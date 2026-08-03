@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 import asyncio
 import logging
 from time import time
@@ -48,6 +49,7 @@ from constants import (
     MAX_CHANNELS,
     GQL_QUERIES,
     WATCH_INTERVAL,
+    REFRESH_JITTER,
     State,
     ClientType,
     PriorityMode,
@@ -441,6 +443,9 @@ class Twitch:
         self._drops: dict[str, TimedDrop] = {}
         self._campaigns: dict[str, DropsCampaign] = {}
         self._mnt_triggers: deque[datetime] = deque()
+        # NOTE: with periodic refreshes enabled, we end up in CHANNEL_SWITCH every few minutes,
+        # so remember if we already told the user there's nothing to watch, to avoid spamming it
+        self._no_channel_printed: bool = False
         # NOTE: GQL is pretty volatile and breaks everything if one runs into their rate limit.
         # Do not modify the default, safe values.
         self._qgl_limiter = RateLimiter(capacity=5, window=1)
@@ -733,10 +738,10 @@ class Twitch:
                     self.change_state(State.IDLE)
             elif self._state is State.CHANNELS_FETCH:
                 self.gui.status.update(_("gui", "status", "gathering"))
-                # start with all current channels, clear the memory and GUI
+                # start with all current channels, clear the memory
+                # NOTE: the GUI list is only rebuilt further below, and only if needed
                 new_channels: set[Channel] = set(channels.values())
                 channels.clear()
-                self.gui.channels.clear()
                 # gather and add ACL channels from campaigns
                 # NOTE: we consider only campaigns that can be progressed
                 # NOTE: we use another set so that we can set them online separately
@@ -776,8 +781,8 @@ class Twitch:
                 to_remove_channels = ordered_channels[MAX_CHANNELS:]
                 ordered_channels = ordered_channels[:MAX_CHANNELS]
                 if to_remove_channels:
-                    # tracked channels and gui were cleared earlier, so no need to do it here
-                    # just make sure to unsubscribe from their topics
+                    # tracked channels were cleared earlier, and the gui list is rebuilt below,
+                    # so just make sure to unsubscribe from their topics
                     to_remove_topics = []
                     for channel in to_remove_channels:
                         to_remove_topics.append(
@@ -788,10 +793,22 @@ class Twitch:
                         )
                     self.websocket.remove_topics(to_remove_topics)
                     del to_remove_channels, to_remove_topics
+                # Only tear the gui list down when the set of channels actually changed.
+                # A periodic refresh usually ends up with the exact same channels, and
+                # rebuilding the table every time would flicker and drop the user's selection.
+                gui_selection: Channel | None = None
+                if self.gui.channels.get_iids() != set(
+                    channel.iid for channel in ordered_channels
+                ):
+                    gui_selection = self.gui.channels.get_selection()
+                    self.gui.channels.clear()
                 # set our new channel list
                 for channel in ordered_channels:
                     channels[channel.id] = channel
                     channel.display(add=True)
+                # restore the selection, as long as the channel is still on the list
+                if gui_selection is not None and gui_selection.id in channels:
+                    self.gui.channels.set_selection(gui_selection)
                 # subscribe to these channel's state updates
                 to_add_topics: list[WebsocketTopic] = []
                 for channel_id in channels:
@@ -859,7 +876,10 @@ class Twitch:
                             new_watching = channel
                             break
                 watching_channel = self.watching_channel.get_with_default(None)
-                if new_watching is not None:
+                # NOTE: a GUI-selected channel skips the 'should_switch' check above, so it ends
+                # up here even when it's already the one being watched - re-watching it would
+                # reprint the status, which gets noisy with periodic refreshes enabled
+                if new_watching is not None and new_watching != watching_channel:
                     # if we have a better switch target - do so
                     self.watch(new_watching)
                     # break the state change chain by clearing the flag
@@ -873,7 +893,9 @@ class Twitch:
                     self._state_change.clear()
                 else:
                     # not watching anything and there isn't anything to watch either
-                    self.print(_("status", "no_channel"))
+                    if not self._no_channel_printed:
+                        self.print(_("status", "no_channel"))
+                        self._no_channel_printed = True
                     self.change_state(State.IDLE)
                 del new_watching, selected_channel, watching_channel
             elif self._state is State.RESTART:
@@ -967,9 +989,23 @@ class Twitch:
             if now >= next_period:
                 break
             next_trigger = next_period
+            trigger_type: str = "Reload"
+            # Periodically re-scan for channels that went live since the last time we looked.
+            # Without this, campaigns with no ACL are only ever discovered during the hourly
+            # reload, because their channels come from a point-in-time directory query.
+            interval_minutes: int = self.settings.refresh_interval
+            if interval_minutes > 0:
+                refresh_at = now + timedelta(minutes=interval_minutes) + timedelta(
+                    seconds=random.uniform(0, REFRESH_JITTER.total_seconds())
+                )
+                if refresh_at < next_trigger:
+                    next_trigger = refresh_at
+                    trigger_type = "Refresh"
+            # NOTE: only consume a real trigger if it ends up being the earliest one,
+            # otherwise it'd be silently skipped by the refresh scheduled above
             while self._mnt_triggers and self._mnt_triggers[0] <= next_trigger:
                 next_trigger = self._mnt_triggers.popleft()
-            trigger_type: str = "Reload" if next_trigger == next_period else "Cleanup"
+                trigger_type = "Cleanup"
             logger.log(
                 CALL,
                 (
@@ -1031,6 +1067,8 @@ class Twitch:
         )
 
     def watch(self, channel: Channel, *, update_status: bool = True):
+        # we have something to watch again, so allow the "no channels" message through next time
+        self._no_channel_printed = False
         self.gui.tray.change_icon("active")
         self.gui.channels.set_watching(channel)
         self.watching_channel.set(channel)

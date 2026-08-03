@@ -1021,8 +1021,17 @@ class ChannelList:
             return None
         return self._channel_map[selection[0]]
 
+    def set_selection(self, channel: Channel):
+        self._table.selection_set(channel.iid)
+
     def clear_selection(self):
         self._table.selection_set('')
+
+    def get_iids(self) -> set[str]:
+        """
+        Returns the set of channel IDs currently displayed on the list.
+        """
+        return set(self._channel_map)
 
     def clear(self):
         iids = self._table.get_children()
@@ -1564,6 +1573,7 @@ class _SettingsVars(TypedDict):
     dark_mode: IntVar
     language: StringVar
     priority_mode: StringVar
+    refresh_interval: StringVar
     tray_notifications: IntVar
     enable_badges_emotes: IntVar
     available_drops_check: IntVar
@@ -1585,6 +1595,20 @@ class SettingsPanel:
             ),
         }
 
+    @cached_property
+    def REFRESH_INTERVALS(self) -> dict[int, str]:
+        # NOTE: Translation calls have to be deferred here,
+        # to allow changing the language before the settings panel is initialized.
+        return {
+            0: _("gui", "settings", "refresh_intervals", "disabled"),
+            **{
+                minutes: _("gui", "settings", "refresh_intervals", "minutes").format(
+                    minutes=minutes
+                )
+                for minutes in (1, 2, 5, 10, 15, 30)
+            },
+        }
+
     def __init__(self, manager: GUIManager, master: ttk.Widget):
         self._manager = manager
         self._settings: Settings = manager._twitch.settings
@@ -1592,6 +1616,10 @@ class SettingsPanel:
         if priority_mode not in self.PRIORITY_MODES:
             priority_mode = PriorityMode.PRIORITY_ONLY
             self._settings.priority_mode = priority_mode
+        refresh_interval = self._settings.refresh_interval
+        if refresh_interval not in self.REFRESH_INTERVALS:
+            refresh_interval = 5
+            self._settings.refresh_interval = refresh_interval
         self._vars: _SettingsVars = {
             "autostart": IntVar(master, 0),
             "language": StringVar(master, _.current),
@@ -1599,6 +1627,7 @@ class SettingsPanel:
             "tray": IntVar(master, self._settings.autostart_tray),
             "dark_mode": IntVar(master, int(self._settings.dark_mode)),
             "priority_mode": StringVar(master, self.PRIORITY_MODES[priority_mode]),
+            "refresh_interval": StringVar(master, self.REFRESH_INTERVALS[refresh_interval]),
             "tray_notifications": IntVar(master, self._settings.tray_notifications),
             "enable_badges_emotes": IntVar(
                 master, int(self._settings.enable_badges_emotes)
@@ -1682,6 +1711,15 @@ class SettingsPanel:
             command=self.priority_mode,
             textvariable=self._vars["priority_mode"],
             values=list(self.PRIORITY_MODES.values()),
+        ).grid(column=1, row=irow, sticky="w")
+        ttk.Label(
+            checkboxes_frame, text=_("gui", "settings", "general", "refresh_interval")
+        ).grid(column=0, row=(irow := irow + 1), sticky="e")
+        SelectCombobox(
+            checkboxes_frame,
+            command=self.refresh_interval,
+            textvariable=self._vars["refresh_interval"],
+            values=list(self.REFRESH_INTERVALS.values()),
         ).grid(column=1, row=irow, sticky="w")
 
         # proxy frame
@@ -2041,6 +2079,13 @@ class SettingsPanel:
         for value, name in self.PRIORITY_MODES.items():
             if mode_name == name:
                 self._settings.priority_mode = value
+                break
+
+    def refresh_interval(self, event: tk.Event[ttk.Combobox]) -> None:
+        interval_name: str = self._vars["refresh_interval"].get()
+        for value, name in self.REFRESH_INTERVALS.items():
+            if interval_name == name:
+                self._settings.refresh_interval = value
                 break
 
     def exclude_add(self) -> None:
@@ -2838,6 +2883,7 @@ if __name__ == "__main__":
                 language="English",
                 autostart_tray=False,
                 exclude={"Lit Game"},
+                refresh_interval=5,
                 tray_notifications=True,
                 enable_badges_emotes=False,
                 available_drops_check=False,

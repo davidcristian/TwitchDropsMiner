@@ -18,6 +18,7 @@ class SettingsFile(TypedDict):
     exclude: set[str]
     priority: list[str]
     autostart_tray: bool
+    refresh_interval: int
     connection_quality: int
     tray_notifications: bool
     enable_badges_emotes: bool
@@ -30,6 +31,7 @@ default_settings: SettingsFile = {
     "priority": [],
     "exclude": set(),
     "dark_mode": False,
+    "refresh_interval": 5,
     "autostart_tray": False,
     "connection_quality": 1,
     "language": DEFAULT_LANG,
@@ -56,6 +58,7 @@ class Settings:
     exclude: set[str]
     priority: list[str]
     autostart_tray: bool
+    refresh_interval: int
     connection_quality: int
     tray_notifications: bool
     enable_badges_emotes: bool

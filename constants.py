@@ -128,6 +128,9 @@ PING_INTERVAL = timedelta(minutes=3)
 PING_TIMEOUT = timedelta(seconds=10)
 ONLINE_DELAY = timedelta(seconds=120)
 WATCH_INTERVAL = timedelta(seconds=20)
+# Random amount of time added on top of the channel refresh interval,
+# so that the requests don't end up sent on a perfectly fixed schedule.
+REFRESH_JITTER = timedelta(seconds=60)
 # Strings
 WINDOW_TITLE = f"Twitch Drops Miner v{__version__} (by DevilXD)"
 # Logging

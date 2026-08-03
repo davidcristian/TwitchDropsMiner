@@ -163,6 +163,7 @@ class GUISettingsGeneral(TypedDict):
     tray_notifications: str
     dark_mode: str
     priority_mode: str
+    refresh_interval: str
     proxy: str
 
 
@@ -180,10 +181,16 @@ class GUIPriorityModes(TypedDict):
     low_availability: str
 
 
+class GUIRefreshIntervals(TypedDict):
+    disabled: str
+    minutes: str
+
+
 class GUISettings(TypedDict):
     general: GUISettingsGeneral
     advanced: GUISettingsAdvanced
     priority_modes: GUIPriorityModes
+    refresh_intervals: GUIRefreshIntervals
     game_name: str
     priority: str
     exclude: str
@@ -379,6 +386,7 @@ default_translation: Translation = {
                 "tray_notifications": "Tray notifications: ",
                 "dark_mode": "Dark mode: ",
                 "priority_mode": "Priority mode: ",
+                "refresh_interval": "Check for new streams every: ",
                 "proxy": "Proxy (requires restart):",
             },
             "advanced": {
@@ -396,6 +404,10 @@ default_translation: Translation = {
                 "priority_only": "Priority list only",
                 "ending_soonest": "Ending soonest",
                 "low_availability": "Low availability first",
+            },
+            "refresh_intervals": {
+                "disabled": "Never (hourly reload only)",
+                "minutes": "{minutes} min",
             },
             "game_name": "Game name",
             "priority": "Priority",
