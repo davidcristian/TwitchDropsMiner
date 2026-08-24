@@ -209,6 +209,8 @@ class GUISettings(TypedDict):
     game_name: str
     priority: str
     exclude: str
+    pattern_matches: str
+    pattern_empty: str
     reload: str
     reload_text: str
 
@@ -437,9 +439,13 @@ default_translation: Translation = {
                 "empty": "Nothing detected yet - add a game folder below.",
                 "no_dirs": "No folders added.",
             },
-            "game_name": "Game name",
+            "game_name": "Game name or pattern",
             "priority": "Priority",
             "exclude": "Exclude",
+            "pattern_matches": "\"{pattern}\" matches {count} game(s): {games}",
+            "pattern_empty": (
+                "\"{pattern}\" doesn't match any game with a campaign right now."
+            ),
             "reload": "Reload",
             "reload_text": "Most changes require a reload to take an immediate effect: ",
         },

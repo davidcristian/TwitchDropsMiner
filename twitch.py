@@ -741,13 +741,26 @@ class Twitch:
                 detected = self.settings.detected_games
                 priority_mode = self.settings.priority_mode
                 priority_only = priority_mode is PriorityMode.PRIORITY_ONLY
+                # List entries ignore case, accents and punctuation, and can use '*' and '?'
+                # wildcards, so a single entry can stand in for a whole series of games.
+                priority_patterns = gamelib.compile_patterns(priority)
+                exclude_patterns = gamelib.compile_patterns(exclude)
                 # Games detected as installed rank below every manually prioritized one,
                 # so an explicit choice always wins over an automatic one.
-                priority_order: dict[str, int] = {
-                    name: index for index, name in enumerate(priority)
+                detected_order: dict[str, int] = {
+                    name: len(priority) + index for index, name in enumerate(detected)
                 }
-                for index, name in enumerate(detected):
-                    priority_order.setdefault(name, len(priority) + index)
+                # NOTE: resolve each game's rank once here, rather than on every comparison
+                # the sort below makes - matching a pattern is more expensive than a lookup
+                priority_order: dict[str, int] = {}
+                for campaign in self.inventory:
+                    game_name: str = campaign.game.name
+                    if game_name not in priority_order:
+                        rank: int | None = gamelib.match_rank(priority_patterns, game_name)
+                        priority_order[game_name] = (
+                            rank if rank is not None
+                            else detected_order.get(game_name, MAX_INT)
+                        )
                 next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
                 # sorted_campaigns: list[DropsCampaign] = list(self.inventory)
                 sorted_campaigns: list[DropsCampaign] = self.inventory
@@ -764,13 +777,13 @@ class Twitch:
                     if (
                         game not in self.wanted_games  # isn't already there
                         # and isn't excluded by list or priority mode
-                        and game.name not in exclude
-                        # NOTE: a detected game counts as wanted under priority-only mode,
-                        # so having it installed is enough to mine it
+                        and not gamelib.any_match(exclude_patterns, game.name)
+                        # NOTE: a rank below MAX_INT means the game either matched a priority
+                        # list entry, or was detected as installed - both count as wanted
+                        # under priority-only mode
                         and (
                             not priority_only
-                            or game.name in priority
-                            or game.name in detected
+                            or priority_order.get(game.name, MAX_INT) < MAX_INT
                         )
                         # and can be progressed within the next hour
                         and campaign.can_earn_within(next_hour)

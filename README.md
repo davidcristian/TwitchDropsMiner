@@ -9,7 +9,7 @@ Every several seconds, the application pretends to watch a particular stream by 
 ### Features:
 
 - Stream-less drop mining - save on bandwidth.
-- Game priority and exclusion lists, allowing you to focus on mining what you want, in the order you want, and ignore what you don't want.
+- Game priority and exclusion lists, allowing you to focus on mining what you want, in the order you want, and ignore what you don't want. Entries ignore case, accents and punctuation, and accept `*` and `?` wildcards, so a single `Pokemon*` entry covers every Pokémon game.
 - Sharded websocket connection, allowing for tracking up to `199` channels at the same time.
 - Automatic detection of installed games, matching your Steam and Epic libraries against the games that currently have drop campaigns, so owning a game is enough to mine it.
 - Automatic drop campaigns discovery based on linked accounts (requires you to do [account linking](https://www.twitch.tv/drops/campaigns) yourself though).

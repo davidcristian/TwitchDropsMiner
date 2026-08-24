@@ -35,7 +35,15 @@ if sys.platform == "darwin":
 
 from translate import _
 from cache import ImageCache
-from gamelib import GameMatch, MatchKind
+from gamelib import (
+    GameMatch,
+    MatchKind,
+    any_match,
+    has_wildcard,
+    matching_names,
+    compile_pattern,
+    compile_patterns,
+)
 from exceptions import MinerException, ExitRequest
 from utils import resource_path, set_root_icon, webopen, task_wrapper, Game, _T
 from constants import (
@@ -1343,14 +1351,18 @@ class InventoryOverview:
         upcoming = bool(self._filters["upcoming"].get())
         finished = bool(self._filters["finished"].get())
         priority_only = self._settings.priority_mode is PriorityMode.PRIORITY_ONLY
+        # NOTE: list entries can be wildcards, so these need matching rather than a lookup
+        game_name: str = campaign.game.name
+        listed_excluded = any_match(compile_patterns(self._settings.exclude), game_name)
+        listed_priority = any_match(compile_patterns(self._settings.priority), game_name)
         if (
             campaign.required_minutes > 0  # don't show sub-only campaigns
             and (not_linked or campaign.eligible)
             and (campaign.active or upcoming and campaign.upcoming or expired and campaign.expired)
             and (
                 excluded or (
-                    campaign.game.name not in self._settings.exclude
-                    and not priority_only or campaign.game.name in self._settings.priority
+                    not listed_excluded
+                    and not priority_only or listed_priority
                 )
             )
             and (finished or not campaign.finished)
@@ -2144,6 +2156,26 @@ class SettingsPanel:
         self._settings.alter()
         self.rescan_games()
 
+    def _report_pattern(self, entry: str) -> None:
+        """
+        Say what a wildcard entry caught, so it isn't a shot in the dark.
+
+        Plain entries are left alone - what they match is already obvious.
+        """
+        if not has_wildcard(entry):
+            return
+        matched: list[str] = matching_names(compile_pattern(entry), self._game_names)
+        if matched:
+            self._manager.print(
+                _("gui", "settings", "pattern_matches").format(
+                    pattern=entry, count=len(matched), games=", ".join(matched)
+                )
+            )
+        else:
+            self._manager.print(
+                _("gui", "settings", "pattern_empty").format(pattern=entry)
+            )
+
     def priority_add(self) -> None:
         game_name: str = self._priority_entry.get()
         if not game_name:
@@ -2160,6 +2192,7 @@ class SettingsPanel:
             self._settings.priority.append(game_name)
             self._settings.alter()
             self.update_priority_choices()
+            self._report_pattern(game_name)
         else:
             # already there, set the selection on it
             self._priority_list.selection_set(existing_idx)
@@ -2232,6 +2265,7 @@ class SettingsPanel:
             self._settings.exclude.add(game_name)
             self._settings.alter()
             self.update_excluded_choices()
+            self._report_pattern(game_name)
             # insert it alphabetically
             for i, item in enumerate(self._exclude_list.get(0, "end")):
                 if game_name < item:
