@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from tkinter.font import Font, nametofont
 from functools import partial, cached_property
 from datetime import datetime, timedelta, timezone
-from tkinter import Tk, ttk, StringVar, DoubleVar, IntVar
+from tkinter import Tk, ttk, filedialog, StringVar, DoubleVar, IntVar
 from typing import Any, Union, Tuple, TypedDict, NoReturn, Generic, TYPE_CHECKING
 
 import pystray
@@ -35,6 +35,7 @@ if sys.platform == "darwin":
 
 from translate import _
 from cache import ImageCache
+from gamelib import GameMatch, MatchKind
 from exceptions import MinerException, ExitRequest
 from utils import resource_path, set_root_icon, webopen, task_wrapper, Game, _T
 from constants import (
@@ -1873,9 +1874,68 @@ class SettingsPanel:
             exclude_frame, text="❌", command=self.exclude_delete, width=3, style="Large.TButton"
         ).grid(column=0, row=2, columnspan=2, sticky="nsew")
 
+        # Detected games section
+        detect_frame = ttk.LabelFrame(
+            center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "detect", "name")
+        )
+        detect_frame.grid(column=3, row=0, rowspan=2, sticky="nsew")
+        detect_frame.columnconfigure(0, weight=1)
+        # NOTE: this list is filled in automatically and has no add/remove buttons on purpose.
+        # To override a bad match, put the game on the Exclude list - that's checked separately
+        # and wins over everything else.
+        self._detected_list = PaddedListbox(
+            detect_frame,
+            width=28,
+            height=8,
+            padding=(1, 0),
+            activestyle="none",
+            selectmode="single",
+            highlightthickness=0,
+            exportselection=False,
+        )
+        self._detected_list.grid(column=0, row=0, columnspan=2, sticky="nsew")
+        detect_frame.rowconfigure(0, weight=3)
+        self._detected_label = ttk.Label(
+            detect_frame, text=_("gui", "settings", "detect", "empty"), wraplength=210
+        )
+        self._detected_label.grid(column=0, row=1, columnspan=2, sticky="ew", pady=(2, 4))
+        ttk.Label(
+            detect_frame, text=_("gui", "settings", "detect", "dirs")
+        ).grid(column=0, row=2, columnspan=2, sticky="w")
+        self._game_dirs_list = PaddedListbox(
+            detect_frame,
+            width=28,
+            height=4,
+            padding=(1, 0),
+            activestyle="none",
+            selectmode="single",
+            highlightthickness=0,
+            exportselection=False,
+        )
+        self._game_dirs_list.grid(column=0, row=3, rowspan=2, sticky="nsew")
+        detect_frame.rowconfigure(3, weight=1)
+        ttk.Button(
+            detect_frame, text="➕", command=self.game_dir_add, width=3, style="Large.TButton"
+        ).grid(column=1, row=3, sticky="nsew")
+        ttk.Button(
+            detect_frame,
+            text="❌",
+            width=3,
+            style="Large.TButton",
+            command=self.game_dir_delete,
+        ).grid(column=1, row=4, sticky="nsew")
+        ttk.Button(
+            detect_frame,
+            text=_("gui", "settings", "detect", "rescan"),
+            command=self.rescan_games,
+        ).grid(column=0, row=5, columnspan=2, sticky="ew", pady=(4, 0))
+        # restore what the last scan found, so the list isn't empty before the first reload
+        self._game_dirs_list.insert("end", *self._settings.game_dirs)
+        self._restore_detected()
+
         # Reload button
         reload_frame = ttk.Frame(center_frame)
-        reload_frame.grid(column=0, row=2, columnspan=3, pady=4)
+        reload_frame.grid(column=0, row=2, columnspan=4, pady=4)
         ttk.Label(reload_frame, text=_("gui", "settings", "reload_text")).grid(column=0, row=0)
         ttk.Button(
             reload_frame,
@@ -1886,6 +1946,8 @@ class SettingsPanel:
     def clear_selection(self) -> None:
         self._priority_list.selection_clear(0, "end")
         self._exclude_list.selection_clear(0, "end")
+        self._detected_list.selection_clear(0, "end")
+        self._game_dirs_list.selection_clear(0, "end")
 
     def update_dark_mode(self) -> None:
         self._settings.dark_mode = bool(self._vars["dark_mode"].get())
@@ -2009,6 +2071,78 @@ class SettingsPanel:
         self._game_names.update(game.name for game in games)
         self.update_excluded_choices()
         self.update_priority_choices()
+
+    def _fill_detected(self, entries: abc.Iterable[tuple[str, bool]]) -> None:
+        self._detected_list.delete(0, "end")
+        for game_name, exact in entries:
+            # mark the names we had to guess at, so a wrong one is easy to spot
+            self._detected_list.insert("end", game_name if exact else f"≈ {game_name}")
+
+    def _restore_detected(self) -> None:
+        """
+        Show the previous scan's result, before a new scan has had a chance to run.
+        """
+        detected: list[str] = self._settings.detected_games
+        # NOTE: only the names are persisted, so we can't tell exact matches apart here
+        self._fill_detected((game_name, True) for game_name in detected)
+        self._detected_label.config(
+            text=(
+                _("gui", "settings", "detect", "restored").format(count=len(detected))
+                if detected
+                else _("gui", "settings", "detect", "empty")
+            )
+        )
+
+    def set_scanning(self, scanning: bool) -> None:
+        if scanning:
+            self._detected_label.config(text=_("gui", "settings", "detect", "scanning"))
+        else:
+            # scan didn't complete - put the previous result back rather than
+            # leaving the label stuck on "scanning..."
+            self._restore_detected()
+
+    def set_detected(self, matches: abc.Sequence[GameMatch], installed: int = 0) -> None:
+        self._fill_detected((m.game_name, m.kind is MatchKind.EXACT) for m in matches)
+        if not self._settings.game_dirs:
+            self._detected_label.config(text=_("gui", "settings", "detect", "no_dirs"))
+            return
+        self._detected_label.config(
+            text=_("gui", "settings", "detect", "detected").format(
+                count=len(matches), total=installed
+            )
+        )
+
+    def rescan_games(self) -> None:
+        asyncio.create_task(task_wrapper(self._manager._twitch.detect_games)())
+
+    def game_dir_add(self) -> None:
+        directory: str = filedialog.askdirectory(
+            parent=self._manager._root,
+            title=_("gui", "settings", "detect", "add_dir"),
+            mustexist=True,
+        )
+        if not directory:
+            # dialog cancelled
+            return
+        # normalize the separators, so the same folder can't be added twice
+        directory = str(Path(directory))
+        if directory in self._settings.game_dirs:
+            return
+        self._settings.game_dirs.append(directory)
+        self._settings.alter()
+        self._game_dirs_list.insert("end", directory)
+        self._game_dirs_list.see("end")
+        self.rescan_games()
+
+    def game_dir_delete(self) -> None:
+        selection: tuple[int, ...] = self._game_dirs_list.curselection()
+        if not selection:
+            return
+        idx: int = selection[0]
+        self._game_dirs_list.delete(idx)
+        del self._settings.game_dirs[idx]
+        self._settings.alter()
+        self.rescan_games()
 
     def priority_add(self) -> None:
         game_name: str = self._priority_entry.get()
@@ -2711,6 +2845,12 @@ class GUIManager:
             bg=surface, fg=fg, sel_bg=sel_bg, sel_fg=sel_fg
         )
         self.settings._exclude_list.configure_theme(
+            bg=surface, fg=fg, sel_bg=sel_bg, sel_fg=sel_fg
+        )
+        self.settings._detected_list.configure_theme(
+            bg=surface, fg=fg, sel_bg=sel_bg, sel_fg=sel_fg
+        )
+        self.settings._game_dirs_list.configure_theme(
             bg=surface, fg=fg, sel_bg=sel_bg, sel_fg=sel_fg
         )
         # Inventory canvas

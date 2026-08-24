@@ -16,6 +16,7 @@ from typing import Any, Literal, Final, NoReturn, overload, cast, TYPE_CHECKING
 import aiohttp
 from yarl import URL
 
+import gamelib
 from translate import _
 from gui import GUIManager
 from channel import Channel
@@ -446,6 +447,11 @@ class Twitch:
         # NOTE: with periodic refreshes enabled, we end up in CHANNEL_SWITCH every few minutes,
         # so remember if we already told the user there's nothing to watch, to avoid spamming it
         self._no_channel_printed: bool = False
+        # NOTE: the game folder scan re-runs on every reload, so remember which problems
+        # we've already reported - a folder on an unplugged drive would print hourly otherwise
+        self._scan_errors_printed: set[str] = set()
+        # the Rescan button can be pressed while a scan is already running
+        self._scanning_games: bool = False
         # NOTE: GQL is pretty volatile and breaks everything if one runs into their rate limit.
         # Do not modify the default, safe values.
         self._qgl_limiter = RateLimiter(capacity=5, window=1)
@@ -573,6 +579,70 @@ class Twitch:
         self.gui.save(force=force)
         self.settings.save(force=force)
 
+    async def detect_games(self) -> None:
+        """
+        Scan the configured game folders, and match what's installed on disk
+        against the games that currently have drop campaigns.
+
+        Only high-confidence matches are kept - see 'gamelib.match_games'. The result
+        is stored in the settings, so it survives a restart and is available before
+        the first inventory fetch of the next run completes.
+        """
+        game_dirs: list[str] = self.settings.game_dirs
+        if not game_dirs:
+            # nothing configured - make sure we don't keep a stale list around
+            if self.settings.detected_games:
+                self.settings.detected_games = []
+                # the games we were mining because of a detection are no longer wanted
+                self.change_state(State.GAMES_UPDATE)
+            self._scan_errors_printed.clear()
+            self.gui.settings.set_detected([])
+            return
+        if self._scanning_games:
+            # a scan is already in flight - a second one would only redo the same work
+            return
+        self._scanning_games = True
+        self.gui.settings.set_scanning(True)
+        try:
+            # walking the filesystem blocks, so keep it off the event loop
+            result: gamelib.ScanResult = await asyncio.to_thread(
+                gamelib.scan_directories, game_dirs
+            )
+        except Exception:
+            logger.exception("Game folder scan failed")
+            self.gui.settings.set_scanning(False)
+            return
+        finally:
+            self._scanning_games = False
+        for error in result.errors:
+            if error not in self._scan_errors_printed:
+                self.print(_("gui", "settings", "detect", "scan_error").format(error=error))
+        # only keep the problems that are still current, so a folder that breaks again later
+        # gets reported again instead of staying silent
+        self._scan_errors_printed = set(result.errors)
+        matches: list[gamelib.GameMatch] = gamelib.match_games(
+            result.games, (campaign.game.name for campaign in self.inventory)
+        )
+        # NOTE: copy, because assigning below would otherwise mutate what we compare against
+        previous: list[str] = list(self.settings.detected_games)
+        detected: list[str] = [match.game_name for match in matches]
+        self.gui.settings.set_detected(matches, len(result.games))
+        if detected != previous:
+            self.settings.detected_games = detected
+            # 'wanted_games' is derived from this list, so it has to be recalculated.
+            # Without this, a game picked up by the Rescan button would show up on the
+            # list but not actually get mined until the next hourly reload.
+            # NOTE: this only redoes the games/channels part - the inventory itself
+            # is left alone, so it costs a directory query per ACL-less game at most.
+            self.change_state(State.GAMES_UPDATE)
+        logger.log(
+            CALL,
+            (
+                f"Game detection: {len(result.games)} installed, "
+                f"{len(matches)} matched to a campaign"
+            ),
+        )
+
     def get_priority(self, channel: Channel) -> int:
         """
         Return a priority number for a given channel.
@@ -652,6 +722,8 @@ class Twitch:
                 await self.websocket.start()
                 await self.fetch_inventory()
                 self.gui.set_games(set(campaign.game for campaign in self.inventory))
+                # match installed games against the campaigns we've just fetched
+                await self.detect_games()
                 # Save state on every inventory fetch
                 self.save()
                 self.change_state(State.GAMES_UPDATE)
@@ -666,8 +738,16 @@ class Twitch:
                 self.wanted_games.clear()
                 exclude = self.settings.exclude
                 priority = self.settings.priority
+                detected = self.settings.detected_games
                 priority_mode = self.settings.priority_mode
                 priority_only = priority_mode is PriorityMode.PRIORITY_ONLY
+                # Games detected as installed rank below every manually prioritized one,
+                # so an explicit choice always wins over an automatic one.
+                priority_order: dict[str, int] = {
+                    name: index for index, name in enumerate(priority)
+                }
+                for index, name in enumerate(detected):
+                    priority_order.setdefault(name, len(priority) + index)
                 next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
                 # sorted_campaigns: list[DropsCampaign] = list(self.inventory)
                 sorted_campaigns: list[DropsCampaign] = self.inventory
@@ -677,9 +757,7 @@ class Twitch:
                     elif priority_mode is PriorityMode.LOW_AVBL_FIRST:
                         sorted_campaigns.sort(key=lambda c: c.availability)
                 sorted_campaigns.sort(
-                    key=lambda c: (
-                        priority.index(c.game.name) if c.game.name in priority else MAX_INT
-                    )
+                    key=lambda c: priority_order.get(c.game.name, MAX_INT)
                 )
                 for campaign in sorted_campaigns:
                     game: Game = campaign.game
@@ -687,7 +765,13 @@ class Twitch:
                         game not in self.wanted_games  # isn't already there
                         # and isn't excluded by list or priority mode
                         and game.name not in exclude
-                        and (not priority_only or game.name in priority)
+                        # NOTE: a detected game counts as wanted under priority-only mode,
+                        # so having it installed is enough to mine it
+                        and (
+                            not priority_only
+                            or game.name in priority
+                            or game.name in detected
+                        )
                         # and can be progressed within the next hour
                         and campaign.can_earn_within(next_hour)
                     ):

@@ -186,11 +186,26 @@ class GUIRefreshIntervals(TypedDict):
     minutes: str
 
 
+class GUISettingsDetect(TypedDict):
+    name: str
+    dirs: str
+    add_dir: str
+    remove_dir: str
+    rescan: str
+    scanning: str
+    scan_error: str
+    detected: str
+    restored: str
+    empty: str
+    no_dirs: str
+
+
 class GUISettings(TypedDict):
     general: GUISettingsGeneral
     advanced: GUISettingsAdvanced
     priority_modes: GUIPriorityModes
     refresh_intervals: GUIRefreshIntervals
+    detect: GUISettingsDetect
     game_name: str
     priority: str
     exclude: str
@@ -408,6 +423,19 @@ default_translation: Translation = {
             "refresh_intervals": {
                 "disabled": "Never (hourly reload only)",
                 "minutes": "{minutes} min",
+            },
+            "detect": {
+                "name": "Detected Games",
+                "dirs": "Game folders:",
+                "add_dir": "Add a Steam or Epic games folder",
+                "remove_dir": "Remove the selected folder",
+                "rescan": "Rescan",
+                "scanning": "Scanning game folders...",
+                "scan_error": "Game scan: {error}",
+                "detected": "{count} of {total} installed games matched.",
+                "restored": "{count} games from the last scan.",
+                "empty": "Nothing detected yet - add a game folder below.",
+                "no_dirs": "No folders added.",
             },
             "game_name": "Game name",
             "priority": "Priority",

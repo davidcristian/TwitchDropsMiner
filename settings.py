@@ -24,6 +24,8 @@ class SettingsFile(TypedDict):
     enable_badges_emotes: bool
     available_drops_check: bool
     priority_mode: PriorityMode
+    game_dirs: list[str]
+    detected_games: list[str]
 
 
 default_settings: SettingsFile = {
@@ -39,6 +41,8 @@ default_settings: SettingsFile = {
     "enable_badges_emotes": False,
     "available_drops_check": False,
     "priority_mode": PriorityMode.PRIORITY_ONLY,
+    "game_dirs": [],
+    "detected_games": [],
 }
 
 
@@ -64,6 +68,8 @@ class Settings:
     enable_badges_emotes: bool
     available_drops_check: bool
     priority_mode: PriorityMode
+    game_dirs: list[str]
+    detected_games: list[str]
 
     PASSTHROUGH = ("_settings", "_args", "_altered")
 
