@@ -859,6 +859,8 @@ class Twitch:
                     ):
                         # non-excluded games with no priority are placed last, below priority ones
                         self.wanted_games.append(game)
+                # show the user what all of the above actually settled on
+                self.gui.settings.set_wanted_games(self.wanted_games)
                 full_cleanup = True
                 self.restart_watching()
                 self.change_state(State.CHANNELS_CLEANUP)

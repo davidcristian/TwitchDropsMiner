@@ -195,6 +195,16 @@ class GUIRestartDelays(TypedDict):
     minutes: str
 
 
+class GUISettingsWanted(TypedDict):
+    name: str
+    game: str
+    source: str
+    installed: str
+    unlisted: str
+    count: str
+    empty: str
+
+
 class GUISettingsDetect(TypedDict):
     name: str
     dirs: str
@@ -216,6 +226,7 @@ class GUISettings(TypedDict):
     refresh_intervals: GUIRefreshIntervals
     restart_delays: GUIRestartDelays
     detect: GUISettingsDetect
+    wanted: GUISettingsWanted
     game_name: str
     priority: str
     exclude: str
@@ -443,6 +454,15 @@ default_translation: Translation = {
             "restart_delays": {
                 "disabled": "Never (stay stopped)",
                 "minutes": "{minutes} min",
+            },
+            "wanted": {
+                "name": "Games Being Mined",
+                "game": "Game",
+                "source": "Matched by",
+                "installed": "installed",
+                "unlisted": "not on any list",
+                "count": "Mining {count} game(s), highest priority first.",
+                "empty": "Nothing worked out yet - press Reload below.",
             },
             "detect": {
                 "name": "Detected Games",

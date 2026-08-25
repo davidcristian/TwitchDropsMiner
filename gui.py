@@ -39,6 +39,7 @@ from gamelib import (
     GameMatch,
     MatchKind,
     any_match,
+    match_rank,
     has_wildcard,
     matching_names,
     compile_pattern,
@@ -1676,11 +1677,43 @@ class SettingsPanel:
         center_frame = ttk.Frame(master)
         center_frame.grid(column=0, row=0)
 
+        # Mining summary section
+        # NOTE: spans the full width above the other sections, filling what would
+        # otherwise be dead space, and answers "so what is it actually mining?"
+        wanted_frame = ttk.LabelFrame(
+            center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "wanted", "name")
+        )
+        wanted_frame.grid(column=0, row=0, columnspan=4, sticky="nsew", pady=(0, 4))
+        wanted_frame.columnconfigure(0, weight=1)
+        wanted_frame.rowconfigure(0, weight=1)
+        wanted_scroll = ttk.Scrollbar(wanted_frame, orient="vertical")
+        self._wanted_table = ttk.Treeview(
+            wanted_frame,
+            height=6,
+            show="headings",
+            selectmode="none",
+            columns=("order", "game", "source"),
+            yscrollcommand=wanted_scroll.set,
+        )
+        wanted_scroll.config(command=self._wanted_table.yview)
+        self._wanted_table.grid(column=0, row=0, sticky="nsew")
+        wanted_scroll.grid(column=1, row=0, sticky="ns")
+        self._wanted_table.heading("order", text="#")
+        self._wanted_table.heading("game", text=_("gui", "settings", "wanted", "game"))
+        self._wanted_table.heading("source", text=_("gui", "settings", "wanted", "source"))
+        self._wanted_table.column("order", width=40, stretch=False, anchor="center")
+        self._wanted_table.column("game", width=460, anchor='w')
+        self._wanted_table.column("source", width=300, anchor='w')
+        self._wanted_label = ttk.Label(
+            wanted_frame, text=_("gui", "settings", "wanted", "empty")
+        )
+        self._wanted_label.grid(column=0, row=1, columnspan=2, sticky="w", pady=(2, 0))
+
         # General section
         general_frame = ttk.LabelFrame(
             center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "general", "name")
         )
-        general_frame.grid(column=0, row=0, sticky="nsew")
+        general_frame.grid(column=0, row=1, sticky="nsew")
         # use another frame to center the options within the section
         # NOTE: this can be adjusted or removed later on if more options were to be added
         general_frame.rowconfigure(0, weight=1)
@@ -1783,7 +1816,7 @@ class SettingsPanel:
         advanced_frame = ttk.LabelFrame(
             center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "advanced", "name")
         )
-        advanced_frame.grid(column=0, row=1, sticky="nsew")
+        advanced_frame.grid(column=0, row=2, sticky="nsew")
         advanced_frame.columnconfigure(0, weight=1)
         advanced_frame.rowconfigure(0, weight=1)
         advanced_center = ttk.Frame(advanced_frame)
@@ -1828,7 +1861,7 @@ class SettingsPanel:
         priority_frame = ttk.LabelFrame(
             center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "priority")
         )
-        priority_frame.grid(column=1, row=0, rowspan=2, sticky="nsew")
+        priority_frame.grid(column=1, row=1, rowspan=2, sticky="nsew")
         self._priority_entry = PlaceholderCombobox(
             priority_frame, placeholder=_("gui", "settings", "game_name"), width=30
         )
@@ -1890,7 +1923,7 @@ class SettingsPanel:
         exclude_frame = ttk.LabelFrame(
             center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "exclude")
         )
-        exclude_frame.grid(column=2, row=0, rowspan=2, sticky="nsew")
+        exclude_frame.grid(column=2, row=1, rowspan=2, sticky="nsew")
         self._exclude_entry = PlaceholderCombobox(
             exclude_frame, placeholder=_("gui", "settings", "game_name"), width=26
         )
@@ -1919,7 +1952,7 @@ class SettingsPanel:
         detect_frame = ttk.LabelFrame(
             center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "detect", "name")
         )
-        detect_frame.grid(column=3, row=0, rowspan=2, sticky="nsew")
+        detect_frame.grid(column=3, row=1, rowspan=2, sticky="nsew")
         detect_frame.columnconfigure(0, weight=1)
         # NOTE: this list is filled in automatically and has no add/remove buttons on purpose.
         # To override a bad match, put the game on the Exclude list - that's checked separately
@@ -1976,7 +2009,7 @@ class SettingsPanel:
 
         # Reload button
         reload_frame = ttk.Frame(center_frame)
-        reload_frame.grid(column=0, row=2, columnspan=4, pady=4)
+        reload_frame.grid(column=0, row=3, columnspan=4, pady=4)
         ttk.Label(reload_frame, text=_("gui", "settings", "reload_text")).grid(column=0, row=0)
         ttk.Button(
             reload_frame,
@@ -2112,6 +2145,34 @@ class SettingsPanel:
         self._game_names.update(game.name for game in games)
         self.update_excluded_choices()
         self.update_priority_choices()
+
+    def set_wanted_games(self, games: abc.Sequence[Game]) -> None:
+        """
+        Show what the miner settled on mining, and what each game got there by.
+        """
+        table = self._wanted_table
+        table.delete(*table.get_children())
+        priority: list[str] = self._settings.priority
+        patterns = compile_patterns(priority)
+        detected: list[str] = self._settings.detected_games
+        for index, game in enumerate(games, start=1):
+            rank: int | None = match_rank(patterns, game.name)
+            if rank is not None:
+                # name the entry responsible, so a wildcard's reach is visible
+                source: str = priority[rank]
+            elif game.name in detected:
+                source = _("gui", "settings", "wanted", "installed")
+            else:
+                # only reachable when the priority mode allows mining anything
+                source = _("gui", "settings", "wanted", "unlisted")
+            table.insert('', "end", values=(index, game.name, source))
+        self._wanted_label.config(
+            text=(
+                _("gui", "settings", "wanted", "count").format(count=len(games))
+                if games
+                else _("gui", "settings", "wanted", "empty")
+            )
+        )
 
     def _fill_detected(self, entries: abc.Iterable[tuple[str, bool]]) -> None:
         self._detected_list.delete(0, "end")
