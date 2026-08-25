@@ -17,6 +17,7 @@ Every several seconds, the application pretends to watch a particular stream by 
 - Automatic channel stream switching, when the one you were currently watching goes offline, as well as when a channel streaming a higher priority game goes online.
 - Login session is saved in a cookies file, so you don't need to login every time.
 - Mining is automatically started as new campaigns appear, and stopped when the last available drops have been mined.
+- Automatic restart after a fatal error, so a temporary problem on Twitch's side doesn't leave the miner sitting stopped until you notice and restart it yourself.
 
 ### Usage:
 

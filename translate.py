@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 
 class StatusMessages(TypedDict):
     terminated: str
+    fatal_error: str
+    restarting: str
     watching: str
     goes_online: str
     goes_offline: str
@@ -50,6 +52,7 @@ class GUIStatus(TypedDict):
     idle: str
     exiting: str
     terminated: str
+    restarting: str
     cleanup: str
     gathering: str
     switching: str
@@ -164,6 +167,7 @@ class GUISettingsGeneral(TypedDict):
     dark_mode: str
     priority_mode: str
     refresh_interval: str
+    restart_delay: str
     proxy: str
 
 
@@ -182,6 +186,11 @@ class GUIPriorityModes(TypedDict):
 
 
 class GUIRefreshIntervals(TypedDict):
+    disabled: str
+    minutes: str
+
+
+class GUIRestartDelays(TypedDict):
     disabled: str
     minutes: str
 
@@ -205,6 +214,7 @@ class GUISettings(TypedDict):
     advanced: GUISettingsAdvanced
     priority_modes: GUIPriorityModes
     refresh_intervals: GUIRefreshIntervals
+    restart_delays: GUIRestartDelays
     detect: GUISettingsDetect
     game_name: str
     priority: str
@@ -262,6 +272,8 @@ default_translation: Translation = {
     "english_name": "English",
     "status": {
         "terminated": "\nApplication Terminated.\nClose the window to exit the application.",
+        "fatal_error": "Fatal error encountered:\n",
+        "restarting": "Restarting automatically at {time}...",
         "watching": "Watching: {channel}",
         "goes_online": "{channel} goes ONLINE, switching...",
         "goes_offline": "{channel} goes OFFLINE, switching...",
@@ -303,6 +315,7 @@ default_translation: Translation = {
             "idle": "Idle",
             "exiting": "Exiting...",
             "terminated": "Terminated",
+            "restarting": "Restarting at {time}",
             "cleanup": "Cleaning up channels...",
             "gathering": "Gathering channels...",
             "switching": "Switching the channel...",
@@ -404,6 +417,7 @@ default_translation: Translation = {
                 "dark_mode": "Dark mode: ",
                 "priority_mode": "Priority mode: ",
                 "refresh_interval": "Check for new streams every: ",
+                "restart_delay": "Restart after a crash after: ",
                 "proxy": "Proxy (requires restart):",
             },
             "advanced": {
@@ -424,6 +438,10 @@ default_translation: Translation = {
             },
             "refresh_intervals": {
                 "disabled": "Never (hourly reload only)",
+                "minutes": "{minutes} min",
+            },
+            "restart_delays": {
+                "disabled": "Never (stay stopped)",
                 "minutes": "{minutes} min",
             },
             "detect": {

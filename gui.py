@@ -1587,6 +1587,7 @@ class _SettingsVars(TypedDict):
     language: StringVar
     priority_mode: StringVar
     refresh_interval: StringVar
+    restart_delay: StringVar
     tray_notifications: IntVar
     enable_badges_emotes: IntVar
     available_drops_check: IntVar
@@ -1622,6 +1623,20 @@ class SettingsPanel:
             },
         }
 
+    @cached_property
+    def RESTART_DELAYS(self) -> dict[int, str]:
+        # NOTE: Translation calls have to be deferred here,
+        # to allow changing the language before the settings panel is initialized.
+        return {
+            0: _("gui", "settings", "restart_delays", "disabled"),
+            **{
+                minutes: _("gui", "settings", "restart_delays", "minutes").format(
+                    minutes=minutes
+                )
+                for minutes in (1, 5, 10, 15, 30, 60)
+            },
+        }
+
     def __init__(self, manager: GUIManager, master: ttk.Widget):
         self._manager = manager
         self._settings: Settings = manager._twitch.settings
@@ -1633,6 +1648,10 @@ class SettingsPanel:
         if refresh_interval not in self.REFRESH_INTERVALS:
             refresh_interval = 5
             self._settings.refresh_interval = refresh_interval
+        restart_delay = self._settings.restart_delay
+        if restart_delay not in self.RESTART_DELAYS:
+            restart_delay = 10
+            self._settings.restart_delay = restart_delay
         self._vars: _SettingsVars = {
             "autostart": IntVar(master, 0),
             "language": StringVar(master, _.current),
@@ -1641,6 +1660,7 @@ class SettingsPanel:
             "dark_mode": IntVar(master, int(self._settings.dark_mode)),
             "priority_mode": StringVar(master, self.PRIORITY_MODES[priority_mode]),
             "refresh_interval": StringVar(master, self.REFRESH_INTERVALS[refresh_interval]),
+            "restart_delay": StringVar(master, self.RESTART_DELAYS[restart_delay]),
             "tray_notifications": IntVar(master, self._settings.tray_notifications),
             "enable_badges_emotes": IntVar(
                 master, int(self._settings.enable_badges_emotes)
@@ -1733,6 +1753,15 @@ class SettingsPanel:
             command=self.refresh_interval,
             textvariable=self._vars["refresh_interval"],
             values=list(self.REFRESH_INTERVALS.values()),
+        ).grid(column=1, row=irow, sticky="w")
+        ttk.Label(
+            checkboxes_frame, text=_("gui", "settings", "general", "restart_delay")
+        ).grid(column=0, row=(irow := irow + 1), sticky="e")
+        SelectCombobox(
+            checkboxes_frame,
+            command=self.restart_delay,
+            textvariable=self._vars["restart_delay"],
+            values=list(self.RESTART_DELAYS.values()),
         ).grid(column=1, row=irow, sticky="w")
 
         # proxy frame
@@ -2253,6 +2282,13 @@ class SettingsPanel:
         for value, name in self.REFRESH_INTERVALS.items():
             if interval_name == name:
                 self._settings.refresh_interval = value
+                break
+
+    def restart_delay(self, event: tk.Event[ttk.Combobox]) -> None:
+        delay_name: str = self._vars["restart_delay"].get()
+        for value, name in self.RESTART_DELAYS.items():
+            if delay_name == name:
+                self._settings.restart_delay = value
                 break
 
     def exclude_add(self) -> None:
@@ -3058,6 +3094,9 @@ if __name__ == "__main__":
                 autostart_tray=False,
                 exclude={"Lit Game"},
                 refresh_interval=5,
+                restart_delay=10,
+                game_dirs=[],
+                detected_games=[],
                 tray_notifications=True,
                 enable_badges_emotes=False,
                 available_drops_check=False,

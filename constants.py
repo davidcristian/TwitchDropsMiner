@@ -131,6 +131,15 @@ WATCH_INTERVAL = timedelta(seconds=20)
 # Random amount of time added on top of the channel refresh interval,
 # so that the requests don't end up sent on a perfectly fixed schedule.
 REFRESH_JITTER = timedelta(seconds=60)
+# Random amount of time added on top of the automatic restart delay. A Twitch-side
+# outage takes every miner down at once, so this keeps them from all coming back
+# at the exact same moment once it's over.
+RESTART_JITTER = timedelta(seconds=60)
+# A denied captcha needs a person to clear it, and the message Twitch gives back asks
+# for 12+ hours of patience. We still try again sooner in case it was a transient
+# denial, but back off towards that advice instead of stacking up failed logins.
+CAPTCHA_RESTART_DELAY = timedelta(hours=1)
+CAPTCHA_RESTART_MAX = timedelta(hours=12)
 # Strings
 WINDOW_TITLE = f"Twitch Drops Miner v{__version__} (by DevilXD)"
 # Logging

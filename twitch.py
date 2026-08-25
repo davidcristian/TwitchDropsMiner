@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import random
+import traceback
 import asyncio
 import logging
 from time import time
@@ -51,6 +52,9 @@ from constants import (
     GQL_QUERIES,
     WATCH_INTERVAL,
     REFRESH_JITTER,
+    RESTART_JITTER,
+    CAPTCHA_RESTART_MAX,
+    CAPTCHA_RESTART_DELAY,
     State,
     ClientType,
     PriorityMode,
@@ -452,6 +456,8 @@ class Twitch:
         self._scan_errors_printed: set[str] = set()
         # the Rescan button can be pressed while a scan is already running
         self._scanning_games: bool = False
+        # how many times in a row a login has been denied by a captcha, for backing off
+        self._captcha_denials: int = 0
         # NOTE: GQL is pretty volatile and breaks everything if one runs into their rate limit.
         # Do not modify the default, safe values.
         self._qgl_limiter = RateLimiter(capacity=5, window=1)
@@ -534,6 +540,9 @@ class Twitch:
         self._auth_state.clear()
         self.wanted_games.clear()
         self._mnt_triggers.clear()
+        # the next run starts fresh, so let the suppressed messages through again
+        self._no_channel_printed = False
+        self._scan_errors_printed.clear()
         # wait at least half a second + whatever it takes to complete the closing
         # this allows aiohttp to safely close the session
         await asyncio.sleep(start_time + 0.5 - time())
@@ -677,8 +686,66 @@ class Twitch:
                 await self.shutdown()
             except ExitRequest:
                 break
-            except aiohttp.ContentTypeError as exc:
-                raise RequestException(_("login", "unexpected_content")) from exc
+            except Exception as exc:
+                error: Exception = exc
+                if isinstance(exc, aiohttp.ContentTypeError):
+                    # this one gets a friendlier explanation than the raw aiohttp error
+                    error = RequestException(_("login", "unexpected_content"))
+                    error.__cause__ = exc
+                if not await self._await_restart(error):
+                    # restarting is turned off, so the error terminates us like it used to
+                    raise error
+                if self.gui.close_requested:
+                    # the window was closed while we were waiting out the delay
+                    break
+
+    async def _await_restart(self, error: BaseException) -> bool:
+        """
+        Report a fatal error, then wait out the restart delay.
+
+        Returns False when automatic restarting is disabled, meaning the error is
+        supposed to terminate the application, exactly like it always did.
+        """
+        minutes: int = self.settings.restart_delay
+        if minutes <= 0:
+            return False
+        delay: timedelta
+        if isinstance(error, CaptchaRequired):
+            # Solving a captcha needs a person, and Twitch asks for 12+ hours before
+            # trying again. Retrying on the normal schedule would just pile up failed
+            # logins, so start an hour out - in case the denial was transient - and
+            # double towards that advice for as long as it keeps happening.
+            delay = min(
+                CAPTCHA_RESTART_DELAY * 2 ** self._captcha_denials, CAPTCHA_RESTART_MAX
+            )
+            self._captcha_denials += 1
+            self.print(_("error", "captcha"))
+        else:
+            logger.error("Fatal error encountered", exc_info=error)
+            self.print(_("status", "fatal_error"))
+            self.print(
+                ''.join(traceback.format_exception(type(error), error, error.__traceback__))
+            )
+            delay = timedelta(minutes=minutes)
+        # tear everything down, so the retry starts from the same place a fresh run would
+        await self.shutdown()
+        delay += timedelta(seconds=random.uniform(0, RESTART_JITTER.total_seconds()))
+        restart_at: datetime = (datetime.now(timezone.utc) + delay).astimezone()
+        # a captcha backoff can run into tomorrow, where a bare clock time would be
+        # ambiguous, so include the date whenever the restart isn't happening today
+        restart_time: str = restart_at.strftime(
+            "%X" if restart_at.date() == datetime.now().date() else "%x %X"
+        )
+        self.gui.tray.change_icon("error")
+        self.gui.status.update(_("gui", "status", "restarting").format(time=restart_time))
+        self.print(_("status", "restarting").format(time=restart_time))
+        logger.log(CALL, f"Restarting at: {restart_time}")
+        # closing the window cuts the wait short, so the user never has to sit through it
+        with suppress(asyncio.TimeoutError):
+            await asyncio.wait_for(
+                self.gui.wait_until_closed(), timeout=delay.total_seconds()
+            )
+        return True
 
     async def _run(self):
         """
@@ -691,6 +758,8 @@ class Twitch:
         """
         self.gui.start()
         auth_state = await self.get_auth()
+        # logging in worked, so forget any captcha denials we've been backing off from
+        self._captcha_denials = 0
         await self.websocket.start()
         # NOTE: watch task is explicitly restarted on each new run
         if self._watching_task is not None:

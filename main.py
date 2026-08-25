@@ -172,7 +172,7 @@ if __name__ == "__main__":
         except Exception:
             exit_status = 1
             client.prevent_close()
-            client.print("Fatal error encountered:\n")
+            client.print(_("status", "fatal_error"))
             client.print(traceback.format_exc())
         finally:
             if sys.platform == "linux":
