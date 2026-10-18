@@ -44,6 +44,7 @@ burst of requests puts that account at risk.
 | `cache.py` | The image cache for game and drop artwork |
 | `registry.py` | Windows registry access, used for starting with Windows |
 | `exceptions.py` | `MinerException` and its subclasses, including `ExitRequest` and `ReloadRequest` |
+| `gamelib.py` | Finds games installed through Steam, Epic, Legendary or Heroic, and matches names against `*` and `?` patterns ignoring case and accents |
 
 **Soft cap: 300 lines per module.** Most inherited modules are over it, and `gui.py` and `twitch.py` are several
 times over. Do not add a new responsibility to a module that is over the cap: put it in a new module and call it
