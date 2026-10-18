@@ -51,13 +51,15 @@ The command line flags, such as `-vvv --log`, are listed in
 env/bin/python gui.py
 ```
 
-This opens the window with mock data and no Twitch connection, so a GUI change can be checked without logging
-in. On Windows, use `env\scripts\python gui.py`. A new setting also needs an entry in the mock at the end of
-`gui.py`; see the recipe in [AGENTS.md](../AGENTS.md#recipes).
+This opens the window with mock data, so a GUI change can be checked without logging in. It sends no GQL
+request, but it downloads two images for the mock campaign from Twitch's image server, `static-cdn.jtvnw.net`,
+and saves them in `cache/`. On Windows, use `env\scripts\python gui.py`. A new setting also needs an entry in
+the mock at the end of `gui.py`; see the recipe in [AGENTS.md](../AGENTS.md#recipes). To run it without a
+display, see [runbooks/gui-preview-headless.md](runbooks/gui-preview-headless.md).
 
 ## Build the executable with PyInstaller
 
-Run `build.bat` on Windows or `./build.sh` on Linux. The script:
+Run `build.bat` on Windows or `./build.sh` on Linux and macOS. The script:
 
 1. stops with `No virtual environment found!` when `env/` does not exist;
 2. installs PyInstaller into `env/` the first time. `build.bat` then also runs pywin32's post-install script;
@@ -77,12 +79,12 @@ These settings at the top of `build.spec` change the build:
 | `optimize` | `1` removes `assert` statements, `2` also removes docstrings. |
 
 On Linux, `build.spec` bundles `libayatana-appindicator3.so.1` and the `AyatanaAppIndicator3-0.1` typelib from
-the first of `/usr/lib/<arch>-linux-gnu`, `/usr/lib64` and `/usr/lib` that has them, so install the tray
+the first of `/usr/lib/<arch>-linux-gnu`, `/usr/lib64` and `/usr/lib` that has the library, so install the tray
 packages above before you build. CI also builds libXft 2.3.9 from source and runs PyInstaller under `xvfb-run`;
 the `linux-pyinstaller` job in `ci.yml` shows both steps.
 
-On macOS there is no script. CI runs `pyinstaller build.spec --noconfirm`, which creates a `.app` bundle in
-`dist/`.
+On macOS, `build.spec` also creates a `.app` bundle in `dist/`. CI runs `pyinstaller build.spec --noconfirm`
+there instead of `build.sh`.
 
 ## Package the Windows build
 
@@ -113,10 +115,11 @@ A new package folder must be added to the recipe's `cp` and `compileall` lines, 
 
 ## Release builds
 
-CI runs on every push to `master` and on every pull request. It builds for Windows, macOS, Linux with
-PyInstaller and Linux as an AppImage, both Linux builds for `x86_64` and `aarch64`, and appends the short commit
-hash to the version in `version.py`. After a run that is not for a pull request, CI replaces the `dev-build`
-pre-release on the [Releases page](https://github.com/davidcristian/TwitchDropsMiner/releases) with the new
-builds. A pull request builds but publishes nothing.
+CI runs on every push to `master`, on every pull request and when it is started by hand. It builds for
+Windows, macOS, Linux with PyInstaller and Linux as an AppImage, both Linux builds for `x86_64` and `aarch64`,
+and appends the short commit hash to the version in `version.py`. After a run that is not for a pull request,
+CI replaces the `dev-build` pre-release on the
+[Releases page](https://github.com/davidcristian/TwitchDropsMiner/releases) with the new builds. A pull request
+builds but publishes nothing.
 
 Before you open a pull request, run the checks in [AGENTS.md](../AGENTS.md#what-every-change-must-pass).
