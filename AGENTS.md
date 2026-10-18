@@ -44,7 +44,7 @@ burst of requests puts that account at risk.
 | `cache.py` | The image cache for game and drop artwork |
 | `registry.py` | Windows registry access, used for starting with Windows |
 | `exceptions.py` | `MinerException` and its subclasses, including `ExitRequest` and `ReloadRequest` |
-| `gamelib.py` | Finds games installed through Steam, Epic, Legendary or Heroic, and matches names against `*` and `?` patterns ignoring case and accents |
+| `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
 
 **Soft cap: 300 lines per module.** Most inherited modules are over it, and `gui.py` and `twitch.py` are several
 times over. Do not add a new responsibility to a module that is over the cap: put it in a new module and call it
@@ -73,14 +73,19 @@ from there. Keep I/O at the edges of that module, so its logic can be called wit
 the search text occurs once in the file. A replacement on a repeated line puts the code in the wrong class, and
 the mistake shows only at runtime.
 
+**A new package** (a folder of modules, such as `gamelib/`): the `cp` and `compileall` lines in
+`appimage/AppImageBuilder.yml` take only the top-level `*.py` files, so add the folder to both, and to the
+`py_compile` check below. Without it the AppImage fails at startup with a `ModuleNotFoundError`. PyInstaller
+follows the imports, so `build.spec` needs no change.
+
 ## What every change must pass
 
 There is no test suite, linter or single check command yet. Until there is, run each of these and report it with
 its command and output. The commands use `python`; on Linux outside the `env/` virtual environment that
 `setup_env.sh` creates, use `python3`.
 
-1. `python -m py_compile *.py` succeeds. Code must run on Python 3.10, the version CI builds with, so no
-   `except*`, `typing.Self`, `tomllib` or other 3.11+ features.
+1. `python -m py_compile *.py gamelib/*.py` succeeds. Code must run on Python 3.10, the version CI builds with,
+   so no `except*`, `typing.Self`, `tomllib` or other 3.11+ features.
 2. `for f in lang/*.json; do python -m json.tool "$f" > /dev/null || echo "$f"; done` prints nothing. CI's
    Validate job runs the same check.
 3. A GUI change is run in `python gui.py` or the full app (`python main.py`). When the GUI cannot start (no
