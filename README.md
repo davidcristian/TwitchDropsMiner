@@ -13,9 +13,9 @@ Every 20 seconds, the app asks Twitch for the list of the newest video segments 
 - Mining without the stream: no video or sound is downloaded, which saves bandwidth.
 - Priority and Exclude lists: mine the games you want, in the order you want, and skip the games you don't. Entries ignore case, accents and punctuation, and accept `*` and `?` wildcards, so one `Pokemon*` entry matches every Pokémon game. An entry without a wildcard matches one game only.
 - Installed game detection: add your Steam or Epic game folders on the Settings tab, and the app mines every installed game that has a drop campaign. One Steam folder is enough, because the app also reads the Steam libraries it lists on other drives. Epic games installed through the Legendary or Heroic launchers, the usual way on Linux, are found too. Detected games rank below the games on your Priority list, and the Exclude list still applies to them.
-- A Games Being Mined table on the Settings tab. It lists the games in the order the app picks them, and shows for each game the Priority entry that matched it or that it is installed. An entry that never appears in the table matches nothing.
+- A Games Being Mined table on the Settings tab. It lists the games in the order the app picks them, and shows for each game the Priority entry that matched it or that it is installed. When a Priority entry never appears in the table, no game is mined because of it.
 - A check for new streams every 5 minutes by default (1 to 30 minutes, or Never), so a channel that goes live between the hourly reloads is found within minutes. Each check costs a few requests to Twitch.
-- Automatic restart after a fatal error, 10 minutes later by default (1 to 60 minutes, or Never), so a temporary problem on Twitch's side does not stop mining for the rest of the day. After a CAPTCHA denial the app waits 1 hour, and doubles the wait after each further denial, up to the 12 hours Twitch asks for.
+- Automatic restart after a fatal error, 10 minutes later by default (1 to 60 minutes, or Never), so a temporary problem on Twitch's side does not stop mining for the rest of the day.
 - Up to `199` channels tracked at the same time, spread over several websocket connections.
 - Campaigns are found through the game accounts you have linked on the [campaigns page](https://www.twitch.tv/drops/campaigns). You link them yourself.
 - Stream tag and campaign checks, so the app does not mine a stream that cannot give you the drop.
@@ -46,7 +46,7 @@ Every 20 seconds, the app asks Twitch for the list of the newest video segments 
 > The app stores your login session in the `cookies.jar` file and restores it on every run. Keep this file private: anyone who has it can use your Twitch account without knowing your password.
 
 > [!IMPORTANT]
-> Twitch may email you a "New Login" notice after you log in through the app. This is normal, and you can check that the notice shows your own IP address. It names the browser as "Chrome", because the app presents itself to Twitch as Chrome.
+> Twitch may email you a "New Login" notice after you log in through the app. This is normal, and you can check that the notice shows your own IP address. The notice can name a browser you did not use, such as "Chrome".
 
 > [!NOTE]
 > The remaining time counts down one minute and then stops. It starts again when Twitch next reports the drop's progress, which happens at most 20 seconds after the timer reaches zero. The seconds are an estimate and do not change how fast the drop progresses. Twitch sometimes skips a progress report or reports progress for the wrong drop, and the app handles both cases.
@@ -93,7 +93,7 @@ Twitch Drops Miner is built for these goals:
 - Easy to use. It has a GUI and comes as a ready-to-run executable that needs no Python installation.
 - A helper that runs in the background. It starts with your PC, runs through the day and closes when the PC shuts down. It should run for at least 24 hours without help.
 - Little attention. The app finds new streams, mines your installed games and restarts after a fatal error by itself, so checking it once or twice a day is enough.
-- Low Twitch traffic. Twitch sees no more traffic than a diligent person would cause, because the app runs on your own account and a burst of requests puts that account at risk. Requests to GQL, the GraphQL API that the Twitch website uses, are limited to 5 per second. A full reload, which can cost thousands of requests, runs at startup, once an hour, after a drop is claimed and when you press `Reload`. The checks for new streams between reloads cost a few requests each.
+- Low Twitch traffic. Twitch sees no more traffic than a diligent person would cause, because the app runs on your own account and a burst of requests puts that account at risk. Requests to GQL, the GraphQL API that the Twitch website uses, are limited to 5 per second. A full reload, which can send thousands of GQL operations in batches of 20, runs at startup, once an hour, after a drop is claimed and when you press `Reload`. The checks for new streams between reloads cost a few requests each.
 - One account. The app mines on a single Twitch account.
 
 The app is not built for:
@@ -102,7 +102,7 @@ The app is not built for:
 - Other sites that depend on watching Twitch streams.
 - Running without a GUI, or with only a console.
 - Running as a 24/7 miner on a remote server, in Docker or in any other remote deployment.
-- Unattended use with 100% uptime. A restart after a fatal error waits 10 minutes by default, and CAPTCHA denials can stop mining for up to 12 hours at a time.
+- Unattended use with 100% uptime. A restart after a fatal error waits 10 minutes by default.
 - More than one account.
 - Campaigns that your account is not linked to.
 - Anything that raises Twitch traffic above what a diligent person would cause.

@@ -21,22 +21,24 @@ burst of requests puts that account at risk.
 
 - Every GQL request goes through `Twitch.gql_request`, where a `RateLimiter` (`utils.py`) allows 5 per second.
   Never send GQL another way.
-- A full reload (`State.INVENTORY_FETCH`) can cost thousands of requests when a campaign lists many channels. It
-  runs at startup, once an hour from `_maintenance_task`, after a drop is claimed and from the Reload button. Do
-  not add a timer that runs it more often.
-- New periodic work re-enters `State.CHANNELS_FETCH`, which costs a few requests, rather than reloading.
+- A full reload (`State.INVENTORY_FETCH`) can send thousands of GQL operations, batched 20 to a request, when a
+  campaign lists many channels. It runs at startup and on every new run (the Invalidate button, a restart after a
+  fatal error), once an hour from `_maintenance_task`, after a drop is claimed or its reward notification
+  arrives, and from the Reload button. Do not add a timer that runs it more often.
+- New periodic work re-enters `State.CHANNELS_CLEANUP`, which moves on to `State.CHANNELS_FETCH` and costs a few
+  requests, rather than reloading.
 - A change that adds requests states how many per cycle in its commit body.
 
 ## Module map
 
 | Module | What it holds |
 | --- | --- |
-| `main.py` | Entry point: arguments, logging, the single instance lock, the fatal error dialog |
+| `main.py` | Entry point: arguments, logging, the single instance lock, the report of a fatal error in the Output box, the exit code |
 | `twitch.py` | `Twitch`: login, HTTP and GQL requests, the `State` machine in `_run`, choosing and watching channels |
 | `inventory.py` | `DropsCampaign` and `TimedDrop`: campaign data, drop progress, claiming |
 | `channel.py` | `Channel` and `Stream`: stream state and online checks |
 | `websocket.py` | The PubSub websocket pool and its topics |
-| `gui.py` | The whole GUI. `python gui.py` opens it with mock data and no Twitch connection |
+| `gui.py` | The whole GUI. `python gui.py` opens it with mock data and no login; it downloads only the mock's images |
 | `settings.py` | `settings.json`: the `SettingsFile` type, its defaults, loading and saving |
 | `constants.py` | Paths, intervals, `State`, `PriorityMode`, and the GQL queries with their hashes |
 | `translate.py` | The `Translation` types and the English strings. Other languages are in `lang/` |
