@@ -70,9 +70,9 @@ pytest runs the suite in `tests/`, and `just check` runs it with a floor of 80% 
 The tests found the defects of tasks [032](032-names-outside-a-to-z-dropped.md),
 [033](033-fuzzy-match-ignores-i-v-x.md), [034](034-shared-epic-folder-reported-empty.md) and
 [035](035-unknown-user-ends-the-game-scan.md), and confirmed [009](009-trademark-symbols-in-game-names.md). Each
-is a strict `xfail` test that names its task. The `utils` and settings candidates need `requirements.txt` to
-import, and are [task 031](031-tests-for-utils-and-settings.md). The logic in `Twitch._run` waits for the splits
-of [task 005](005-modules-over-the-line-cap.md).
+had a strict `xfail` test that named its task, until the fixes of 032 to 035 removed those marks. The `utils` and
+settings candidates need `requirements.txt` to import, and are [task 031](031-tests-for-utils-and-settings.md). The
+logic in `Twitch._run` waits for the splits of [task 005](005-modules-over-the-line-cap.md).
 
 ## History
 

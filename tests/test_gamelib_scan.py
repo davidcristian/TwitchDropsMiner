@@ -114,11 +114,6 @@ def test_scan_directories_reports_no_error_for_folders_that_share_the_system_lau
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Windows forms a home folder for any user name")
-@pytest.mark.xfail(
-    strict=True,
-    reason="expanduser raises RuntimeError for an unknown user name, which ends the scan of every folder "
-    "(docs/refinements/tasks/035-unknown-user-ends-the-game-scan.md)",
-)
 def test_scan_directories_reports_the_folder_of_an_unknown_user(tmp_path, steam_manifest):
     steam_manifest(tmp_path / "Steam" / "steamapps", 620, "Portal 2")
     result = scan_directories(["~tdm-no-such-user/Games", tmp_path / "Steam"])
@@ -136,3 +131,10 @@ def test_scan_directories_reads_the_launcher_folder_once_for_several_folders(
     assert result.libraries.count(launcher_folders.system) == 1
     assert names(result) == ["Fortnite"]
     assert result.errors == []
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows forms a home folder for any user name")
+def test_scan_directories_names_the_folder_of_an_unknown_user_as_written(tmp_path):
+    result = scan_directories(["~tdm-no-such-user/Games"])
+    assert len(result.errors) == 1
+    assert result.errors[0].startswith("~tdm-no-such-user/Games: ")

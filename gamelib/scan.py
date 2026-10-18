@@ -15,7 +15,12 @@ def scan_directories(directories: abc.Iterable[Path | str]) -> ScanResult:
     """
     result = ScanResult()
     for raw_directory in directories:
-        directory = Path(raw_directory).expanduser()
+        try:
+            directory = Path(raw_directory).expanduser()
+        except RuntimeError as exc:
+            # expanduser raises it for ~name when no user has that name
+            result.errors.append(f"{raw_directory}: {exc}")
+            continue
         try:
             if not directory.is_dir():
                 result.errors.append(f"Not a directory: {directory}")
