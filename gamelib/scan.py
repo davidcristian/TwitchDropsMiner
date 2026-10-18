@@ -11,10 +11,7 @@ from .common import LocalGame, Platform, ScanResult
 
 def scan_directories(directories: abc.Iterable[Path | str]) -> ScanResult:
     """
-    Scan every given directory for installed games, de-duplicating the results.
-
-    Each directory is probed as both a Steam and an Epic install, so the user
-    never has to tell us which launcher they're pointing at.
+    Scans every given directory as both a Steam and an Epic install, removing duplicate games.
     """
     result = ScanResult()
     for raw_directory in directories:

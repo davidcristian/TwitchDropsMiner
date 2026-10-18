@@ -19,12 +19,8 @@ def has_wildcard(text: str) -> bool:
 @lru_cache(maxsize=256)
 def compile_pattern(text: str) -> re.Pattern[str]:
     """
-    Turn a priority/exclude list entry into a matcher for game names.
-
-    The literal pieces go through the same normalization as the names they're
-    compared against, so 'Pokemon' finds 'Pokémon' without any special syntax.
-    '*' matches any run of characters and '?' matches a single one, so a single
-    entry can cover a whole series of games.
+    Compiles a priority or exclude list entry into a regular expression for normalized names.
+    '*' matches any run of characters and '?' matches one character.
     """
     parts: list[str] = []
     for segment in _WILDCARD_SPLIT.split(text):
@@ -43,10 +39,7 @@ def compile_patterns(entries: abc.Iterable[str]) -> list[re.Pattern[str]]:
 
 def matches(pattern: re.Pattern[str], game_name: str) -> bool:
     """
-    Whether a compiled entry covers the given game name.
-
-    The match is anchored at both ends, so an entry without wildcards still only
-    ever matches that one game: 'Rust' never matches 'Rust Console Edition'.
+    Returns whether a compiled entry matches the whole normalized game name.
     """
     return pattern.fullmatch(normalize(game_name)) is not None
 

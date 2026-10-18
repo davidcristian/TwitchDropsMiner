@@ -236,11 +236,8 @@ class PaddedListbox(tk.Listbox):
             options.update(args[0])
         if kwargs:
             options.update(kwargs)
-        # NOTE on processed options:
-        # • relief is applied to the frame only
-        # • background is copied, so that both listbox and frame change color
-        # • borderwidth is applied to the frame only
-        # bg is folded into background for easier processing
+        # relief and borderwidth apply to the frame only. background (or bg) applies to both
+        # the frame and the listbox, so that both change color.
         if "bg" in options:
             options["background"] = options.pop("bg")
         frame_options = {}
@@ -1550,7 +1547,7 @@ class InventoryOverview:
                 # required_minutes is zero for subscription-based drops
                 progress_text = ''
             if datetime.now(timezone.utc) < drop.starts_at > drop.campaign.starts_at:
-                # this drop can only be earned later than the campaign start
+                # this drop starts later than its campaign
                 progress_text += '\n' + _("gui", "inventory", "starts").format(
                     time=drop.starts_at.astimezone().replace(microsecond=0, tzinfo=None)
                 )
@@ -2637,11 +2634,8 @@ class GUIManager:
 
     # https://stackoverflow.com/questions/56329342/tkinter-treeview-background-tag-not-working
     def _fixed_map(self, option):
-        # Fix for setting text colour for Tkinter 8.6.9
-        # From: https://core.tcl.tk/tk/info/509cafafae
-        #
-        # Returns the style map for 'option' with any styles starting with
-        # ('!disabled', '!selected', ...) filtered out.
+        # Fix for setting text colour for Tkinter 8.6.9: https://core.tcl.tk/tk/info/509cafafae
+        # Returns the 'option' style map without entries starting with ('!disabled', '!selected').
 
         # style.map() returns an empty list for missing options, so this
         # should be future-safe.
@@ -2705,13 +2699,7 @@ class GUIManager:
 
     async def _poll(self):
         """
-        This runs the Tkinter event loop via asyncio instead of calling mainloop.
-        0.05s gives similar performance and CPU usage.
-        Not ideal, but the simplest way to avoid threads, thread safety,
-        loop.call_soon_threadsafe, futures and all of that.
-
-        Uses TKINTER_DONT_WAIT to prevent Tcl/Tk from hanging inside native
-        system calls (e.g. X11/Wayland input contexts) during heavy UI redraws.
+        Processes pending Tk events every 0.05 seconds on the asyncio loop, in place of mainloop.
         """
         do_one_event = self._root.dooneevent
         # TKINTER_DONT_WAIT (1 << 1) tells Tcl to return immediately
@@ -2784,11 +2772,8 @@ class GUIManager:
 
     def _set_title_bar_color(self, color: int) -> None:
         """
-        Set the Windows title bar color to match the theme.
-        Only works on Windows with DWM enabled.
-
-        Args:
-            color: ARGB color value (e.g., 0x001E1E1E for dark gray).
+        Sets the Windows title bar color through DWM, and does nothing on other platforms.
+        `color` is a DWM color value, such as 0x001E1E1E for dark gray.
         """
         if sys.platform != "win32":
             return

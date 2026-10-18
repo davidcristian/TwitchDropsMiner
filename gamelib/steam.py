@@ -37,10 +37,8 @@ _KV_PATTERN = re.compile(r'"([^"]+)"\s*"([^"]*)"')
 
 def _parse_kv(text: str) -> dict[str, str]:
     """
-    Pull the flat '"key" "value"' pairs out of a Steam KeyValues document.
-
-    The first occurrence of a key wins: the fields we care about sit at the top of
-    the file, while nested blocks further down can reuse the same key names.
+    Returns the flat '"key" "value"' pairs of a Steam KeyValues document.
+    The first value of a key is kept, because nested blocks below the top fields reuse key names.
     """
     result: dict[str, str] = {}
     for key, value in _KV_PATTERN.findall(text):
@@ -65,10 +63,7 @@ def _parse_kv_all(text: str, key: str) -> list[str]:
 
 def _find_steamapps(directory: Path) -> Path | None:
     """
-    Resolve a user-picked directory to a 'steamapps' folder.
-
-    Accepts the Steam root, the steamapps folder itself, or the 'common' folder
-    inside it, because all three are things a user could reasonably point at.
+    Resolves a Steam root, a 'steamapps' folder or its 'common' folder to the 'steamapps' folder.
     """
     if directory.name.lower() == "common" and (directory.parent / "libraryfolders.vdf").exists():
         directory = directory.parent

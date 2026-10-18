@@ -12,11 +12,7 @@ logger = logging.getLogger("TwitchDrops")
 
 def _epic_manifest_dirs(directory: Path) -> list[Path]:
     """
-    Locate the folders holding Epic's '.item' manifests.
-
-    The launcher keeps them in a fixed system location rather than next to the
-    games, so a user pointing at their Epic games folder still needs us to go
-    find the real index.
+    Returns the folders holding Epic's '.item' manifests, including the launcher's own folders.
     """
     dirs: list[Path] = []
     if any(directory.glob("*.item")):

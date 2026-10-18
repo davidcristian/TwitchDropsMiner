@@ -30,7 +30,7 @@ if sys.platform == "win32":
     SYS_SITE_PACKAGES = "Lib/site-packages"
 else:
     # On Linux, the site-packages path includes a versioned 'pythonX.Y' folder part
-    # The Lib folder is also spelled in lowercase: 'lib'
+    # The Lib folder name is also lower case: 'lib'
     version_info = sys.version_info
     SYS_SITE_PACKAGES = f"lib/python{version_info.major}.{version_info.minor}/site-packages"
 # scripts venv path changes depending on the system platform

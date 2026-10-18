@@ -152,13 +152,8 @@ class _AuthState:
                 async with self._twitch.request(
                     "POST", "https://id.twitch.tv/oauth2/device", headers=headers, data=payload
                 ) as response:
-                    # {
-                    #     "device_code": "40 chars [A-Za-z0-9]",
-                    #     "expires_in": 1800,
-                    #     "interval": 5,
-                    #     "user_code": "8 chars [A-Z]",
-                    #     "verification_uri": "https://www.twitch.tv/activate?device-code=ABCDEFGH"
-                    # }
+                    # Twitch sends a 40 character device_code, an 8 letter user_code, an interval
+                    # of 5 seconds and an expires_in of 1800 seconds.
                     response_json: JsonType = await response.json()
                     device_code: str = response_json["device_code"]
                     user_code: str = response_json["user_code"]
@@ -188,12 +183,7 @@ class _AuthState:
                         if response.status != 200:
                             continue
                         response_json = await response.json()
-                        # {
-                        #     "access_token": "40 chars [A-Za-z0-9]",
-                        #     "refresh_token": "40 chars [A-Za-z0-9]",
-                        #     "scope": [...],
-                        #     "token_type": "bearer"
-                        # }
+                        # the response also has refresh_token, scope and token_type ("bearer")
                         self.access_token = cast(str, response_json["access_token"])
                         return self.access_token
             except RequestInvalid:
@@ -212,14 +202,11 @@ class _AuthState:
             # username and password are added later
             # "username": str,
             # "password": str,
-            # client ID to-be associated with the access token
             "client_id": client_info.CLIENT_ID,
             "undelete_user": False,  # purpose unknown
             "remember_me": True,  # persist the session via the cookie
-            # "authy_token": str,  # 2FA token
-            # "twitchguard_code": str,  # email code
-            # "captcha": str,  # self-fed captcha
-            # 'force_twitchguard': False,  # force email code confirmation
+            # optional keys: "authy_token" (2FA token), "twitchguard_code" (email code), "captcha",
+            # and "force_twitchguard" (force the email code)
         }
 
         while True:
@@ -304,18 +291,9 @@ class _AuthState:
                         gui_print(_("login", "twofa_code_required"))
                     continue
                 elif error_code >= 5000:
-                    # Special errors, usually from Twitch telling the user to "go away"
-                    # We print the code out to inform the user, and just use chrome flow instead
-                    # {
-                    #     "error_code":5023,
-                    #     "error":"Please update your app to continue",
-                    #     "error_description":"client is not supported for this feature"
-                    # }
-                    # {
-                    #     "error_code":5027,
-                    #     "error":"Please update your app to continue",
-                    #     "error_description":"client blocked from this operation"
-                    # }
+                    # Twitch returns codes of 5000 and above for errors such as 5023 ("client
+                    # is not supported for this feature") and 5027 ("client blocked from this
+                    # operation"). The code is printed, and the login raises CaptchaRequired.
                     gui_print(_("login", "error_code").format(error_code=error_code))
                     logger.info(str(login_response))
                     use_chrome = True
@@ -380,10 +358,6 @@ class _AuthState:
             ) as response:
                 page_html = await response.text("utf8")
                 assert page_html is not None
-            #     match = re.search(r'twilightBuildID="([-a-z0-9]+)"', page_html)
-            # if match is None:
-            #     raise MinerException("Unable to extract client_version")
-            # self.client_version = match.group(1)
             # doing the request ends up setting the "unique_id" value in the cookie
             cookie = jar.filter_cookies(client_info.CLIENT_URL)
             self.device_id = cookie["unique_id"].value
@@ -591,12 +565,8 @@ class Twitch:
 
     async def detect_games(self) -> None:
         """
-        Scan the configured game folders, and match what's installed on disk
-        against the games that currently have drop campaigns.
-
-        Only high-confidence matches are kept - see 'gamelib.match_games'. The result
-        is stored in the settings, so it survives a restart and is available before
-        the first inventory fetch of the next run completes.
+        Scans the game folders and stores the Twitch names of the installed games that match
+        a campaign's game in the detected_games setting.
         """
         game_dirs: list[str] = self.settings.game_dirs
         if not game_dirs:
@@ -639,11 +609,9 @@ class Twitch:
         self.gui.settings.set_detected(matches, len(result.games))
         if detected != previous:
             self.settings.detected_games = detected
-            # 'wanted_games' is derived from this list, so it has to be recalculated.
-            # Without this, a game picked up by the Rescan button would show up on the
-            # list but not actually get mined until the next hourly reload.
-            # NOTE: this only redoes the games/channels part - the inventory itself
-            # is left alone, so it costs a directory query per ACL-less game at most.
+            # wanted_games is computed from this list, so a game found by Rescan is mined now and
+            # not after the next hourly reload. GAMES_UPDATE sends no inventory request, but its
+            # full cleanup makes CHANNELS_FETCH check the wanted campaigns' ACL channels again.
             self.change_state(State.GAMES_UPDATE)
         logger.log(
             CALL,
@@ -655,11 +623,8 @@ class Twitch:
 
     def get_priority(self, channel: Channel) -> int:
         """
-        Return a priority number for a given channel.
-
-        0 has the highest priority.
-        Higher numbers -> lower priority.
-        MAX_INT (a really big number) signifies the lowest possible priority.
+        Returns the index of the channel's game in wanted_games, where 0 is the highest priority,
+        or MAX_INT when the channel's game is None (as when offline) or not wanted.
         """
         if (
             (game := channel.game) is None  # None when OFFLINE or no game set
@@ -702,20 +667,17 @@ class Twitch:
 
     async def _await_restart(self, error: BaseException) -> bool:
         """
-        Report a fatal error, then wait out the restart delay.
-
-        Returns False when automatic restarting is disabled, meaning the error is
-        supposed to terminate the application, exactly like it always did.
+        Prints a message for a fatal error, shuts down and waits for the restart delay.
+        Returns False when the restart is turned off, so the error ends the app.
         """
         minutes: int = self.settings.restart_delay
         if minutes <= 0:
             return False
         delay: timedelta
         if isinstance(error, CaptchaRequired):
-            # Solving a captcha needs a person, and Twitch asks for 12+ hours before
-            # trying again. Retrying on the normal schedule would just pile up failed
-            # logins, so start an hour out - in case the denial was transient - and
-            # double towards that advice for as long as it keeps happening.
+            # A captcha needs a person, and the captcha message says to retry in 12 hours or more.
+            # The wait starts at one hour, in case the denial is temporary, and doubles for each
+            # denial in a row up to that limit.
             delay = min(
                 CAPTCHA_RESTART_DELAY * 2 ** self._captcha_denials, CAPTCHA_RESTART_MAX
             )
@@ -750,12 +712,7 @@ class Twitch:
 
     async def _run(self):
         """
-        Main method that runs the whole client.
-
-        Here, we manage several things, specifically:
-        • Fetching the drops inventory to make sure that everything we can claim, is claimed
-        • Selecting a stream to watch, and watching it
-        • Changing the stream that's being watched if necessary
+        Logs in and runs the state machine, which claims drops and picks and watches channels.
         """
         self.gui.start()
         auth_state = await self.get_auth()
@@ -1036,10 +993,8 @@ class Twitch:
                     # selected channel is checked first, and set as long as we can watch it
                     new_watching = selected_channel
                 else:
-                    # other channels additionally need to have a good reason
-                    # for a switch (including the watching one)
-                    # NOTE: we need to sort the channels every time because one channel
-                    # can end up streaming any game - channels aren't game-tied
+                    # other channels, the watched one included, must pass should_switch
+                    # NOTE: sorted on every switch, because a channel can change its game
                     for channel in sorted(channels.values(), key=self.get_priority):
                         if self.should_switch(channel):
                             new_watching = channel
@@ -1099,11 +1054,9 @@ class Twitch:
             # wait ~15 seconds for a progress update
             await asyncio.sleep(15 - min(time() - last_sent, 15))
             if self.gui.progress.minute_almost_done():
-                # If the previous update was more than ~60s ago, and the progress tracker
-                # isn't counting down anymore, that means Twitch has temporarily
-                # stopped reporting drop's progress. To ensure the timer keeps at least somewhat
-                # accurate time, we can use GQL to query for the current drop,
-                # or even "pretend" mining as a last resort option.
+                # The minute countdown has stopped or nearly ended, so no progress update came
+                # from Twitch for about a minute. Ask GQL for the current drop, or, as a last
+                # resort, add an estimated minute to the likely campaign.
                 handled: bool = False
 
                 # Solution 1: use GQL to query for the currently mined drop status
@@ -1283,17 +1236,8 @@ class Twitch:
 
     @task_wrapper
     async def process_stream_update(self, channel_id: int, message: JsonType):
-        # message = {
-        #     "channel_id": "12345678",
-        #     "type": "broadcast_settings_update",
-        #     "channel": "channel._login",
-        #     "old_status": "Old title",
-        #     "status": "New title",
-        #     "old_game": "Old game name",
-        #     "game": "New game name",
-        #     "old_game_id": 123456,
-        #     "game_id": 123456
-        # }
+        # The message has "channel_id", "type" ("broadcast_settings_update"), "channel", and
+        # "status" (the title), "game" and "game_id", each with its "old_" value.
         channel = self.channels.get(channel_id)
         if channel is None:
             logger.error(f"Broadcast settings update for a non-existing channel: {channel_id}")
@@ -1303,10 +1247,9 @@ class Twitch:
         else:
             game_change = ''
         logger.log(CALL, f"Channel update from websocket: {channel.name}{game_change}")
-        # There's no information about channel tags here, but this event is triggered
-        # when the tags change. We can use this to just update the stream data after the change.
-        # Use 'check_online' to introduce a delay, allowing for multiple title and tags
-        # changes before we update. This eventually calls 'on_channel_update' below.
+        # The message has no tags, but Twitch sends it when the tags change too. check_online
+        # fetches the stream after a delay, so several changes in a row cost one fetch, and
+        # that fetch calls on_channel_update.
         channel.check_online()
 
     def on_channel_update(
@@ -1459,7 +1402,7 @@ class Twitch:
                 raise ExitRequest()
             elif (
                 invalidate_after is not None
-                # account for the expiration landing during the request
+                # account for an expiration that happens during the request
                 and datetime.now(timezone.utc) >= (invalidate_after - session_timeout)
             ):
                 raise RequestInvalid()
@@ -1750,7 +1693,7 @@ class Twitch:
             return None
         watching_channel = self.watching_channel.get_with_default(channel)
         if watching_channel is None:
-            # if we aren't watching anything, we can't earn any drops
+            # with no watched channel, no drop makes progress
             return None
         campaigns: list[DropsCampaign] = []
         for campaign in self.inventory:
@@ -1792,7 +1735,7 @@ class Twitch:
 
     async def bulk_check_online(self, channels: abc.Iterable[Channel]):
         """
-        Utilize batch GQL requests to check ONLINE status for a lot of channels at once.
+        Uses batched GQL requests to check the ONLINE status of many channels at once.
         Also handles the drops_enabled check (if enabled).
         """
         acl_streams_map: dict[int, JsonType] = {}

@@ -68,11 +68,7 @@ FUZZY_MIN_LENGTH: int = 8
 
 def normalize(name: str) -> str:
     """
-    Reduce a game name to a comparable form.
-
-    Twitch and the launchers disagree constantly on capitalization, punctuation
-    and trademark symbols, but 'Tom Clancy's Rainbow Six: Siege' and
-    'Tom Clancy's Rainbow Six Siege' must count as one game.
+    Returns the comparable form of a game name: lower case words of a to z and 0 to 9.
     """
     # split accented characters apart and drop the accents
     text = unicodedata.normalize("NFKD", name)
@@ -124,10 +120,7 @@ def match_games(
     local_games: abc.Iterable[LocalGame], game_names: abc.Iterable[str]
 ) -> list[GameMatch]:
     """
-    Pair installed games against the Twitch games that currently have campaigns.
-
-    Only high-confidence pairings are returned. Anything ambiguous is dropped,
-    because a wrong match quietly redirects mining to a game the user never asked for.
+    Pairs installed games with the Twitch games that have campaigns, keeping only clear matches.
     """
     # build the lookup of Twitch names, keeping every name variant
     exact_lookup: dict[str, set[str]] = defaultdict(set)

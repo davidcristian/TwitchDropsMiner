@@ -181,10 +181,8 @@ class Channel:
         self._spade_url: URLType | None = None
         self._stream: Stream | None = None
         self._pending_stream_up: asyncio.Task[Any] | None = None
-        # ACL-based channels are:
-        # • considered first when switching channels
-        # • if we're watching a non-based channel, a based channel going up triggers a switch
-        # • not cleaned up unless they're streaming a game we haven't selected
+        # Among channels of equal priority, ACL-based ones are sorted first and are preferred
+        # in a switch. CHANNELS_CLEANUP removes them only when it removes every channel.
         self.acl_based: bool = acl_based
 
     @classmethod
@@ -301,10 +299,7 @@ class Channel:
 
     async def get_spade_url(self) -> URLType:
         """
-        To get this monstrous thing, you have to walk a chain of requests.
-        Streamer page (HTML) --parse-> Streamer Settings (JavaScript) --parse-> Spade URL
-
-        For mobile view, spade_url is available immediately from the page, skipping step #2.
+        Returns the spade URL read from the channel page, or from the settings script it links.
         """
         SETTINGS_PATTERN: str = r'src="(https://[\w.]+/config/settings\.[0-9a-f]{32}\.js)"'
         SPADE_PATTERN: str = r'"spade_?url": ?"(https://[.\w\-/]+)"'
@@ -394,16 +389,7 @@ class Channel:
 
     def check_online(self):
         """
-        Sets up a task that will wait ONLINE_DELAY duration,
-        and then check for the stream being ONLINE OR OFFLINE.
-
-        If the channel is OFFLINE, it sets the channel's status to PENDING_ONLINE,
-        where after ONLINE_DELAY, it's going to be set to ONLINE.
-        If the channel is ONLINE already, after ONLINE_DELAY,
-        it's status is going to be double-checked to ensure it's actually ONLINE.
-
-        This is called externally, if we receive an event about the status possibly being ONLINE
-        or having to be updated.
+        Starts a task that fetches the stream after ONLINE_DELAY, unless one is already waiting.
         """
         if self._pending_stream_up is None:
             self._pending_stream_up = asyncio.create_task(self._online_delay())

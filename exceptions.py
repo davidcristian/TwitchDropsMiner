@@ -53,11 +53,7 @@ class RequestInvalid(RequestException):
 class WebsocketClosed(RequestException):
     """
     Raised when the websocket connection has been closed.
-
-    Attributes:
-    -----------
-    received: bool
-        `True` if the closing was caused by our side receiving a close frame, `False` otherwise.
+    `received` is True when the server sent a close frame.
     """
     def __init__(self, *args: object, received: bool = False):
         if args:

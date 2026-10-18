@@ -72,12 +72,8 @@ class BaseDrop:
             self.claim_id = data["self"]["dropInstanceID"]
             self.is_claimed = data["self"]["isClaimed"]
         elif (
-            # If there's no self edge available, we can use claimed_benefits to determine
-            # (with pretty good certainty) if this drop has been claimed or not.
-            # To do this, we check if the benefitEdges appear in claimed_benefits, and then
-            # deref their "lastAwardedAt" timestamps into a list to check against.
-            # If the benefits were claimed while the drop was active,
-            # the drop has been claimed too.
+            # Without a "self" edge, the drop counts as claimed when its benefits appear in
+            # claimed_benefits and each one was last awarded while the drop was active.
             (
                 dts := [
                     claimed_benefits[bid]
@@ -108,7 +104,7 @@ class BaseDrop:
         raise NotImplementedError
 
     def _base_earn_conditions(self) -> bool:
-        # define when a drop can be earned or not
+        # the conditions for drop progress that depend on neither the time nor the channel
         return (
             self.preconditions_met  # preconditions are met
             and not self.is_claimed  # isn't already claimed
@@ -154,10 +150,8 @@ class BaseDrop:
         self.claim_id = claim_id
 
     async def generate_claim(self) -> None:
-        # claim IDs now appear to be constructed from other IDs we have access to
-        # Format: UserID#CampaignID#DropID
-        # NOTE: This marks a drop as a ready-to-claim, so we may want to later ensure
-        # its mining progress is finished first
+        # A claim ID has the form UserID#CampaignID#DropID, so it is built from known IDs.
+        # Setting it makes can_claim True even when the drop's progress is not finished.
         auth_state = await self.campaign._twitch.get_auth()
         self.claim_id = f"{auth_state.user_id}#{self.campaign.id}#{self.id}"
 
@@ -456,7 +450,7 @@ class DropsCampaign:
                     # or there's no ACL, or the channel is in the ACL
                     (not self.allowed_channels or channel in self.allowed_channels)
                     # and the channel is live and playing the campaign's game,
-                    # or this campaign can be earned anywhere (special game)
+                    # or this campaign's drops progress whatever game is streamed (special game)
                     and (
                         ignore_channel_status
                         or channel.game is not None and channel.game == self.game
@@ -479,7 +473,7 @@ class DropsCampaign:
     def can_earn(
         self, channel: Channel | None = None, ignore_channel_status: bool = False
     ) -> bool:
-        # True if any of the containing drops can be earned
+        # True if any of its drops can make progress
         return (
             self._base_can_earn(channel, ignore_channel_status)
             and any(drop._base_can_earn() for drop in self.drops)
@@ -487,7 +481,7 @@ class DropsCampaign:
 
     def can_earn_within(self, stamp: datetime) -> bool:
         # Same as can_earn, but doesn't check the channel
-        # and uses a future timestamp to see if we can earn this campaign later
+        # and uses a future timestamp to see if this campaign's drops can progress later
         return (
             self.eligible
             and self._valid
