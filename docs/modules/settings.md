@@ -1,0 +1,107 @@
+# `settings.py`
+
+**Purpose.** The app's settings: the keys of `settings.json` with their types and defaults, and the `Settings`
+object that the rest of the app reads them from. `Settings` also exposes the command line flags, so callers
+read flags and settings from one object. Loading and saving go through `json_load` and `json_save` in
+`utils.py`. To add a setting, follow the recipe in [AGENTS.md](../../AGENTS.md#recipes): a setting missing from
+the `gui.py` preview mock fails only when `python gui.py` runs.
+
+## Public contract
+
+- `SettingsFile` is the `TypedDict` of the keys in `settings.json`. `default_settings` is a `SettingsFile` with
+  the default of each key.
+- `Settings(args)` loads `settings.json` (`SETTINGS_PATH`) and keeps `args`, the `ParsedArgs` from
+  [main.py](main.md). `main.py` creates the only instance and passes it to `Twitch`, which stores it as
+  `Twitch.settings`.
+- Reading an attribute checks `args` first and the file second. `log`, `tray`, `dump`, `logging_level`,
+  `debug_ws` and `debug_gql` come from the command line; every key of `SettingsFile` comes from the file.
+- Assigning an attribute writes a key of `SettingsFile` and marks the settings as changed. Assigning any other
+  name raises `TypeError`, so a flag cannot be changed at run time. Deleting an attribute raises `RuntimeError`.
+- `alter()` marks the settings as changed. A caller calls it after it changes a list or a set in place, such as
+  `settings.priority.append(name)`, because that does not go through assignment. `SettingsPanel` does this for
+  each change to the Priority, Exclude and game folder lists.
+- `save(force=False)` writes the file when the settings changed since the last save, or when `force` is true.
+
+## The keys
+
+The GUI labels are the English strings in the Settings tab ([gui.md](gui.md)). A key without a label has no
+widget and is changed only by the app or by editing the file.
+
+| Key | Type | Default | GUI label | What reads it |
+| --- | --- | --- | --- | --- |
+| `language` | `str` | `DEFAULT_LANG` (`"English"`) | "Language 🌐 (requires restart): " | `main()` calls `_.set_language` with it once at start ([translate.md](translate.md)) |
+| `proxy` | `yarl.URL` | `URL()` (no proxy) | "Proxy (requires restart):" | `Twitch.request` on every HTTP request, and each `Websocket` once, when its `_handle` task starts |
+| `dark_mode` | `bool` | `False` | "Dark mode: " | `GUIManager.apply_theme`, at once |
+| `priority` | `list[str]` | `[]` | "Priority" list | `Twitch._run` in `State.GAMES_UPDATE`, in list order, and the inventory filter ([ADR-0005](../adr/ADR-0005-list-patterns.md)) |
+| `exclude` | `set[str]` | `set()` | "Exclude" list | `Twitch._run` in `State.GAMES_UPDATE`, and the inventory filter |
+| `priority_mode` | `PriorityMode` | `PriorityMode.PRIORITY_ONLY` | "Priority mode: " | `Twitch._run` in `State.GAMES_UPDATE`, and the inventory filter |
+| `refresh_interval` | `int` (minutes) | `5` | "Check for new streams every: " | `Twitch._maintenance_task` ([ADR-0003](../adr/ADR-0003-stream-refresh.md)) |
+| `restart_delay` | `int` (minutes) | `10` | "Restart after a crash after: " | `Twitch._await_restart` ([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)) |
+| `autostart_tray` | `bool` | `False` | "Autostart into tray: " | `SettingsPanel.__init__`, for the checkbox. `update_autostart` stores the checkbox in it and adds `--tray` to the autostart command while the checkbox is on |
+| `tray_notifications` | `bool` | `True` | "Tray notifications: " | `TrayIcon.notify` |
+| `enable_badges_emotes` | `bool` | `False` | "Enable partial support for badges and emotes: " | `DropsCampaign.eligible` |
+| `available_drops_check` | `bool` | `False` | "Enable extra available drops check: " | `Stream.__init__` and `Twitch.bulk_check_online` |
+| `game_dirs` | `list[str]` | `[]` | "Game folders:" | `Twitch.detect_games` ([ADR-0004](../adr/ADR-0004-installed-game-detection.md)) |
+| `detected_games` | `list[str]` | `[]` | "Detected Games" list, filled by the app | `Twitch._run` in `State.GAMES_UPDATE`, and the Settings tab |
+| `connection_quality` | `int` | `1` | none | `Twitch.get_session`, which multiplies the HTTP timeouts by it |
+
+- The "Language" label is hard-coded English in `gui.py`, not a translation key
+  ([task 014](../refinements/tasks/014-hard-coded-strings.md)).
+- "Autostart into tray" and "Tray notifications" are not shown on macOS. The "Autostart" checkbox next to them is
+  not a setting: `SettingsPanel` reads and writes the operating system's autostart entry instead.
+- The "Proxy" label says that a change needs a restart. `Twitch.request` uses a change at once. Each websocket
+  reads the setting once, when its `_handle` task starts, and keeps that value for its reconnects. So PubSub uses
+  a change only in a connection task that starts later: at the next run, or in a connection that the pool adds
+  when the others are full.
+- `refresh_interval` takes the values of its drop-down list, 0, 1, 2, 5, 10, 15 or 30 minutes, and
+  `restart_delay` takes 0, 1, 5, 10, 15, 30 or 60 minutes. In both lists 0 is shown as "Never".
+- `connection_quality` sets the timeouts to 5 seconds times its value for connecting and 10 seconds times its
+  value in total. `Twitch.get_session` sets a value below 1 to 1 and a value above 6 to 6.
+
+## Loading `settings.json`
+
+`json_load(SETTINGS_PATH, default_settings)` in `utils.py`:
+
+1. When `settings.json.new` exists, it reads that file. When that file is not valid JSON, it deletes it.
+2. Otherwise it reads `settings.json`. When that file is not valid JSON, `json.JSONDecodeError` reaches
+   `main.py`, which shows the "Settings error" dialog and exits with code 4.
+3. Without either file it starts from a copy of `default_settings`.
+4. It merges the result with `default_settings`: a key that is not in `default_settings` is removed, a value
+   whose type is not exactly the type of the default is replaced by the default, and a missing key gets the
+   default. All three happen without a message.
+
+The type check compares `type(value)` with `type(default)`, so `1` for a `bool` is reset to the default, and the
+items of a list or set are not checked. A value saved as `{"__type": ..., "data": ...}` with a `__type` that
+`utils.SERIALIZE_ENV` does not name is removed and then refilled with the default.
+
+Some values with the right type are corrected later. `SettingsPanel.__init__` sets a `refresh_interval` that is
+not in its list to 5, a `restart_delay` that is not in its list to 10, and an unknown `priority_mode` to
+`PriorityMode.PRIORITY_ONLY`. `Twitch.get_session` limits `connection_quality` to 1 through 6.
+
+## Saving `settings.json`
+
+`Twitch.save()` calls `Settings.save()` together with the image cache's save. It runs after each inventory fetch
+(`State.INVENTORY_FETCH`) without `force`, and once with `force=True` in `main()` after the window closes. A
+changed setting is therefore written at the next reload or when the app closes. When the process is killed,
+the changes since the last save are lost.
+
+`json_save` writes `settings.json.new` and then renames it over `settings.json` with `Path.replace`, so a save
+that stops halfway leaves the previous `settings.json` unchanged. It sorts the keys and indents by 4 spaces.
+A `set`, `URL`, `Enum` or `datetime` value is written as `{"__type": <class name>, "data": <value>}`, and
+`json_load` turns it back into the class that `SERIALIZE_ENV` names.
+
+## Invariants
+
+- One `Settings` instance exists. `json_load` copies `default_settings` shallowly, so a list or set that the file
+  does not have is the same object as the one in `default_settings`. A second instance would share it.
+- A list or set changed in place is followed by `alter()`. Otherwise the change is saved only after the next
+  assignment to a setting, or by the forced save at exit.
+- A new type of setting value needs a branch in `utils._serialize` and an entry in `SERIALIZE_ENV`. Without the
+  branch, `json_save` raises `TypeError`. Without the entry, the saved value is dropped and reset to the default
+  on the next start.
+- A default changed in `default_settings` for `refresh_interval` or `restart_delay` is changed in
+  `SettingsPanel.__init__` too, which repeats the defaults 5 and 10
+  ([task 026](../refinements/tasks/026-settings-defaults-written-twice.md)).
+
+**Dependencies.** Repo modules: `utils` (`json_load`, `json_save`), `constants` (`SETTINGS_PATH`,
+`DEFAULT_LANG`, `PriorityMode`), and `main` for type checking only. Third-party: `yarl`.

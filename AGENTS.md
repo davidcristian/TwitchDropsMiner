@@ -1,7 +1,9 @@
 # TwitchDropsMiner engineering rules
 
 Every agent and every person working in this repo follows these rules. A change that breaks one of them is **not
-done**, even when it works. If a rule here conflicts with a request, follow the rule and say so.
+done**, even when it works. If a rule here conflicts with a request, follow the rule and say so. This file is
+the contract, and the detail lives in `docs/`: the index is [docs/index.md](docs/index.md), the map
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), the decisions `docs/adr/`.
 
 ## What this is
 
@@ -12,7 +14,7 @@ Linux (`build.spec`, `appimage/`, `.github/workflows/ci.yml`).
 
 The project started as a fork of [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner) and is
 developed on its own. It is licensed under the AGPL v3 ([LICENSE](LICENSE)). Code from the original project stays
-under the MIT License ([LICENSE.MIT](LICENSE.MIT)).
+under the MIT License ([LICENSE.MIT](LICENSE.MIT)). [ADR-0001](docs/adr/ADR-0001-independent-project.md) says why.
 
 ## The one hard rule
 
@@ -28,6 +30,8 @@ burst of requests puts that account at risk.
 - New periodic work re-enters `State.CHANNELS_CLEANUP`, which moves on to `State.CHANNELS_FETCH` and costs a few
   requests, rather than reloading.
 - A change that adds requests states how many per cycle in its commit body.
+
+[ADR-0002](docs/adr/ADR-0002-twitch-traffic-budget.md) gives the request counts this rule rests on.
 
 ## Module map
 
@@ -46,21 +50,24 @@ burst of requests puts that account at risk.
 | `cache.py` | The image cache for game and drop artwork |
 | `registry.py` | Windows registry access, used for starting with Windows |
 | `exceptions.py` | `MinerException` and its subclasses, including `ExitRequest` and `ReloadRequest` |
+| `version.py` | `__version__`, to which CI appends the commit hash. Its doc is part of `docs/modules/constants.md` |
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
-| `docs/` | Docs for users: `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
+| `docs/` | Listed in `docs/index.md`: `ARCHITECTURE.md`, the decisions (`adr/`), one contract doc per module (`modules/`), procedures (`runbooks/`), the deferred work (`refinements/`), and two pages for users, `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
 
 **Soft cap: 300 lines per module.** Most inherited modules are over it, and `gui.py` and `twitch.py` are several
-times over. Do not add a new responsibility to a module that is over the cap: put it in a new module and call it
-from there. Keep I/O at the edges of that module, so its logic can be called without Twitch or a display.
+times over ([task 005](docs/refinements/tasks/005-modules-over-the-line-cap.md) records the splits). Do not add a
+new responsibility to a module that is over the cap: put it in a new module and call it from there. Keep I/O at the
+edges of that module, so its logic can be called without Twitch or a display.
 
 ## Recipes
 
-**A new setting** touches three places, and missing the third is silent:
+**A new setting** touches four places, and missing the third is silent:
 
 1. `SettingsFile`, `default_settings` and the attribute list on `Settings`, in `settings.py`.
 2. The widget in `SettingsPanel`, in `gui.py`.
 3. The `settings=SimpleNamespace(...)` mock under `if __name__ == "__main__":` at the end of `gui.py`. Without it
    `python gui.py` fails with an `AttributeError`, and nothing else reports it.
+4. The key table in [docs/modules/settings.md](docs/modules/settings.md).
 
 **A string the user sees:**
 
@@ -83,8 +90,9 @@ follows the imports, so `build.spec` needs no change.
 
 ## What every change must pass
 
-There is no test suite, linter or single check command yet. Until there is, run each of these and report it with
-its command and output. The commands use `python`; on Linux outside the `env/` virtual environment that
+There is no test suite, linter or single check command yet ([task 003](docs/refinements/tasks/003-test-suite.md),
+[task 004](docs/refinements/tasks/004-single-check-command.md)). Until there is, run each of these and report it
+with its command and output. The commands use `python`; on Linux outside the `env/` virtual environment that
 `setup_env.sh` creates, use `python3`.
 
 1. `python -m py_compile *.py gamelib/*.py` succeeds. Code must run on Python 3.10, the version CI builds with,
@@ -92,13 +100,16 @@ its command and output. The commands use `python`; on Linux outside the `env/` v
 2. `for f in lang/*.json; do python -m json.tool "$f" > /dev/null || echo "$f"; done` prints nothing. CI's
    Validate job runs the same check.
 3. A GUI change is run in `python gui.py` or the full app (`python main.py`). When the GUI cannot start (no
-   `tkinter`, or no display), the GUI part is reported as unverified, and the change is not done.
+   `tkinter`, or no display), the GUI part is reported as unverified, and the change is not done. On Linux
+   without a display, [docs/runbooks/gui-preview-headless.md](docs/runbooks/gui-preview-headless.md) describes how
+   to run it.
 4. Logic that needs neither Twitch nor a display is checked by calling it with real inputs, and the inputs and
    results are shown. A pytest suite is welcome and should start with such logic.
 5. No new dependency unless the standard library cannot do the job. `requirements.txt` is installed into every
    build.
 6. No secrets in the repo or in logs. `cookies.jar` holds the login session; it, `settings.json`, `log.txt` and
-   `dump.dat` are gitignored and are never committed or pasted.
+   `dump.dat` are gitignored and are never committed or pasted. A log made with `-vvvv` or `--debug-ws` contains
+   the login token today ([task 011](docs/refinements/tasks/011-login-token-in-debug-log.md)).
 
 ## Prose
 
@@ -112,7 +123,8 @@ read.
   an argument or return value is not obvious from its name and type.
 - **Docs** are short and written for a reader who has never seen this repo: what a thing is and does, then why,
   when the why is not obvious. Keep facts, numbers, commands, file paths and decisions. Cut the story of how the
-  code got here, repeated explanations (link to the one place instead) and hedging.
+  code got here, repeated explanations (link to the one place instead) and hedging. A markdown file is at most
+  250 lines: a longer one says two things.
 - **Plain words.** Short sentences, one idea each, subject first, with the literal verb: "checks", "fails",
   "returns", "stores", "sends", "is set to". Code does not know, notice, want, refuse, believe or own anything,
   so say what it does. Define a technical term once, where it first appears. No metaphors, idioms or wordplay.
@@ -165,8 +177,8 @@ from upstream, keep their original style and are not reworded.
 - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`, `chore`, `revert`. A breaking change
   adds `!` after the type or scope and a `BREAKING CHANGE:` footer. A scope is optional and used only when the
   change stays inside one module or area: the module name without `.py` (`gui`, `twitch`), `lang` or `ci`.
-- **No volatile references.** Never cite a commit hash, an issue or PR number, or a numbered pointer into a
-  document that changes. Name the behavior or the decision instead.
+- **No volatile references.** Never cite a commit hash, an issue or PR number, an ADR or backlog task number, or
+  any other numbered pointer into a document. Name the behavior or the decision instead.
 - The banned words and the dash rule apply to commit messages.
 - One logical change per commit, and every commit passes the checks above.
 
@@ -177,7 +189,8 @@ from upstream, keep their original style and are not reworded.
   logical concern per pull request.
 - Never force-push `master`. Rewriting a branch nobody else has pulled is fine.
 - DevilXD/TwitchDropsMiner (the `upstream` remote) is read only for this project: fetch from it, but never open an
-  issue or a pull request there. Its fixes come in by cherry-pick or merge, never by rebasing `master`.
+  issue or a pull request there. Its fixes come in by cherry-pick or merge, never by rebasing `master`
+  ([docs/runbooks/upstream-fixes.md](docs/runbooks/upstream-fixes.md)).
 - GitHub records this repo as a fork, so `gh` targets the parent repo by default. Pass
   `--repo davidcristian/TwitchDropsMiner`, or run `gh repo set-default davidcristian/TwitchDropsMiner` once per
   clone.
@@ -196,5 +209,14 @@ from upstream, keep their original style and are not reworded.
   Do not match it to the nearest familiar failure and push through.
 - **Docs change with behavior.** A change to what the user sees or does updates `README.md` and the matching page
   in `docs/` in the same commit. A change to a build script or to CI updates `docs/building.md`. A change to a
-  module, a recipe or a check updates this file.
+  module's public contract or invariants updates its doc in `docs/modules/`, and a new module gets one. A new
+  state, event, GQL operation or background task updates `docs/ARCHITECTURE.md`, and a changed procedure updates
+  its runbook in `docs/runbooks/`. A change to the module map, a recipe or a check updates this file.
+- **Decisions are written down.** A non-obvious choice becomes an ADR in `docs/adr/`, in the format in
+  [docs/adr/README.md](docs/adr/README.md), and gets a line in `docs/index.md`. An ADR states the decision that
+  applies today and is edited in place when that decision changes. When a request leaves a choice open, record
+  your reading of it as an ADR, continue, and name the riskiest assumption in your summary.
+- **Deferred work is written down.** Work left for later, and a gap found and not fixed, becomes a task file in
+  `docs/refinements/tasks/`, in the format in [docs/refinements/index.md](docs/refinements/index.md). A deferral
+  without a record is a lost decision. A task's state is written on its `**Status:**` line and nowhere else.
 - Keep this file and all docs short and full of pointers; context bloat is a defect.

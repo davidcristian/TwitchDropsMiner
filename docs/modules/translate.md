@@ -1,0 +1,96 @@
+# `translate.py`
+
+**Purpose.** The strings the app shows to the user. It holds the `Translation` types that name each string,
+the English strings in `default_translation`, and `_`, the one `Translator` instance that returns a string in
+the current language. Other languages are JSON files in `lang/`. To add a string, follow the recipe in
+[AGENTS.md](../../AGENTS.md#recipes).
+
+## Public contract
+
+### The `Translation` types
+
+`Translation` is a tree of `TypedDict` classes. Each leaf is a `str`.
+
+| Key | Type | What it holds |
+| --- | --- | --- |
+| `language_name` | `NotRequired[str]` | Set by `Translator` to the name of the loaded language; a file cannot set it |
+| `english_name` | `str` | The language's name in English; no code reads it ([task 022](../refinements/tasks/022-unused-code.md)) |
+| `status` | `StatusMessages` | Lines printed to the Output box, such as `watching` and `claimed_drop` |
+| `login` | `LoginMessages` | Login messages, with `chrome` (`ChromeMessages`) |
+| `error` | `ErrorMessages` | `captcha`, `no_connection`, `site_down` |
+| `gui` | `GUIMessages` | The window's text, one nested type per part |
+
+`GUIMessages` contains `GUIStatus`, `GUITabs`, `GUITray`, `GUILoginForm`, `GUIWebsocket`, `GUIProgress`,
+`GUIChannels` (with `GUIChannelHeadings`), `GUIInventory` (with `GUIInvFilter` and `GUIInvStatus`),
+`GUISettings` and `GUIHelp`. `GUISettings` contains `GUISettingsGeneral`, `GUISettingsAdvanced`,
+`GUIPriorityModes`, `GUIRefreshIntervals`, `GUIRestartDelays`, `GUISettingsDetect` and `GUISettingsWanted`.
+`GUIHelp` contains `GUIHelpAbout`, `GUIHelpLinks` and `GUIHelpInvalidate`.
+
+### `default_translation`
+
+The English strings, typed as `Translation`. It is the only source of translatable English text: the app reads
+English from it in memory, and every other language falls back to it. Some strings are `str.format` templates
+with named fields, such as `"Watching: {channel}"`.
+
+### `_` and `Translator`
+
+- `_(*path)` returns the string at `path` in the current translation: `_("gui", "status", "idle")` returns
+  `"Idle"` in English. With no `path` it raises `ValueError`. When a key on the path does not exist, it raises
+  `MinerException` naming the language and the path. A path that ends at a dict returns the dict.
+- `_.languages` iterates over the language names: `"English"` first, then the other file names in `lang/`
+  without `.json`, sorted.
+- `_.current` is the name of the loaded language.
+- `_.set_language(language)` loads a language. It raises `ValueError` for a name not in `_.languages`. `main()`
+  calls it once at start with the `language` setting, before the window is built ([main.md](main.md)).
+
+## How the language files are found and loaded
+
+`LANG_PATH` in `constants.py` is the `lang` folder next to the code: the folder of `main.py` in a run from
+source, the PyInstaller unpack folder (`sys._MEIPASS`) in a PyInstaller build, and the folder of the started
+script in the AppImage. `Translator.__init__` lists the `*.json` files in it once, when `translate` is imported.
+A language's name is its file name, such as `Polski` for `lang/Polski.json`.
+
+`set_language` does nothing for the language already loaded. For `"English"` it takes a copy of
+`default_translation` and reads no file. For any other language it calls `json_load` (`utils.py`) with
+`default_translation` as the template, which changes the file's data in memory:
+
+- A key that the file does not have gets the English string, so a missing key shows in English.
+- A key that `default_translation` does not have is removed
+  ([task 023](../refinements/tasks/023-language-file-keys-dropped.md)).
+- A value whose type differs from the English one, such as a string where a section is expected, is replaced
+  by the English value.
+
+The merge removes `language_name` from a file as an unknown key. The `ValueError` that `set_language` raises
+for a file with `language_name` is therefore never reached.
+
+A file that is not valid JSON makes `set_language` raise `json.JSONDecodeError`. It is a `ValueError`, so
+`main()` catches it and the app stays in English without a message. CI's Validate job, which runs on each pull
+request and each push to `master`, and check 2 in [AGENTS.md](../../AGENTS.md#what-every-change-must-pass)
+parse each `lang/*.json` file to find such a file.
+
+## Why `lang/English.json` is rewritten on every run from source
+
+In a run from source (`IS_PACKAGED` is false), `Translator.__init__` writes `default_translation` to
+`lang/English.json` each time `translate` is imported. The code comment calls the file a template: it always
+contains the current keys and English strings, for a translator to copy. The file is only generated output, so
+`.gitignore` lists it and `default_translation` stays the one place where English is edited. An edit to
+`lang/English.json` is overwritten on the next run. A packaged build does not write it, and `build.spec` leaves
+it out of the PyInstaller build.
+
+## Invariants
+
+- No module calls `_()` at import time. The language is set in `main()` after all imports, so a string read
+  earlier would always be English. `SettingsPanel` reads its choice names in `cached_property` attributes for
+  this reason ([gui.md](gui.md)).
+- Widgets read their text when they are built, so a language change needs a restart. The "Language" label in
+  `gui.py` says so, and is itself hard-coded English
+  ([task 014](../refinements/tasks/014-hard-coded-strings.md)).
+- A key added to a `TypedDict` is added to `default_translation` too. A key missing there raises
+  `MinerException` when it is read, in every language.
+- A translated template uses only the named fields of the English one. `str.format` raises `KeyError` for a
+  field the code does not pass.
+- Other languages need no edit for a new key, because the merge fills it in English
+  ([task 008](../refinements/tasks/008-translations-for-new-strings.md)).
+
+**Dependencies.** Repo modules: `exceptions` (`MinerException`), `utils` (`json_load`, `json_save`) and
+`constants` (`IS_PACKAGED`, `LANG_PATH`, `DEFAULT_LANG`). No third-party package.

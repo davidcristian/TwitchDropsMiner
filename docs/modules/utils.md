@@ -1,0 +1,111 @@
+# `utils.py`
+
+**Purpose.** Holds the helpers that several modules share: reading and writing JSON files, pacing requests
+(`RateLimiter`, `ExponentialBackoff`), running tasks, the `Game` class and small helpers for time, random IDs,
+the single instance lock and the browser. None of them sends a request to Twitch by itself. The module is 458
+lines, over the 300 line soft cap in AGENTS.md
+([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
+
+## Public contract
+
+### JSON files
+
+| Helper | What it does |
+| --- | --- |
+| `json_save(path, contents, *, sort=False)` | Writes `<name>.new` with an indent of 4, then replaces `path` with it, so a crash during the write leaves the old file whole |
+| `json_load(path, defaults, *, merge=True)` | Reads `<name>.new` first when it exists and deletes it when it is not valid JSON, then reads `path` only when `<name>.new` gave nothing. When neither exists, returns a shallow copy of `defaults`. A `path` that is not valid JSON raises `json.JSONDecodeError` |
+| `merge_json(obj, template)` | Called by `json_load` when `merge` is true. Deletes keys that `template` lacks, replaces a value whose type differs from the template's, recurses into dicts and adds missing keys |
+| `json_minify(data)` | Returns JSON without spaces, for request and websocket payloads |
+
+`json_save` writes a `datetime` (a naive one counts as UTC), a `set`, an `Enum` (by its value) and a `URL` as
+`{"__type": "<class name>", "data": ...}`. Any other type that JSON cannot hold raises `TypeError`. `json_load`
+rebuilds these objects through `SERIALIZE_ENV`, which knows `set`, `URL`, `PriorityMode` and `datetime`. It
+drops a key whose `__type` is not in `SERIALIZE_ENV`, and the merge then puts the default back.
+
+| Caller | File | Notes |
+| --- | --- | --- |
+| `settings.py` | `settings.json` | merged with `default_settings` |
+| `cache.py` | `cache/mapping.json` | `merge=False`; catches `json.JSONDecodeError` ([cache.md](cache.md)) |
+| `translate.py` | `lang/*.json` | merged with `default_translation`. From source it also saves `lang/English.json` |
+
+`json_minify` is called by `websocket.py` for every message it sends, and by `channel.py` for the spade and GQL
+watch payloads, which only uncalled methods read ([channel.md](channel.md#watching)).
+
+### Request pacing
+
+**`RateLimiter(*, capacity, window)`** is an async context manager. A request may start when both the number
+started in the current window and the number in progress are below `capacity`. The window starts with the first
+request after a reset and lasts `window` seconds. `Twitch.__init__` creates
+`RateLimiter(capacity=5, window=1)`, and `Twitch.gql_request` enters it around each POST. A POST that
+`Twitch.request` sends again after a 5xx status or a connection error stays in the same slot. Callers put up to 20
+operations into one POST with `chunk(ops, 20)`, and a POST counts once. Called with 12 short requests at once,
+it starts them in groups of 5, 5 and 2, one second apart. Called with 7 requests of 2.5 seconds each, it starts 5
+at once and the other 2 when the first ones end. [ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md) explains
+the limit.
+
+**`ExponentialBackoff(*, base=2, variance=0.1, shift=0, maximum=300)`** is an iterator of delays in seconds:
+`base ** steps`, times a random factor between `1 - variance` and `1 + variance` (or the two ends of a tuple),
+plus `shift`, and never above `maximum`. `steps` grows only when the delay is at most `maximum`. `reset()` sets
+it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays are about 1, 2, 4 and 8 seconds.
+
+| Caller | `maximum` | Retries on |
+| --- | --- | --- |
+| `Twitch.request` | 180 | a status of 500 or above and connection errors |
+| `Twitch.gql_request` | 60 | `service error` and `PersistedQueryNotFound` once, after at least 5 seconds; `service timeout`, `request cancelled`, `service unavailable` and `context deadline exceeded` each time |
+| `Websocket._backoff_connect` in `websocket.py` | 180 | connection errors; `reset()` after each connection |
+
+### Tasks
+
+- **`task_wrapper(afunc=None, *, critical=False)`** decorates a coroutine function that runs as a task. It
+  ignores `ExitRequest` and `ReloadRequest`, and logs any other exception with its traceback and raises it again.
+  With `critical=True` it first calls `Twitch.close()` on the `Twitch` object found as the first argument or as
+  its `_twitch` attribute, so the failure of a required task stops the app, with no automatic restart
+  ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)). The critical tasks are
+  `Twitch._watch_loop`, `Twitch._maintenance_task` and `Websocket._handle`. Without `critical` it wraps the
+  PubSub handlers `process_stream_state`, `process_stream_update`, `process_drops` and `process_notifications`
+  in `twitch.py`, `Websocket.stop` and, in `gui.py`, `Twitch.detect_games` and `HelpTab._invalidate_token`.
+- **`AwaitableValue[T]`** is a value that coroutines can wait for: `get()` waits until `set()` is called. It
+  also has `has_value()`, `wait()`, `get_with_default(default)` and `clear()`. `Twitch.watching_channel` is one,
+  and `Websocket._ws` holds each websocket's connection in one.
+- **`chunk(iterable, length)`** yields lists of `length` items; the last list can be shorter. `twitch.py` puts
+  20 campaign details, stream checks or available drop checks into one GQL request, and `websocket.py` puts 20
+  topics into one `LISTEN` or `UNLISTEN` message.
+
+### `Game`
+
+`Game(data)` is a Twitch game: `id` (an `int`), `name` (`displayName`, or `name` when that is missing) and
+`slug` (from the data, or made from the name: lower case, apostrophes removed, and each run of characters other
+than letters, digits and `_` turned into one `-`, with no `-` at either end). Two games are equal when their IDs
+are. `is_special()` is true for the IDs in `SPECIAL_GAME_IDS` (`509663`, `509672`): for a campaign of that game,
+`can_earn` then accepts a channel whatever game it streams, when the campaign's list of allowed channels is
+empty or includes it (`inventory.py`, `twitch.py`). `inventory.py`, `channel.py`, `twitch.py` and `gui.py` use
+`Game`.
+
+### Other helpers
+
+| Helper | What it does | Caller |
+| --- | --- | --- |
+| `lock_file(path)` | Opens `path`, writes one character and locks it with `msvcrt.locking` on Windows or `fcntl.lockf` on Linux and macOS. Returns `(locked, file)`; on other systems `locked` is always true | `main.py`, the single instance lock on `lock.file` |
+| `resource_path(relative_path)` | `constants._resource_path` ([constants.md](constants.md#working-directory-and-paths)) | `main.py`, `gui.py` |
+| `set_root_icon(root, image_path)` | Sets the window icon and keeps a reference to the image | `main.py`, `gui.py` |
+| `webopen(url)` | Opens `url` in a new browser tab. In a packaged Linux build it restores `LD_LIBRARY_PATH` from `LD_LIBRARY_PATH_ORIG` for the call, because PyInstaller points it at the bundled libraries | `gui.py` |
+| `timestamp(string)` | Parses a Twitch UTC time, with or without fractions of a second | `inventory.py`, `twitch.py` |
+| `isonow()` | Returns the current UTC time with milliseconds and a `Z` | `channel.py`, in the watch payload that only uncalled methods read |
+| `create_nonce(chars, length)`, `CHARS_ASCII`, `CHARS_HEX_LOWER` | Return a random string | `websocket.py` (30 ASCII characters), `twitch.py` (the 16 character hex session ID) |
+| `format_traceback(exc, **kwargs)` | Returns a traceback as a string | `websocket.py` |
+
+`first_to_complete`, `deduplicate`, `invalidate_cache` and `CHARS_HEX_UPPER` have no caller
+([task 022](../refinements/tasks/022-unused-code.md)).
+
+## Invariants
+
+- Every GQL request passes through the `RateLimiter` in `Twitch.gql_request`
+  ([AGENTS.md](../../AGENTS.md#the-one-hard-rule)). A GQL request sent another way is not counted.
+- A new type stored in a JSON file needs a branch in `_serialize` (every `Enum` already has one) and an entry in
+  `SERIALIZE_ENV`. Without the entry, the key is dropped on load and reset to its default. An `IntEnum` is
+  written as a plain number and read back as one.
+- `utils` imports `tkinter` and Pillow at the top, so even its JSON helpers need both installed. It imports
+  `twitch` only inside `task_wrapper`, which avoids an import cycle.
+
+**Dependencies.** `constants`, `exceptions`, and `twitch` inside `task_wrapper`. Third party: `yarl` and Pillow.
+Standard library: `tkinter`, `asyncio`, `json` and others.

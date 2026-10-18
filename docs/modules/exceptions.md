@@ -1,0 +1,123 @@
+# `exceptions.py`
+
+**Purpose.** The app's own exception classes. `MinerException` is the base class, and its subclasses name a
+request failure, a login failure, or a request from the user to exit or reload. The module has no logic beyond
+default messages and imports nothing.
+
+## Public contract
+
+The classes, with the message each one has by default:
+
+```
+Exception
+└── MinerException            "Unknown miner error" when raised without arguments
+    ├── ExitRequest           "Application was requested to exit"
+    ├── ReloadRequest         "Application was requested to reload entirely"
+    └── RequestException      "Unknown error during request" when raised without arguments
+        ├── RequestInvalid    "Request became invalid during its retry loop"
+        ├── WebsocketClosed   "Websocket has been closed"; has the attribute received: bool
+        ├── LoginException    "Unknown error during login" when raised without arguments
+        │   └── CaptchaRequired   "Captcha is required"
+        └── GQLException      takes the error message as its one argument
+```
+
+## How an exception ends a run
+
+Any exception other than `ExitRequest` and `ReloadRequest` that leaves `Twitch._run` reaches `Twitch.run`, which
+treats it as a fatal error. While the "Restart after a crash after" setting is not "Never", `Twitch.run` waits
+and starts again ([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)). Otherwise it raises the error to
+`main()`, which prints it and exits with code 1 ([main.md](main.md#exit-codes)). In a background task that
+`utils.task_wrapper` wraps, any other exception is logged and raised again; with `critical=True` the wrapper also
+calls `Twitch.close()`, so the run ends without the restart
+([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)).
+
+## Each class
+
+**`MinerException`** is raised directly for errors that have no subclass:
+
+- `Channel.get_stream` wraps a `MinerException` from `Twitch.gql_request` in a new one that names the channel.
+  It also catches one from the `AvailableDrops` query, logs it at `CALL` level and continues.
+- `Twitch.get_live_streams` wraps a `GQLException` in a new one that names the game slug.
+- `Twitch._merge_data` raises it when the inventory and campaign data have different types for one key.
+- `WebsocketPool.add_topics` raises it when the topics do not fit in `MAX_WEBSOCKETS` websockets.
+- `Translator.__call__` raises it for a key path that the current translation does not have
+  ([translate.md](translate.md)).
+- `TrayIcon.get_title` raises it when the tray tooltip cannot be shortened to 127 characters
+  ([gui.md](gui.md#the-tray-icon)).
+- `Channel.get_spade_url` raises it when it finds no spade URL. Only `Channel._send_watch_spade` calls it, and no
+  code calls that method ([task 022](../refinements/tasks/022-unused-code.md)).
+
+No other code catches `MinerException` by name.
+
+**`ExitRequest`** means the user closed the window.
+
+- Raised by `GUIManager.coro_unless_closed` when the window closes before the wrapped coroutine ends, by
+  `Twitch.request` before each try when `GUIManager.close_requested` is set, and by `Twitch.fetch_inventory`
+  after each campaign is added to the Inventory tab.
+- Caught by `Twitch.run`, which ends the run loop, and by `utils.task_wrapper`, which ends the task without a
+  log line.
+
+**`ReloadRequest`** means a full restart of the client without closing the window.
+
+- Raised by `Twitch._run` in `State.RESTART`. Only `HelpTab._invalidate_token` sets that state, after the
+  "Invalidate" button sends the token to Twitch's revoke endpoint.
+- Caught by `Twitch.run`, which calls `Twitch.shutdown()` and starts `Twitch._run` again, and by
+  `utils.task_wrapper`.
+
+**`RequestException`** is the base class for request failures.
+
+- Raised directly only by `Twitch.run`, which wraps an `aiohttp.ContentTypeError` in one with the message
+  `_("login", "unexpected_content")` and the original error as its cause. It goes to
+  `Twitch._await_restart` like any other fatal error.
+- Caught by `Channel._send_watch_spade` and `Channel._send_watch_gql`, which return `False`. No code calls
+  either method.
+
+**`RequestInvalid`** means the deadline of a request passed before the request was sent.
+
+- Raised by `Twitch.request` when the `invalidate_after` time, less the session timeout, has passed before a
+  try. Only `_AuthState._oauth_login` passes `invalidate_after`, set to the expiry of the device code.
+- Caught by `_AuthState._oauth_login`, which then asks Twitch for a new device code.
+
+**`WebsocketClosed`** means a websocket connection ended. `received` is `True` when the server sent a close
+frame.
+
+- Raised by `Websocket._gather_recv` for a connection error, a `CLOSE`, `CLOSED` or `ERROR` message, and by
+  `Websocket.send` for a connection error.
+- Caught by `Websocket._handle`. When `received` is `True` it logs a warning and reconnects. When the app
+  closed the websocket itself, it sets the status to "Disconnected" and returns. In every other case it
+  reconnects.
+
+**`LoginException`** and **`CaptchaRequired`** come from the password login.
+
+- `_AuthState._login` raises `LoginException` for an unknown error from `passport.twitch.tv/login`, and when
+  the flow ends without an access token. It raises `CaptchaRequired` for error code 1000 or any code of 5000 or
+  more.
+- No code calls `_AuthState._login` ([task 010](../refinements/tasks/010-unreachable-password-login.md)). The
+  app logs in through `_AuthState._oauth_login`, the device activation flow, which raises neither class. So no
+  code path raises either class today. No code catches `LoginException` by name.
+- `CaptchaRequired` is still handled in two places, and neither can run today. When restarting is on,
+  `Twitch._await_restart` waits 1 hour, doubling for each further denial up to 12 hours
+  (`CAPTCHA_RESTART_DELAY`, `CAPTCHA_RESTART_MAX`). Otherwise `main()` prints the CAPTCHA message and exits
+  with code 1.
+
+**`GQLException`** means Twitch answered a GQL request with an error.
+
+- Raised by `Twitch.gql_request` for a response with an `error` key, or with an `errors` list in which no
+  message is one the method retries or clears. It retries `service error` and `PersistedQueryNotFound` once,
+  retries `service timeout`, `request cancelled`, `service unavailable` and `context deadline exceeded`, and
+  sets the data at the error's path to `None` for `server error`.
+- Caught by `BaseDrop._claim`, which returns `False` because the claim may have failed; by
+  `Twitch._watch_loop` around the `CurrentDrop` query, which then uses no drop data; and by
+  `Twitch.get_live_streams`, which raises a `MinerException` that names the game.
+
+## Invariants
+
+- `ExitRequest` and `ReloadRequest` are control flow, not errors. A broad `except Exception` around a call that
+  can raise them raises the exception again, as the blocks in `Twitch.fetch_inventory` and
+  `Twitch.bulk_check_online` do, because `Twitch.run` must see it to exit or reload.
+- `except MinerException` also catches `ExitRequest` and `ReloadRequest`, because they are subclasses.
+  `Channel.get_stream` turns an `ExitRequest` from its GQL request into a plain `MinerException` this way. It runs
+  only in the task that `Channel.check_online` starts with `asyncio.create_task`. Nothing awaits that task, so
+  an exception in it ends the task and does not appear in the Output box.
+
+**Dependencies.** None.
