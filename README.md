@@ -78,11 +78,11 @@ Every 20 seconds, the app asks Twitch for the list of the newest video segments 
 
 ### Advanced Usage:
 
-To run the latest `master` from source or build your own executable, follow the original project's wiki page: https://github.com/DevilXD/TwitchDropsMiner/wiki/Setting-up-the-environment,-building-and-running
+To run the latest `master` from source or build your own executable, see [docs/building.md](docs/building.md).
 
 ### Support:
 
-- The original project's [troubleshooting page](https://github.com/DevilXD/TwitchDropsMiner/wiki/Troubleshooting) explains some common problems.
+- [docs/troubleshooting.md](docs/troubleshooting.md) explains common problems, the command line flags and how to get a log.
 - This project's code differs from the original, so do not report its problems on DevilXD/TwitchDropsMiner.
 
 ### Project goals:

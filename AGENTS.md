@@ -45,6 +45,7 @@ burst of requests puts that account at risk.
 | `registry.py` | Windows registry access, used for starting with Windows |
 | `exceptions.py` | `MinerException` and its subclasses, including `ExitRequest` and `ReloadRequest` |
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
+| `docs/` | Docs for users: `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
 
 **Soft cap: 300 lines per module.** Most inherited modules are over it, and `gui.py` and `twitch.py` are several
 times over. Do not add a new responsibility to a module that is over the cap: put it in a new module and call it
@@ -191,6 +192,7 @@ from upstream, keep their original style and are not reworded.
   done only when it is: an inaccurate "done" costs more to undo than an accurate "not yet".
 - **Stop when surprised.** When output contradicts your model of the system, work it out again from the evidence.
   Do not match it to the nearest familiar failure and push through.
-- **Docs change with behavior.** A change to what the user sees or does updates `README.md` in the same commit. A
-  change to a module, a recipe or a check updates this file.
+- **Docs change with behavior.** A change to what the user sees or does updates `README.md` and the matching page
+  in `docs/` in the same commit. A change to a build script or to CI updates `docs/building.md`. A change to a
+  module, a recipe or a check updates this file.
 - Keep this file and all docs short and full of pointers; context bloat is a defect.
