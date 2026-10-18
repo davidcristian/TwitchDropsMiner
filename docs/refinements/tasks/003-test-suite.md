@@ -1,6 +1,6 @@
 # There is no test suite
 
-**Status:** open
+**Status:** done 2026-10-18
 **Area:** repo checks
 **Origin:** [AGENTS.md](../../../AGENTS.md#what-every-change-must-pass)
 **Verified:** 2026-10-18
@@ -56,7 +56,26 @@ inputs, and nothing repeats that check on the next change.
   there. AGENTS.md's "What every change must pass" section then names the command.
 - **Twitch requests:** none.
 
+## How it was closed
+
+pytest runs the suite in `tests/`, and `just check` runs it with a floor of 80% branch coverage of `redact`,
+`gamelib` and `scripts/` ([ADR-0013](../../adr/ADR-0013-test-standard.md)). `pytest` and `pytest-cov` are in
+`requirements-dev.txt`, which no build installs, and CI's Validate job runs the suite on Python 3.10.
+
+- `redact` and every module of `gamelib`, which covers the `gamelib.patterns`, `gamelib.matching` and scanner
+  candidates above. The scanners read launcher files that the tests write to temporary folders, and
+  `Path.home()` and the Epic system folder point there.
+- `scripts/`: the checks that `just check` runs.
+
+The tests found the defects of tasks [032](032-names-outside-a-to-z-dropped.md),
+[033](033-fuzzy-match-ignores-i-v-x.md), [034](034-shared-epic-folder-reported-empty.md) and
+[035](035-unknown-user-ends-the-game-scan.md), and confirmed [009](009-trademark-symbols-in-game-names.md). Each
+is a strict `xfail` test that names its task. The `utils` and settings candidates need `requirements.txt` to
+import, and are [task 031](031-tests-for-utils-and-settings.md). The logic in `Twitch._run` waits for the splits
+of [task 005](005-modules-over-the-line-cap.md).
+
 ## History
 
 - 2026-10-18: Opened. Found while the docs were written, from the AGENTS.md line that welcomes a pytest suite.
   Calling `match_games` with real names while listing the candidates found the `™` case.
+- 2026-10-18: Closed. The suite tests `redact`, `gamelib` and `scripts/`; tasks 031 to 035 hold what is left.

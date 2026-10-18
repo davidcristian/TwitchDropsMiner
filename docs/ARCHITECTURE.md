@@ -178,10 +178,10 @@ build and, with `IS_APPIMAGE`, in an AppImage; a packaged build reads `icons/` a
 The Python modules are in the [module map](../AGENTS.md#module-map). The other files, then the gitignored ones:
 
 ```
-lang/                  one translation file per language, named after the language; CI checks the JSON
+lang/                  one translation file per language, named after the language; langcheck.py checks the JSON
 icons/                 pickaxe.ico (window and tray) and active, idle, error, maint: the tray icon states
 appimage/              AppImageBuilder.yml, the AppImage recipe, and pickaxe.png, its icon
-.github/workflows/     ci.yml: the Validate job, the four builds and the dev-build pre-release
+.github/workflows/     ci.yml: the Validate job (just check), the four builds and the dev-build pre-release
 .vscode/               launch.json debug configurations and tasks.json build tasks
 build.spec             PyInstaller spec: one-file build, icons, translations, Linux tray library, macOS .app
 setup_env.sh, .bat     create env/ and install requirements.txt into it
@@ -190,6 +190,12 @@ run_dev.bat            starts main.py from env/ on Windows, with or without a co
 pack.bat               zips dist\*.exe and manual.txt into "Twitch Drops Miner.zip" with 7z.exe
 manual.txt             command line flags and exit codes; every release build includes it
 requirements.txt       aiohttp, Pillow, pystray, PyGObject (Linux), pywin32 (Windows), truststore
+requirements-dev.txt   the tools of just check: just, ruff, pytest, pytest-cov, pre-commit; no build installs it
+justfile               the recipes of just check, one per check
+pyproject.toml         the ruff, pytest and coverage settings; the app is not a package
+.pre-commit-config.yaml  the git hooks: just check before a commit, two checks of the commit message
+scripts/               the check scripts that just check runs, and commitlint.py for commit messages
+tests/                 the pytest suite, one file per module under test
 version.py             __version__; CI appends the short commit hash
 LICENSE, LICENSE.MIT   GNU AGPL v3 for the project; MIT for the code from DevilXD/TwitchDropsMiner
 README.md, AGENTS.md   the user guide; the engineering rules, which CLAUDE.md includes
@@ -204,6 +210,7 @@ lock.file              the single instance lock
 log.txt, dump.dat      written with --log and --dump
 cache/                 ImageCache images and mapping.json
 lang/English.json      rewritten from default_translation on every run from source
+.coverage, .ruff_cache/  written by just check
 *.new                  the file json_save writes before it replaces the target
 env/                   the virtual environment from setup_env
 build/, dist/          PyInstaller output; *.exe, *.zip, *.tmp, *.app and "Twitch Drops Miner/" too

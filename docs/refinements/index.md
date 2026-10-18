@@ -73,3 +73,8 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [028: A watch restart in the first 15 seconds of a cycle has no effect](tasks/028-watch-restart-dropped.md) | twitch |
 | [029: Each stream refresh stops the drop countdown](tasks/029-refresh-stops-the-countdown.md) | twitch, gui |
 | [030: A device code can expire before the Login press](tasks/030-device-code-expires-before-login-press.md) | twitch, gui |
+| [031: The logic in utils and settings has no tests](tasks/031-tests-for-utils-and-settings.md) | utils, settings, tests |
+| [032: Letters outside a to z are removed from normalized game names](tasks/032-names-outside-a-to-z-dropped.md) | gamelib |
+| [033: A fuzzy game match ignores the numerals I, V and X](tasks/033-fuzzy-match-ignores-i-v-x.md) | gamelib |
+| [034: A game folder scanned after another one is reported as holding no games](tasks/034-shared-epic-folder-reported-empty.md) | gamelib |
+| [035: A game folder that names an unknown user ends the scan of every folder](tasks/035-unknown-user-ends-the-game-scan.md) | gamelib |

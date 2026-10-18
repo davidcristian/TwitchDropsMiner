@@ -1,6 +1,6 @@
 # No single command runs the repo checks
 
-**Status:** open
+**Status:** done 2026-10-18
 **Area:** repo checks, ci
 **Origin:** [AGENTS.md](../../../AGENTS.md#what-every-change-must-pass)
 **Verified:** 2026-10-18
@@ -50,7 +50,25 @@ task file missing from the index, each added for the test, before it is trusted.
 
 Cost: no Twitch requests and a few seconds of CI time.
 
+## How it was closed
+
+`just check` is the one command ([ADR-0012](../../adr/ADR-0012-check-command.md)). The pre-commit hook and the
+Validate job in CI run it. It differs from the proposal above in four ways:
+
+- A `justfile` runs one standard-library script per rule from `scripts/`, in place of one script.
+- `syntaxcheck.py` parses each file with `ast.parse(feature_version=(3, 10))`, which rejects `except*` on any
+  Python, in place of `py_compile`, which rejects it only on 3.10.
+- The line limit covers modules too. The eight inherited modules over 300 lines are named exceptions
+  ([005](005-modules-over-the-line-cap.md)).
+- It also runs ruff, `rostercheck.py` (the module map, the module docs and the settings keys against the code)
+  and the test suite ([003](003-test-suite.md)), and two commit-msg hooks check commit messages.
+
+Each scan was shown to fail on a broken copy of the repo: a banned word, a phrase split by a line break, an em
+dash, an invalid language file, a broken link and heading, a task missing from the index, a module missing from
+the map, and a settings key missing from each place that lists it.
+
 ## History
 
 - 2026-10-18: Opened. Found while the docs were written, from the AGENTS.md lines that say no single check command
   exists and no script checks the banned words.
+- 2026-10-18: Closed. `just check` runs the scans, ruff and the tests, locally and in CI.

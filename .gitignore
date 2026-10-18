@@ -26,3 +26,6 @@ settings.json
 /*.AppImage.zsync
 .DS_Store
 *.app
+# Check output
+.coverage
+.ruff_cache

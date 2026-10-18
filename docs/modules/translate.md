@@ -64,9 +64,9 @@ The merge removes `language_name` from a file as an unknown key. The `ValueError
 for a file with `language_name` is therefore never reached.
 
 A file that is not valid JSON makes `set_language` raise `json.JSONDecodeError`. It is a `ValueError`, so
-`main()` catches it and the app stays in English without a message. CI's Validate job, which runs on each pull
-request and each push to `master`, and check 2 in [AGENTS.md](../../AGENTS.md#what-every-change-must-pass)
-parse each `lang/*.json` file to find such a file.
+`main()` catches it and the app stays in English without a message. `scripts/langcheck.py`, which
+[`just check`](../../AGENTS.md#what-every-change-must-pass) runs locally and in CI's Validate job on each pull
+request and each push to `master`, parses each `lang/*.json` file to find such a file.
 
 ## Why `lang/English.json` is rewritten on every run from source
 

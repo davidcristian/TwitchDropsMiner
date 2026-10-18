@@ -83,3 +83,5 @@ split into a package on 2026-10-18.
 
 - 2026-10-18: Opened while the docs were written. `match_games`, `normalize` and the pattern functions were
   called with names that contain `™`, `℠` and `®`.
+- 2026-10-18: Three strict `xfail` tests in `tests/test_gamelib_matching.py` and `tests/test_gamelib_patterns.py`
+  assert the correct behavior. They pass, and the strict mark then fails the suite, once this is fixed.

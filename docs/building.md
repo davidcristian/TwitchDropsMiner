@@ -57,6 +57,33 @@ and saves them in `cache/`. On Windows, use `env\scripts\python gui.py`. A new s
 the mock at the end of `gui.py`; see the recipe in [AGENTS.md](../AGENTS.md#recipes). To run it without a
 display, see [runbooks/gui-preview-headless.md](runbooks/gui-preview-headless.md).
 
+## Run the checks
+
+`just check` runs every check that a change must pass, as listed in
+[AGENTS.md](../AGENTS.md#what-every-change-must-pass). Its tools are in `requirements-dev.txt`, which no build
+installs. Install them into `env/` once, then activate the environment so that `just` and the recipes use its
+Python:
+
+```bash
+env/bin/python -m pip install -r requirements-dev.txt
+source env/bin/activate
+just check
+```
+
+On Windows, run `env\scripts\python -m pip install -r requirements-dev.txt`, then `env\scripts\activate` and
+`just check`. The recipes run `python3` on Linux and macOS and `python` on Windows.
+
+`just check` stops at the first check that fails. `just --list` shows each check's own recipe, such as
+`just check-tests` for the test suite alone. To run `just check` before each commit and check each commit
+message, install the git hooks once, in the activated environment:
+
+```bash
+pre-commit install
+```
+
+The Validate job in CI installs `requirements-dev.txt` on Python 3.10 and runs `just check`, and the build jobs
+start only when it passes.
+
 ## Build the executable with PyInstaller
 
 Run `build.bat` on Windows or `./build.sh` on Linux and macOS. The script:

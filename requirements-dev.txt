@@ -1,0 +1,8 @@
+# The tools `just check` runs. Builds install requirements.txt only.
+pre-commit==4.6.2
+pytest==9.1.1
+pytest-cov==7.1.0
+ruff==0.16.10
+rust-just==1.58.0
+# redact.py imports yarl, which requirements.txt installs with aiohttp.
+yarl

@@ -1,8 +1,8 @@
 # TwitchDropsMiner engineering rules
 
 Every agent and every person working in this repo follows these rules. A change that breaks one of them is **not
-done**, even when it works. If a rule here conflicts with a request, follow the rule and say so. This file is
-the contract, and the detail lives in `docs/`: the index is [docs/index.md](docs/index.md), the map
+done**, even when it works. If a rule here conflicts with a request, follow the rule and say so. This file is the
+contract, and the detail lives in `docs/`: the index [docs/index.md](docs/index.md), the map
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), the decisions `docs/adr/`.
 
 ## What this is
@@ -55,10 +55,23 @@ burst of requests puts that account at risk.
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
 | `docs/` | Listed in `docs/index.md`: `ARCHITECTURE.md`, the decisions (`adr/`), one contract doc per module (`modules/`), procedures (`runbooks/`), the deferred work (`refinements/`), and two pages for users, `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
 
-**Soft cap: 300 lines per module.** Most inherited modules are over it, and `gui.py` and `twitch.py` are several
-times over ([task 005](docs/refinements/tasks/005-modules-over-the-line-cap.md) records the splits). Do not add a
-new responsibility to a module that is over the cap: put it in a new module and call it from there. Keep I/O at the
-edges of that module, so its logic can be called without Twitch or a display.
+**At most 300 lines per module**, which `scripts/linecap.py` checks. It names the eight inherited modules over the
+limit as exceptions until they are split ([task 005](docs/refinements/tasks/005-modules-over-the-line-cap.md)), and
+an exception fails once its module is under the limit. Do not add a new responsibility to a module over the limit:
+put it in a new module and call it from there.
+
+## Code rules
+
+New code follows these ([ADR-0014](docs/adr/ADR-0014-code-rules.md)), and inherited code does where a change
+rewrites it.
+
+- **Logic apart from I/O.** New logic that calls Twitch, the disk or the OS receives that call as an argument (a
+  `Protocol` or a function), so a test passes a fake. The code that makes the real call holds no decisions.
+- **Platform differences in one place.** New Windows, Linux or macOS behavior goes in one function per concern,
+  which the rest of the code calls, rather than in an inline `sys.platform` check.
+- **Types.** Public functions are fully typed, and `Any` is used only where any value is accepted. Errors are
+  specific exception classes, `MinerException` subclasses for the app's own. No bare `except:`, and
+  `except Exception` only where a task must keep running, which then logs the error.
 
 ## Recipes
 
@@ -74,67 +87,71 @@ edges of that module, so its logic can be called without Twitch or a display.
 
 1. Add a key to the matching `TypedDict` and to `default_translation`, both in `translate.py`.
 2. Read it with `_("section", "key")`. Never hard-code text that the GUI or the console shows.
-3. Leave `lang/English.json` alone. It is gitignored, and every run from source rewrites it from
-   `default_translation`.
-4. Other languages need no edit, because a missing key falls back to English. An edit to `lang/*.json` must stay
-   valid JSON, which CI checks.
+3. Leave `lang/English.json` alone: it is gitignored, and every run from source rewrites it.
+4. Other languages need no edit, because a missing key falls back to English.
 
-**An edit to `gui.py`:** many of its classes share identical lines, such as the
-`__init__(self, manager: GUIManager, master: ttk.Widget)` signature. Before a search and replace edit, check that
-the search text occurs once in the file. A replacement on a repeated line puts the code in the wrong class, and
-the mistake shows only at runtime.
+**An edit to `gui.py`:** many of its classes share identical lines, such as their `__init__` signature. Before a
+search and replace edit, check that the search text occurs once in the file: a replacement on a repeated line puts
+the code in the wrong class, which shows only at runtime.
 
-**A new package** (a folder of modules, such as `gamelib/`): the `cp` and `compileall` lines in
-`appimage/AppImageBuilder.yml` take only the top-level `*.py` files, so add the folder to both, and to the
-`py_compile` check below. Without it the AppImage fails at startup with a `ModuleNotFoundError`. PyInstaller
-follows the imports, so `build.spec` needs no change.
+**A new module** gets a row in the module map and a doc in `docs/modules/`. When it needs neither Twitch nor a
+display, add it to `source` under `[tool.coverage.run]` in `pyproject.toml`. A new package (a folder of modules,
+such as `gamelib/`) also goes in the `cp` and `compileall` lines of `appimage/AppImageBuilder.yml`, which take only
+the top-level `*.py` files; without it the AppImage fails at startup with a `ModuleNotFoundError`.
 
 ## What every change must pass
 
-There is no test suite, linter or single check command yet ([task 003](docs/refinements/tasks/003-test-suite.md),
-[task 004](docs/refinements/tasks/004-single-check-command.md)). Until there is, run each of these and report it
-with its command and output. The commands use `python`; on Linux outside the `env/` virtual environment that
-`setup_env.sh` creates, use `python3`.
+**`just check` is the single command, and it must pass.** The pre-commit hook and the Validate job in CI run it.
+[docs/building.md](docs/building.md#run-the-checks) sets it up, and [ADR-0012](docs/adr/ADR-0012-check-command.md)
+gives the reasons. In order, it runs `syntaxcheck.py` (Python 3.10 syntax), `langcheck.py` (`lang/*.json` is
+JSON), ruff (the rules in `pyproject.toml`), `linecap.py` (the line limits), `dashcheck.py` and `prosecheck.py`
+(the Prose rules a script can read), `docscheck.py` (the links between docs, line numbers, the two indexes and
+the record formats), `rostercheck.py` (the module map, the module docs, the settings keys, the `gui.py` mock and
+this list), and pytest over `tests/`, which fails below 80% branch coverage of the modules `pyproject.toml`
+lists. No check finds 3.11+ names such as `typing.Self` and `tomllib`, which fail only on import: avoid them.
 
-1. `python -m py_compile *.py gamelib/*.py` succeeds. Code must run on Python 3.10, the version CI builds with,
-   so no `except*`, `typing.Self`, `tomllib` or other 3.11+ features.
-2. `for f in lang/*.json; do python -m json.tool "$f" > /dev/null || echo "$f"; done` prints nothing. CI's
-   Validate job runs the same check.
-3. A GUI change is run in `python gui.py` or the full app (`python main.py`). When the GUI cannot start (no
-   `tkinter`, or no display), the GUI part is reported as unverified, and the change is not done. On Linux
-   without a display, [docs/runbooks/gui-preview-headless.md](docs/runbooks/gui-preview-headless.md) describes how
-   to run it.
-4. Logic that needs neither Twitch nor a display is checked by calling it with real inputs, and the inputs and
-   results are shown. A pytest suite is welcome and should start with such logic.
-5. No new dependency unless the standard library cannot do the job. `requirements.txt` is installed into every
-   build.
-6. No secrets in the repo or in logs. `cookies.jar` holds the login session; it, `settings.json`, `log.txt` and
+The rest is checked by hand, and the report of a change shows the output of each:
+
+1. **Tests assert behavior** ([ADR-0013](docs/adr/ADR-0013-test-standard.md)). A bug fix adds a test that fails
+   without it. A module that needs neither Twitch nor a display tests each public function with its error and edge
+   cases, with fakes, not mocks, and no test only to reach a line. A known defect is a strict `xfail` test that
+   names its task file.
+2. A GUI change is run in `python gui.py` or `python main.py`. When the GUI cannot start, the GUI part is reported
+   as unverified and the change is not done. [The headless runbook](docs/runbooks/gui-preview-headless.md) runs it
+   on Linux without a display.
+3. Logic that needs Twitch is called with stubbed inputs, and the inputs and results are shown.
+4. No new dependency unless the standard library cannot do the job. Every build installs `requirements.txt`; the
+   tools `just check` runs are in `requirements-dev.txt`, which no build installs.
+5. No secrets in the repo or in logs. `cookies.jar` holds the login session; it, `settings.json`, `log.txt` and
    `dump.dat` are gitignored and are never committed or pasted. A log call that prints a request, a response or a
    websocket message passes it through `redact` in `redact.py` ([ADR-0011](docs/adr/ADR-0011-secrets-in-logs.md)).
 
 ## Prose
 
-Write comments, docstrings, docs and commit messages in plain English that a new reader understands on the first
-read.
+Write comments, docstrings, docs and commit messages in plain English that a new reader understands at once.
 
-- **Comments** say why: a workaround, a constraint the code cannot show, or a Twitch behavior the code depends on.
-  Delete a comment that repeats the code or tells history ("was X, now Y"). A comment is one or two lines, three
-  at most.
-- **Docstrings** are one line saying what the module, class or function does. Add a second or third line only when
-  an argument or return value is not obvious from its name and type.
+- **Comments.** Code has no comment unless one is strictly necessary: why a workaround exists, a constraint the
+  code cannot show, a Twitch behavior the code depends on, or a directive a tool reads (`# noqa`). Delete one that
+  repeats the code, tells history ("was X, now Y"), cites an ADR for background, or says what a better name would
+  say. A comment is one or two lines, three at most.
+- **Docstrings** are one line saying what the module, class or function does; delete one that only repeats the
+  name. Tests have none, because the test name says what it checks. A second or third line only explains an
+  argument or return value that its name and type do not, and never more: design reasons go in an ADR or a module
+  doc, history in git.
 - **Docs** are short and written for a reader who has never seen this repo: what a thing is and does, then why,
-  when the why is not obvious. Keep facts, numbers, commands, file paths and decisions. Cut the story of how the
-  code got here, repeated explanations (link to the one place instead) and hedging. A markdown file is at most
-  250 lines: a longer one says two things.
+  when the why is not obvious. Keep facts, numbers, commands, file paths and decisions, and name code by its
+  function or class, never by a line number. Cut the story of how the code got here, repeated explanations (link
+  to the one place instead) and hedging. A markdown file is at most 250 lines: a longer one says two things.
 - **Plain words.** Short sentences, one idea each, subject first, with the literal verb: "checks", "fails",
-  "returns", "stores", "sends", "is set to". Code does not know, notice, want, refuse, believe or own anything,
-  so say what it does. Define a technical term once, where it first appears. No metaphors, idioms or wordplay.
-  Anything in backticks is exempt.
+  "returns", "stores", "sends", "is set to". Code does not know, notice, want, refuse, believe, agree, argue,
+  answer, promise or own anything, so say what it does: a server returns a response. Define a technical term
+  once, where it first appears. No metaphors, idioms, wordplay or invented terms. Anything in backticks is exempt.
 - **No dash as punctuation.** No em dash, en dash or spaced `--`. Restructure the sentence instead.
 
-**Banned words.** The words in the left column may not appear in prose or in commit messages, in any
-capitalization. No script checks this here, so check it by hand. The table is a minimum: rewrite any other
-figurative word the same way.
+**Banned words.** The words in the left column may not appear in prose, in any capitalization, even split by a
+line break. `prosecheck.py` reads this table for every text file except `LICENSE*` and `lang/`, and
+`commitlint.py` for commit messages; neither reads backticks, link targets or URLs. The table is a minimum:
+rewrite any other figurative word the same way.
 
 | Do not write | Write instead |
 | --- | --- |
@@ -167,56 +184,66 @@ figurative word the same way.
 
 ## Commits
 
-[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). Older commits, including those taken
-from upstream, keep their original style and are not reworded.
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), checked by two commit-msg hooks:
+conventional-pre-commit for the type and format, `scripts/commitlint.py` for the rest of these rules, the banned
+words and the dash rule included. No script checks the imperative mood. Older commits, including those taken from
+upstream, keep their original style and are not reworded.
 
 - **The subject says what changed; the body says why it was needed.** A subject starts with a verb of change
-  (`add`, `fix`, `remove`, `split`, `rename`) and reads correctly to someone who has not seen the diff. The body
-  states the problem, then what the change does about it. Write no body when the subject says everything.
-- Format: `type(scope)?: subject`, imperative mood, lowercase subject, no trailing period, subject at most 72
-  characters. The body is at most 50 words and wraps at 72.
+  (`add`, `fix`, `remove`, `split`, `rename`), names what changed rather than a relation between two files, and
+  reads correctly to someone who has not seen the diff. The body states the problem, then what the change does
+  about it, in two or three plain sentences. Write no body when the subject says everything. Reasoning belongs in
+  `docs/`, and a message that needs it points there.
+- Format: `type(scope)?: subject`, imperative mood, lowercase subject, no trailing period, first line at most 72
+  characters. The body is at most 50 words and wraps at 72, except a line of one word. A paste, which is a line in
+  a code fence or after a `$ ` prompt, is exempt from the wrap, the word count and the dash rule, and from nothing
+  else. A fence that nothing closes fails.
 - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`, `chore`, `revert`. A breaking change
-  adds `!` after the type or scope and a `BREAKING CHANGE:` footer. A scope is optional and used only when the
-  change stays inside one module or area: the module name without `.py` (`gui`, `twitch`), `lang` or `ci`.
+  adds `!` after the type or scope and a `BREAKING CHANGE:` footer. A scope is optional, only for a change inside
+  one module or area: the module name without `.py` (`gui`, `twitch`), `lang` or `ci`, never the type (`ci(ci)`).
 - **No volatile references.** Never cite a commit hash, an issue or PR number, an ADR or backlog task number, or
-  any other numbered pointer into a document. Name the behavior or the decision instead.
-- The banned words and the dash rule apply to commit messages.
-- One logical change per commit, and every commit passes the checks above.
+  any other numbered pointer into a document (`check 3`), in a paste too. Name the behavior or the decision
+  instead. Code paths, package names and environment variables are welcome.
+- One logical change per commit, and every commit passes `just check`.
 
 ## Branches, pull requests and remotes
 
 - Work happens on a branch named `feat/...`, `fix/...`, `docs/...` or `chore/...` and reaches `master` through a
-  pull request on [davidcristian/TwitchDropsMiner](https://github.com/davidcristian/TwitchDropsMiner). One
-  logical concern per pull request.
+  pull request on [davidcristian/TwitchDropsMiner](https://github.com/davidcristian/TwitchDropsMiner), one logical
+  concern per pull request.
 - Never force-push `master`. Rewriting a branch nobody else has pulled is fine.
 - DevilXD/TwitchDropsMiner (the `upstream` remote) is read only for this project: fetch from it, but never open an
   issue or a pull request there. Its fixes come in by cherry-pick or merge, never by rebasing `master`
   ([docs/runbooks/upstream-fixes.md](docs/runbooks/upstream-fixes.md)).
-- GitHub records this repo as a fork, so `gh` targets the parent repo by default. Pass
-  `--repo davidcristian/TwitchDropsMiner`, or run `gh repo set-default davidcristian/TwitchDropsMiner` once per
-  clone.
+- GitHub records this repo as a fork, so `gh` targets the parent repo by default: pass
+  `--repo davidcristian/TwitchDropsMiner`, or run `gh repo set-default` once per clone.
 
 ## Working agreement
 
 - **Claims come with evidence.** Never report a check as passing without having run it in this session; show the
   command and its output. Label an unverified statement as an assumption.
 - **Prove a check can fail.** After writing or changing a check, break the thing it checks and watch it fail
-  before trusting it.
+  before trusting it. The table of each break and its result goes in the body of the commit that makes the
+  check, inside a code fence, and names the test suite its counts are over.
+- **The agent runs what it can reach**: the tests, the GUI without a display, Twitch code against stubs. Only a
+  real Twitch login, a real drop claim and Windows or macOS behavior are left to the maintainer, and the report
+  names each. Work the agent can do now is done now, not deferred.
+- **Names are chosen with care the first time.** A `settings.json` key or a file the app writes cannot change once
+  users' files depend on it ([ADR-0007](docs/adr/ADR-0007-kept-identifiers.md)): propose it with an alternative.
 - **Read before you write.** Open the file and its call sites before editing. Never edit from memory of its
   contents, and never invent an API: check the signature.
 - **Report faithfully.** Report a failing check with its output and name every step you skipped. Report a task as
   done only when it is: an inaccurate "done" costs more to undo than an accurate "not yet".
 - **Stop when surprised.** When output contradicts your model of the system, work it out again from the evidence.
   Do not match it to the nearest familiar failure and push through.
-- **Docs change with behavior.** A change to what the user sees or does updates `README.md` and the matching page
-  in `docs/` in the same commit. A change to a build script or to CI updates `docs/building.md`. A change to a
-  module's public contract or invariants updates its doc in `docs/modules/`, and a new module gets one. A new
-  state, event, GQL operation or background task updates `docs/ARCHITECTURE.md`, and a changed procedure updates
-  its runbook in `docs/runbooks/`. A change to the module map, a recipe or a check updates this file.
-- **Decisions are written down.** A non-obvious choice becomes an ADR in `docs/adr/`, in the format in
-  [docs/adr/README.md](docs/adr/README.md), and gets a line in `docs/index.md`. An ADR states the decision that
-  applies today and is edited in place when that decision changes. When a request leaves a choice open, record
-  your reading of it as an ADR, continue, and name the riskiest assumption in your summary.
+- **Docs change with behavior**, in the same commit. What the user sees or does: `README.md` and its page in
+  `docs/`. A build script or CI: `docs/building.md`. A module's contract or invariants: its doc in `docs/modules/`.
+  A new state, event, GQL operation or background task: `docs/ARCHITECTURE.md`. A procedure: its runbook in
+  `docs/runbooks/`. The module map, a recipe or a check: this file.
+- **Decisions are written down.** A non-obvious choice becomes an ADR in the format in
+  [docs/adr/README.md](docs/adr/README.md), with a line in `docs/index.md`; it states the decision that applies
+  today and is edited in place when that changes. When a request leaves a choice open, record your reading of it
+  as an ADR, continue, and name the riskiest assumption in your summary.
 - **Deferred work is written down.** Work left for later, and a gap found and not fixed, becomes a task file in
   `docs/refinements/tasks/`, in the format in [docs/refinements/index.md](docs/refinements/index.md). A deferral
   without a record is a lost decision. A task's state is written on its `**Status:**` line and nowhere else.

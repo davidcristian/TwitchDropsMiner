@@ -12,9 +12,9 @@ On 2026-10-18 the maintainer asked that the docs follow the practices of Cortex,
 repos. In Cortex, `AGENTS.md` is the contract and `docs/` holds the detail: a start page, an architecture map,
 decision records, one contract doc per module, runbooks, a backlog with one file per task, a folder of
 measurements, a folder of work that waits on special hardware, and a roadmap of slices. `just check` runs
-scripts that check its docs: the line limit, the banned words, the dashes and the backlog index. This repo has
-no check command yet ([task 004](../refinements/tasks/004-single-check-command.md)). This record states which
-Cortex practices this repo adopts, which it does not, and why.
+scripts that check its docs: the line limit, the banned words, the dashes and the backlog index. This record
+states which Cortex docs practices this repo adopts, which it does not, and why.
+[ADR-0012](ADR-0012-check-command.md) states which of its checks this repo runs.
 
 ## Decision
 
@@ -51,8 +51,8 @@ Cortex practices this repo adopts, which it does not, and why.
    needs no edit when a task changes state, and it cannot disagree with a task file about a state.
 
 8. **A markdown file is at most 250 lines, and the prose rules apply to every doc.** The
-   [Prose](../../AGENTS.md#prose) section of AGENTS.md sets both. A file that needs more lines says two things
-   and is split.
+   [Prose](../../AGENTS.md#prose) section of AGENTS.md sets both, and `just check` checks the parts a script can
+   read. A file that needs more lines says two things and is split.
 
 9. **Four Cortex practices are not adopted:**
    - **`docs/readings/`.** Cortex keeps the measurements its decisions rest on there, each with its date and
@@ -62,10 +62,9 @@ Cortex practices this repo adopts, which it does not, and why.
      work here waits on special hardware. Work that waits on a run with a Twitch login has no record yet.
    - **A roadmap of slices.** Cortex's `ROADMAP.md` orders its planned vertical slices. No planned slices
      exist here.
-   - **A generated and checked backlog index.** Cortex writes its index from the task files with
-     `just backlog`, and a check fails when the index is out of date. This repo has no check command yet
-     (task 004), so the list is written by hand. Because it gives no status, it changes only when a task is
-     added.
+   - **A generated backlog index.** Cortex writes its index from the task files with `just backlog`. Here the
+     list is written by hand. It gives no status, so it changes only when a task is added, and
+     `scripts/docscheck.py` fails when it lacks a task or a link's text is not the task's title.
 
 10. **No empty folders.** Cortex's AGENTS.md says "No scaffolding of empty layers" about code, and this repo
     applies the same rule to `docs/`: it has no empty `docs/readings/` or `docs/host/`. A folder is added with
@@ -82,9 +81,8 @@ Cortex practices this repo adopts, which it does not, and why.
   the file.
 - A commit message cites no ADR or task number, as the [Commits](../../AGENTS.md#commits) section says. It
   names the decision or the behavior instead.
-- Nothing in the repo checks the line limit, the prose rules or that the links between docs resolve. They are
-  checked by hand. Task 004 proposes a script for the line limit, the banned words, the dash rule and the
-  links.
+- `just check` checks the line limit, the banned words, the dash rule, the links between docs, the two indexes
+  and the format of each ADR and task file ([ADR-0012](ADR-0012-check-command.md)).
 - The docs for users stay `README.md`, `manual.txt`, `docs/building.md` and `docs/troubleshooting.md`. The rest
   of `docs/` is for people who change the code.
 
@@ -101,6 +99,5 @@ Cortex practices this repo adopts, which it does not, and why.
 - [docs/index.md](../index.md) and [ARCHITECTURE.md](../ARCHITECTURE.md).
 - [AGENTS.md](../../AGENTS.md): the [working agreement](../../AGENTS.md#working-agreement) and the
   [Prose](../../AGENTS.md#prose) rules.
-- [004](../refinements/tasks/004-single-check-command.md): the check command that would check the line limit
-  and the prose rules. [005](../refinements/tasks/005-modules-over-the-line-cap.md): the modules over the line
-  cap.
+- [ADR-0012](ADR-0012-check-command.md): the check command that checks the docs.
+  [005](../refinements/tasks/005-modules-over-the-line-cap.md): the modules over the line cap.

@@ -1,0 +1,27 @@
+# Settings for the development tools only. The app is not a package, and builds read requirements.txt.
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+# Claude Code keeps its worktrees there, each a copy of this repo.
+extend-exclude = [".claude"]
+
+[tool.ruff.lint]
+# The rules ruff 0.6 enabled by default. The default set of ruff 0.16 reports 96 problems in the inherited
+# code, most of them import order and style.
+select = ["E4", "E7", "E9", "F"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "scripts"]
+addopts = "--strict-markers"
+
+[tool.coverage.run]
+branch = true
+# The modules that need neither Twitch nor a display. A new such module is added here.
+source = ["redact", "gamelib", "scripts"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = true
