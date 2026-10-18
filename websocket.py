@@ -10,6 +10,7 @@ from typing import Any, Literal, TYPE_CHECKING
 import aiohttp
 
 from translate import _
+from redact import redact
 from exceptions import MinerException, WebsocketClosed
 from constants import PING_INTERVAL, PING_TIMEOUT, MAX_WEBSOCKETS, WS_TOPICS_LIMIT
 from utils import (
@@ -330,7 +331,7 @@ class Websocket:
             await ws.send_json(message, dumps=json_minify)
         except aiohttp.ClientConnectionError:
             raise WebsocketClosed(received=False)
-        ws_logger.debug(f"Websocket[{self._idx}] sent: {message}")
+        ws_logger.debug(f"Websocket[{self._idx}] sent: {redact(message)}")
 
 
 class WebsocketPool:

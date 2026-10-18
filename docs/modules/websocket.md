@@ -99,6 +99,8 @@ type is logged. The handlers and what they do are in [twitch.md](twitch.md#webso
 
 ## Invariants
 
+- `send` logs each message at DEBUG through `redact`, so the `auth_token` of a `LISTEN` or `UNLISTEN` message
+  shows as `<hidden>` ([redact.md](redact.md)). A new log call that prints a message does the same.
 - The pool holds at most `MAX_WEBSOCKETS * WS_TOPICS_LIMIT` (400) topics, and `Twitch` stays within this through
   `MAX_CHANNELS`. A new topic for each channel must increase `TOPICS_PER_CHANNEL`, and a new user topic must
   increase `BASE_TOPICS`, so that `MAX_CHANNELS` goes down to match.
@@ -118,5 +120,5 @@ type is logged. The handlers and what they do are in [twitch.md](twitch.md#webso
 
 **Dependencies.** `utils` (`ExponentialBackoff`, `AwaitableValue`, `task_wrapper`, `chunk`, `create_nonce`,
 `json_minify`, `format_traceback`, `CHARS_ASCII`), `exceptions` (`MinerException`, `WebsocketClosed`),
-`constants` (`PING_INTERVAL`, `PING_TIMEOUT`, `MAX_WEBSOCKETS`, `WS_TOPICS_LIMIT`) and `translate` for the status
-texts. Third party: aiohttp.
+`constants` (`PING_INTERVAL`, `PING_TIMEOUT`, `MAX_WEBSOCKETS`, `WS_TOPICS_LIMIT`), `redact` for the `sent:`
+log line, and `translate` for the status texts. Third party: aiohttp.

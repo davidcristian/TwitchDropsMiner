@@ -38,6 +38,7 @@ Each record states the decision that applies today and is edited in place when i
 | [ADR-0008: The docs layout](adr/ADR-0008-docs-layout.md) | Which Cortex docs practices this repo follows: AGENTS.md as the contract, this index, the map, ADRs edited in place, a doc per module, runbooks, one file per backlog task, the 250-line cap; and the four it leaves out. |
 | [ADR-0009: Watching by playlist HEAD requests](adr/ADR-0009-watch-method.md) | Every 20 seconds the app reads the stream's playlist and sends one `HEAD` request per segment, outside the GQL limiter; the Spade and GQL methods stay with no caller. |
 | [ADR-0010: Login by device code with the Android app client](adr/ADR-0010-device-code-login.md) | The device code flow is the only login, with the `ANDROID_APP` client; the token is kept in `cookies.jar` and checked at each run, `Invalidate` logs out, and the password login stays with no caller. |
+| [ADR-0011: Secrets are hidden at the log call](adr/ADR-0011-secrets-in-logs.md) | A log call that prints a request, a response or a websocket message passes it through `redact()`, which hides secrets by key name and a URL's password. |
 
 ## Modules
 
@@ -59,4 +60,5 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [cache.md](modules/cache.md) | `ImageCache`: where images are stored, their expiry and broken data |
 | [registry.md](modules/registry.md) | The Windows registry wrapper and autostart on each OS |
 | [exceptions.md](modules/exceptions.md) | Each exception class, what raises it and what catches it |
+| [redact.md](modules/redact.md) | `redact`: the secret key names it hides before a log call prints a value |
 | [gamelib.md](modules/gamelib.md) | The installed game scan, name matching and the list patterns |

@@ -54,9 +54,8 @@ cases; step 2 of the update covers the variables.
 
 To see every GQL request and response, add `--debug-gql` to the command. `--help` does not list it. It logs the
 operations and Twitch's answers on the `TwitchDrops.gql` logger, and the answers contain your account data, so
-do not share that output. Never share a log made with `-vvvv` either: at that level `Twitch.request` logs the
-request headers, which include `Authorization: OAuth <token>`
-([task 011](../refinements/tasks/011-login-token-in-debug-log.md)).
+do not share that output. At `-vvvv`, `Twitch.request` also logs each request and response, with the token
+and other secrets shown as `<hidden>` ([redact.md](../modules/redact.md)).
 
 ## Find the current hash
 

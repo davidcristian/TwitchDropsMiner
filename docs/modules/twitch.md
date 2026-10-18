@@ -34,8 +34,8 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
   payload error with `ExponentialBackoff(maximum=3*60)`, with no limit on the count. It prints each retry to
   the Output box, except after a connection error on the first try. It raises `ExitRequest` when the
   window closes, and `RequestInvalid` when `invalidate_after` is less than one session timeout away. It logs
-  its arguments at DEBUG, headers included, so the log line of a GQL request contains the OAuth token
-  ([task 011](../refinements/tasks/011-login-token-in-debug-log.md)).
+  its arguments, and the status, method, URL and headers of each response, at DEBUG through `redact`, so the
+  token, the device code, cookies and a proxy password show as `<hidden>` ([redact.md](redact.md)).
 - `gql_request(ops)` sends one GQL operation, or a list of them, in one POST to `https://gql.twitch.tv/gql`, and
   returns the response JSON, or a list of them for a list. See [GQL requests](#gql-requests).
 - `get_auth()` checks the login, logs in when needed and returns the `_AuthState`. `wait_until_login()` returns
@@ -209,5 +209,5 @@ once while it persists ([gamelib.md](gamelib.md)).
   during a run must be cleared there.
 - `channels` stays within `MAX_CHANNELS` ([websocket.md](websocket.md#the-199-channel-limit)).
 
-**Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `translate`, `exceptions`, `utils` and
-`constants`. Third party: aiohttp and yarl.
+**Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `translate`, `redact`, `exceptions`,
+`utils` and `constants`. Third party: aiohttp and yarl.

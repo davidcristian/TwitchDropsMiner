@@ -1,6 +1,6 @@
 # Debug logs contain the login token
 
-**Status:** open
+**Status:** done 2026-10-18
 **Area:** twitch (requests), websocket, logging
 **Origin:** Found on 2026-10-18 while the docs were written, [twitch.md](../../modules/twitch.md#requests)
 **Verified:** 2026-10-18
@@ -103,8 +103,30 @@ AGENTS.md asks for. A check calls both log paths with a fake token, as above, an
 it fits the test suite of [003](003-test-suite.md). The docs that warn about `-vvvv` then change. The fix sends
 no Twitch request.
 
+## How it was closed
+
+`redact.py` adds `redact()`, which returns a copy of a value with the value of each secret key, and a URL's
+password, replaced by `<hidden>` ([ADR-0011](../../adr/ADR-0011-secrets-in-logs.md)). The `Request:` and
+`Response:` lines of `Twitch.request` and the `sent:` line of `Websocket.send` pass their values through it. The
+`Response:` line now logs the status, the method, the URL and the redacted headers. The fix also covers a proxy
+password, which the `Request:` line logged with `settings.proxy` and which this task did not list.
+
+The script described above, extended with a proxy URL that has a password and a response with a `Set-Cookie`
+header, ran against the code before and after the fix. It exits 1 when a secret is in the log:
+
+```
+before -vvvv:            token in 3, device code in 1, proxy password in 1, cookie in 1   exit 1
+before --debug-ws:       token in 1                                                     exit 1
+after  -vvv:             0 lines                                                        exit 0
+after  -vvvv:            0 secrets, each shown as <hidden>                              exit 0
+after  --debug-ws:       0 secrets                                                      exit 0
+after  -vvvv --debug-ws --debug-gql:  0 secrets                                         exit 0
+```
+
 ## History
 
 - 2026-10-18: Opened. While twitch.md was written, the `Request:` line was found to include the headers. Real
   calls of the log paths under each set of flags showed which flags write the token, and found the websocket
   line and the device code.
+- 2026-10-18: Closed. `redact()` hides the secrets in the three log lines, and the before and after runs of the
+  check above show no secret in the log after the fix.

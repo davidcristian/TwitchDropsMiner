@@ -80,9 +80,8 @@ original project left no written reason for the flow or for a client.
 - **The code is requested before the `Login` press,** and its lifetime counts from that request. A press after
   the lifetime shows a code that has already expired and opens its activation page. The first poll then raises
   `RequestInvalid`, and the app requests a new code and waits for another press.
-- **`cookies.jar` gives access to the account,** as the README's caution says, and it is gitignored. A log
-  made with `-vvvv` or `--debug-ws` contains the token
-  ([task 011](../refinements/tasks/011-login-token-in-debug-log.md)).
+- **`cookies.jar` gives access to the account,** as the README's caution says, and it is gitignored. A log line
+  shows the token as `<hidden>` ([ADR-0011](ADR-0011-secrets-in-logs.md)).
 - **The README's note on the "New Login" email** says that the app presents itself to Twitch as Chrome. The
   upstream README has said so since 2024-09-15, when the client was already `ANDROID_APP`. Decision 2 gives
   today's.

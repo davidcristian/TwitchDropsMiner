@@ -150,7 +150,7 @@ problem, include:
 - the version, from `--version` or the window title;
 - your operating system and the build you use: Windows, macOS, AppImage, Linux PyInstaller or source;
 - the steps that lead to the problem;
-- a log made with `-vvv --log`, read first so that it contains nothing private. Do not send a log made with
-  `-vvvv`: it contains your login token ([task 011](refinements/tasks/011-login-token-in-debug-log.md)).
+- a log made with `-vvv --log`, read first so that it contains nothing private. The app writes `<hidden>` in
+  place of your login token.
 
 Never share `cookies.jar`.

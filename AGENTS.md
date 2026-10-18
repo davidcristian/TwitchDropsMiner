@@ -50,6 +50,7 @@ burst of requests puts that account at risk.
 | `cache.py` | The image cache for game and drop artwork |
 | `registry.py` | Windows registry access, used for starting with Windows |
 | `exceptions.py` | `MinerException` and its subclasses, including `ExitRequest` and `ReloadRequest` |
+| `redact.py` | `redact`, which hides the login token and other secrets in a value before a log call prints it |
 | `version.py` | `__version__`, to which CI appends the commit hash. Its doc is part of `docs/modules/constants.md` |
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
 | `docs/` | Listed in `docs/index.md`: `ARCHITECTURE.md`, the decisions (`adr/`), one contract doc per module (`modules/`), procedures (`runbooks/`), the deferred work (`refinements/`), and two pages for users, `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
@@ -108,8 +109,8 @@ with its command and output. The commands use `python`; on Linux outside the `en
 5. No new dependency unless the standard library cannot do the job. `requirements.txt` is installed into every
    build.
 6. No secrets in the repo or in logs. `cookies.jar` holds the login session; it, `settings.json`, `log.txt` and
-   `dump.dat` are gitignored and are never committed or pasted. A log made with `-vvvv` or `--debug-ws` contains
-   the login token today ([task 011](docs/refinements/tasks/011-login-token-in-debug-log.md)).
+   `dump.dat` are gitignored and are never committed or pasted. A log call that prints a request, a response or a
+   websocket message passes it through `redact` in `redact.py` ([ADR-0011](docs/adr/ADR-0011-secrets-in-logs.md)).
 
 ## Prose
 

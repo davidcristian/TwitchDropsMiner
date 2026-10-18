@@ -19,6 +19,7 @@ from yarl import URL
 
 import gamelib
 from translate import _
+from redact import redact
 from gui import GUIManager
 from channel import Channel
 from websocket import WebsocketPool
@@ -1450,7 +1451,7 @@ class Twitch:
         method = method.upper()
         if self.settings.proxy and "proxy" not in kwargs:
             kwargs["proxy"] = self.settings.proxy
-        logger.debug(f"Request: ({method=}, {url=}, {kwargs=})")
+        logger.debug(f"Request: ({method=}, {url=}, kwargs={redact(kwargs)!r})")
         session_timeout = timedelta(seconds=session.timeout.total or 0)
         backoff = ExponentialBackoff(maximum=3*60)
         for delay in backoff:
@@ -1468,7 +1469,10 @@ class Twitch:
                     session.request(method, url, **kwargs)
                 )
                 assert response is not None
-                logger.debug(f"Response: {response.status}: {response}")
+                logger.debug(
+                    f"Response: {response.status}: {response.method} {response.url} "
+                    f"headers={redact(response.headers)!r}"
+                )
                 if response.status < 500:
                     # pre-read the response to avoid getting errors outside of the context manager
                     raw_response = await response.read()  # noqa

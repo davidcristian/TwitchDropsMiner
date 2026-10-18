@@ -46,7 +46,7 @@ message box titled "Argument Parser Error" when argparse exits, also for `--help
 | `--version` | | Shows `v` and `version.__version__`, and exits with code 0. |
 | `-v` | `logging_level` | Counted. `LOGGING_LEVELS[min(count, 4)]`: 0 is ERROR, 1 WARNING, 2 INFO, 3 `CALL`, 4 DEBUG. |
 | `--tray` | `tray` | Starts with the window hidden in the tray ([gui.md](gui.md#the-tray-icon)). Ignored on macOS. |
-| `--log` | `log` | Also writes the `TwitchDrops` log to `log.txt` (`LOG_PATH`) with `FILE_FORMATTER`. At `-vvvv` that log contains the OAuth token ([task 011](../refinements/tasks/011-login-token-in-debug-log.md)), and `--debug-ws` adds it with each `LISTEN` message. |
+| `--log` | `log` | Also writes the `TwitchDrops` log to `log.txt` (`LOG_PATH`) with `FILE_FORMATTER`. The token and other secrets in it show as `<hidden>` ([redact.md](redact.md)). |
 | `--dump` | `dump` | `Twitch.run` empties `dump.dat`, `Twitch.fetch_inventory` appends the campaign data to it, and the app closes when `Twitch._run` next reaches `State.IDLE` or `State.CHANNEL_SWITCH`. |
 | `--debug-ws` | `debug_ws` | Hidden from the help. Sets the `TwitchDrops.websocket` logger to DEBUG. |
 | `--debug-gql` | `debug_gql` | Hidden from the help. Sets the `TwitchDrops.gql` logger to DEBUG. |

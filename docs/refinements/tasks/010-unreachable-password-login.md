@@ -90,7 +90,9 @@ Both choices send no Twitch request, and the device code login stays as it is.
   ([upstream-fixes.md](../../runbooks/upstream-fixes.md)), but upstream has not changed it since 2024.
 - **Keep it, with a written reason.** The reason is a plan to bring back a password login. A comment above
   `_login` states it, ADR-0006 says that decision 6 applies only once `_login` has a caller, and `manual.txt`
-  stops naming the CAPTCHA. The code stays in `twitch.py`, which is over the cap.
+  stops naming the CAPTCHA. The code stays in `twitch.py`, which is over the cap. Its
+  `logger.info(str(login_response))` then passes the answer through `redact`
+  ([ADR-0011](../../adr/ADR-0011-secrets-in-logs.md)), because a successful answer holds the token.
 
 ## History
 
