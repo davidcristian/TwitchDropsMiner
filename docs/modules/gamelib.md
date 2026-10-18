@@ -15,7 +15,7 @@ explains the detection design and [ADR-0005](../adr/ADR-0005-list-patterns.md) t
 | `steam.py` | `scan_steam`, `STEAM_TOOL_APPIDS`, `STEAM_TOOL_PREFIXES` |
 | `epic.py` | `scan_epic`, for Epic manifests and the Legendary and Heroic index |
 | `scan.py` | `scan_directories`, which runs both scanners on each folder |
-| `matching.py` | `normalize`, `match_games`, `EDITION_WORDS`, `ROMAN_NUMERALS`, `FUZZY_THRESHOLD`, `FUZZY_MIN_LENGTH` |
+| `matching.py` | `normalize`, `match_games`, `EDITION_WORDS`, `ROMAN_NUMERALS`, `SINGLE_LETTER_NUMERALS`, `FUZZY_THRESHOLD`, `FUZZY_MIN_LENGTH` |
 | `patterns.py` | `compile_pattern`, `compile_patterns`, `matches`, `match_rank`, `any_match`, `matching_names`, `has_wildcard` |
 
 ## Public contract
@@ -81,14 +81,21 @@ is set and differs from `AppName`), or has `bIsIncompleteInstall` set.
 
 ## Matching rules
 
-`normalize` turns a name into lower case words of `a` to `z` and `0` to `9`, separated by single spaces:
+`normalize` turns a name into case-folded words of letters and digits, in any script, separated by single
+spaces:
 
-1. NFKD decomposition, then accents are removed: `Pokémon` becomes `pokemon`.
-2. Lower case, and `&` becomes `and`.
-3. Apostrophes (`'`, `’`, `ʼ`) are removed without a gap: `Clancy's` becomes `clancys`.
-4. Every other run of characters outside `a-z0-9` becomes one space, and the ends are trimmed.
+1. Apostrophes (`'`, `’`, `ʼ`, `ʻ`, `´`) are removed without a gap: `Clancy's` becomes `clancys`.
+2. NFKD decomposition, then the accents of Latin and Greek letters are removed: `Pokémon` becomes `pokemon`. The
+   marks of other scripts are parts of their letters (the breve of `й`, the dakuten of `ガ`), so they stay, and
+   NFC joins them back, which also joins Hangul syllables.
+3. Case folding (`str.casefold`), which writes `ß` as `ss`. The Latin letters that have no accent to remove
+   (`æ`, `œ`, `ø`, `ł`, `đ`, `ð`, `þ`, `ħ`, `ı`) are written as `ae`, `oe`, `o`, `l`, `d`, `d`, `th`, `h`, `i`
+   (`LATIN_LETTERS`). `&` becomes `and`.
+4. Every other run of characters that are not letters, digits or marks becomes one space, and the ends are
+   trimmed.
 
-So `Tom Clancy's Rainbow Six: Siege` becomes `tom clancys rainbow six siege`. NFKD writes `™` as `TM`, so
+So `Tom Clancy's Rainbow Six: Siege` becomes `tom clancys rainbow six siege`, `Łódź` becomes `lodz`, and
+`Мир Танков` becomes `мир танков`. NFKD writes `™` as `TM`, so
 `Pokémon™ Scarlet` becomes `pokemontm scarlet`, and `Warframe™` does not match `Warframe`
 ([task 009](../refinements/tasks/009-trademark-symbols-in-game-names.md)).
 
@@ -100,12 +107,16 @@ a candidate decides:
    name itself, the name with the `ROMAN_NUMERALS` (`ii` to `xv`) written as digits, and the name without its
    trailing `EDITION_WORDS`, with and without the digits. `Dark Souls 3` matches `Dark Souls III`, and
    `Mafia: Definitive Edition` matches `Mafia`. `of`, `the`, `year` and `game` are edition words, so all of
-   `Game of the Year Edition` is removed. `i`, `v` and `x` are not in `ROMAN_NUMERALS`, so `Grand Theft Auto 5`
-   does not match `Grand Theft Auto V`.
+   `Game of the Year Edition` is removed. `i`, `v` and `x` are not in `ROMAN_NUMERALS`, because a single letter
+   is often part of a title (`Mega Man X`), so `Grand Theft Auto 5` is not a variant of `Grand Theft Auto V`.
 3. **`FUZZY`**: only for normalized names of at least `FUZZY_MIN_LENGTH` (8) characters on both sides, and only
-   when the numbers in both names are equal (digits and roman numerals, in order). The `difflib.SequenceMatcher`
-   ratio must be at least `FUZZY_THRESHOLD` (0.92). The number rule keeps `Counter-Strike 2` from matching
-   `Counter-Strike`.
+   when the numbers in both names are equal, in order: every run of digits, also inside a word (`lineage2`),
+   the `ROMAN_NUMERALS` words, and a lone `i`, `v` or `x` (`SINGLE_LETTER_NUMERALS`). The
+   `difflib.SequenceMatcher` ratio must be at least `FUZZY_THRESHOLD` (0.92). The number rule keeps
+   `Counter-Strike 2` from matching `Counter-Strike`, and `Grand Theft Auto V` from matching `Grand Theft Auto`.
+   `Grand Theft Auto 5` and `Grand Theft Auto V` have the same numbers, so they pair as a fuzzy match. The same
+   game written once with its lone numeral and once without (`Mortal Kombat XL` and `Mortal Kombat X`) does not
+   pair, which [ADR-0004](../adr/ADR-0004-installed-game-detection.md) accepts.
 
 A step that finds more than one Twitch name gives no match, and the next step is not tried. A fuzzy match is
 also dropped when a second Twitch name reaches the threshold. For example, a local `Halo Infinite` gets no match

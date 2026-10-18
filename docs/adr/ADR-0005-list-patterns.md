@@ -1,6 +1,6 @@
 # ADR-0005: Priority and Exclude list patterns
 
-**Status:** Accepted (2026-08-25)
+**Status:** Accepted (2026-10-18)
 
 ## Context
 
@@ -17,7 +17,10 @@ in which order, and which entry put each one there.
 ## Decision
 
 1. **Entries and game names are compared after one normalization.** `gamelib.normalize` removes case, accents
-   and apostrophes, writes `&` as `and`, and turns other punctuation into spaces. It is the same function that
+   and apostrophes, writes `&` as `and`, and turns other punctuation into spaces. It keeps the letters and
+   digits of every script, so an entry in Cyrillic, Chinese, Japanese or Korean matches only names with the
+   same letters; only Latin and Greek letters lose their accents. It is the
+   same function that
    installed game detection uses. `compile_pattern` normalizes each literal piece of an entry, and `matches`
    normalizes the game name, so `Pokemon` matches `Pokémon` and `Tom Clancys Rainbow Six Siege` matches
    `Tom Clancy's Rainbow Six Siege`.

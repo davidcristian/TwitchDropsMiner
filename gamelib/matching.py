@@ -57,6 +57,13 @@ ROMAN_NUMERALS: dict[str, str] = {
     "xiv": "14",
     "xv": "15",
 }
+# Latin letters that have no accent to drop, written as the letters an English name would use.
+LATIN_LETTERS = str.maketrans({
+    "æ": "ae", "œ": "oe", "ø": "o", "ł": "l", "đ": "d", "ð": "d", "þ": "th", "ħ": "h", "ı": "i",
+})
+# A lone i, v or x is a number only when the numbers of two names are compared, so that "grand theft auto v"
+# is not the original game. Exact and variant matches keep them as letters, as in "mega man x".
+SINGLE_LETTER_NUMERALS: dict[str, str] = {"i": "1", "v": "5", "x": "10"}
 # A fuzzy match needs to clear this ratio to be considered high confidence.
 # This is deliberately strict: a wrong auto-added game silently wastes mining time,
 # which is far worse than simply missing one that the user can still add by hand.
@@ -66,20 +73,34 @@ FUZZY_THRESHOLD: float = 0.92
 FUZZY_MIN_LENGTH: int = 8
 
 
+def _is_accented_script(char: str) -> bool:
+    """Whether a letter is Latin or Greek, whose combining marks are accents rather than parts of the letter."""
+    return unicodedata.name(char, "").startswith(("LATIN", "GREEK"))
+
+
+def _is_word_char(char: str) -> bool:
+    """Whether a character is part of a word: a letter, a digit, or a mark such as a Devanagari vowel sign."""
+    return char.isalnum() or unicodedata.category(char).startswith("M")
+
+
 def normalize(name: str) -> str:
-    """
-    Returns the comparable form of a game name: lower case words of a to z and 0 to 9.
-    """
-    # split accented characters apart and drop the accents
-    text = unicodedata.normalize("NFKD", name)
-    text = "".join(char for char in text if not unicodedata.combining(char))
-    text = text.lower()
-    text = text.replace("&", " and ")
+    """Returns the comparable form of a game name: case-folded words of letters and digits, in any script."""
     # drop apostrophes without leaving a gap, so "clancy's" becomes "clancys"
-    text = re.sub(r"['\u2019\u02bc]", "", text)
-    # everything else that isn't alphanumeric becomes a separator
-    text = re.sub(r"[^a-z0-9]+", " ", text)
-    return " ".join(text.split())
+    text = re.sub(r"['\u2019\u02bc\u02bb\u00b4]", "", name)
+    # Drop the accents of Latin and Greek letters only: the breve of the Cyrillic й and the dakuten of the kana ガ
+    # make other letters, so they stay, and NFC joins them back to their letters.
+    kept: list[str] = []
+    accents = True
+    for char in unicodedata.normalize("NFKD", text):
+        if unicodedata.combining(char):
+            if accents:
+                continue
+        elif not unicodedata.category(char).startswith("M"):
+            accents = not char.isalpha() or _is_accented_script(char)
+        kept.append(char)
+    text = unicodedata.normalize("NFC", "".join(kept)).casefold().translate(LATIN_LETTERS)
+    text = text.replace("&", " and ")
+    return " ".join("".join(char if _is_word_char(char) else " " for char in text).split())
 
 
 def _variants(normalized: str) -> set[str]:
@@ -106,14 +127,16 @@ def _variants(normalized: str) -> set[str]:
 
 
 def _numbers(normalized: str) -> list[str]:
-    """
-    The numeric tokens in a name, with roman numerals folded into digits.
-    """
-    return [
-        ROMAN_NUMERALS[token] if token in ROMAN_NUMERALS else token
-        for token in normalized.split()
-        if token.isdigit() or token in ROMAN_NUMERALS
-    ]
+    """The numbers in a name, in order: roman numeral words as digits, and every run of digits, even inside a word."""
+    numerals = {**ROMAN_NUMERALS, **SINGLE_LETTER_NUMERALS}
+    numbers: list[str] = []
+    for token in normalized.split():
+        if token in numerals:
+            numbers.append(numerals[token])
+        else:
+            # "lineage2" and "三國志14" hold a number too; each digit is written in 0 to 9
+            numbers.extend("".join(str(unicodedata.digit(char)) for char in run) for run in re.findall(r"\d+", token))
+    return numbers
 
 
 def match_games(

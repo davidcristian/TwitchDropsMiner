@@ -1,6 +1,6 @@
 # ADR-0004: Installed game detection
 
-**Status:** Accepted (2026-08-24)
+**Status:** Accepted (2026-10-18)
 
 ## Context
 
@@ -48,18 +48,20 @@ a game the user never chose. A missed match costs little, because the user can s
    Twitch games that have a campaign in the inventory. `_match_one` tries three steps in order, and returns no
    match at any step that finds more than one candidate:
    - exact (`MatchKind.EXACT`): equal after `normalize`, which removes case, accents and apostrophes, writes
-     `&` as `and` and turns other punctuation into spaces. Its Unicode NFKD step turns `™` into the letters
-     `tm`, so `Warframe™` does not match `Warframe`
+     `&` as `and` and turns other punctuation into spaces, keeping the letters and digits of every script. Its
+     Unicode NFKD step turns `™` into the letters `tm`, so `Warframe™` does not match `Warframe`
      ([009](../refinements/tasks/009-trademark-symbols-in-game-names.md));
    - variant (`MatchKind.VARIANT`): equal after the roman numerals in `ROMAN_NUMERALS` become digits or the
      trailing `EDITION_WORDS` are removed, on either side;
    - fuzzy (`MatchKind.FUZZY`): a `difflib.SequenceMatcher` ratio of at least `FUZZY_THRESHOLD` (0.92), both
-     normalized names at least `FUZZY_MIN_LENGTH` (8) characters long, the same numeric tokens on both sides,
-     and no second Twitch name also at or above the threshold.
+     normalized names at least `FUZZY_MIN_LENGTH` (8) characters long, the same numbers on both sides (each
+     run of digits, also inside a word, and the roman numerals), and no second Twitch name also at or above
+     the threshold. A lone `i`, `v` or `x` counts as a number here and nowhere else, since a single letter is
+     often part of a title.
 
-   The numeric token check separates a sequel from its prequel: an installed `Counter-Strike 2` gets no
-   match against a campaign for `Counter-Strike`. The Detected Games list marks a variant or fuzzy match with
-   `≈`, so a wrong one is easy to find.
+   The numeric token check separates a sequel from its prequel: an installed `Counter-Strike 2` gets no match
+   against a campaign for `Counter-Strike`, and `Grand Theft Auto V` none against `Grand Theft Auto`. The Detected
+   Games list marks a variant or fuzzy match with `≈`, so a wrong one is easy to find.
 
 5. **Standard library only.** Steam's KeyValues files (`.vdf`, `.acf`) are read with one regular expression
    for flat `"key" "value"` pairs (`_KV_PATTERN` in `gamelib/steam.py`), because every field the scan needs is
@@ -75,6 +77,10 @@ a game the user never chose. A missed match costs little, because the user can s
 
 ## Consequences
 
+- A lone `I`, `V` or `X` that is part of a title or an edition blocks a fuzzy match, so the same game written
+  with and without it is not paired: `Mortal Kombat XL` against `Mortal Kombat X`, or
+  `The Elder Scrolls V: Skyrim` against `The Elder Scrolls: Skyrim`. Such a game can be added to the Priority
+  list by hand, while a sequel paired with its original would mine a game the user did not choose.
 - The scan reads local files only and sends no request to Twitch. A changed result enters
   `State.GAMES_UPDATE`, not `State.INVENTORY_FETCH`, so a `Rescan` never causes a full reload
   ([ADR-0002](ADR-0002-twitch-traffic-budget.md)). It does fetch the channels again: one `GameDirectory`

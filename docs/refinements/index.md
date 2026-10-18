@@ -78,3 +78,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [033: A fuzzy game match ignores the numerals I, V and X](tasks/033-fuzzy-match-ignores-i-v-x.md) | gamelib |
 | [034: A game folder scanned after another one is reported as holding no games](tasks/034-shared-epic-folder-reported-empty.md) | gamelib |
 | [035: A game folder that names an unknown user ends the scan of every folder](tasks/035-unknown-user-ends-the-game-scan.md) | gamelib |
+| [036: A name that holds a native title and an English one does not match the English Twitch name](tasks/036-mixed-script-names-unmatched.md) | gamelib |

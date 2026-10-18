@@ -119,10 +119,20 @@ def test_matches_ignores_the_trademark_sign():
     assert matches(compile_pattern("Warframe"), "Warframe™")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="normalize drops letters outside a to z, so a Cyrillic entry matches every other Cyrillic name "
-    "(docs/refinements/tasks/032-names-outside-a-to-z-dropped.md)",
-)
 def test_matches_tells_apart_entries_written_in_cyrillic():
     assert not matches(compile_pattern("Мир танков"), "Мир кораблей")
+
+
+def test_compile_pattern_matches_wildcards_in_any_script():
+    assert matches(compile_pattern("Мир*"), "Мир танков")
+    assert not matches(compile_pattern("Мир*"), "Тетрис")
+    assert matches(compile_pattern("原?"), "原神")
+
+
+def test_match_rank_ranks_an_entry_written_in_cjk():
+    assert match_rank(compile_patterns(["Warframe", "原神"]), "原神") == 1
+
+
+def test_compile_pattern_matches_one_hangul_syllable_with_one_question_mark():
+    assert matches(compile_pattern("원?"), "원신")
+    assert not matches(compile_pattern("원???"), "원신")

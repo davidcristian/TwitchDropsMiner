@@ -11,7 +11,7 @@ Every 20 seconds, the app asks Twitch for the list of the newest video segments 
 ### Features:
 
 - Mining without the stream: no video or sound is downloaded, which saves bandwidth.
-- Priority and Exclude lists: mine the games you want, in the order you want, and skip the games you don't. Entries ignore case, accents and punctuation, and accept `*` and `?` wildcards, so one `Pokemon*` entry matches every Pokémon game. An entry without a wildcard matches one game only.
+- Priority and Exclude lists: mine the games you want, in the order you want, and skip the games you don't. Entries ignore case, accents and punctuation, in any alphabet, and accept `*` and `?` wildcards, so one `Pokemon*` entry matches every Pokémon game. An entry without a wildcard matches one game only.
 - Installed game detection: add your Steam or Epic game folders on the Settings tab, and the app mines every installed game that has a drop campaign. One Steam folder is enough, because the app also reads the Steam libraries it lists on other drives. Epic games installed through the Legendary or Heroic launchers, the usual way on Linux, are found too. Detected games rank below the games on your Priority list, and the Exclude list still applies to them.
 - A Games Being Mined table on the Settings tab. It lists the games in the order the app picks them, and shows for each game the Priority entry that matched it or that it is installed. When a Priority entry never appears in the table, no game is mined because of it.
 - A check for new streams every 5 minutes by default (1 to 30 minutes, or Never), so a channel that goes live between the hourly reloads is found within minutes. Each check costs a few requests to Twitch.

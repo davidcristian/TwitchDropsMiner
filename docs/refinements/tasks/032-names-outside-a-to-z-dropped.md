@@ -1,6 +1,6 @@
 # Letters outside a to z are removed from normalized game names
 
-**Status:** open
+**Status:** done 2026-10-18
 **Area:** gamelib (matching and patterns)
 **Origin:** Found on 2026-10-18 by the first tests of `gamelib`, [ADR-0013](../../adr/ADR-0013-test-standard.md)
 **Verified:** 2026-10-18
@@ -28,7 +28,22 @@ expression class `[^\W_]`) and still splits on punctuation. It changes the norma
 a to z, so the existing matches stay. The strict `xfail` tests in `tests/test_gamelib_matching.py` and
 `tests/test_gamelib_patterns.py` that name this file pass once it is fixed. Twitch requests: none.
 
+## How it was closed
+
+`normalize` now keeps the letters, digits and marks of every script. It removes the accents of Latin and Greek
+letters only, joins the other marks back to their letters with NFC (`й`, `ガ`, Hangul syllables), folds case with
+`str.casefold`, and writes the Latin letters that have no accent form in English letters (`Æterna` as `aeterna`,
+`Łódź` as `lodz`). `normalize("Мир танков")` returns `"мир танков"`, so the entry `Мир танков` no longer matches
+`Мир кораблей`, and `Мир танков 2` no longer pairs with `Тетрис 2`. Every name written in `a` to `z` normalizes as
+before, checked over 406 such names. The fuzzy number check also reads digits inside a word now (`σ2`, `三國志14`,
+`lineage2`), because the letters around them stay. The two strict `xfail` tests pass without the mark, and new
+tests cover the scripts, the marks and the numbers.
+
+One correct match is lost: a name that holds a native title and an English one, such as
+`原神 Genshin Impact`, no longer equals the English Twitch name ([036](036-mixed-script-names-unmatched.md)).
+
 ## History
 
 - 2026-10-18: Opened. The first `gamelib` tests found it, and direct calls of `normalize`, `match_rank` and
   `match_games` confirmed it.
+- 2026-10-18: Closed. `normalize` keeps the letters of every script and folds case.
