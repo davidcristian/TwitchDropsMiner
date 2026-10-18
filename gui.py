@@ -2412,37 +2412,29 @@ class HelpTab:
         bottom_frame.grid(column=0, row=1, sticky="nsew")
         irow = 0
         # About
-        about = ttk.LabelFrame(center_frame, padding=(4, 0, 4, 4), text="About")
+        about = ttk.LabelFrame(
+            center_frame, padding=(4, 0, 4, 4), text=_("gui", "help", "about", "name")
+        )
         about.grid(column=0, row=(irow := irow + 1), sticky="nsew", padx=2)
         about.columnconfigure(2, weight=1)
-        # About - created by
+        # About - repo link
         ttk.Label(
-            about, text="Application created by: ", anchor="e"
+            about, text=_("gui", "help", "about", "repository"), anchor="e"
         ).grid(column=0, row=0, sticky="nsew")
         LinkLabel(
-            about, link="https://github.com/DevilXD", text="DevilXD"
+            about,
+            link="https://github.com/davidcristian/TwitchDropsMiner",
+            text="https://github.com/davidcristian/TwitchDropsMiner",
         ).grid(column=1, row=0, sticky="nsew")
-        # About - repo link
-        ttk.Label(about, text="Repository: ", anchor="e").grid(column=0, row=1, sticky="nsew")
+        # About - original project
+        ttk.Label(
+            about, text=_("gui", "help", "about", "based_on"), anchor="e"
+        ).grid(column=0, row=1, sticky="nsew")
         LinkLabel(
             about,
             link="https://github.com/DevilXD/TwitchDropsMiner",
-            text="https://github.com/DevilXD/TwitchDropsMiner",
+            text=_("gui", "help", "about", "based_on_text"),
         ).grid(column=1, row=1, sticky="nsew")
-        # About - donate
-        ttk.Separator(
-            about, orient="horizontal"
-        ).grid(column=0, row=2, columnspan=3, sticky="nsew")
-        ttk.Label(about, text="Donate: ", anchor="e").grid(column=0, row=3, sticky="nsew")
-        LinkLabel(
-            about,
-            link="https://www.buymeacoffee.com/DevilXD",
-            text=(
-                "If you like the application and found it useful, "
-                "please consider donating a small amount of money to support me. Thank you!"
-            ),
-            wraplength=self.WIDTH,
-        ).grid(column=1, row=3, sticky="nsew")
         # Useful links
         links = ttk.LabelFrame(
             center_frame, padding=(4, 0, 4, 4), text=_("gui", "help", "links", "name")

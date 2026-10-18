@@ -236,6 +236,13 @@ class GUISettings(TypedDict):
     reload_text: str
 
 
+class GUIHelpAbout(TypedDict):
+    name: str
+    repository: str
+    based_on: str
+    based_on_text: str
+
+
 class GUIHelpLinks(TypedDict):
     name: str
     inventory: str
@@ -248,6 +255,7 @@ class GUIHelpInvalidate(TypedDict):
 
 
 class GUIHelp(TypedDict):
+    about: GUIHelpAbout
     links: GUIHelpLinks
     how_it_works: str
     how_it_works_text: str
@@ -488,6 +496,12 @@ default_translation: Translation = {
             "reload_text": "Most changes require a reload to take an immediate effect: ",
         },
         "help": {
+            "about": {
+                "name": "About",
+                "repository": "Repository: ",
+                "based_on": "Based on: ",
+                "based_on_text": "TwitchDropsMiner by DevilXD",
+            },
             "links": {
                 "name": "Useful Links",
                 "inventory": "See Twitch inventory",
