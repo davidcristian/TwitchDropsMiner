@@ -141,7 +141,7 @@ RESTART_JITTER = timedelta(seconds=60)
 CAPTCHA_RESTART_DELAY = timedelta(hours=1)
 CAPTCHA_RESTART_MAX = timedelta(hours=12)
 # Strings
-WINDOW_TITLE = f"Twitch Drops Miner v{__version__} (by DevilXD)"
+WINDOW_TITLE = f"Twitch Drops Miner v{__version__}"
 # Logging
 LOGGING_LEVELS = {
     0: logging.ERROR,
