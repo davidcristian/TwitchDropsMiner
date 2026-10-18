@@ -114,11 +114,12 @@ def scan_epic(directory: Path, result: ScanResult) -> bool:
     """
     found = False
     for manifests in _epic_manifest_dirs(directory):
+        found = True
+        # _epic_manifest_dirs returns the launcher's own folders for every added folder; each is read once.
         if manifests in result.libraries:
             continue
         result.libraries.append(manifests)
         _scan_epic_manifests(manifests, result)
-        found = True
     if _scan_legendary(directory, result):
         found = True
     return found

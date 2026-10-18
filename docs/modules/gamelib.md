@@ -46,11 +46,11 @@ explains the detection design and [ADR-0005](../adr/ADR-0005-list-patterns.md) t
 ## The scan
 
 `scan_directories` expands `~` in each folder and adds the error line `Not a directory: ...` when it is not a
-folder. It runs both scanners on every folder, because one folder can hold both kinds of install, and adds
-`No Steam or Epic games found in: ...` when neither recognizes it. A Legendary or Heroic index in the home
-folder makes the Epic scanner recognize every folder, so the line does not appear then. It then keeps the first
-game of each lower case name and platform, and sorts by lower case name. A Steam library or an Epic manifest
-folder that is already in `result.libraries` is not read again.
+folder. It runs both scanners on every folder, because one folder can hold both kinds of install, and adds `No
+Steam or Epic games found in: ...` when neither recognizes it. A Legendary or Heroic index in the home folder, or
+an Epic launcher folder that holds a manifest, makes the Epic scanner recognize every folder, so the line does not
+appear then. It then keeps the first game of each lower case name and platform, and sorts by lower case name. A
+Steam library or an Epic manifest folder that is already in `result.libraries` is not read again.
 
 **Steam** (`steam.py`):
 

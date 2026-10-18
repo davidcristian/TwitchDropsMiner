@@ -120,7 +120,9 @@ Add a Steam or Epic games folder on the Settings tab. The app scans it at once; 
 - **Legendary and Heroic:** the app reads `~/.config/legendary/installed.json` and
   `~/.config/heroic/legendaryConfig/legendary/installed.json`, so any added folder is enough.
 
-The Output box shows `Game scan: No Steam or Epic games found in: ...` when a folder holds neither. The Detected
+The Output box shows `Game scan: No Steam or Epic games found in: ...` when a folder holds neither. When the Epic
+launcher's manifests folder holds a game, or a Legendary or Heroic index exists, every folder counts as an Epic
+folder, so the line does not appear. The Detected
 Games section shows how many installed games matched a game with a campaign. Only games with a campaign can
 match, and a name that is not a clear match is left out. A name shown with `≈` was not an exact match; when it is
 the wrong game, add that game to the Exclude list. An installed name with a trademark sign, such as
