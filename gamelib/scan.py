@@ -27,7 +27,7 @@ def scan_directories(directories: abc.Iterable[Path | str]) -> ScanResult:
             result.errors.append(f"{directory}: {exc}")
             continue
         recognized = scan_steam(directory, result)
-        # NOTE: not an elif - a single folder can hold both, and probing is cheap
+        # NOTE: not an elif, because a single folder can hold both, and probing is cheap
         if scan_epic(directory, result):
             recognized = True
         if not recognized:

@@ -31,7 +31,7 @@ STEAM_TOOL_PREFIXES: tuple[str, ...] = (
 #################
 
 # Steam's KeyValues format is nested, but every field we need is a plain
-# '"key"    "value"' pair, so a full parser would be overkill here.
+# '"key"    "value"' pair, so a full parser is not needed.
 _KV_PATTERN = re.compile(r'"([^"]+)"\s*"([^"]*)"')
 
 

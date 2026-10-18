@@ -22,7 +22,7 @@ class MatchKind(Enum):
     How a local game was matched against a Twitch game name, weakest last.
     """
     EXACT = auto()  # identical after normalization
-    VARIANT = auto()  # identical after stripping edition words / numeral spelling
+    VARIANT = auto()  # identical after stripping edition words or converting roman numerals
     FUZZY = auto()  # close enough by character similarity
 
     def __str__(self) -> str:

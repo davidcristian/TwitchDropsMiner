@@ -58,7 +58,7 @@ ROMAN_NUMERALS: dict[str, str] = {
     "xv": "15",
 }
 # A fuzzy match needs to clear this ratio to be considered high confidence.
-# This is deliberately strict - a wrong auto-added game silently wastes mining time,
+# This is deliberately strict: a wrong auto-added game silently wastes mining time,
 # which is far worse than simply missing one that the user can still add by hand.
 FUZZY_THRESHOLD: float = 0.92
 # Below this many characters, a fuzzy match is too easy to hit by accident,
@@ -71,8 +71,8 @@ def normalize(name: str) -> str:
     Reduce a game name to a comparable form.
 
     Twitch and the launchers disagree constantly on capitalization, punctuation
-    and trademark symbols - 'Tom Clancy's Rainbow Six: Siege' against
-    'Tom Clancy's Rainbow Six Siege' should not be treated as two games.
+    and trademark symbols, but 'Tom Clancy's Rainbow Six: Siege' and
+    'Tom Clancy's Rainbow Six Siege' must count as one game.
     """
     # split accented characters apart and drop the accents
     text = unicodedata.normalize("NFKD", name)
@@ -88,11 +88,11 @@ def normalize(name: str) -> str:
 
 def _variants(normalized: str) -> set[str]:
     """
-    Build the alternative spellings a name could reasonably be listed under.
+    Build the alternative forms a name could reasonably be listed under.
     """
     variants: set[str] = {normalized}
     tokens: list[str] = normalized.split()
-    # roman numerals spelled as digits, and the reverse
+    # roman numerals written as digits, so 'iii' and '3' compare equal
     arabic = [ROMAN_NUMERALS.get(token, token) for token in tokens]
     if arabic != tokens:
         variants.add(" ".join(arabic))
@@ -126,10 +126,10 @@ def match_games(
     """
     Pair installed games against the Twitch games that currently have campaigns.
 
-    Only high-confidence pairings are returned - anything ambiguous is dropped,
+    Only high-confidence pairings are returned. Anything ambiguous is dropped,
     because a wrong match quietly redirects mining to a game the user never asked for.
     """
-    # build the lookup of Twitch names, keeping every spelling variant
+    # build the lookup of Twitch names, keeping every name variant
     exact_lookup: dict[str, set[str]] = defaultdict(set)
     variant_lookup: dict[str, set[str]] = defaultdict(set)
     normalized_names: dict[str, str] = {}
@@ -165,9 +165,9 @@ def _match_one(
     candidates = exact_lookup.get(local_normalized)
     if candidates:
         if len(candidates) > 1:
-            return None  # ambiguous, refuse to guess
+            return None  # ambiguous, so return no match instead of a guess
         return GameMatch(next(iter(candidates)), local, MatchKind.EXACT)
-    # 2. match through an alternative spelling on either side
+    # 2. match through an alternative form on either side
     local_variants = _variants(local_normalized)
     variant_hits: set[str] = set()
     for variant in local_variants:
@@ -187,7 +187,7 @@ def _match_one(
     for game_name, normalized in normalized_names.items():
         if len(normalized) < FUZZY_MIN_LENGTH:
             continue
-        # Sequels are the main trap here: 'counter strike 2' and 'counter strike'
+        # Sequels cause most false matches here: 'counter strike 2' and 'counter strike'
         # sit well above any sane similarity threshold, but they're different games.
         # Requiring the numbers to agree rules that out.
         if _numbers(normalized) != local_numbers:
@@ -200,8 +200,8 @@ def _match_one(
             runner_up = ratio
     if best_name is None or best_ratio < FUZZY_THRESHOLD:
         return None
-    # two Twitch games this close to the same local name means we can't tell them
-    # apart - the sequel problem, where only a digit differs
+    # two Twitch games this close to the same local name cannot be told apart:
+    # the sequel problem, where only a digit differs
     if runner_up >= FUZZY_THRESHOLD:
         return None
     return GameMatch(best_name, local, MatchKind.FUZZY, best_ratio)

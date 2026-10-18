@@ -51,8 +51,8 @@ def _scan_epic_manifests(manifests: Path, result: ScanResult) -> None:
             continue
         app_name: str = str(data.get("AppName", ""))
         main_app: str = str(data.get("MainGameAppName", ""))
-        # DLC and add-ons point back at the game they belong to - skip them,
-        # they'd only ever produce duplicate or bogus matches
+        # DLC and add-ons point back at the game they belong to. Skip them, because
+        # they would only ever produce duplicate or bogus matches
         if main_app and app_name and main_app != app_name:
             continue
         if data.get("bIsIncompleteInstall"):
