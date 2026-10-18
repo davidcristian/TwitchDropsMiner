@@ -26,7 +26,7 @@ None of the five commits has a message body, so the code comments are the only w
 1. **`Channel.send_watch` is the watch method.** `Twitch._watch_loop` calls it and no other method. One call:
    1. Calls `Stream.get_stream_url()`. The first call for a `Stream` object sends one `PlaybackAccessToken`
       GQL query with the channel login, then GETs `https://usher.ttvnw.net/api/channel/hls/<login>.m3u8` with
-      the token and its signature. The code comment calls the answer "a list of all available stream
+      the token and its signature. The code comment calls the response "a list of all available stream
       qualities". The method keeps its last line, "usually with the lowest quality stream" in the comment's
       words, and stores it on the `Stream`. Once it is stored, later calls for the same `Stream` send nothing.
    2. GETs that playlist with the header `Connection: close`. The code comment says the server closes the
@@ -35,8 +35,8 @@ None of the five commits has a message body, so the code comments are the only w
       playlist's order. The code comment counts "~15 chunks of the stream at ~2s intervals", and says a `HEAD`
       request "is enough to advance the drops, without downloading the actual stream data".
 
-   It returns False when the playlist answers with a status of 400 or more or with JSON, or at the first
-   segment that answers with a status other than 200, and True when every segment returned 200.
+   It returns False when the playlist request returns a status of 400 or more or JSON, or at the first
+   segment request that returns a status other than 200, and True when every segment returned 200.
 
 2. **A cycle starts every `WATCH_INTERVAL`, 20 seconds** (`constants.py`). The `send_watch` docstring says:
    "Optimally, send every ~20 seconds to advance drops." `_watch_loop` notes the time and awaits `send_watch`.
@@ -58,7 +58,7 @@ None of the five commits has a message body, so the code comments are the only w
 One cycle, once the `Stream` has its playlist URL, sends:
 
 - 1 GET of the playlist and 1 `HEAD` per segment: about 16 requests with the code comment's count of 15
-  segments. `Twitch.request` sends them to the hosts that the usher answer and the playlist name. None of them
+  segments. `Twitch.request` sends them to the hosts that the usher response and the playlist name. None of them
   passes the GQL limiter.
 - At most 1 `CurrentDrop` query, through `Twitch.gql_request` and its limiter of 5 per second
   ([ADR-0002](ADR-0002-twitch-traffic-budget.md)).

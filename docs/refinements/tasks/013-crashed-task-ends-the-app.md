@@ -5,11 +5,11 @@
 **Origin:** Found on 2026-10-18 while the docs were written, [twitch.md](../../modules/twitch.md#invariants)
 **Verified:** 2026-10-18
 
-`task_wrapper(critical=True)` in `utils.py` (line 127) wraps three tasks: `Twitch._watch_loop` (line 1084),
-`Twitch._maintenance_task` (line 1150) and `Websocket._handle` (`websocket.py`, line 144). When one of them
-raises anything other than `ExitRequest` or `ReloadRequest`, the wrapper logs `Exception in <name> task` with
-the traceback. It then finds the `Twitch` object, as the first argument or as its `_twitch` attribute, calls
-`Twitch.close()`, which is `change_state(State.EXIT)`, and raises the exception again inside the task.
+`task_wrapper(critical=True)` in `utils.py` wraps three tasks: `Twitch._watch_loop`, `Twitch._maintenance_task`
+and `Websocket._handle` (`websocket.py`). When one of them raises anything other than `ExitRequest` or
+`ReloadRequest`, the wrapper logs `Exception in <name> task` with the traceback. It then finds the `Twitch`
+object, as the first argument or as its `_twitch` attribute, calls `Twitch.close()`, which is
+`change_state(State.EXIT)`, and raises the exception again inside the task.
 
 `_run` handles `State.EXIT` by returning, so `Twitch.run` leaves its loop as after a normal close. The
 exception never leaves `_run`, so `Twitch._await_restart` is not called and the restart of
@@ -20,16 +20,16 @@ exception raised inside `_run`, even the same one, restarts the run after the de
 
 - **`_watch_loop`:** `Channel.send_watch` calls `Stream.get_stream_url`, whose `PlaybackAccessToken` query
   raises `GQLException` for an error message that `gql_request` does not retry. `get_stream_url` raises
-  `TypeError` when the answer's `streamPlaybackAccessToken` is null, and raises `aiohttp.InvalidURL` or
+  `TypeError` when the response's `streamPlaybackAccessToken` is null, and raises `aiohttp.InvalidURL` or
   `ValueError` again after it prints a playlist it cannot read. The `CurrentDrop` check catches only
-  `GQLException`, so a null `currentUser` in its answer raises `TypeError`. `Twitch.request` raises
+  `GQLException`, so a null `currentUser` in its response raises `TypeError`. `Twitch.request` raises
   `aiohttp.ClientConnectorCertificateError` without a retry.
 - **`Websocket._handle`:** its reconnect loop catches every `Exception` and reconnects, so only the lines
   outside it can end the task: `wait_until_login`, `set_status` and the `get_session` call at the start of
   `_backoff_connect`.
 - **`_maintenance_task`:** it computes times and calls `change_state`. It sends no request.
 
-So a change in a Twitch answer that the watch loop reads ends the app, while the same change in an answer
+So a change in a Twitch response that the watch loop reads ends the app, while the same change in a response
 that `_run` reads restarts it.
 
 ## How it was confirmed

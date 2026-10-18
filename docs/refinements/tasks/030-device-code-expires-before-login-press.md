@@ -6,7 +6,7 @@
 **Verified:** 2026-10-18
 
 `_AuthState._oauth_login` in `twitch.py` sends `POST https://id.twitch.tv/oauth2/device` first, and sets
-`expires_at` from the `expires_in` of the answer (1800 seconds, in the code's comment of the answer). Only then
+`expires_at` from the `expires_in` of the response (1800 seconds, as the code comment gives it). Only then
 does it call `LoginForm.ask_enter_code` in `gui.py`, which waits in `wait_for_login_press` until the user presses
 `Login`, prints the code, waits 4 seconds and opens the activation page. The code's lifetime therefore counts
 from the request, not from the press.

@@ -6,20 +6,19 @@
 **Verified:** 2026-10-18
 
 The app logs in only through the OAuth device code flow. `_AuthState._validate` in `twitch.py` calls
-`_AuthState._oauth_login` (line 398) and no other login. `_AuthState._login` (line 202), the password login
-through `https://passport.twitch.tv/login`, has no caller. It is the only code that raises `CaptchaRequired`
-(line 335) or `LoginException` (lines 325 and 339), and `_oauth_login` raises neither.
+`_AuthState._oauth_login` and no other login. `_AuthState._login`, the password login through
+`https://passport.twitch.tv/login`, has no caller. It is the only code that raises `CaptchaRequired` or
+`LoginException`, and `_oauth_login` raises neither.
 
 So this code never runs, or runs only to build widgets that the window never shows:
 
-- **`twitch.py`:** `_AuthState._login` (138 lines), and `SkipExtraJsonDecoder` and `SAFE_LOADS` (lines 77 to
-  84), which only `_login` uses. The `CaptchaRequired` branch of `Twitch._await_restart` (line 713) and the
-  counter `_captcha_denials`, which `Twitch.__init__` sets to 0 and `_run` sets back to 0 after each login
-  (line 762).
+- **`twitch.py`:** `_AuthState._login` (138 lines), and `SkipExtraJsonDecoder` and `SAFE_LOADS`, which only
+  `_login` uses. The `CaptchaRequired` branch of `Twitch._await_restart` and the counter `_captcha_denials`,
+  which `Twitch.__init__` sets to 0 and `_run` sets back to 0 after each login.
 - **`constants.py`:** `CAPTCHA_RESTART_DELAY` (1 hour) and `CAPTCHA_RESTART_MAX` (12 hours). Only that branch
   reads them.
-- **`main.py`:** the `except CaptchaRequired` branch of `main()` (line 168), which prints the CAPTCHA message and
-  sets exit code 1.
+- **`main.py`:** the `except CaptchaRequired` branch of `main()`, which prints the CAPTCHA message and sets
+  exit code 1.
 - **`gui.py`:** `LoginData`, `LoginForm.ask_login` and `LoginForm.clear`. Only `_login` and `ask_login` call
   them. `LoginForm.__init__` still creates the Username, Password and 2FA code entries, but their `grid` calls
   are commented out, so the window never shows them.
@@ -69,8 +68,8 @@ does. `twitch.py` is 1849 lines against the 300 line cap ([005](005-modules-over
 (2021-12-03) added the call, and "Implement SmartTV OAuth2 login flow" (2022-12-23) replaced it with
 `await self._oauth_login()` and commented out the `grid` calls of the three entries. The password code stayed.
 The original project still has it, and has not changed `_login` since "Move ClientType into Twitch class as an
-attribute" (2024-02-13). The comments in `_login` quote two answers that Twitch gave to it: error 5023, "client
-is not supported for this feature", and 5027, "client blocked from this operation".
+attribute" (2024-02-13). The comments in `_login` quote two error responses from Twitch: 5023, "client is not
+supported for this feature", and 5027, "client blocked from this operation".
 
 This project added the CAPTCHA restart schedule in "Restart automatically after a fatal error" (2026-08-25,
 found with `git log -S'_captcha_denials'`), three years and eight months after the last call of `_login` was
@@ -91,8 +90,8 @@ Both choices send no Twitch request, and the device code login stays as it is.
 - **Keep it, with a written reason.** The reason is a plan to bring back a password login. A comment above
   `_login` states it, ADR-0006 says that decision 6 applies only once `_login` has a caller, and `manual.txt`
   stops naming the CAPTCHA. The code stays in `twitch.py`, which is over the cap. Its
-  `logger.info(str(login_response))` then passes the answer through `redact`
-  ([ADR-0011](../../adr/ADR-0011-secrets-in-logs.md)), because a successful answer holds the token.
+  `logger.info(str(login_response))` then passes the response through `redact`
+  ([ADR-0011](../../adr/ADR-0011-secrets-in-logs.md)), because a successful response holds the token.
 
 ## History
 

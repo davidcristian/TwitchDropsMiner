@@ -11,23 +11,19 @@ No code in the repo calls, reads or reaches the code below. The module docs name
 [constants.md](../../modules/constants.md), [gui.md](../../modules/gui.md) and
 [translate.md](../../modules/translate.md).
 
-- **The Spade and GQL watch methods, `channel.py`.** `Channel._send_watch_spade` (line 485) and
-  `Channel._send_watch_gql` (line 499). `Twitch._watch_loop` calls only `Channel.send_watch`, the playlist HEAD
-  method. Only these two use `Channel.get_spade_url`, `Channel.url`, the `_spade_url` slot and attribute,
-  `Stream.spade_payload`, `Stream.gql_payload` and `Stream._watch_payload`. In `channel.py`, only they use the
-  imports `gzip`, `b64encode`, `json_minify`, `isonow`, `RequestException` and `GQLQuery`.
-- **`BaseDrop.generate_claim`**, `inventory.py` line 156. It builds a claim ID as
-  `<user ID>#<campaign ID>#<drop ID>`.
-- **`DropsCampaign.get_drop`**, `inventory.py` line 469. `Twitch.process_drops` finds a drop in `Twitch._drops`
-  instead.
-- **`websocket.py`:** the `Websocket.connected` property (line 66) and `WebsocketPool.wait_until_connected`
-  (line 346). The one call of a `wait_until_connected`, in `Websocket.start`, calls the `Websocket` method of
-  that name.
-- **`utils.py`:** `first_to_complete` (line 48), `CHARS_HEX_UPPER` (line 116), `deduplicate` (line 123) and
-  `invalidate_cache` (line 160).
+- **The Spade and GQL watch methods, `channel.py`.** `Channel._send_watch_spade` and `Channel._send_watch_gql`.
+  `Twitch._watch_loop` calls only `Channel.send_watch`, the playlist HEAD method. Only these two use
+  `Channel.get_spade_url`, `Channel.url`, the `_spade_url` slot and attribute, `Stream.spade_payload`,
+  `Stream.gql_payload` and `Stream._watch_payload`. In `channel.py`, only they use the imports `gzip`,
+  `b64encode`, `json_minify`, `isonow`, `RequestException` and `GQLQuery`.
+- **`BaseDrop.generate_claim`**, `inventory.py`. It builds a claim ID as `<user ID>#<campaign ID>#<drop ID>`.
+- **`DropsCampaign.get_drop`**, `inventory.py`. `Twitch.process_drops` finds a drop in `Twitch._drops` instead.
+- **`websocket.py`:** the `Websocket.connected` property and `WebsocketPool.wait_until_connected`. The one call
+  of a `wait_until_connected`, in `Websocket.start`, calls the `Websocket` method of that name.
+- **`utils.py`:** `first_to_complete`, `CHARS_HEX_UPPER`, `deduplicate` and `invalidate_cache`.
 - **Five `GQL_QUERIES` entries, `constants.py`:** `ClaimCommunityPoints`, `ChannelPointsContext`,
   `SlugRedirect`, `NotificationsView` and `NotificationsList`.
-- **`SelectMenu`**, `gui.py` line 375. The four drop-down lists of the General frame use `SelectCombobox`.
+- **`SelectMenu`**, `gui.py`. The four drop-down lists of the General frame use `SelectCombobox`.
 - **The four `login.chrome` strings** in `default_translation` and their `ChromeMessages` type,
   `translate.py`.
 - **The `english_name` string**, `translate.py`. Every language file defines it, such as `"Polish"` in

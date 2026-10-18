@@ -6,15 +6,15 @@
 **Verified:** 2026-10-18
 
 `Twitch._campaigns` maps a campaign ID to its `DropsCampaign`. `Twitch.fetch_inventory` in `twitch.py` adds
-each fetched campaign to it (line 1708) and never removes one. A few lines earlier it clears `_drops`,
-`inventory` and `_mnt_triggers` (line 1696), and `shutdown` clears the same three, but neither clears
-`_campaigns`. So the map keeps every campaign fetched since the process started, across reloads, restarts after
-a fatal error and the `Invalidate` button, which logs in again, possibly to another account.
+each fetched campaign to it and never removes one. A few lines earlier it clears `_drops`, `inventory` and
+`_mnt_triggers`, and `shutdown` clears the same three, but neither clears `_campaigns`. So the map keeps every
+campaign fetched since the process started, across reloads, restarts after a fatal error and the `Invalidate`
+button, which logs in again, possibly to another account.
 
 ## Who reads it
 
-One function: `Channel._check_drops_enabled` in `channel.py` (line 326). It gets the campaign IDs that Twitch's
-`AvailableDrops` answer lists for a channel and looks each one up in `_campaigns`. It returns True when
+One function: `Channel._check_drops_enabled` in `channel.py`. It gets the campaign IDs that Twitch's
+`AvailableDrops` response lists for a channel and looks each one up in `_campaigns`. It returns True when
 `campaign.can_earn(channel, ignore_channel_status=True)` is True for one of them. Two places call it, and only
 when the stream information says that drops are not enabled:
 
@@ -45,7 +45,7 @@ per channel of its ACL (access control list). A copy that runs for weeks keeps e
 
 ## How it was confirmed
 
-A script ran the real `fetch_inventory` twice on a stub client whose `gql_request` returns fixed answers: first
+A script ran the real `fetch_inventory` twice on a stub client whose `gql_request` returns fixed responses: first
 campaigns A, with a 1200 channel ACL, and B; then B and C. It measured memory with `tracemalloc` and then
 called the real `Channel._check_drops_enabled`:
 
@@ -78,5 +78,5 @@ in the same commit. The fix sends no Twitch request.
 ## History
 
 - 2026-10-18: Opened. While the invariants of twitch.md were written, `shutdown` was found not to clear
-  `_campaigns`. Two runs of the real `fetch_inventory` with stubbed answers showed the stale entry, its memory
+  `_campaigns`. Two runs of the real `fetch_inventory` with stubbed responses showed the stale entry, its memory
   and its effect on `_check_drops_enabled`.

@@ -24,7 +24,7 @@ search for the hash yourself, and bring it in with [upstream-fixes.md](upstream-
 
 ## What a broken operation looks like
 
-Twitch answers an outdated hash with an error whose message is `PersistedQueryNotFound`. `Twitch.gql_request`
+For an outdated hash, Twitch returns an error whose message is `PersistedQueryNotFound`. `Twitch.gql_request`
 retries such a request once, after at least 5 seconds, and logs this line in the Output box, even without `-v`:
 
 ```text
@@ -53,7 +53,7 @@ another message, or a `KeyError` or `TypeError` where the code reads the respons
 cases; step 2 of the update covers the variables.
 
 To see every GQL request and response, add `--debug-gql` to the command. `--help` does not list it. It logs the
-operations and Twitch's answers on the `TwitchDrops.gql` logger, and the answers contain your account data, so
+operations and Twitch's responses on the `TwitchDrops.gql` logger, and the responses contain your account data, so
 do not share that output. At `-vvvv`, `Twitch.request` also logs each request and response, with the token
 and other secrets shown as `<hidden>` ([redact.md](../modules/redact.md)).
 
@@ -130,8 +130,8 @@ fix(constants): update the Campaigns GQL hash
 ```
 
 The scope is `constants` because the change stays in `constants.py`. Drop the scope when a caller changes too.
-A body is optional; when you write one, name the error, for example "Twitch answers the old hash with
-PersistedQueryNotFound, so the inventory reload fails."
+A body is optional; when you write one, name the error, for example "Twitch returns
+PersistedQueryNotFound for the old hash, so the inventory reload fails."
 
 ## The client ID and the user agent
 

@@ -112,7 +112,7 @@ instead and is not restarted ([task 013](refinements/tasks/013-crashed-task-ends
 6. **Progress.** `drop-progress` events on the `user-drop-events` topic go to `TimedDrop.update_minutes`, and
    the progress panel counts each minute down. 15 seconds after a watch request, if that count has stopped or
    is at `ALMOST_DONE_SECONDS` (10) or less (`minute_almost_done`), `_watch_loop` sends `CurrentDrop`. With no
-   usable answer, `DropsCampaign.bump_minutes` adds an estimated minute.
+   usable response, `DropsCampaign.bump_minutes` adds an estimated minute.
 7. **Stream changes.** `stream-up`, `broadcast-settings-update` or a viewer count for an offline channel calls
    `Channel.check_online`, which sends `GetStreamInfo` once, after `ONLINE_DELAY` (120 seconds)
    ([task 002](refinements/tasks/002-online-delay-single-try.md)). `stream-down` sets the channel offline at

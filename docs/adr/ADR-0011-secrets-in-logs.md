@@ -38,12 +38,12 @@ The log lines are f-strings, so a value is already text when a log handler recei
 - A new log call that prints a header, a request body, a cookie or a websocket message uses `redact()`.
   AGENTS.md check 6 states this.
 - A secret under a key name that is not in `SECRET_KEYS` is logged until its name is added.
-- `--debug-gql` still writes Twitch's GQL answers on `TwitchDrops.gql`. They hold account data but not the login
+- `--debug-gql` still writes Twitch's GQL responses on `TwitchDrops.gql`. They hold account data but not the login
   token, and [gql-operations.md](../runbooks/gql-operations.md) says not to share that output.
 - `redact()` runs for every request at every log level, because Python builds an f-string before the logger
   checks the level. It copies the arguments, which costs little next to the request, and it adds no request to
   Twitch.
-- The password login logs Twitch's answer to a failed login without `redact()`. It has no caller
+- The password login logs Twitch's response to a failed login without `redact()`. It has no caller
   ([task 010](../refinements/tasks/010-unreachable-password-login.md)).
 
 ## Alternatives rejected

@@ -6,7 +6,7 @@
 
 Before this layout, the committed docs were `README.md`, `AGENTS.md`, the `manual.txt` that every release
 includes, and two pages for users, `docs/building.md` and `docs/troubleshooting.md`. They had no place for the
-reason behind a decision, for what a module promises its callers, or for a known gap left for later.
+reason behind a decision, for what a module's callers depend on, or for a known gap left for later.
 
 On 2026-10-18 the maintainer asked that the docs follow the practices of Cortex, another of the maintainer's
 repos. In Cortex, `AGENTS.md` is the contract and `docs/` holds the detail: a start page, an architecture map,

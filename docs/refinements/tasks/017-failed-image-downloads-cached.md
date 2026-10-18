@@ -31,10 +31,10 @@ does not produce a white image: the download waits and then succeeds. These case
 
 ## How it was confirmed
 
-`ImageCache` was created with a Tk root under Xvfb and a stub `request` that answered the first call for each
-URL with a failure and the second with a valid 40 by 40 PNG. Each URL was then read twice with `get()`:
+`ImageCache` was created with a Tk root under Xvfb and a stub `request` that returned a failure for the first
+call for each URL and a valid 40 by 40 PNG for the second. Each URL was then read twice with `get()`:
 
-| First answer | File the URL maps to | Requests sent | Same image both times | `expires` renewed |
+| First response | File the URL maps to | Requests sent | Same image both times | `expires` renewed |
 | --- | --- | --- | --- | --- |
 | 403 with an HTML body | `fffffffffffffffffffffffff.png` | 1 | yes | yes |
 | 404 | the same | 1 | yes | yes |
@@ -74,5 +74,5 @@ of `Twitch.request`.
 ## History
 
 - 2026-10-18: Opened while the docs were written. `ImageCache.get` and `Twitch.request` were called with stubbed
-  network answers. The claim that a passing network error leaves a blank image did not hold: `Twitch.request`
+  network responses. The claim that a passing network error leaves a blank image did not hold: `Twitch.request`
   retries those errors. The task names the failures that do reach the fallback.

@@ -5,9 +5,9 @@
 **Origin:** Found on 2026-10-18 while the docs were written, [twitch.md](../../modules/twitch.md#maintenance-task)
 **Verified:** 2026-10-18
 
-When no game is wanted, the `State.CHANNELS_CLEANUP` branch of `Twitch._run` in `twitch.py` (line 867) removes
-every channel, prints `_("status", "no_campaign")` and enters `State.IDLE`. The text is "No active campaigns to
-mine drops for. Waiting for an active campaign...". Nothing records that it was already printed.
+When no game is wanted, the `State.CHANNELS_CLEANUP` branch of `Twitch._run` in `twitch.py` removes every
+channel, prints `_("status", "no_campaign")` and enters `State.IDLE`. The text is "No active campaigns to mine
+drops for. Waiting for an active campaign...". Nothing records that it was already printed.
 
 `_maintenance_task` enters `CHANNELS_CLEANUP` on each stream refresh, every `refresh_interval` minutes plus a
 random 0 to 60 seconds (`REFRESH_JITTER`), and at each time trigger in `_mnt_triggers`. `fetch_inventory`

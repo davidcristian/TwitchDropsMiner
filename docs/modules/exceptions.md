@@ -100,7 +100,7 @@ frame.
   (`CAPTCHA_RESTART_DELAY`, `CAPTCHA_RESTART_MAX`). Otherwise `main()` prints the CAPTCHA message and exits
   with code 1.
 
-**`GQLException`** means Twitch answered a GQL request with an error.
+**`GQLException`** means Twitch returned an error in the response to a GQL request.
 
 - Raised by `Twitch.gql_request` for a response with an `error` key, or with an `errors` list in which no
   message is one the method retries or clears. It retries `service error` and `PersistedQueryNotFound` once,

@@ -45,7 +45,7 @@ Because of the `or`, condition 4 holds whenever `listed_priority` is true, even 
 too. So a game that matches both lists is shown with the "Excluded" filter off, in every Priority mode.
 `State.GAMES_UPDATE` checks the Exclude patterns as a separate condition, so it never mines that game. The same
 stand-in with `Warframe` on both lists returned shown for "Ending soonest" and for "Priority list only". A
-detected game on the Exclude list is hidden, which agrees with what is mined.
+detected game on the Exclude list is hidden, which matches what is mined.
 
 ## Effect on a user
 

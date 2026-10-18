@@ -94,7 +94,7 @@ a token for another client ID it deletes `cookies.jar`. In both cases it logs in
 runs at most twice, then raises `RuntimeError`. At the end it saves the cookie jar.
 
 The `Invalidate` button on the Help tab revokes the token at `https://id.twitch.tv/oauth2/revoke`. On a 200
-answer it calls `invalidate(delete_cookies=True)`, and in every case it enters `State.RESTART`.
+response it calls `invalidate(delete_cookies=True)`, and in every case it enters `State.RESTART`.
 `_AuthState._login`, a password login through `passport.twitch.tv`, has no caller, and it is the only code
 that raises `CaptchaRequired` ([task 010](../refinements/tasks/010-unreachable-password-login.md)).
 

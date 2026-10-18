@@ -5,23 +5,23 @@
 **Origin:** Found on 2026-10-18 while the docs were written, [ADR-0003](../../adr/ADR-0003-stream-refresh.md#decision)
 **Verified:** 2026-10-18
 
-At the end of `State.CHANNELS_FETCH`, `Twitch._run` in `twitch.py` (lines 1006 to 1014) takes the first channel
-that `can_watch` accepts and calls `active_drop.display(countdown=False, subone=True)` for the first drop of its
-active campaign. While a channel is watched, `get_active_campaign` uses the watched channel, so this is the drop
-being mined. `CampaignProgress.display` in `gui.py` (line 772) calls `stop_timer()` first. With `subone=True` it
-then calls `_update_time(0)`, which shows the remaining time one minute lower at 0 seconds and starts no
-countdown. The comment at that branch says that the watch loop subtracts this minute when the first watch
-request returns a progress update. That holds when a new watch starts.
+At the end of `State.CHANNELS_FETCH`, `Twitch._run` in `twitch.py` takes the first channel that `can_watch`
+accepts and calls `active_drop.display(countdown=False, subone=True)` for the first drop of its active
+campaign. While a channel is watched, `get_active_campaign` uses the watched channel, so this is the drop
+being mined. `CampaignProgress.display` in `gui.py` calls `stop_timer()` first. With `subone=True` it then
+calls `_update_time(0)`, which shows the remaining time one minute lower at 0 seconds and starts no countdown.
+The comment at that branch says that the watch loop subtracts this minute when the first watch request returns
+a progress update. That holds when a new watch starts.
 
-A stream refresh starts no new watch. `_maintenance_task` (line 1191) enters `State.CHANNELS_CLEANUP` every
+A stream refresh starts no new watch. `_maintenance_task` enters `State.CHANNELS_CLEANUP` every
 `refresh_interval` minutes plus 0 to 60 seconds, and that state moves to `CHANNELS_FETCH`. When the watched
 channel stays, `CHANNEL_SWITCH` does not call `watch` again, and nothing ends the watch loop's wait. So the
 countdown stops in the middle of a minute and stays stopped until the next progress update:
 
-- `minute_almost_done()` (`gui.py` line 768) returns True while no countdown runs. The next check in
-  `_watch_loop` (line 1100) comes 15 seconds into the next watch cycle, at most about 20 seconds after the
-  refresh, and sends one `CurrentDrop` GQL query. Its answer, or the estimate that `bump_minutes` adds when
-  the answer is not usable, shows the drop again with a new countdown. So one refresh causes at most one query.
+- `minute_almost_done()` (`gui.py`) returns True while no countdown runs. The next check in `_watch_loop`
+  comes 15 seconds into the next watch cycle, at most about 20 seconds after the refresh, and sends one
+  `CurrentDrop` GQL query. Its response, or the estimate that `bump_minutes` adds when the response is not
+  usable, shows the drop again with a new countdown. So one refresh causes at most one query.
 - A PubSub `drop-progress` event that arrives before that check restarts the countdown, and no query is sent.
 
 Without the refresh, that check sends nothing while the countdown runs with more than `ALMOST_DONE_SECONDS`
@@ -31,7 +31,7 @@ Without the refresh, that check sends nothing while the countdown runs with more
 
 A script ran the real `Twitch._run`, `_watch_loop` and `process_drops`, the real `CampaignProgress` with Tk
 variables under Xvfb, and a real `DropsCampaign` with one drop at 46 of 60 minutes. Stubs replaced the login,
-the websocket pool, the channel and `gql_request`, which counted `CurrentDrop` queries and answered with the
+the websocket pool, the channel and `gql_request`, which counted `CurrentDrop` queries and returned the
 drop's current minutes. A channel was watched from t=0, and a PubSub progress event came at t=1. The refresh
 was `change_state(State.CHANNELS_CLEANUP)`, as `_maintenance_task` sends it. Excerpts:
 
@@ -63,7 +63,7 @@ wait is at least 60 seconds at 1 minute, so the schedule allows at most 59.
 
 While a drop is mined, each refresh sets both remaining times in the progress panel, for the drop and for the
 campaign, to the whole minute below and stops them: "0:13:37" becomes "0:13:00". They stay there until the next
-progress update, at most about 20 seconds later. When that update is the `CurrentDrop` answer with unchanged
+progress update, at most about 20 seconds later. When that update is the `CurrentDrop` response with unchanged
 minutes, the times go back up to "0:14:00" and count down from there. This happens about 10 times an hour at
 the default and about 40 times an hour at 1 minute. The drop's minutes do not change; only the display does.
 
@@ -84,10 +84,11 @@ fetch" (2026-08-03), which runs `CHANNELS_FETCH` every few minutes while the sam
 ## What a fix involves
 
 The pre-display is needed only when a new watch starts, so a fix skips it when the refresh keeps the watched
-channel. On a copy, the loop at line 1007 was skipped while `watching_channel` has a value. Scenario B then
-showed '0:13:36 remaining', timer running, at t=25.2, and sent no `CurrentDrop` in 58 s. By the code, that
-condition also skips the pre-display after a reload that keeps the channel, where `restart_watching` has
-already stopped the countdown. A fix keeps it there, for example with a flag that `GAMES_UPDATE` sets.
+channel. On a copy, the pre-display loop of `State.CHANNELS_FETCH` in `Twitch._run` was skipped while
+`watching_channel` has a value. Scenario B then showed '0:13:36 remaining', timer running, at t=25.2, and sent
+no `CurrentDrop` in 58 s. By the code, that condition also skips the pre-display after a reload that keeps the
+channel, where `restart_watching` has already stopped the countdown. A fix keeps it there, for example with a
+flag that `GAMES_UPDATE` sets.
 
 The fix sends no new request and removes up to one `CurrentDrop` per refresh.
 

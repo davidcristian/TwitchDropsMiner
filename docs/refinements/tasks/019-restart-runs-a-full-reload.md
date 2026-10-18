@@ -5,8 +5,8 @@
 **Origin:** Found on 2026-10-18 while the docs were written, [ADR-0006](../../adr/ADR-0006-restart-after-fatal-error.md)
 **Verified:** 2026-10-18
 
-After a fatal error, `Twitch._await_restart` in `twitch.py` (line 702) calls `shutdown()`, which clears the
-inventory, the channels and the login state, and waits `restart_delay` minutes plus a random 0 to 60 seconds
+After a fatal error, `Twitch._await_restart` in `twitch.py` calls `shutdown()`, which clears the inventory,
+the channels and the login state, and waits `restart_delay` minutes plus a random 0 to 60 seconds
 (`RESTART_JITTER`). `Twitch.run` then calls `_run` again. `_run` logs in, which sends a GET of
 `https://www.twitch.tv` for the device ID and a GET of `https://id.twitch.tv/oauth2/validate` for the token,
 because `shutdown` removed both from memory. It then starts in `State.INVENTORY_FETCH`, a full reload
@@ -17,7 +17,7 @@ The choices of "Restart after a crash after" (`SettingsPanel.RESTART_DELAYS` in 
 on every run, after the reload's requests, causes one full reload per restart, without end.
 
 One such error is an outdated hash. When Twitch stops accepting the `GameDirectory` hash in `constants.py`,
-`gql_request` retries the `PersistedQueryNotFound` answer once and then raises `GQLException`, and
+`gql_request` retries the `PersistedQueryNotFound` response once and then raises `GQLException`, and
 `get_live_streams` turns it into a `MinerException`. That happens in `State.CHANNELS_FETCH`, after
 `fetch_inventory` and after `bulk_check_online` has checked every ACL channel, so each run sends the whole
 reload and then fails. An outdated `GetStreamInfo` hash fails inside `bulk_check_online`, after part of its

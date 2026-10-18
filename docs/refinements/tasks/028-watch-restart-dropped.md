@@ -5,28 +5,27 @@
 **Origin:** Found on 2026-10-18 while the docs were written, [twitch.md](../../modules/twitch.md#watch-loop)
 **Verified:** 2026-10-18
 
-`Twitch.restart_watching` in `twitch.py` (line 1253) stops the minute countdown with
-`gui.progress.stop_timer()` and sets the event `_watching_restart`, so that the watch loop sends its next
-watch request at once. One cycle of `Twitch._watch_loop` (line 1085), with `WATCH_INTERVAL` at 20 seconds:
+`Twitch.restart_watching` in `twitch.py` stops the minute countdown with `gui.progress.stop_timer()` and sets
+the event `_watching_restart`, so that the watch loop sends its next watch request at once. One cycle of
+`Twitch._watch_loop`, with `WATCH_INTERVAL` at 20 seconds:
 
 1. It notes the time in `last_sent` and awaits `channel.send_watch()`: a playlist GET and one HEAD request per
    stream chunk, sent to Twitch's video servers.
 2. It awaits `asyncio.sleep(15 - elapsed)`, which the event cannot end.
 3. When `gui.progress.minute_almost_done()` is True, it awaits one `CurrentDrop` GQL query.
-4. It awaits `_watch_sleep(20 - elapsed)`. `_watch_sleep` (line 1078) first clears `_watching_restart` and
-   then waits on it with a timeout.
+4. It awaits `_watch_sleep(20 - elapsed)`. `_watch_sleep` first clears `_watching_restart` and then waits on
+   it with a timeout.
 
 So a call during steps 1 to 3, the first 15 seconds after `last_sent` plus the time of a `CurrentDrop` query,
 is cleared in step 4 and has no effect. Only a call during step 4, the last 5 seconds, ends the wait at once.
 
 Two places call `restart_watching`:
 
-- `Twitch.process_drops` (line 1407), after it claims a drop whose campaign can continue on the watched
-  channel. It first waits 4 seconds and sends `CurrentDrop` up to 8 times, 2 seconds apart, until Twitch
-  reports another drop. The code comment says that the next drop can then be started by sending the watch
-  request again.
-- The `State.GAMES_UPDATE` branch of `Twitch._run` (line 865), after it computes `wanted_games`. That state
-  runs after each reload and after `detect_games` finds a changed list of installed games.
+- `Twitch.process_drops`, after it claims a drop whose campaign can continue on the watched channel. It first
+  waits 4 seconds and sends `CurrentDrop` up to 8 times, 2 seconds apart, until Twitch reports another drop.
+  The code comment says that the next drop can then be started by sending the watch request again.
+- The `State.GAMES_UPDATE` branch of `Twitch._run`, after it computes `wanted_games`. That state runs after
+  each reload and after `detect_games` finds a changed list of installed games.
 
 Neither is timed to the watch cycle, so about three quarters of the calls fall in steps 1 to 3.
 

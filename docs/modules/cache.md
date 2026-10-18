@@ -53,7 +53,7 @@ entry names is deleted. A file that no entry names stays, unless `mapping.json` 
 | `mapping.json` is not valid JSON | The cache starts with an empty mapping and deletes every `*.png` in `cache/` |
 | `mapping.json.new` is not valid JSON | `json_load` deletes it and reads `mapping.json` ([utils.md](utils.md#json-files)) |
 | An image file is missing or fails to decode | `get()` downloads the image again. It calls `load()` to decode the whole file, so a file damaged anywhere fails at this point |
-| The answer is a 404, the body of another answer is not an image (such as a 403 page), or `Twitch.request` raises an error that it does not retry (such as `ExitRequest` when the window closes during the download). It retries connection errors other than a certificate error, timeouts and statuses of 500 and above until a try succeeds, so these never reach `get()` | `get()` uses a 10 by 10 white image, saves it and maps the URL to it like a real image |
+| The response is a 404, the body of another response is not an image (such as a 403 page), or `Twitch.request` raises an error that it does not retry (such as `ExitRequest` when the window closes during the download). It retries connection errors other than a certificate error, timeouts and statuses of 500 and above until a try succeeds, so these never reach `get()` | `get()` uses a 10 by 10 white image, saves it and maps the URL to it like a real image |
 | The resize raises `OSError` | `get()` returns a white image of the size asked for |
 
 A white image saved for a failed download stays in place while the URL is still requested: each `get()` finds

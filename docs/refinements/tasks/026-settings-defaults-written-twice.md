@@ -6,16 +6,16 @@
 **Verified:** 2026-10-18
 
 `default_settings` in `settings.py` holds the default of each setting. `SettingsPanel.__init__` in `gui.py`
-(line 1641) writes three of them again, as the value it sets when the stored one is not in its drop-down list:
+writes three of them again, as the value it sets when the stored one is not in its drop-down list:
 
 | Setting | `default_settings` | Fallback in `SettingsPanel.__init__` | Choice list in `SettingsPanel` |
 | --- | --- | --- | --- |
-| `refresh_interval` | `5` (line 37) | `5` (line 1650) | `REFRESH_INTERVALS`: 0, 1, 2, 5, 10, 15, 30 (line 1623) |
-| `restart_delay` | `10` (line 38) | `10` (line 1654) | `RESTART_DELAYS`: 0, 1, 5, 10, 15, 30, 60 (line 1637) |
-| `priority_mode` | `PriorityMode.PRIORITY_ONLY` (line 45) | the same (line 1646) | `PRIORITY_MODES`: all three `PriorityMode` members |
+| `refresh_interval` | `5` | `5` | `REFRESH_INTERVALS`: 0, 1, 2, 5, 10, 15, 30 |
+| `restart_delay` | `10` | `10` | `RESTART_DELAYS`: 0, 1, 5, 10, 15, 30, 60 |
+| `priority_mode` | `PriorityMode.PRIORITY_ONLY` | the same | `PRIORITY_MODES`: all three `PriorityMode` members |
 
 The fallback is then used as a key of the choice list, to set the text of the drop-down list. So each value
-must agree in three places: the default, the fallback, and the list. The `if __name__ == "__main__":` mock at
+must match in three places: the default, the fallback, and the list. The `if __name__ == "__main__":` mock at
 the end of `gui.py` repeats every default a fourth time (`refresh_interval=5`, `restart_delay=10`,
 `priority_mode=PriorityMode.PRIORITY_ONLY` and the rest), as the AGENTS.md recipe for a new setting asks. It is
 used only by `python gui.py`.
@@ -36,7 +36,7 @@ sets an entry whose URL has no host or no port to `URL()`, which means no proxy.
 
 ## Effect
 
-Today the copies agree, and a user sees nothing wrong. The problem is in the next change to one copy:
+Today the copies match, and a user sees nothing wrong. The problem is in the next change to one copy:
 
 - **A new default in `settings.py` only.** A new user gets it. A stored value outside the list still falls
   back to the old 5 or 10. A new default that is not in the list is replaced by 5 or 10 at the first start,

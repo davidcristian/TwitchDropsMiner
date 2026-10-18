@@ -22,7 +22,7 @@ original project left no written reason for the flow or for a client.
 
 1. **The device code flow is the only login.** `_AuthState._validate` calls `_oauth_login` when the cookie jar
    has no `auth-token` cookie for `https://www.twitch.tv`. `_oauth_login`:
-   1. POSTs the client ID and an empty `scopes` to `https://id.twitch.tv/oauth2/device`. The answer gives a
+   1. POSTs the client ID and an empty `scopes` to `https://id.twitch.tv/oauth2/device`. The response has a
       device code, a user code, a polling `interval`, a lifetime `expires_in` and the activation page.
    2. Calls `LoginForm.ask_enter_code`. The Output box shows "Please log in to continue." After the user
       presses `Login`, it shows the user code, and 4 seconds later the browser opens the activation page.
@@ -40,12 +40,12 @@ original project left no written reason for the flow or for a client.
 3. **The token is kept in `cookies.jar`.** After a login, `_validate` sets the cookies `auth-token` (the
    access token) and `persistent` (the user ID) for `https://www.twitch.tv`, and saves the aiohttp cookie jar
    to `cookies.jar` next to the app. The next run takes the token from that cookie and logs "Restoring session
-   from cookie". `_oauth_login` keeps only the token answer's `access_token`, and no code refreshes a token.
+   from cookie". `_oauth_login` keeps only the token response's `access_token`, and no code refreshes a token.
 
 4. **Each run checks the token at its start.** `_validate` GETs `https://www.twitch.tv`, whose `unique_id`
    cookie is the device ID, then `https://id.twitch.tv/oauth2/validate`, which gives the user ID. It does so
    when `access_token` or `user_id` is missing, which is at the start of each run, because `Twitch.shutdown`
-   calls `_auth_state.clear()`. On the validate answer:
+   calls `_auth_state.clear()`. On the validate response:
    - **401:** it logs "Restored session is invalid", clears every cookie of `www.twitch.tv`, and runs the
      device code flow again.
    - **A `client_id` other than `CLIENT_ID`:** it logs "Cookie client ID mismatch", clears the jar, deletes
@@ -70,7 +70,7 @@ original project left no written reason for the flow or for a client.
 - **The login requests are not GQL,** so the GQL limiter does not apply to them
   ([ADR-0002](ADR-0002-twitch-traffic-budget.md)). A run with a saved token sends 2 GETs. A login also sends 1
   POST per code and, from the `Login` press, 1 POST every `interval` seconds until the code is entered or
-  expires. The code comment's example answer, `interval` 5 and `expires_in` 1800, gives at most 360 polls.
+  expires. The values in the code comment, `interval` 5 and `expires_in` 1800, give at most 360 polls.
 - **A new `CLIENT_ID` logs every user out once,** and so does a switch of `_client_type` to another entry. At
   the next start, the validate endpoint reports the old client ID, or the jar has no token for the new
   `CLIENT_URL`, and the user enters a new code. `_validate` compares only the client ID, so a new user agent

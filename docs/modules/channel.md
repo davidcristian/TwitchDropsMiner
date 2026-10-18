@@ -96,11 +96,11 @@ plus one per 20 online channels with the extra check.
 
 1. `Stream.get_stream_url()`. On the first call for a `Stream`, it sends a `PlaybackAccessToken` GQL query for
    the channel login, then GETs `https://usher.ttvnw.net/api/channel/hls/<login>.m3u8` with the token and its
-   signature. The answer lists the stream qualities. The method keeps the last URL in the list, which the code
-   comment says is usually the lowest quality, and caches it on the `Stream`. A JSON answer returns None. When it
-   has an `error` key, the error is logged and the channel is set offline.
+   signature. The response lists the stream qualities. The method keeps the last URL in the list, which the code
+   comment says is usually the lowest quality, and caches it on the `Stream`. For a JSON response it returns
+   None. When that response has an `error` key, the error is logged and the channel is set offline.
 2. A GET of that media playlist with `Connection: close`. A status of 400 or above returns False; the playlist
-   returns 404 once the stream has ended. A JSON answer also returns False.
+   returns 404 once the stream has ended. For a JSON response it also returns False.
 3. A HEAD request to each segment URL in the playlist, which is each line that starts with `http`. The code
    comment counts about 15 segments of about 2 seconds each. A status other than 200 returns False.
 

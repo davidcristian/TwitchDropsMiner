@@ -8,8 +8,8 @@
 Two log calls write the OAuth access token, and the first of them also writes the device code of a login in
 progress:
 
-- **`Twitch.request` in `twitch.py` (line 1453)** logs `Request: (method=..., url=..., kwargs=...)` at DEBUG
-  on the `TwitchDrops` logger. `kwargs` holds the request's headers and body:
+- **`Twitch.request` in `twitch.py`** logs `Request: (method=..., url=..., kwargs=...)` at DEBUG on the
+  `TwitchDrops` logger. `kwargs` holds the request's headers and body:
   - every GQL request: `gql_request` passes `_AuthState.headers(gql=True)`, which contains
     `Authorization: OAuth <access_token>`.
   - the token check in `_AuthState._validate`: a GET of `https://id.twitch.tv/oauth2/validate` with the same
@@ -17,17 +17,16 @@ progress:
   - the `Invalidate` button: `HelpTab._invalidate_token` in `gui.py` posts the token as `data["token"]`.
   - the device code login: `_AuthState._oauth_login` polls `https://id.twitch.tv/oauth2/token` every
     `interval` seconds. The poll body holds only the client ID, the device code and the grant type. So until
-    the code expires (`expires_in`, 1800 seconds in the code's example answer), anyone with the log line can
+    the code expires (`expires_in`, which the code comment gives as 1800 seconds), anyone with the log line can
     send the same poll and receive the token once the user enters the code.
-- **`Websocket.send` in `websocket.py` (line 333)** logs `sent: {message}` at DEBUG on the
-  `TwitchDrops.websocket` logger. Each `LISTEN` and `UNLISTEN` message has the token in `data["auth_token"]`
-  (`Websocket._handle_topics`, lines 220 and 236).
+- **`Websocket.send` in `websocket.py`** logs `sent: {message}` at DEBUG on the `TwitchDrops.websocket`
+  logger. Each `LISTEN` and `UNLISTEN` message has the token in `data["auth_token"]` (`Websocket._handle_topics`).
 
-The `Response:` line of `Twitch.request` (line 1471) logs `str(response)`. aiohttp's
-`ClientResponse.__repr__` prints every response header (checked in aiohttp 3.14.3; `requirements.txt` allows
-3.9 and later 3.x), so a `Set-Cookie` header from Twitch is logged too. An example is the GET of
-`https://www.twitch.tv` that sets the `unique_id` cookie. The `auth-token` cookie never comes from a response:
-`_validate` writes it into the cookie jar itself (line 399).
+The `Response:` line of `Twitch.request` logs `str(response)`. aiohttp's `ClientResponse.__repr__` prints
+every response header (checked in aiohttp 3.14.3; `requirements.txt` allows 3.9 and later 3.x), so a
+`Set-Cookie` header from Twitch is logged too. An example is the GET of `https://www.twitch.tv` that sets the
+`unique_id` cookie. The `auth-token` cookie never comes from a response: `_validate` writes it into the cookie
+jar itself.
 
 The token is the value of the `auth-token` cookie in `cookies.jar`.
 [troubleshooting.md](../../troubleshooting.md) says that anyone who has that file can use the Twitch account,
@@ -48,7 +47,7 @@ child loggers reach both handlers.
 | `--debug-ws`, with any `-v` count | not written below `-vvvv` | written, with the token |
 | `--debug-gql` alone | not written | not written |
 
-`--debug-gql` writes the operations and Twitch's answers on `TwitchDrops.gql`. They contain account data but
+`--debug-gql` writes the operations and Twitch's responses on `TwitchDrops.gql`. They contain account data but
 not the token. [gql-operations.md](../../runbooks/gql-operations.md) already warns not to share either output.
 
 ## How it was confirmed
@@ -70,9 +69,9 @@ contain the fake token or the fake device code:
 
 The other log calls, listed with `git grep` on `logger`, `ws_logger` and `gql_logger`, write fixed text, names,
 IDs, status codes, exceptions and the websocket messages that Twitch sends. None of them is passed a header, a
-request body or the token. The `PlaybackAccessToken` answer that `--debug-gql` writes holds a playback token
+request body or the token. The `PlaybackAccessToken` response that `--debug-gql` writes holds a playback token
 for the watched stream, which is not the login token. The password login, which never runs
-([010](010-unreachable-password-login.md)), logs Twitch's answer to a failed login.
+([010](010-unreachable-password-login.md)), logs Twitch's response to a failed login.
 
 ## Effect
 

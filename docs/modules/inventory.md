@@ -9,7 +9,7 @@ reload ([twitch.md](twitch.md#state-machine)). The only request the module sends
 
 ### `DropsCampaign(twitch, data, claimed_benefits)`
 
-`data` is one campaign, merged from the `Inventory`, `Campaigns` and `CampaignDetails` GQL answers.
+`data` is one campaign, merged from the `Inventory`, `Campaigns` and `CampaignDetails` GQL responses.
 `claimed_benefits` maps a benefit ID to the time it was last awarded, from the inventory's `gameEventDrops`.
 
 - Data: `id`, `name`, `game` (a `Game`), `linked` (the user's account is connected to the game), `link_url`,
@@ -114,7 +114,7 @@ minutes the campaign also displays its `first_drop`.
   False, which counts as a failure. Otherwise it sends one `ClaimDrop` GQL mutation with the `dropInstanceID`.
   A `claimDropRewards.status` of `ELIGIBLE_FOR_ALL` or `DROP_INSTANCE_ALREADY_CLAIMED` is a success: the drop is
   marked claimed, its minutes are set to `required_minutes`, a line goes to the Output box and the tray shows a
-  notification when tray notifications are on. A `GQLException` or any other answer is a failure, which is
+  notification when tray notifications are on. A `GQLException` or any other response is a failure, which is
   logged as an error.
 - `Twitch` claims a drop on a `drop-claim` event, and in `State.GAMES_UPDATE` for every claimable drop of the
   campaigns that are not upcoming. So a drop with a claim ID that no event claimed is claimed at the next reload.

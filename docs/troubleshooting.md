@@ -69,8 +69,8 @@ Delete `cookies.jar` the same way when the login keeps failing. When Twitch reje
 deletes it and asks you to log in again by itself.
 
 **"Unexpected content type returned, usually due to being redirected."** Something between the app and Twitch
-answered instead of Twitch. This happens on networks that need a login page before they allow internet access.
-Log in to the network in a browser. If you set a proxy on the Settings tab, check it as well.
+sent the response instead of Twitch. This happens on networks that need a login page before they allow internet
+access. Log in to the network in a browser. If you set a proxy on the Settings tab, check it as well.
 
 ## Nothing is mined
 

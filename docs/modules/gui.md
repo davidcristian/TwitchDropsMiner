@@ -47,7 +47,7 @@ from [translate.md](translate.md).
   Linux the write fails when the autostart folder does not exist, and a run from source writes a `pythonw`
   command ([task 015](../refinements/tasks/015-autostart-on-linux-and-macos.md)).
 - **`HelpTab`** "Invalidate" posts the access token to `https://id.twitch.tv/oauth2/revoke`, deletes
-  `cookies.jar` when Twitch answers 200, and sets `State.RESTART`. The button stays disabled until a login
+  `cookies.jar` when Twitch returns 200, and sets `State.RESTART`. The button stays disabled until a login
   completes.
 
 The helper widgets at the top of the file (`PlaceholderEntry`, `PlaceholderCombobox`, `PaddedListbox`,

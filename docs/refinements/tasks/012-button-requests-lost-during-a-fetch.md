@@ -5,8 +5,8 @@
 **Origin:** Found on 2026-10-18 while the docs were written, [twitch.md](../../modules/twitch.md)
 **Verified:** 2026-10-18
 
-`Twitch.change_state` in `twitch.py` (line 553) stores one value in `_state` and sets the event that `_run`
-waits on. Three handlers in `Twitch._run` await requests and then end with `change_state(<next state>)`:
+`Twitch.change_state` in `twitch.py` stores one value in `_state` and sets the event that `_run` waits on.
+Three handlers in `Twitch._run` await requests and then end with `change_state(<next state>)`:
 
 | Handler | What it awaits | Last call |
 | --- | --- | --- |
@@ -44,29 +44,28 @@ arrive during them.
   still tracked.
 
 **Invalidate** (Help tab, `State.RESTART`): `HelpTab._invalidate_token` in `gui.py` awaits `get_auth` and a
-POST to `https://id.twitch.tv/oauth2/revoke`. On a 200 answer it calls `invalidate(delete_cookies=True)`, which
+POST to `https://id.twitch.tv/oauth2/revoke`. On a 200 response it calls `invalidate(delete_cookies=True)`, which
 removes the token and `cookies.jar`. Then it calls `change_state(State.RESTART)`, which any of the three
 handlers can replace:
 
 - With the token removed, no `ReloadRequest` is raised and `shutdown` does not run. The next `gql_request`
   calls `get_auth`, which finds no `auth-token` cookie and starts `_oauth_login`, so the Login Form asks for a
   new code in the middle of the running state. After the login, the run goes on with the data it had. `_run`
-  subscribed the `User` topics `Drops` and `Notifications` with the old user ID (lines 769 to 774), and they
-  stay until `_run` starts again. When the user logged in with another account, the app listens on the first
-  account's topics.
-- With a revoke answer other than 200, the token stays, the Output box shows "Failed to invalidate the auth
+  subscribed the `User` topics `Drops` and `Notifications` with the old user ID, and they stay until `_run`
+  starts again. When the user logged in with another account, the app listens on the first account's topics.
+- With a revoke response other than 200, the token stays, the Output box shows "Failed to invalidate the auth
   token", and nothing else happens.
 
 ## The same replacement for requests from tasks
 
 The same calls from tasks are replaced the same way:
 
-- `_maintenance_task` (line 1150) enters `CHANNELS_CLEANUP` for a stream refresh or a time trigger, and
-  `INVENTORY_FETCH` for the hourly reload, after which the task ends. Only `fetch_inventory` starts a new one
-  (line 1742). A refresh can start up to just before the hour, so the hourly request can arrive while that
-  refresh's `CHANNELS_FETCH` awaits its queries. Then no reload runs and no maintenance task is left. No stream
-  refresh, time trigger or hourly reload runs until something else enters `INVENTORY_FETCH`: a claim whose
-  campaign cannot continue on the watched channel, a reward notification, the Reload button or a restart.
+- `_maintenance_task` enters `CHANNELS_CLEANUP` for a stream refresh or a time trigger, and `INVENTORY_FETCH`
+  for the hourly reload, after which the task ends. Only `fetch_inventory` starts a new one. A refresh can
+  start up to just before the hour, so the hourly request can arrive while that refresh's `CHANNELS_FETCH`
+  awaits its queries. Then no reload runs and no maintenance task is left. No stream refresh, time trigger or
+  hourly reload runs until something else enters `INVENTORY_FETCH`: a claim whose campaign cannot continue on
+  the watched channel, a reward notification, the Reload button or a restart.
 - `process_drops` and `process_notifications` (`INVENTORY_FETCH` after a claim or a reward notification),
   `on_channel_update` and `DropsCampaign.bump_minutes` (`CHANNEL_SWITCH`), and `detect_games` from the
   Rescan button (`GAMES_UPDATE`). A Rescan replaced during `CHANNELS_FETCH` stores the detected games in the
