@@ -26,7 +26,7 @@ Every 20 seconds, the app asks Twitch for the list of the newest video segments 
 ### Usage:
 
 - Download and unzip [the latest release](https://github.com/davidcristian/TwitchDropsMiner/releases). Keep the app in the folder it comes in.
-- Run it and log in to your Twitch account with the login form in the app.
+- Run it and press `Login` in the app. The app shows a code and opens the Twitch activation page in your browser. Enter the code there while logged in to the Twitch account you want to mine on. The app never asks for your password ([Logging in](docs/troubleshooting.md#logging-in)).
 - After you log in, the app fetches every campaign and game you can mine drops for. On the Settings tab, add the games you want to the Priority list, or add your Steam or Epic game folders, then press `Reload`. The app finds the streams it can watch and starts mining. You can also switch to another channel by hand.
 - The Priority Mode setting decides what happens to the other games. "Priority list only" mines only the games on your Priority list and the installed games. "Ending soonest" also mines every other game that is not excluded, starting with the campaign that ends first. "Low availability first" does the same, starting with the campaign that has the least time to spare: the least time left before it ends, compared with the watch time its drops still need.
 - Link your Twitch account to your game accounts on the [campaigns page](https://www.twitch.tv/drops/campaigns), so the app can mine more games.

@@ -32,17 +32,10 @@ class ChromeMessages(TypedDict):
 
 class LoginMessages(TypedDict):
     chrome: ChromeMessages
-    error_code: str
     unexpected_content: str
-    email_code_required: str
-    twofa_code_required: str
-    incorrect_login_pass: str
-    incorrect_email_code: str
-    incorrect_twofa_code: str
 
 
 class ErrorMessages(TypedDict):
-    captcha: str
     no_connection: str
     site_down: str
 
@@ -83,9 +76,6 @@ class GUILoginForm(TypedDict):
     logged_out: str
     request: str
     required: str
-    username: str
-    password: str
-    twofa_code: str
     button: str
 
 
@@ -315,15 +305,8 @@ default_translation: Translation = {
                 "The Chrome window was closed before the login procedure could be completed."
             ),
         },
-        "error_code": "Login error code: {error_code}",
-        "incorrect_login_pass": "Incorrect username or password.",
-        "incorrect_email_code": "Incorrect email code.",
-        "incorrect_twofa_code": "Incorrect 2FA code.",
-        "email_code_required": "Email code required. Check your email.",
-        "twofa_code_required": "2FA token required.",
     },
     "error": {
-        "captcha": "Your login attempt was denied by CAPTCHA.\nPlease try again in 12+ hours.",
         "site_down": "Twitch is down, retrying in {seconds} seconds...",
         "no_connection": "Cannot connect to Twitch, retrying in {seconds} seconds... ({url})",
     },
@@ -362,9 +345,6 @@ default_translation: Translation = {
             "logging_in": "Logging in...",
             "required": "Login required",
             "request": "Please log in to continue.",
-            "username": "Username",
-            "password": "Password",
-            "twofa_code": "2FA code (optional)",
             "button": "Login",
         },
         "websocket": {

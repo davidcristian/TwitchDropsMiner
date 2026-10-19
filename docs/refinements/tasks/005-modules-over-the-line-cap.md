@@ -3,26 +3,26 @@
 **Status:** open
 **Area:** module layout
 **Origin:** [AGENTS.md](../../../AGENTS.md#module-map)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-19
 
 AGENTS.md sets a limit of 300 lines per module, and `scripts/linecap.py` checks it. Eight modules are over it,
-measured with `wc -l` on 2026-10-18, and linecap.py names them in `EXCEPTIONS`. An entry there fails once its
+measured with `wc -l` on 2026-10-19, and linecap.py names them in `EXCEPTIONS`. An entry there fails once its
 module is under the limit, so a split removes it. AGENTS.md forbids adding a new responsibility to any of them:
 new work goes into a new module that they call. This task records where each one can be split. It does not ask
 for the split now.
 
 | Module | Lines |
 | --- | --- |
-| `gui.py` | 3268 |
-| `twitch.py` | 1797 |
-| `translate.py` | 608 |
-| `constants.py` | 523 |
+| `gui.py` | 3215 |
+| `twitch.py` | 1639 |
+| `translate.py` | 588 |
+| `constants.py` | 518 |
 | `inventory.py` | 504 |
 | `channel.py` | 492 |
 | `utils.py` | 458 |
 | `websocket.py` | 405 |
 
-`main.py` (208), `cache.py` (142), `settings.py` (113), `registry.py` (112), `exceptions.py` (90) and every
+`main.py` (203), `cache.py` (142), `settings.py` (113), `registry.py` (112), `exceptions.py` (71) and every
 module in `gamelib/` (at most 200) are under the cap.
 
 ## Split points
@@ -42,7 +42,7 @@ Line counts are of the class or block today.
   - The mock under `if __name__ == "__main__":` (260). Moving it to its own preview script changes the
     `python gui.py` command that AGENTS.md and `docs/building.md` give.
 - **`twitch.py`**
-  - `_AuthState` (325): login, the OAuth flow, cookies and request headers.
+  - `_AuthState` (198): login, the OAuth flow, cookies and request headers.
   - HTTP and GQL requests: `get_session`, `request` and `gql_request`.
   - Inventory fetching: `fetch_campaigns`, `fetch_inventory` (122) and `_merge_data`.
   - The PubSub handlers: `process_stream_state`, `process_stream_update`, `on_channel_update`, `process_drops`
@@ -51,7 +51,7 @@ Line counts are of the class or block today.
   - `Twitch._run` (320). The wanted games ranking in its `State.GAMES_UPDATE` branch and the channel order in
     its `State.CHANNELS_FETCH` branch need no I/O. As functions in their own module they can be tested
     ([003](003-test-suite.md)).
-- **`translate.py`**: the `TypedDict` classes (about 275 lines), `default_translation` (258) and `Translator`.
+- **`translate.py`**: the `TypedDict` classes (about 265 lines), `default_translation` (248) and `Translator`.
 - **`constants.py`**: `ClientInfo` and `ClientType`, the GQL classes with `GQL_QUERIES` (about 190 lines), and
   `WebsocketTopic` with `WEBSOCKET_TOPICS`.
 - **`inventory.py`**: `Benefit`, `BaseDrop` (152) and `TimedDrop` (118) in one module, `DropsCampaign` (173)
@@ -72,3 +72,5 @@ Splits cost no Twitch requests.
   `wc -l` and class sizes from the `ast` module.
 - 2026-10-18: The limit became a check, `scripts/linecap.py`, with these eight modules as its exceptions. The
   line counts were measured again after the comments and docstrings over three lines were shortened.
+- 2026-10-19: Measured again after the removal of the password login, which shortened `gui.py`, `twitch.py`,
+  `translate.py`, `constants.py`, `main.py` and `exceptions.py`.

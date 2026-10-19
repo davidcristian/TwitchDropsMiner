@@ -1,8 +1,8 @@
 # `exceptions.py`
 
 **Purpose.** The app's own exception classes. `MinerException` is the base class, and its subclasses name a
-request failure, a login failure, or a request from the user to exit or reload. The module has no logic beyond
-default messages and imports nothing.
+request failure or a request from the user to exit or reload. The module has no logic beyond default messages
+and imports nothing.
 
 ## Public contract
 
@@ -16,8 +16,6 @@ Exception
     └── RequestException      "Unknown error during request" when raised without arguments
         ├── RequestInvalid    "Request became invalid during its retry loop"
         ├── WebsocketClosed   "Websocket has been closed"; has the attribute received: bool
-        ├── LoginException    "Unknown error during login" when raised without arguments
-        │   └── CaptchaRequired   "Captcha is required"
         └── GQLException      takes the error message as its one argument
 ```
 
@@ -86,19 +84,6 @@ frame.
 - Caught by `Websocket._handle`. When `received` is `True` it logs a warning and reconnects. When the app
   closed the websocket itself, it sets the status to "Disconnected" and returns. In every other case it
   reconnects.
-
-**`LoginException`** and **`CaptchaRequired`** come from the password login.
-
-- `_AuthState._login` raises `LoginException` for an unknown error from `passport.twitch.tv/login`, and when
-  the flow ends without an access token. It raises `CaptchaRequired` for error code 1000 or any code of 5000 or
-  more.
-- No code calls `_AuthState._login` ([task 010](../refinements/tasks/010-unreachable-password-login.md)). The
-  app logs in through `_AuthState._oauth_login`, the device activation flow, which raises neither class. So no
-  code path raises either class today. No code catches `LoginException` by name.
-- `CaptchaRequired` is still handled in two places, and neither can run today. When restarting is on,
-  `Twitch._await_restart` waits 1 hour, doubling for each further denial up to 12 hours
-  (`CAPTCHA_RESTART_DELAY`, `CAPTCHA_RESTART_MAX`). Otherwise `main()` prints the CAPTCHA message and exits
-  with code 1.
 
 **`GQLException`** means Twitch returned an error in the response to a GQL request.
 

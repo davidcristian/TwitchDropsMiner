@@ -33,9 +33,6 @@ No code in the repo calls, reads or reaches the code below. The module docs name
   defines `language_name`. `json_load` merges the file with `default_translation`, which has no `language_name`,
   so `merge_json` removes the key before the check runs.
 
-The password login, `_AuthState._login` in `twitch.py`, is not called either. It is
-[task 010](010-unreachable-password-login.md), and this task leaves it out.
-
 ## How it was confirmed
 
 - A script parsed every tracked `.py` file with the `ast` module and listed each reference to each name: a

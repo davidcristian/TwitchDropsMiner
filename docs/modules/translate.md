@@ -16,8 +16,8 @@ the current language. Other languages are JSON files in `lang/`. To add a string
 | `language_name` | `NotRequired[str]` | Set by `Translator` to the name of the loaded language; a file cannot set it |
 | `english_name` | `str` | The language's name in English; no code reads it ([task 022](../refinements/tasks/022-unused-code.md)) |
 | `status` | `StatusMessages` | Lines printed to the Output box, such as `watching` and `claimed_drop` |
-| `login` | `LoginMessages` | Login messages, with `chrome` (`ChromeMessages`) |
-| `error` | `ErrorMessages` | `captcha`, `no_connection`, `site_down` |
+| `login` | `LoginMessages` | `unexpected_content`, and `chrome` (`ChromeMessages`), which no code reads ([task 022](../refinements/tasks/022-unused-code.md)) |
+| `error` | `ErrorMessages` | `no_connection`, `site_down` |
 | `gui` | `GUIMessages` | The window's text, one nested type per part |
 
 `GUIMessages` contains `GUIStatus`, `GUITabs`, `GUITray`, `GUILoginForm`, `GUIWebsocket`, `GUIProgress`,

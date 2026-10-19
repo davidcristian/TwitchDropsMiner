@@ -43,8 +43,6 @@ The log lines are f-strings, so a value is already text when a log handler recei
 - `redact()` runs for every request at every log level, because Python builds an f-string before the logger
   checks the level. It copies the arguments, which costs little next to the request, and it adds no request to
   Twitch.
-- The password login logs Twitch's response to a failed login without `redact()`. It has no caller
-  ([task 010](../refinements/tasks/010-unreachable-password-login.md)).
 
 ## Alternatives rejected
 
@@ -60,5 +58,4 @@ The log lines are f-strings, so a value is already text when a log handler recei
 - [redact.md](../modules/redact.md), [twitch.md](../modules/twitch.md#requests),
   [websocket.md](../modules/websocket.md) and [main.md](../modules/main.md), which sets the log levels.
 - [ADR-0010](ADR-0010-device-code-login.md): the login, the token and `cookies.jar`.
-- Tasks [011](../refinements/tasks/011-login-token-in-debug-log.md) (the token in debug logs) and
-  [010](../refinements/tasks/010-unreachable-password-login.md) (the password login).
+- Task [011](../refinements/tasks/011-login-token-in-debug-log.md) (the token in debug logs).

@@ -94,9 +94,8 @@ a token for another client ID it deletes `cookies.jar`. In both cases it logs in
 runs at most twice, then raises `RuntimeError`. At the end it saves the cookie jar.
 
 The `Invalidate` button on the Help tab revokes the token at `https://id.twitch.tv/oauth2/revoke`. On a 200
-response it calls `invalidate(delete_cookies=True)`, and in every case it enters `State.RESTART`.
-`_AuthState._login`, a password login through `passport.twitch.tv`, has no caller, and it is the only code
-that raises `CaptchaRequired` ([task 010](../refinements/tasks/010-unreachable-password-login.md)).
+response it calls `invalidate(delete_cookies=True)`, and in every case it enters `State.RESTART`. The device
+code flow is the only login: the app has no password login ([ADR-0010](../adr/ADR-0010-device-code-login.md)).
 
 ## State machine
 
@@ -144,11 +143,9 @@ stops. Otherwise it prints the traceback, calls `shutdown()`, shows the restart 
 Output box, and waits `restart_delay` minutes plus a random 0 to 60 seconds (`RESTART_JITTER`). `run` then starts
 `_run` again, which begins with a full reload
 ([task 019](../refinements/tasks/019-restart-runs-a-full-reload.md)). Closing the window ends the wait and the
-app. For `CaptchaRequired` the wait is `CAPTCHA_RESTART_DELAY` (1 hour), doubled for each denial in a row up to
-`CAPTCHA_RESTART_MAX` (12 hours), and a successful login resets the count. Nothing raises `CaptchaRequired`
-today, so this branch cannot run ([task 010](../refinements/tasks/010-unreachable-password-login.md)). The
-setting is "Restart after a crash after" on the Settings tab: "Never (stay stopped)", stored as 0, or 1, 5, 10,
-15, 30 or 60 minutes, default 10 ([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)).
+app. Every error waits the same delay. The setting is "Restart after a crash after" on the Settings tab: "Never
+(stay stopped)", stored as 0, or 1, 5, 10, 15, 30 or 60 minutes, default 10
+([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)).
 
 ## Wanted games
 

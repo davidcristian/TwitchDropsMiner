@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import re
 import sys
 import shlex
 import ctypes
@@ -13,7 +12,6 @@ from pathlib import Path
 from collections import abc
 from textwrap import dedent
 from math import log10, ceil
-from dataclasses import dataclass
 from tkinter.font import Font, nametofont
 from functools import partial, cached_property
 from datetime import datetime, timedelta, timezone
@@ -524,13 +522,6 @@ class WebsocketStatus:
         self._topics_var.set('\n'.join(topic_lines))
 
 
-@dataclass
-class LoginData:
-    username: str
-    password: str
-    token: str
-
-
 class LoginForm:
     def __init__(self, manager: GUIManager, master: ttk.Widget):
         self._manager = manager
@@ -539,33 +530,16 @@ class LoginForm:
         frame.grid(column=1, row=1, sticky="nsew", padx=2)
         frame.columnconfigure(0, weight=2)
         frame.columnconfigure(1, weight=1)
-        frame.rowconfigure(4, weight=1)
+        frame.rowconfigure(1, weight=1)
         ttk.Label(frame, text=_("gui", "login", "labels")).grid(column=0, row=0)
         ttk.Label(frame, textvariable=self._var, justify="center").grid(column=1, row=0)
-        self._login_entry = PlaceholderEntry(frame, placeholder=_("gui", "login", "username"))
-        # self._login_entry.grid(column=0, row=1, columnspan=2)
-        self._pass_entry = PlaceholderEntry(
-            frame, placeholder=_("gui", "login", "password"), show='•'
-        )
-        # self._pass_entry.grid(column=0, row=2, columnspan=2)
-        self._token_entry = PlaceholderEntry(frame, placeholder=_("gui", "login", "twofa_code"))
-        # self._token_entry.grid(column=0, row=3, columnspan=2)
 
         self._confirm = asyncio.Event()
         self._button = ttk.Button(
             frame, text=_("gui", "login", "button"), command=self._confirm.set, state="disabled"
         )
-        self._button.grid(column=0, row=4, columnspan=2)
+        self._button.grid(column=0, row=1, columnspan=2)
         self.update(_("gui", "login", "logged_out"), None)
-
-    def clear(self, login: bool = False, password: bool = False, token: bool = False):
-        clear_all = not login and not password and not token
-        if login or clear_all:
-            self._login_entry.clear()
-        if password or clear_all:
-            self._pass_entry.clear()
-        if token or clear_all:
-            self._token_entry.clear()
 
     async def wait_for_login_press(self) -> None:
         self._confirm.clear()
@@ -574,33 +548,6 @@ class LoginForm:
             await self._manager.coro_unless_closed(self._confirm.wait())
         finally:
             self._button.config(state="disabled")
-
-    async def ask_login(self) -> LoginData:
-        self.update(_("gui", "login", "required"), None)
-        # ensure the window isn't hidden into tray when this runs
-        self._manager.grab_attention(sound=False)
-        while True:
-            self._manager.print(_("gui", "login", "request"))
-            await self.wait_for_login_press()
-            login_data = LoginData(
-                self._login_entry.get().strip(),
-                self._pass_entry.get(),
-                self._token_entry.get().strip(),
-            )
-            # basic input data validation: 3-25 characters in length, only ascii and underscores
-            if (
-                not 3 <= len(login_data.username) <= 25
-                and re.match(r'^[a-zA-Z0-9_]+$', login_data.username)
-            ):
-                self.clear(login=True)
-                continue
-            if len(login_data.password) < 8:
-                self.clear(password=True)
-                continue
-            if login_data.token and len(login_data.token) < 6:
-                self.clear(token=True)
-                continue
-            return login_data
 
     async def ask_enter_code(self, page_url: URL, user_code: str) -> None:
         self.update(_("gui", "login", "required"), None)

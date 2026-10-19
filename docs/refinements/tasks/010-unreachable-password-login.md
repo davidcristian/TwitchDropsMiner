@@ -1,9 +1,9 @@
 # The password login and its CAPTCHA handling cannot run
 
-**Status:** open
+**Status:** done 2026-10-19
 **Area:** twitch (login), main, gui, constants, translate
 **Origin:** Found on 2026-10-18 while the docs were written, [twitch.md](../../modules/twitch.md#login)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-19
 
 The app logs in only through the OAuth device code flow. `_AuthState._validate` in `twitch.py` calls
 `_AuthState._oauth_login` and no other login. `_AuthState._login`, the password login through
@@ -67,9 +67,9 @@ does. `twitch.py` is 1849 lines against the 300 line cap ([005](005-modules-over
 `git log -S'await self._login()' -- twitch.py` finds two commits of the original project. "First release"
 (2021-12-03) added the call, and "Implement SmartTV OAuth2 login flow" (2022-12-23) replaced it with
 `await self._oauth_login()` and commented out the `grid` calls of the three entries. The password code stayed.
-The original project still has it, and has not changed `_login` since "Move ClientType into Twitch class as an
-attribute" (2024-02-13). The comments in `_login` quote two error responses from Twitch: 5023, "client is not
-supported for this feature", and 5027, "client blocked from this operation".
+The original project still has it, and last changed `_login` in "Exceptions cleanup" (2024-08-04), which added
+its final `raise LoginException`. The comments in `_login` quote two error responses from Twitch: 5023,
+"client is not supported for this feature", and 5027, "client blocked from this operation".
 
 This project added the CAPTCHA restart schedule in "Restart automatically after a fatal error" (2026-08-25,
 found with `git log -S'_captcha_denials'`), three years and eight months after the last call of `_login` was
@@ -97,3 +97,8 @@ Both choices send no Twitch request, and the device code login stays as it is.
 
 - 2026-10-18: Opened. Checking the login section of twitch.md and ADR-0006 against the code showed that the
   password login has no caller, and an `ast` scan of the modules confirmed it.
+- 2026-10-19: Closed. The dead path was removed: everything listed above, `CaptchaRequired` and
+  `LoginException` in `exceptions.py`, the 10 strings and their `TypedDict` keys. The language files keep their
+  translations, which [023](023-language-file-keys-dropped.md) now lists. ADR-0010 and ADR-0006 state the new
+  decision, and `manual.txt` names only a fatal exception for exit code 1. `git log -L` on upstream's `_login`
+  found a later change than the one named above, and that paragraph now names it.

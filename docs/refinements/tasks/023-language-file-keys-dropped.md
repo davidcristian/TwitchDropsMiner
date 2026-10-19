@@ -3,17 +3,18 @@
 **Status:** open
 **Area:** lang
 **Origin:** Found on 2026-10-18 while the docs were written, [translate.md](../../modules/translate.md)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-19
 
 `Translator.set_language` in `translate.py` loads a language file with `json_load(path, default_translation)`.
 `merge_json` in `utils.py` then deletes, without a message, every key that `default_translation` does not have.
-Eleven files in `lang/` have 13 such keys:
+Every file in `lang/` has such keys, 212 in all:
 
 | File | Key in the file | What the app reads |
 | --- | --- | --- |
 | Polski | `gui.invalidate.button`, `gui.invalidate.text` | `gui.help.invalidate.button` and `gui.help.invalidate.text` |
 | Dansk, Deutsch, Indonesian, Italiano, Nederlandse, Português, Română, Čeština, العربية, 日本語 | `gui.settings.general.priority_only` | nothing; the key belonged to a check box that the Priority mode list replaced |
 | Nederlandse | `gui.inventory.filter.linked` | `gui.inventory.filter.not_linked` |
+| All 20 files | `login.error_code` (not in Čeština), `login.incorrect_login_pass`, `login.incorrect_email_code`, `login.incorrect_twofa_code`, `login.email_code_required`, `login.twofa_code_required`, `error.captcha`, `gui.login.username`, `gui.login.password`, `gui.login.twofa_code` | nothing; they are the strings of a password login, which the app does not have ([ADR-0010](../../adr/ADR-0010-device-code-login.md)) |
 
 No file has a value whose type differs from the English one, which the merge would also replace.
 
@@ -21,8 +22,8 @@ No file has a value whose type differs from the English one, which the merge wou
 
 - A script read `default_translation` from `translate.py` with `ast.literal_eval` and compared its nested key
   paths with those of each file in `lang/` other than `English.json`. It printed each path that a file has and
-  `default_translation` lacks, and each value whose type differs. It printed the 13 keys above and no type
-  difference.
+  `default_translation` lacks, and each value whose type differs. On 2026-10-19 it printed the 212 keys above
+  and no type difference.
 - A real call loaded the files with `Translator.set_language`, from a copy of `lang/` in a temporary folder.
   After `set_language("Polski")`, `_("gui", "help", "invalidate", "button")` returned `'Invalidate'`, the text
   returned the English string, and the loaded data had no `gui.invalidate`. `Polski.json` has `"Unieważnij"` at
@@ -34,14 +35,14 @@ No file has a value whose type differs from the English one, which the merge wou
 ## Effect
 
 A Polish user sees the Invalidate button on the Help tab and its label in English, although `Polski.json`
-translates both. The other 11 keys change nothing on screen: the app does not read them, and the keys that
+translates both. The other keys change nothing on screen: the app does not read them, and the keys that
 replaced them show in English. [Task 008](008-translations-for-new-strings.md) counts those replacement keys
 among the missing ones.
 
 ## How it came about
 
-From `git log -S` and `git show` on `translate.py` and the language files. All three come from the original
-project.
+From `git log -S` and `git show` on `translate.py` and the language files. The first three come from the
+original project.
 
 - Polski: the English keys came in "Implement the auth token invalidation button" (2026-07-02). "Update Polish
   translation" (2026-07-15) added the two strings after the closing brace of `gui.help`, one level too high.
@@ -52,6 +53,9 @@ project.
 - Nederlandse: "Change inventory filters to show all campaigns when all of them are selected" (2023-10-29)
   replaced the English filter `linked` ("Linked only") with `not_linked` ("Not linked"). "Added Dutch language"
   (2023-11-03) used the old key, with "Alleen gekoppelde", which means "only linked".
+- The password login strings: "Remove the password login that nothing calls" (2026-10-19) deleted the login
+  and its 10 strings from `default_translation`, and left the translations in the files
+  ([010](010-unreachable-password-login.md)).
 
 ## What a fix involves
 
@@ -62,6 +66,7 @@ project.
   "Priority list only" as it is, so a speaker of each language writes the new keys
   ([008](008-translations-for-new-strings.md)).
 - Nederlandse `linked`: delete it. It means the opposite of `not_linked`, so it cannot be moved.
+- The password login strings: delete the ten keys from every file. This needs no translator.
 
 Each edit keeps the file valid JSON, which CI's Validate job checks. A script that lists keys the app does not
 read fits in the check command of [004](004-single-check-command.md), next to the missing key report that 008
@@ -74,3 +79,4 @@ Cost: no Twitch requests.
 
 - 2026-10-18: Opened. A comparison of the key paths in each language file with `default_translation`, made
   while the docs were written, found the keys. Split from the part of 008 that needs no translator.
+- 2026-10-19: The removal of the password login added its 10 strings to the keys in every file.
