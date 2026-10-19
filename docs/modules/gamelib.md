@@ -86,20 +86,20 @@ is set and differs from `AppName`), or has `bIsIncompleteInstall` set.
 `normalize` turns a name into case-folded words of letters and digits, in any script, separated by single
 spaces:
 
-1. Apostrophes (`'`, `’`, `ʼ`, `ʻ`, `´`) are removed without a gap: `Clancy's` becomes `clancys`.
-2. NFKD decomposition, then the accents of Latin and Greek letters are removed: `Pokémon` becomes `pokemon`. The
+1. `™` and `℠` become spaces. NFKD would write them as the letters `TM` and `SM`, which would join the word
+   before them.
+2. Apostrophes (`'`, `’`, `ʼ`, `ʻ`, `´`) are removed without a gap: `Clancy's` becomes `clancys`.
+3. NFKD decomposition, then the accents of Latin and Greek letters are removed: `Pokémon` becomes `pokemon`. The
    marks of other scripts are parts of their letters (the breve of `й`, the dakuten of `ガ`), so they stay, and
    NFC joins them back, which also joins Hangul syllables.
-3. Case folding (`str.casefold`), which writes `ß` as `ss`. The Latin letters that have no accent to remove
+4. Case folding (`str.casefold`), which writes `ß` as `ss`. The Latin letters that have no accent to remove
    (`æ`, `œ`, `ø`, `ł`, `đ`, `ð`, `þ`, `ħ`, `ı`) are written as `ae`, `oe`, `o`, `l`, `d`, `d`, `th`, `h`, `i`
    (`LATIN_LETTERS`). `&` becomes `and`.
-4. Every other run of characters that are not letters, digits or marks becomes one space, and the ends are
+5. Every other run of characters that are not letters, digits or marks becomes one space, and the ends are
    trimmed.
 
-So `Tom Clancy's Rainbow Six: Siege` becomes `tom clancys rainbow six siege`, `Łódź` becomes `lodz`, and
-`Мир Танков` becomes `мир танков`. NFKD writes `™` as `TM`, so
-`Pokémon™ Scarlet` becomes `pokemontm scarlet`, and `Warframe™` does not match `Warframe`
-([task 009](../refinements/tasks/009-trademark-symbols-in-game-names.md)).
+So `Tom Clancy's Rainbow Six: Siege` becomes `tom clancys rainbow six siege`, `STAR WARS™ Battlefront™ II`
+becomes `star wars battlefront ii`, `Łódź` becomes `lodz`, and `Мир Танков` becomes `мир танков`.
 
 `match_games` compares each local game with the names of the games in the inventory. The first step that finds
 a candidate decides:
@@ -132,8 +132,8 @@ passed through `normalize` and `re.escape`. `matches` compares the pattern with 
 (`fullmatch`). [troubleshooting.md](../troubleshooting.md#priority-and-exclude-lists) shows the rules from the
 user's side.
 
-- Case, accents and punctuation do not count, and `&` matches `and`: `Ratchet and Clank` matches
-  `Ratchet & Clank`.
+- Case, accents, punctuation and the `™`, `℠` and `®` signs do not count, and `&` matches `and`:
+  `Ratchet and Clank` matches `Ratchet & Clank`, and `Warframe` matches `Warframe™`.
 - An entry without a wildcard matches one game: `Rust` does not match `Rust Console Edition`, but `Rust*` does.
 - `*` also matches nothing, so `Call of Duty*` matches `Call of Duty`.
 - `normalize` trims each piece, so a space next to a wildcard is dropped. `Call *` becomes `call.*` and matches

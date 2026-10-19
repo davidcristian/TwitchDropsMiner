@@ -1,18 +1,17 @@
 # The ™ sign becomes the letters TM in normalized game names
 
-**Status:** open
+**Status:** done 2026-10-19
 **Area:** gamelib (matching and patterns)
 **Origin:** Found on 2026-10-18 while the docs were written, [gamelib.md](../../modules/gamelib.md#matching-rules)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-19
 
 `normalize` in `gamelib/matching.py` starts with Unicode NFKD decomposition. NFKD writes `™` (U+2122) as the
 letters `TM` and `℠` (U+2120) as `SM`, and the later steps keep letters, so the sign joins the word before it:
 `normalize("DOOM™")` returns `"doomtm"`. `®` and `©` have no decomposition, so the step that turns every other
 character into a space removes them: `normalize("Warframe®")` returns `"warframe"`.
 
-The docstring of `normalize` says Twitch and the launchers disagree on trademark symbols, and that such names
-must count as one game. [ADR-0004](../../adr/ADR-0004-installed-game-detection.md) lists trademark symbols
-among the differences between launcher names and Twitch names.
+[ADR-0004](../../adr/ADR-0004-installed-game-detection.md) lists trademark symbols among the differences
+between launcher names and Twitch names, which must not keep a game from matching.
 
 ## What it does to detection
 
@@ -23,7 +22,7 @@ not names read from a launcher.
 | --- | --- | --- | --- |
 | `Warframe™` | `warframetm` | `Warframe` | no match |
 | `DOOM™` | `doomtm` | `DOOM` | no match |
-| `Call of Duty®: Black Ops 6™` | `call of duty black ops 6tm` | `Call of Duty: Black Ops 6` | no match |
+| `Call of Duty®: Black Ops 6™` | `call of duty black ops 6tm` | `Call of Duty: Black Ops 6` | `FUZZY`, ratio 0.960 |
 | `Game℠` | `gamesm` | `Game` | no match |
 | `ARK: Survival Evolved™` | `ark survival evolvedtm` | `ARK: Survival Evolved` | `FUZZY`, ratio 0.952 |
 | `STAR WARS™ Battlefront™ II` | `star warstm battlefronttm ii` | `Star Wars: Battlefront II` | `FUZZY`, ratio 0.923 |
@@ -35,13 +34,11 @@ Why each step fails:
 - The fuzzy step needs both names to have at least `FUZZY_MIN_LENGTH` (8) characters and a ratio of at least
   `FUZZY_THRESHOLD` (0.92). Two extra letters on a short name lower the ratio: `warframetm` against `warframe`
   gives 16/18, 0.889. `doomtm` is too short for the step.
-- `_numbers` keeps only tokens that are digits or roman numerals. `6tm` is neither, so the local name has no
-  number while the Twitch name has `6`, and the fuzzy step skips the pair.
 - A long name still matches, but as `FUZZY`. The Detected Games list marks it with `≈`, and the match is dropped
   when a second Twitch name also reaches the threshold.
 
 Effect on a user: a game with `™` or `℠` in its launcher name is not detected when the name is short, as
-`Warframe™` and `DOOM™` are, or when the sign follows a number. Under "Priority list only", the default mode,
+`Warframe™` and `DOOM™` are. Under "Priority list only", the default mode,
 it is then not mined unless the user adds it to the Priority list. A longer name is detected, but marked `≈`
 as if the match were uncertain.
 
@@ -79,9 +76,28 @@ How it came about: `normalize`, with NFKD and its docstring, came with installed
 (the commit "Implement automatic game detection"). It moved to `gamelib/matching.py` when `gamelib.py` was
 split into a package on 2026-10-18.
 
+## How it was closed
+
+`normalize` turns `™` and `℠` into spaces before the NFKD step. A space keeps `Wars™Battlefront` as two words.
+Over every Unicode code point, alone and between two letters, the new `normalize` differs from the old one only
+at U+2120 and U+2122, so a name without either sign gives the same result as before. All seven rows of the table
+above now give `EXACT`.
+
+The same 307 labeled pairs of real names as the review in [033](033-fuzzy-match-ignores-i-v-x.md) gave 10 changed
+results, all for names with `™` and all correct: 9 `FUZZY` matches became `EXACT`, and `Mortal Kombat X™`
+against `Mortal Kombat X` went from no match to `EXACT`. Of 653,337 calls of `matches` with those names as
+entries and as game names, 44 changed, all from False to True, each with a sign in the entry or the name. The
+calls ran on Python 3.10.
+
+The effects that "What a fix involves" lists are still accurate. Also, an entry `*™` now compiles to `.*` and covers every
+game, as `*®` already did.
+
 ## History
 
 - 2026-10-18: Opened while the docs were written. `match_games`, `normalize` and the pattern functions were
   called with names that contain `™`, `℠` and `®`.
 - 2026-10-18: Three strict `xfail` tests in `tests/test_gamelib_matching.py` and `tests/test_gamelib_patterns.py`
   assert the correct behavior. They pass, and the strict mark then fails the suite, once this is fixed.
+- 2026-10-19: Checked again before the fix. `_numbers` now reads the digits inside a word, so `6tm` counts as
+  6 and the Call of Duty row is `FUZZY`. The table and the reasons are corrected.
+- 2026-10-19: Closed. `normalize` turns `™` and `℠` into spaces before the NFKD step.

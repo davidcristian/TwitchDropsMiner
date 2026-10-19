@@ -48,9 +48,8 @@ a game the user never chose. A missed match costs little, because the user can s
    Twitch games that have a campaign in the inventory. `_match_one` tries three steps in order, and returns no
    match at any step that finds more than one candidate:
    - exact (`MatchKind.EXACT`): equal after `normalize`, which removes case, accents and apostrophes, writes
-     `&` as `and` and turns other punctuation into spaces, keeping the letters and digits of every script. Its
-     Unicode NFKD step turns `™` into the letters `tm`, so `Warframe™` does not match `Warframe`
-     ([009](../refinements/tasks/009-trademark-symbols-in-game-names.md));
+     `&` as `and` and turns the `™` and `℠` signs and other punctuation into spaces, keeping the letters and
+     digits of every script;
    - variant (`MatchKind.VARIANT`): equal after the roman numerals in `ROMAN_NUMERALS` become digits or the
      trailing `EDITION_WORDS` are removed, on either side;
    - fuzzy (`MatchKind.FUZZY`): a `difflib.SequenceMatcher` ratio of at least `FUZZY_THRESHOLD` (0.92), both

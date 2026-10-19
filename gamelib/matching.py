@@ -85,8 +85,10 @@ def _is_word_char(char: str) -> bool:
 
 def normalize(name: str) -> str:
     """Returns the comparable form of a game name: case-folded words of letters and digits, in any script."""
+    # NFKD writes ™ and ℠ as the letters TM and SM, which would join the word before them, so they become spaces
+    text = re.sub(r"[\u2122\u2120]", " ", name)
     # drop apostrophes without leaving a gap, so "clancy's" becomes "clancys"
-    text = re.sub(r"['\u2019\u02bc\u02bb\u00b4]", "", name)
+    text = re.sub(r"['\u2019\u02bc\u02bb\u00b4]", "", text)
     # Drop the accents of Latin and Greek letters only: the breve of the Cyrillic й and the dakuten of the kana ガ
     # make other letters, so they stay, and NFC joins them back to their letters.
     kept: list[str] = []
