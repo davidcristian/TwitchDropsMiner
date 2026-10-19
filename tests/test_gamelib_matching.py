@@ -2,11 +2,6 @@ import pytest
 
 from gamelib import FUZZY_THRESHOLD, GameMatch, LocalGame, MatchKind, Platform, match_games, normalize
 
-TRADEMARK_REASON = (
-    "normalize turns the ™ sign into the letters tm "
-    "(docs/refinements/tasks/009-trademark-symbols-in-game-names.md)"
-)
-
 
 def match_one(local_name, game_names):
     return [
@@ -46,7 +41,7 @@ def test_normalize_turns_other_characters_into_single_spaces(name, expected):
     assert normalize(name) == expected
 
 
-@pytest.mark.parametrize("name", ["", "!!!", "®"])
+@pytest.mark.parametrize("name", ["", "!!!", "®", "™"])
 def test_normalize_returns_an_empty_string_for_a_name_without_letters_or_digits(name):
     assert normalize(name) == ""
 
@@ -94,8 +89,9 @@ def test_match_games_prefers_an_exact_match_to_a_variant():
     ]
 
 
-def test_match_games_gives_no_match_when_two_names_are_equal_after_normalizing():
-    assert match_one("Halo Infinite", ["Halo Infinite", "Halo: Infinite"]) == []
+@pytest.mark.parametrize("game_names", [["Halo Infinite", "Halo: Infinite"], ["Halo Infinite", "Halo Infinite™"]])
+def test_match_games_gives_no_match_when_two_names_are_equal_after_normalizing(game_names):
+    assert match_one("Halo Infinite", game_names) == []
 
 
 def test_match_games_gives_no_match_when_two_variants_fit():
@@ -166,14 +162,20 @@ def test_match_games_returns_an_empty_list_for_empty_input():
     assert match_one("Warframe", []) == []
 
 
-@pytest.mark.xfail(strict=True, reason=TRADEMARK_REASON)
-def test_normalize_removes_the_trademark_sign():
-    assert normalize("DOOM™") == "doom"
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [("DOOM™", "doom"), ("Game℠", "game"), ("STAR WARS™Battlefront™ II", "star wars battlefront ii")],
+)
+def test_normalize_turns_the_trademark_and_service_mark_signs_into_spaces(name, expected):
+    assert normalize(name) == expected
 
 
-@pytest.mark.xfail(strict=True, reason=TRADEMARK_REASON)
-def test_match_games_pairs_a_name_with_the_trademark_sign_as_exact():
-    assert match_one("Warframe™", ["Warframe"]) == [("Warframe", MatchKind.EXACT)]
+@pytest.mark.parametrize(
+    ("local_name", "game_name"),
+    [("Warframe™", "Warframe"), ("Halo", "Halo™"), ("Call of Duty®: Black Ops 6™", "Call of Duty: Black Ops 6")],
+)
+def test_match_games_pairs_a_name_with_the_trademark_sign_as_exact(local_name, game_name):
+    assert match_one(local_name, [game_name]) == [(game_name, MatchKind.EXACT)]
 
 
 def test_match_games_tells_apart_names_written_in_cyrillic():

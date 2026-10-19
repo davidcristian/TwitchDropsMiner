@@ -92,7 +92,8 @@ access. Log in to the network in a browser. If you set a proxy on the Settings t
 
 ## Priority and Exclude lists
 
-An entry ignores case, accents and punctuation, so `pokemon go` matches `Pokémon GO`. `&` counts as `and`.
+An entry ignores case, accents, punctuation and the `™`, `℠` and `®` signs, so `pokemon go` matches
+`Pokémon GO`. `&` counts as `and`.
 
 - `*` matches any run of characters, including none: `Pokemon*` matches `Pokémon Scarlet`.
 - `?` matches exactly one character: `FIFA 2?` matches `FIFA 23`, but not `FIFA 2` or `FIFA 234`.
@@ -126,10 +127,8 @@ launcher's manifests folder holds a game, or a Legendary or Heroic index exists,
 folder, so the line does not appear. The Detected
 Games section shows how many installed games matched a game with a campaign. Only games with a campaign can
 match, and a name that is not a clear match is left out. A name shown with `≈` was not an exact match; when it is
-the wrong game, add that game to the Exclude list. An installed name with a trademark sign, such as
-`Warframe™`, does not match the same name without it
-([task 009](refinements/tasks/009-trademark-symbols-in-game-names.md)). When an installed game is missing, add
-it to the Priority list by hand.
+the wrong game, add that game to the Exclude list. When an installed game is missing, add it to the Priority
+list by hand.
 
 ## The tray icon on Linux
 

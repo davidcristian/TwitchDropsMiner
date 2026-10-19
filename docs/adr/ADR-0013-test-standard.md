@@ -65,4 +65,5 @@ caller depends on, and chose rules about what tests assert plus a floor of 80% b
   [ADR-0014](ADR-0014-code-rules.md) (logic apart from I/O).
 - Tasks [003](../refinements/tasks/003-test-suite.md) (closed by this record),
   [031](../refinements/tasks/031-tests-for-utils-and-settings.md) (the modules not yet tested) and
-  [009](../refinements/tasks/009-trademark-symbols-in-game-names.md) (a known defect with a strict `xfail` test).
+  [009](../refinements/tasks/009-trademark-symbols-in-game-names.md) (a defect whose strict `xfail` tests became
+  plain tests with its fix).

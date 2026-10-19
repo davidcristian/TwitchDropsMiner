@@ -10,11 +10,6 @@ from gamelib import (
     matching_names,
 )
 
-TRADEMARK_REASON = (
-    "normalize turns the ™ sign into the letters tm "
-    "(docs/refinements/tasks/009-trademark-symbols-in-game-names.md)"
-)
-
 
 def test_match_rank_gives_the_index_of_the_entry_that_matches():
     patterns = compile_patterns(["Pokemon*", "Warframe"])
@@ -149,9 +144,12 @@ def test_has_wildcard_finds_a_star_or_a_question_mark(text, expected):
     assert has_wildcard(text) is expected
 
 
-@pytest.mark.xfail(strict=True, reason=TRADEMARK_REASON)
-def test_matches_ignores_the_trademark_sign():
-    assert matches(compile_pattern("Warframe"), "Warframe™")
+@pytest.mark.parametrize(
+    ("entry", "game_name"),
+    [("Warframe", "Warframe™"), ("Warframe™", "Warframe"), ("Halo™*", "Halo Infinite")],
+)
+def test_matches_ignores_the_trademark_sign(entry, game_name):
+    assert matches(compile_pattern(entry), game_name)
 
 
 def test_matches_tells_apart_entries_written_in_cyrillic():
