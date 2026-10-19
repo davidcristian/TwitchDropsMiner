@@ -76,11 +76,8 @@ message box titled "Argument Parser Error" when argparse exits, also for `--help
    only when `restart_delay` is 0, or when `Twitch._await_restart` raises itself. A failed critical task, such
    as `_watch_loop`, calls `Twitch.close()` instead, and `run` returns without a restart
    ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)).
-3. `CaptchaRequired` sets the exit code to 1 and prints the CAPTCHA message. No code path raises it today,
-   because `_AuthState._login`, the only code that raises it, has no caller. So this branch cannot run
-   ([task 010](../refinements/tasks/010-unreachable-password-login.md)). Any other exception sets the exit code
-   to 1 and prints "Fatal error encountered:" and the traceback. Both call `client.prevent_close()`, so the
-   window stays open.
+3. An exception sets the exit code to 1, prints "Fatal error encountered:" and the traceback, and calls
+   `client.prevent_close()`, so the window stays open.
 4. In `finally`, the signal handlers are removed, "Exiting..." is printed and `client.shutdown()` runs.
 5. When the user did not close the window, the tray icon changes to `error`, the Output box shows "Application
    Terminated. Close the window to exit the application.", the status shows "Terminated", and
@@ -98,7 +95,7 @@ the error tray icon. Only the argument and settings errors before the window exi
 | Code | When |
 | --- | --- |
 | 0 | The user closed the window, `--dump` finished, `--help` or `--version` ran, or a critical task failed ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)). |
-| 1 | `client.run()` raised an exception. With the default `restart_delay` of 10, the app starts again after an exception instead ([The run and the exit](#the-run-and-the-exit), step 2). The `CaptchaRequired` case cannot happen today: no code path raises it, because `_AuthState._login`, the only code that raises it, has no caller ([task 010](../refinements/tasks/010-unreachable-password-login.md)). |
+| 1 | `client.run()` raised an exception. With the default `restart_delay` of 10, the app starts again after an exception instead ([The run and the exit](#the-run-and-the-exit), step 2). |
 | 2 | argparse found an error in the command line, such as an unknown flag. |
 | 3 | Another process holds `lock.file`. |
 | 4 | `Settings(args)` raised, for example because `settings.json` is not valid JSON. |

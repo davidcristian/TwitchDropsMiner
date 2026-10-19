@@ -63,25 +63,6 @@ class WebsocketClosed(RequestException):
         self.received: bool = received
 
 
-class LoginException(RequestException):
-    """
-    Raised when an exception occurs during login phase.
-    """
-    def __init__(self, *args: object):
-        if args:
-            super().__init__(*args)
-        else:
-            super().__init__("Unknown error during login")
-
-
-class CaptchaRequired(LoginException):
-    """
-    The most dreaded thing about automated scripts...
-    """
-    def __init__(self):
-        super().__init__("Captcha is required")
-
-
 class GQLException(RequestException):
     """
     Raised when a GQL request returns an error response.

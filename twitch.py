@@ -28,10 +28,8 @@ from exceptions import (
     ExitRequest,
     GQLException,
     ReloadRequest,
-    LoginException,
     MinerException,
     RequestInvalid,
-    CaptchaRequired,
     RequestException,
 )
 from utils import (
@@ -54,8 +52,6 @@ from constants import (
     WATCH_INTERVAL,
     REFRESH_JITTER,
     RESTART_JITTER,
-    CAPTCHA_RESTART_MAX,
-    CAPTCHA_RESTART_DELAY,
     State,
     ClientType,
     PriorityMode,
@@ -73,17 +69,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("TwitchDrops")
 gql_logger = logging.getLogger("TwitchDrops.gql")
-
-
-class SkipExtraJsonDecoder(json.JSONDecoder):
-    def decode(self, s: str, *args):
-        # skip whitespace check
-        obj, end = self.raw_decode(s)
-        return obj
-
-
-def SAFE_LOADS(s: str) -> Any:
-    return json.loads(s, cls=SkipExtraJsonDecoder)
 
 
 class _AuthState:
@@ -190,133 +175,6 @@ class _AuthState:
             except RequestInvalid:
                 # the device_code has expired, request a new code
                 continue
-
-    async def _login(self) -> str:
-        logger.info("Login flow started")
-        gui_print = self._twitch.gui.print
-        login_form: LoginForm = self._twitch.gui.login
-        client_info: ClientInfo = self._twitch._client_type
-
-        token_kind: str = ''
-        use_chrome: bool = False
-        payload: JsonType = {
-            # username and password are added later
-            # "username": str,
-            # "password": str,
-            "client_id": client_info.CLIENT_ID,
-            "undelete_user": False,  # purpose unknown
-            "remember_me": True,  # persist the session via the cookie
-            # optional keys: "authy_token" (2FA token), "twitchguard_code" (email code), "captcha",
-            # and "force_twitchguard" (force the email code)
-        }
-
-        while True:
-            login_data = await login_form.ask_login()
-            payload["username"] = login_data.username
-            payload["password"] = login_data.password
-            # reinstate the 2FA token, if present
-            payload.pop("authy_token", None)
-            payload.pop("twitchguard_code", None)
-            if login_data.token:
-                # if there's no token kind set yet, and the user has entered a token,
-                # we can immediately assume it's an authenticator token and not an email one
-                if not token_kind:
-                    token_kind = "authy"
-                if token_kind == "authy":
-                    payload["authy_token"] = login_data.token
-                elif token_kind == "email":
-                    payload["twitchguard_code"] = login_data.token
-
-            # use fancy headers to mimic the twitch android app
-            headers = {
-                "Accept": "application/vnd.twitchtv.v3+json",
-                "Accept-Encoding": "gzip",
-                "Accept-Language": "en-US",
-                "Client-Id": client_info.CLIENT_ID,
-                "Content-Type": "application/json; charset=UTF-8",
-                "Host": "passport.twitch.tv",
-                "User-Agent": client_info.USER_AGENT,
-                "X-Device-Id": self.device_id,
-                # "X-Device-Id": ''.join(random.choices('0123456789abcdef', k=32)),
-            }
-            async with self._twitch.request(
-                "POST", "https://passport.twitch.tv/login", headers=headers, json=payload
-            ) as response:
-                login_response: JsonType = await response.json(loads=SAFE_LOADS)
-
-            # Feed this back in to avoid running into CAPTCHA if possible
-            if "captcha_proof" in login_response:
-                payload["captcha"] = {"proof": login_response["captcha_proof"]}
-
-            # Error handling
-            if "error_code" in login_response:
-                error_code: int = login_response["error_code"]
-                logger.info(f"Login error code: {error_code}")
-                if error_code == 1000:
-                    logger.info("1000: CAPTCHA is required")
-                    use_chrome = True
-                    break
-                elif error_code in (2004, 3001):
-                    logger.info("3001: Login failed due to incorrect username or password")
-                    gui_print(_("login", "incorrect_login_pass"))
-                    if error_code == 2004:
-                        # invalid username
-                        login_form.clear(login=True)
-                    login_form.clear(password=True)
-                    continue
-                elif error_code in (
-                    3012,  # Invalid authy token
-                    3023,  # Invalid email code
-                ):
-                    logger.info("3012/23: Login failed due to incorrect 2FA code")
-                    if error_code == 3023:
-                        token_kind = "email"
-                        gui_print(_("login", "incorrect_email_code"))
-                    else:
-                        token_kind = "authy"
-                        gui_print(_("login", "incorrect_twofa_code"))
-                    login_form.clear(token=True)
-                    continue
-                elif error_code in (
-                    3011,  # Authy token needed
-                    3022,  # Email code needed
-                ):
-                    # 2FA handling
-                    logger.info("3011/22: 2FA token required")
-                    # user didn't provide a token, so ask them for it
-                    if error_code == 3022:
-                        token_kind = "email"
-                        gui_print(_("login", "email_code_required"))
-                    else:
-                        token_kind = "authy"
-                        gui_print(_("login", "twofa_code_required"))
-                    continue
-                elif error_code >= 5000:
-                    # Twitch returns codes of 5000 and above for errors such as 5023 ("client
-                    # is not supported for this feature") and 5027 ("client blocked from this
-                    # operation"). The code is printed, and the login raises CaptchaRequired.
-                    gui_print(_("login", "error_code").format(error_code=error_code))
-                    logger.info(str(login_response))
-                    use_chrome = True
-                    break
-                else:
-                    ext_msg = str(login_response)
-                    logger.info(ext_msg)
-                    raise LoginException(ext_msg)
-            # Success handling
-            if "access_token" in login_response:
-                self.access_token = cast(str, login_response["access_token"])
-                logger.info("Access token granted")
-                login_form.clear()
-                break
-
-        if use_chrome:
-            # await self._chrome_login()
-            raise CaptchaRequired()
-
-        if hasattr(self, "access_token"):
-            return self.access_token
-        raise LoginException("Login flow finished without setting the access token")
 
     def headers(self, *, user_agent: str = '', gql: bool = False) -> JsonType:
         client_info: ClientInfo = self._twitch._client_type
@@ -432,8 +290,6 @@ class Twitch:
         self._scan_errors_printed: set[str] = set()
         # the Rescan button can be pressed while a scan is already running
         self._scanning_games: bool = False
-        # how many times in a row a login has been denied by a captcha, for backing off
-        self._captcha_denials: int = 0
         # NOTE: GQL is pretty volatile and breaks everything if one runs into their rate limit.
         # Do not modify the default, safe values.
         self._qgl_limiter = RateLimiter(capacity=5, window=1)
@@ -674,29 +530,17 @@ class Twitch:
         minutes: int = self.settings.restart_delay
         if minutes <= 0:
             return False
-        delay: timedelta
-        if isinstance(error, CaptchaRequired):
-            # A captcha needs a person, and the captcha message says to retry in 12 hours or more.
-            # The wait starts at one hour, in case the denial is temporary, and doubles for each
-            # denial in a row up to that limit.
-            delay = min(
-                CAPTCHA_RESTART_DELAY * 2 ** self._captcha_denials, CAPTCHA_RESTART_MAX
-            )
-            self._captcha_denials += 1
-            self.print(_("error", "captcha"))
-        else:
-            logger.error("Fatal error encountered", exc_info=error)
-            self.print(_("status", "fatal_error"))
-            self.print(
-                ''.join(traceback.format_exception(type(error), error, error.__traceback__))
-            )
-            delay = timedelta(minutes=minutes)
+        logger.error("Fatal error encountered", exc_info=error)
+        self.print(_("status", "fatal_error"))
+        self.print(
+            ''.join(traceback.format_exception(type(error), error, error.__traceback__))
+        )
         # tear everything down, so the retry starts from the same place a fresh run would
         await self.shutdown()
-        delay += timedelta(seconds=random.uniform(0, RESTART_JITTER.total_seconds()))
+        delay = timedelta(
+            minutes=minutes, seconds=random.uniform(0, RESTART_JITTER.total_seconds())
+        )
         restart_at: datetime = (datetime.now(timezone.utc) + delay).astimezone()
-        # a captcha backoff can run into tomorrow, where a bare clock time would be
-        # ambiguous, so include the date whenever the restart isn't happening today
         restart_time: str = restart_at.strftime(
             "%X" if restart_at.date() == datetime.now().date() else "%x %X"
         )
@@ -717,8 +561,6 @@ class Twitch:
         """
         self.gui.start()
         auth_state = await self.get_auth()
-        # logging in worked, so forget any captcha denials we've been backing off from
-        self._captcha_denials = 0
         await self.websocket.start()
         # NOTE: watch task is explicitly restarted on each new run
         if self._watching_task is not None:

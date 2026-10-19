@@ -9,14 +9,15 @@ asks Twitch for a short code, the user enters it on the Twitch activation page i
 logged in, and the app receives a token for the account. The app never sees the password.
 
 The login comes from the original project. "First release" (2021-12-03) logged in with the password through
-`https://passport.twitch.tv/login`, the code that is `_AuthState._login` today. "Implement SmartTV OAuth2
-login flow" (2022-12-23) added `_oauth_login` and replaced the one call of `_login` with it, so since then the
-device code flow is the only login the app runs. "Change client type to android app" (2024-08-05) set the
-current client, "Automatically clear the jar and delete the cookie file for re-auth" (2024-09-15) replaced
-the error that the client ID check had raised since 2022-12-24 with a new login, and "Implement the auth token
-invalidation button" (2026-07-02) added `Invalidate`. None of these commits has a message body, so the
-original project left no written reason for the flow or for a client.
-`_AuthState`, `ClientType` and the `Invalidate` handler are the same as upstream's today.
+`https://passport.twitch.tv/login`, the code that is `_AuthState._login` in upstream's `twitch.py`. "Implement
+SmartTV OAuth2 login flow" (2022-12-23) added `_oauth_login` and replaced the one call of `_login` with it, so since
+then the device code flow is the only login the app runs. "Change client type to android app" (2024-08-05) set the
+current client, "Automatically clear the jar and delete the cookie file for re-auth" (2024-09-15) replaced the error
+that the client ID check had raised since 2022-12-24 with a new login, and "Implement the auth token invalidation
+button" (2026-07-02) added `Invalidate`. None of these commits has a message body, so the original project left no
+written reason for the flow or for a client.
+`ClientType`, the `Invalidate` handler and the device code flow work as upstream's do today. Upstream's
+`_AuthState` also keeps `_login`, with no caller.
 
 ## Decision
 
@@ -61,9 +62,11 @@ original project left no written reason for the flow or for a client.
    and `Twitch.run` starts a new run, which logs in again. On another status it logs "Failed to invalidate the
    auth token", and the new run restores the same session from the cookie.
 
-6. **The password login, `_AuthState._login`, stays with no caller,** with its CAPTCHA handling, the hidden
-   entries of the Login Form and their strings
-   ([task 010](../refinements/tasks/010-unreachable-password-login.md)).
+6. **There is no password login.** The app has no code for `https://passport.twitch.tv/login`, a CAPTCHA or
+   a 2FA code, and the Login Form has no username, password or 2FA entries. An error during the device code
+   flow is a fatal error like any other, with the same restart delay
+   ([ADR-0006](ADR-0006-restart-after-fatal-error.md)). A change that upstream makes to its `_login` is left
+   out when its commit is brought in ([upstream-fixes.md](../runbooks/upstream-fixes.md#when-the-pick-conflicts)).
 
 ## Consequences
 
@@ -94,7 +97,10 @@ original project left no written reason for the flow or for a client.
 
 - **Bringing back the password login.** It has had no caller since 2022-12-23. Its comments quote two Twitch
   errors: 5023, "client is not supported for this feature", and 5027, "client blocked from this operation".
-  Task 010 decides whether the code goes.
+- **Keeping the password login with no caller.** 270 lines in `twitch.py`, `gui.py` and four other modules,
+  and 10 strings that every language file translates, described a login and a CAPTCHA wait that the app never
+  ran. Removing them makes an upstream change to `_login` conflict, but upstream last changed it on 2024-08-04
+  ([task 010](../refinements/tasks/010-unreachable-password-login.md)).
 - **Another `ClientType` entry.** It logs every user out once, and nothing here shows that it works better.
 
 ## Related

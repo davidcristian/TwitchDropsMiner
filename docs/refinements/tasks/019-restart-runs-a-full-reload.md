@@ -84,9 +84,8 @@ Each of these changes ADR-0006, and the reload list in AGENTS.md names the resta
 
 - **Lengthen the delay while the error repeats.** Double the delay after each restart whose run fails before
   it reaches a set point, such as its first `CHANNEL_SWITCH` or one hour of running, up to 60 minutes, and reset
-  it at that point. `_await_restart` already doubles its wait this way for a CAPTCHA denial, a branch that
-  cannot run today ([010](010-unreachable-password-login.md)). From the 1 minute choice, the waits are 1, 2, 4,
-  8, 16, 32 and 60 minutes: about 6 reloads in the first hour, then 1 an hour.
+  it at that point. From the 1 minute choice, the waits are 1, 2, 4, 8, 16, 32 and 60 minutes: about 6 reloads
+  in the first hour, then 1 an hour.
 - **Raise the shortest choice.** Without the 1 and 5 minute choices, a repeating error causes at most 5.9
   reloads an hour. A saved value that is no longer a choice is reset to 10 when `SettingsPanel` is created.
 - **Keep the campaigns across a restart.** A restart soon after a reload starts with `State.CHANNELS_CLEANUP`

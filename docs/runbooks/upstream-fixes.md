@@ -94,7 +94,9 @@ error: could not apply <hash>... <subject>
    ```
 
 2. Edit the file. Keep this project's behavior, and add the upstream commit's change to it. Where the two
-   disagree, this project's code and AGENTS.md take precedence.
+   disagree, this project's code and AGENTS.md take precedence. Leave out a change to code this project
+   removed, such as the password login `_AuthState._login`
+   ([ADR-0010](../adr/ADR-0010-device-code-login.md)).
 3. Mark the file as resolved and finish the pick. The commit keeps the upstream author and message:
 
    ```bash

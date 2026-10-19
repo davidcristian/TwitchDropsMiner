@@ -56,8 +56,6 @@ says what each file holds.
 | `WATCH_INTERVAL` | 20 seconds | Time between the `Channel.send_watch` calls of `Twitch._watch_loop` |
 | `REFRESH_JITTER` | 60 seconds | Largest random delay added to the `refresh_interval` setting in `_maintenance_task` ([ADR-0003](../adr/ADR-0003-stream-refresh.md)) |
 | `RESTART_JITTER` | 60 seconds | Largest random delay added to each automatic restart ([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)) |
-| `CAPTCHA_RESTART_DELAY` | 1 hour | First restart delay after Twitch asks for a captcha at login. It doubles with each denial in a row. It is not used today: only the password login raises `CaptchaRequired`, and nothing calls that login ([task 010](../refinements/tasks/010-unreachable-password-login.md)) |
-| `CAPTCHA_RESTART_MAX` | 12 hours | Largest captcha restart delay |
 | `MAX_EXTRA_MINUTES` | 15 | Minutes a drop may advance locally without a progress update from Twitch. At this count `TimedDrop.can_earn` returns false and the loop changes to `CHANNEL_SWITCH`, until a progress update or a reload resets the count |
 | `MAX_WEBSOCKETS` | 8 | PubSub connections in the pool |
 | `WS_TOPICS_LIMIT` | 50 | Topics on one connection |

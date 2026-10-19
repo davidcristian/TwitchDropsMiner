@@ -26,7 +26,6 @@ if __name__ == "__main__":
     from twitch import Twitch
     from settings import Settings
     from version import __version__
-    from exceptions import CaptchaRequired
     from utils import lock_file, resource_path, set_root_icon
     from constants import LOGGING_LEVELS, SELF_PATH, FILE_FORMATTER, LOG_PATH, LOCK_PATH
 
@@ -165,10 +164,6 @@ if __name__ == "__main__":
             loop.add_signal_handler(signal.SIGTERM, lambda *_: client.gui.close())
         try:
             await client.run()
-        except CaptchaRequired:
-            exit_status = 1
-            client.prevent_close()
-            client.print(_("error", "captcha"))
         except Exception:
             exit_status = 1
             client.prevent_close()

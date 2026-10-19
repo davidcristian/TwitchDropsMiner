@@ -3,10 +3,10 @@
 **Status:** open
 **Area:** lang
 **Origin:** found on 2026-10-18 while the docs were written
-**Verified:** 2026-10-18
+**Verified:** 2026-10-19
 
-`default_translation` in `translate.py` has 160 strings. Each of the 20 files in `lang/` other than
-`English.json` lacks between 33 and 50 of them. `English.json` is left out because it is gitignored and every
+`default_translation` in `translate.py` has 150 strings. Each of the 20 files in `lang/` other than
+`English.json` lacks between 33 and 49 of them. `English.json` is left out because it is gitignored and every
 run from source writes it again from `default_translation`. The counts come from comparing the nested key
 paths of `default_translation`, read from `translate.py` with the `ast` module, with the key paths of each
 file.
@@ -38,14 +38,13 @@ These are the strings of this project's own features:
   Deutsch, Indonesian, Italiano, Nederlandse, Português, Română, Čeština, العربية and 日本語. These ten define
   `gui.settings.general.priority_only` instead, which `default_translation` does not have.
 - Tray notifications, `gui.settings.general.tray_notifications` (1 key): Deutsch, Nederlandse and Čeština.
-- Login messages, `login.error_code` and the four `login.chrome` keys (5 keys): Čeština. No code reads the
-  `login.chrome` keys ([022](022-unused-code.md)).
+- The four `login.chrome` keys (4 keys): Čeština. No code reads them ([022](022-unused-code.md)).
 - The inventory filter, `gui.inventory.filter.not_linked` (1 key): Nederlandse, which defines
   `gui.inventory.filter.linked` instead.
 
 ## Missing keys per language
 
-- 50: Čeština.
+- 49: Čeština.
 - 46: Nederlandse.
 - 45: Deutsch.
 - 44: Dansk, Indonesian, Italiano, Português, Română, العربية and 日本語.
@@ -67,3 +66,5 @@ Cost: no Twitch requests.
 
 - 2026-10-18: Opened. Found while the docs were written, from a comparison of the key paths in each language
   file with `default_translation`.
+- 2026-10-19: Counts checked again after the password login's 10 strings left `default_translation`: 150
+  strings, and Čeština lacks 49 of them.
