@@ -68,9 +68,10 @@ in which order, and which entry put each one there.
   that is a game's exact name matches that game, unless the name contains a wildcard character.
 - Matching is local and adds no request to Twitch. A list edit takes effect at the next
   `State.GAMES_UPDATE`, which every reload runs, including the one the `Reload` button starts.
-- Each literal piece is normalized on its own, which removes the spaces at its ends. A space next to a
-  wildcard is therefore dropped: `Battlefield ?` compiles to `battlefield.` and does not match
-  `Battlefield 6`, while `Battlefield*` does.
+- Each literal piece is normalized on its own, and the spaces and punctuation at an end next to a wildcard
+  are kept as one space, as in a normalized game name. `Battlefield ?` compiles to `battlefield\ .` and
+  matches `Battlefield 6`. A space before `*` is part of the entry, so `Call of Duty *` does not match
+  `Call of Duty`, while `Call of Duty*` does.
 - A game name that contains `*` or `?` is read as a pattern. The entry `Who's Your Daddy?!` compiles to
   `whos\ your\ daddy.` and does not match the game of that name; the entry `Whos Your Daddy` does.
 

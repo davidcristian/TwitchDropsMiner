@@ -56,14 +56,49 @@ def test_matches_star_also_matches_no_characters():
 
 
 def test_matches_question_mark_stands_for_exactly_one_character():
-    assert not matches(compile_pattern("Final Fantasy ?"), "Final Fantasy X")
-    assert matches(compile_pattern("Final Fantasy ??"), "Final Fantasy X")
-    assert not matches(compile_pattern("Final Fantasy ???"), "Final Fantasy X")
+    assert matches(compile_pattern("Final Fantasy ?"), "Final Fantasy X")
+    assert not matches(compile_pattern("Final Fantasy ?"), "Final Fantasy XV")
+    assert matches(compile_pattern("Final Fantasy ??"), "Final Fantasy XV")
+    assert not matches(compile_pattern("Final Fantasy ??"), "Final Fantasy X")
 
 
-def test_compile_pattern_drops_a_space_next_to_a_wildcard():
-    assert matches(compile_pattern("Call *"), "Callisto Protocol")
-    assert not matches(compile_pattern("Battlefield ?"), "Battlefield 6")
+def test_compile_pattern_keeps_a_space_next_to_a_wildcard():
+    assert matches(compile_pattern("Battlefield ?"), "Battlefield 6")
+    assert not matches(compile_pattern("Battlefield ?"), "Battlefield6")
+    assert matches(compile_pattern("Call *"), "Call of Duty")
+    assert not matches(compile_pattern("Call *"), "Callisto Protocol")
+    assert not matches(compile_pattern("Call of Duty *"), "Call of Duty")
+
+
+def test_compile_pattern_matches_with_or_without_a_space_before_a_star():
+    assert matches(compile_pattern("* Online"), "Dungeons & Dragons Online")
+    assert matches(compile_pattern("*Online"), "Dungeons & Dragons Online")
+    assert matches(compile_pattern("Battlefield*"), "Battlefield 6")
+
+
+@pytest.mark.parametrize(
+    ("entry", "game_name"),
+    [
+        ("Half-Life: ?", "Half-Life 2"),
+        ("Half-Life:?", "Half-Life 2"),
+        ("S.T.A.L.K.E.R.?*", "S.T.A.L.K.E.R. 2: Heart of Chornobyl"),
+        ("Ratchet &*", "Ratchet & Clank"),
+        ("Call of Duty* - *", "Call of Duty: Black Ops 6 - Zombies"),
+    ],
+)
+def test_compile_pattern_turns_punctuation_next_to_a_wildcard_into_one_space(entry, game_name):
+    assert matches(compile_pattern(entry), game_name)
+
+
+def test_compile_pattern_reads_an_apostrophe_next_to_a_wildcard_as_no_character():
+    assert matches(compile_pattern("*'s Creed"), "Assassin's Creed")
+    assert not matches(compile_pattern("Assassin?s Creed"), "Assassin's Creed")
+
+
+def test_compile_pattern_ignores_spaces_at_the_ends_of_an_entry():
+    assert matches(compile_pattern(" *Online "), "Dungeons & Dragons Online")
+    assert matches(compile_pattern("Battlefield* "), "Battlefield 6")
+    assert matches(compile_pattern(" Warframe "), "Warframe")
 
 
 def test_compile_pattern_reads_a_question_mark_in_a_game_name_as_a_wildcard():
