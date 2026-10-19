@@ -130,8 +130,12 @@ def test_match_games_needs_a_long_name_on_both_sides_for_a_fuzzy_match():
     assert match_one("Fortnite", ["Fortnit"]) == []
 
 
-def test_match_games_needs_the_same_numbers_for_a_fuzzy_match():
-    assert match_one("Counter-Strike 2", ["Counter-Strike"]) == []
+@pytest.mark.parametrize(
+    ("local_name", "game_name"),
+    [("Counter-Strike 2", "Counter-Strike"), ("Counter-Strike", "Counter-Strike 2")],
+)
+def test_match_games_needs_the_same_numbers_for_a_fuzzy_match(local_name, game_name):
+    assert match_one(local_name, [game_name]) == []
 
 
 @pytest.mark.parametrize(
