@@ -8,8 +8,17 @@ from types import SimpleNamespace
 
 import pytest
 
+from gitrepo import remove_git_variables
+
 # The Epic launcher's system folder as gamelib/epic.py names it
 EPIC_SYSTEM_MANIFESTS = "C:/ProgramData/Epic/EpicGamesLauncher/Data/Manifests"
+
+
+@pytest.fixture(autouse=True)
+def no_git_variables(monkeypatch):
+    # A git hook runs the suite with GIT_DIR and GIT_INDEX_FILE set to the repo being committed, and git
+    # then sends a test's commands to that repo instead of the test's temporary one.
+    remove_git_variables(monkeypatch)
 
 
 @pytest.fixture

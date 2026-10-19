@@ -1,8 +1,11 @@
 """Build small git repos with real files in them, for the tests of the scripts in scripts/."""
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
+
+import pytest
 
 # A commit needs an author, and the user's own signing setting and hooks must not run in a test repo.
 _GIT = [
@@ -26,6 +29,13 @@ TABLE = (
     f"| {HOOD}, {HANGING} | say it literally |\n"
 )
 AGENTS = f"# Rules\n\nThe table of words.\n\n{TABLE}\nThe end.\n"
+
+
+def remove_git_variables(patch: pytest.MonkeyPatch) -> None:
+    """Remove every GIT_ environment variable until the patch is undone."""
+    for name in list(os.environ):
+        if name.startswith("GIT_"):
+            patch.delenv(name)
 
 
 def git(root: Path, *args: str) -> str:
