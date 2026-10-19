@@ -22,15 +22,28 @@ def compile_pattern(text: str) -> re.Pattern[str]:
     Compiles a priority or exclude list entry into a regular expression for normalized names.
     '*' matches any run of characters and '?' matches one character.
     """
+    segments = [segment for segment in _WILDCARD_SPLIT.split(text) if segment]
     parts: list[str] = []
-    for segment in _WILDCARD_SPLIT.split(text):
+    for index, segment in enumerate(segments):
         if segment == "*":
             parts.append(".*")
         elif segment == "?":
             parts.append(".")
-        elif segment:
-            parts.append(re.escape(normalize(segment)))
+        else:
+            literal = _literal(segment, after_wildcard=index > 0, before_wildcard=index < len(segments) - 1)
+            parts.append(re.escape(literal))
     return re.compile("".join(parts))
+
+
+def _literal(segment: str, after_wildcard: bool, before_wildcard: bool) -> str:
+    """Normalizes the text between wildcards, keeping spaces and punctuation next to a wildcard as one space."""
+    # normalize trims its result, so a letter added at each end keeps the space there, as in a game name
+    literal = normalize(f"a{segment}a")[1:-1]
+    if not after_wildcard:
+        literal = literal.lstrip(" ")
+    if not before_wildcard:
+        literal = literal.rstrip(" ")
+    return literal
 
 
 def compile_patterns(entries: abc.Iterable[str]) -> list[re.Pattern[str]]:

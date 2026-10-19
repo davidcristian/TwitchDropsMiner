@@ -98,7 +98,8 @@ An entry ignores case, accents and punctuation, so `pokemon go` matches `Pokémo
 - `?` matches exactly one character: `FIFA 2?` matches `FIFA 23`, but not `FIFA 2` or `FIFA 234`.
 - An entry without a wildcard matches one game only: `Rust` does not match `Rust Console Edition`, but `Rust*`
   does.
-- A space next to a wildcard is dropped, so `Battlefield ?` does not match `Battlefield 6`. Use `Battlefield*`.
+- A space next to a wildcard counts: `Battlefield ?` matches `Battlefield 6`, and `Call of Duty *` matches
+  `Call of Duty: Warzone` but not `Call of Duty`. `Call of Duty*` matches both.
 
 When you add an entry with a wildcard, the Output box lists the games with a campaign that it matches, or says
 that it matches none. The Games Being Mined table on the Settings tab shows, for each game, the Priority entry

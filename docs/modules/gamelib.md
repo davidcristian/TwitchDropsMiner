@@ -136,9 +136,13 @@ user's side.
   `Ratchet & Clank`.
 - An entry without a wildcard matches one game: `Rust` does not match `Rust Console Edition`, but `Rust*` does.
 - `*` also matches nothing, so `Call of Duty*` matches `Call of Duty`.
-- `normalize` trims each piece, so a space next to a wildcard is dropped. `Call *` becomes `call.*` and matches
-  `Callisto Protocol`. `Final Fantasy ?` becomes `final\ fantasy.`, where `?` stands for the space, so it does not
-  match `Final Fantasy X`; `Final Fantasy ??` does.
+- Spaces and punctuation at an end of a piece that is next to a wildcard become one space, as `normalize`
+  writes them in a game name. `Battlefield ?` becomes `battlefield\ .` and matches `Battlefield 6`, and
+  `Half-Life:?` matches `Half-Life 2`. The space then has to be in the name: `Call *` does not match
+  `Callisto Protocol`, and `Call of Duty *` does not match `Call of Duty`. Spaces at the start and end of the
+  entry do not count.
+- An apostrophe next to a wildcard is dropped without a space, as in a game name: `*'s Creed` matches
+  `Assassin's Creed`, but `Assassin?s Creed` does not.
 - In the Priority list, a game takes the rank of the first entry that covers it, so a specific entry above a
   wildcard decides that game's rank.
 
