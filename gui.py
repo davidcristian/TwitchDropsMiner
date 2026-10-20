@@ -2546,9 +2546,6 @@ class GUIManager:
         help_frame = ttk.Frame(root_frame, padding=8)
         self.help = HelpTab(self, help_frame)
         self.tabs.add_tab(help_frame, name=_("gui", "tabs", "help"))
-        # clamp minimum window size (update geometry first)
-        root.update_idletasks()
-        root.minsize(width=root.winfo_reqwidth(), height=root.winfo_reqheight())
         # register logging handler
         self._handler = _TKOutputHandler(self)
         self._handler.setFormatter(OUTPUT_FORMATTER)
@@ -2966,6 +2963,9 @@ class GUIManager:
         else:
             # Reset to system default title bar color
             self._set_title_bar_color(0xFFFFFFFF)
+        # the theme sets the fonts and paddings, so the minimum window size follows it
+        self._root.update_idletasks()
+        self._root.minsize(width=self._root.winfo_reqwidth(), height=self._root.winfo_reqheight())
 
 
 ###################

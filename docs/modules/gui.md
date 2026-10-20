@@ -140,6 +140,10 @@ lists the problems.
   lists of the Settings tab and the inventory canvas.
 - On Windows it sets the title bar color with `DwmSetWindowAttribute` (attribute 35, `DWMWA_CAPTION_COLOR`). On
   macOS it sets the app's `NSAppearance` to `DarkAqua` or `Aqua` through `AppKit`.
+- Last, it sets the window's minimum size to the size the window requests, because the fonts and paddings of
+  the theme change that size. In the preview on Linux the minimum is 1539 by 704 pixels in light mode and 1564
+  by 738 in dark mode, wider than a screen of 1366 pixels
+  ([task 044](../refinements/tasks/044-window-wider-than-small-screens.md)).
 
 ## The preview
 
