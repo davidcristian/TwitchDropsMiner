@@ -96,6 +96,34 @@ def test_compile_pattern_ignores_spaces_at_the_ends_of_an_entry():
     assert matches(compile_pattern(" Warframe "), "Warframe")
 
 
+@pytest.mark.parametrize(
+    ("entry", "merged"),
+    [
+        ("**********q", "*q"),
+        ("Halo**", "Halo*"),
+        ("*?*?*", "??*"),
+        ("Halo ?**?", "Halo ??*"),
+        ("*'*'*q", "*q"),
+    ],
+)
+def test_compile_pattern_merges_wildcards_with_no_text_between_them(entry, merged):
+    assert compile_pattern(entry).pattern == compile_pattern(merged).pattern
+
+
+@pytest.mark.parametrize(
+    ("entry", "matched"),
+    [
+        ("Halo**", ["Halo", "Halo 2", "Halo Infinite", "Halo Wars"]),
+        ("Halo*?*", ["Halo 2", "Halo Infinite", "Halo Wars"]),
+        ("Halo ?**?", ["Halo Infinite", "Halo Wars"]),
+        ("Halo ?*?*?*?*?", ["Halo Infinite"]),
+        ("Halo ?*'*", ["Halo 2", "Halo Infinite", "Halo Wars"]),
+    ],
+)
+def test_matching_names_reads_a_run_of_wildcards_as_its_question_marks_and_one_star(entry, matched):
+    assert matching_names(compile_pattern(entry), ["Halo", "Halo 2", "Halo Wars", "Halo Infinite"]) == matched
+
+
 def test_compile_pattern_reads_a_question_mark_in_a_game_name_as_a_wildcard():
     assert not matches(compile_pattern("Who's Your Daddy?!"), "Who's Your Daddy?!")
     assert matches(compile_pattern("Whos Your Daddy"), "Who's Your Daddy?!")

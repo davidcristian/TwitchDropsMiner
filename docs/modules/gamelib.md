@@ -138,8 +138,11 @@ when the inventory has both `Halo Infinite` and `Halo: Infinite`. The GUI shows 
 ## Patterns
 
 `compile_pattern` splits an entry at each `*` and `?`. `*` becomes `.*`, `?` becomes `.`, and each other piece is
-passed through `normalize` and `re.escape`. `matches` compares the pattern with the whole normalized game name
-(`fullmatch`). [troubleshooting.md](../troubleshooting.md#priority-and-exclude-lists) shows the rules from the
+passed through `normalize` and `re.escape`. Wildcards with no text between them, or only text that `normalize`
+removes such as an apostrophe, become one `.` per `?` and then one `.*` if the run has a `*`: `Halo*?*` becomes
+`halo..*`. One `.*` matches the same names as several in a row, but with several a failed match tests every way
+to split the name between them, and ten `*` take minutes for one name. `matches` compares the pattern with the
+whole normalized game name (`fullmatch`). [troubleshooting.md](../troubleshooting.md#priority-and-exclude-lists) shows the rules from the
 user's side.
 
 - Case, accents, punctuation and the `™`, `℠` and `®` signs do not count, and `&` matches `and`:

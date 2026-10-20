@@ -24,15 +24,25 @@ def compile_pattern(text: str) -> re.Pattern[str]:
     """
     segments = [segment for segment in _WILDCARD_SPLIT.split(text) if segment]
     parts: list[str] = []
+    wildcards = ""
     for index, segment in enumerate(segments):
-        if segment == "*":
-            parts.append(".*")
-        elif segment == "?":
-            parts.append(".")
-        else:
-            literal = _literal(segment, after_wildcard=index > 0, before_wildcard=index < len(segments) - 1)
+        if segment in ("*", "?"):
+            wildcards += segment
+            continue
+        literal = _literal(segment, after_wildcard=index > 0, before_wildcard=index < len(segments) - 1)
+        if literal:
+            parts.append(_wildcard_run(wildcards))
             parts.append(re.escape(literal))
+            wildcards = ""
+    parts.append(_wildcard_run(wildcards))
     return re.compile("".join(parts))
+
+
+def _wildcard_run(wildcards: str) -> str:
+    """Writes wildcards with no text between them as one '.' per '?' followed by at most one '.*'."""
+    # '.*.*' matches the same names as '.*', but a failed match tests every split of the name between them,
+    # which takes minutes for ten '*' in a row
+    return "." * wildcards.count("?") + (".*" if "*" in wildcards else "")
 
 
 def _literal(segment: str, after_wildcard: bool, before_wildcard: bool) -> str:
