@@ -22,6 +22,18 @@ FENCES = ("```", "~~~")
 _FENCE = re.compile(r"(`{3,}|~{3,})(.*)")
 # Python skips a byte order mark at the start of a file, but ast.parse and compile of a str reject it.
 BOM = "\ufeff"
+# The Unicode dashes that Latin text uses as punctuation, without the hyphens and the minus sign U+2212.
+DASHES = {
+    "\u2014": "an em dash",
+    "\u2013": "an en dash",
+    "\u2012": "a figure dash",
+    "\u2015": "a horizontal bar",
+    "\u2e3a": "a two-em dash",
+    "\u2e3b": "a three-em dash",
+    "\ufe31": "a vertical em dash",
+    "\ufe32": "a vertical en dash",
+    "\ufe58": "a small em dash",
+}
 
 Line = tuple[int, str]
 

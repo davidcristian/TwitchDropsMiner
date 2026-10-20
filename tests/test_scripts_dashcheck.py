@@ -21,6 +21,33 @@ def test_dash_problems_reports_an_em_dash_and_an_en_dash_on_any_line():
     ]
 
 
+@pytest.mark.parametrize(
+    ("dash", "label"),
+    [
+        ("\u2012", "a figure dash"),
+        ("\u2015", "a horizontal bar"),
+        ("\u2e3a", "a two-em dash"),
+        ("\u2e3b", "a three-em dash"),
+        ("\ufe31", "a vertical em dash"),
+        ("\ufe32", "a vertical en dash"),
+        ("\ufe58", "a small em dash"),
+    ],
+)
+def test_dash_problems_reports_the_other_unicode_dashes_by_name(dash, label):
+    text = f"one\ntwo {dash} three\n"
+    assert dashcheck.dash_problems("a.md", text) == [Problem("a.md", 2, f"{label}; restructure the sentence")]
+    assert dashcheck.dash_problems("build.yml", text) == [Problem("build.yml", 2, f"{label}; restructure the sentence")]
+
+
+@pytest.mark.parametrize(
+    "line",
+    ["2 \u00d7 5 \u2212 1", "a non\u2011breaking hyphen", "a well\u2010known name", "the scan ran - then it stopped"],
+    ids=["minus sign", "non-breaking hyphen", "hyphen", "spaced hyphen"],
+)
+def test_dash_problems_ignores_a_minus_sign_a_hyphen_and_a_spaced_hyphen(line):
+    assert dashcheck.dash_problems("a.md", line + "\n") == []
+
+
 def test_dash_problems_reports_an_em_dash_in_code_too():
     text = f"x = 1\n```\ncode {EM} here\n```\n`span {EM}`\n"
     assert [problem.line for problem in dashcheck.dash_problems("a.md", text)] == [3, 5]

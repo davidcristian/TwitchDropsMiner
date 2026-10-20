@@ -34,8 +34,12 @@ lint rules without its formatter or pyright.
    - `linecap.py`: at most 300 lines per Python file and 250 per markdown file. The eight inherited modules over
      300 are named in `EXCEPTIONS`, and an entry fails once its module is under the limit, so the list only
      shrinks as [task 005](../refinements/tasks/005-modules-over-the-line-cap.md) splits them.
-   - `dashcheck.py`: no em dash or en dash in any text file, and no spaced `--` in prose: markdown outside code,
-     Python comments and docstrings, and `.txt` files. In a shell script or a recipe, `--` ends the options.
+   - `dashcheck.py`: no em dash, en dash or other Unicode dash in any text file, and no spaced `--` in prose:
+     markdown outside code, Python comments and docstrings, and `.txt` files. In a shell script or a recipe,
+     `--` ends the options. `DASHES` in `sources.py` lists the Unicode dashes for this scan and `commitlint.py`.
+     The minus sign U+2212 passes, because a formula uses it. A hyphen with a space on each side passes too:
+     a comment such as `n - 1` uses it as a minus sign, and inherited comments and English strings that use it
+     as a dash keep it, so that upstream fixes still apply. The reader checks it.
    - `prosecheck.py`: no word of the banned table in AGENTS.md in docs, comments, docstrings, the strings of
      `translate.py` or the other text files, and no comment block or docstring over three lines. It reads the
      table from AGENTS.md, so the list is written in one place.

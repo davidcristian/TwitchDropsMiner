@@ -1,4 +1,4 @@
-"""Fail on a dash used as punctuation: an em dash, an en dash, or a spaced ASCII double hyphen in prose."""
+"""Fail on a dash used as punctuation: an em, en or other Unicode dash, or a spaced ASCII double hyphen in prose."""
 from __future__ import annotations
 
 import argparse
@@ -8,10 +8,9 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from bannedwords import mask_run, runs
-from sources import PYTHON_SUFFIXES, ROOT, Line, Problem, is_prose_file, prose_runs, read_texts, repo_files
+from sources import DASHES, PYTHON_SUFFIXES, ROOT, Line, Problem, is_prose_file, prose_runs, read_texts, repo_files
 
 
-DASHES = {"\u2014": "an em dash", "\u2013": "an en dash"}
 # A double hyphen with whitespace or a line break on both sides, so not a flag such as --root or part of ---.
 SPACED = re.compile(r"(?<!\S)--(?!\S)")
 # A line of only hyphens, pipes and colons is a horizontal rule, a heading underline or a table separator.

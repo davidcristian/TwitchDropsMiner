@@ -11,7 +11,7 @@ from typing import NamedTuple
 
 import bannedwords
 from linerefs import FILE
-from sources import FENCES, ROOT
+from sources import DASHES, FENCES, ROOT
 
 
 MAX_SUBJECT = 72
@@ -29,8 +29,7 @@ TRAILER_KEYS = (
 )
 _TRAILER = re.compile(rf"(?:{'|'.join(map(re.escape, TRAILER_KEYS))}): \S", re.IGNORECASE)
 _DASHES = (
-    (re.compile("\u2014"), "an em dash"),
-    (re.compile("\u2013"), "an en dash"),
+    *((re.compile(dash), label) for dash, label in DASHES.items()),
     (re.compile(r"(?<!\S)--(?!\S)"), "a spaced --"),
 )
 # A line of only hyphens and spaces, such as a markdown rule, is not a sentence.

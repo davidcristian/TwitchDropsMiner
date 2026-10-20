@@ -119,10 +119,12 @@ def test_check_reports_a_fence_that_nothing_closes(repo):
 
 def test_check_reports_each_dash_in_the_header_and_the_body_but_not_in_a_paste(repo):
     text = f"fix: a {EM} b\n\nOne {EN} two.\nThree -- four.\n```\nfive {EM} six -- seven\n```\n"
+    text += "Eight \u2012 nine \u2212 10 - 11.\n"
     assert lint(text, repo) == [
         "line 1 uses an em dash; restructure the sentence",
         "line 3 uses an en dash; restructure the sentence",
         "line 4 uses a spaced --; restructure the sentence",
+        "line 8 uses a figure dash; restructure the sentence",
     ]
 
 
