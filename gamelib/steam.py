@@ -75,10 +75,10 @@ def _find_steamapps(directory: Path) -> Path | None:
     return None
 
 
-def _steam_library_index(steamapps: Path) -> list[Path]:
+def _steam_library_index(steamapps: Path, result: ScanResult) -> list[Path]:
     """
     Read Steam's own library index, so that libraries on other drives are picked
-    up from a single added directory.
+    up from a single added directory. A library that cannot be checked gets an error line in result.
     """
     libraries: list[Path] = [steamapps]
     for index_path in (
@@ -92,7 +92,14 @@ def _steam_library_index(steamapps: Path) -> list[Path]:
             continue
         for raw_path in _parse_kv_all(text, "path"):
             library = Path(raw_path) / "steamapps"
-            if library.is_dir() and library not in libraries:
+            try:
+                found = library.is_dir()
+            except OSError as exc:
+                error = f"{library}: {exc}"
+                if error not in result.errors:
+                    result.errors.append(error)
+                continue
+            if found and library not in libraries:
                 libraries.append(library)
         break
     return libraries
@@ -133,7 +140,7 @@ def scan_steam(directory: Path, result: ScanResult) -> bool:
     steamapps = _find_steamapps(directory)
     if steamapps is None:
         return False
-    for library in _steam_library_index(steamapps):
+    for library in _steam_library_index(steamapps, result):
         if library in result.libraries:
             continue
         result.libraries.append(library)

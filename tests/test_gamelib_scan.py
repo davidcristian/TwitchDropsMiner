@@ -42,6 +42,31 @@ def test_scan_directories_reports_a_folder_it_cannot_check(tmp_path, unreadable)
     assert str(locked / "Games") in result.errors[0]
 
 
+def test_scan_directories_scans_the_other_folders_after_one_it_cannot_open(tmp_path, steam_manifest, unopenable):
+    locked = tmp_path / "locked"
+    steam_manifest(locked / "steamapps", 570, "Dota 2")
+    steam_manifest(tmp_path / "Steam" / "steamapps", 620, "Portal 2")
+    unopenable(locked)
+    result = scan_directories([locked, tmp_path / "Steam"])
+    assert names(result) == ["Portal 2"]
+    assert len(result.errors) == 1
+    assert result.errors[0].startswith(f"{locked}: ")
+
+
+def test_scan_directories_keeps_the_games_found_in_a_folder_before_an_error(
+    tmp_path, launcher_folders, steam_manifest, unopenable
+):
+    steam = tmp_path / "Steam"
+    steam_manifest(steam / "steamapps", 620, "Portal 2")
+    epic = launcher_folders.home / ".config" / "Epic"
+    epic.mkdir(parents=True)
+    unopenable(epic)
+    result = scan_directories([steam])
+    assert names(result) == ["Portal 2"]
+    assert len(result.errors) == 1
+    assert result.errors[0].startswith(f"{steam}: ")
+
+
 def test_scan_directories_recognizes_every_folder_when_the_home_folder_has_a_legendary_index(
     tmp_path, launcher_folders
 ):

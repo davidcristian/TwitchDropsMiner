@@ -107,6 +107,36 @@ def test_scan_steam_reads_escaped_backslashes_in_library_paths(tmp_path, steam_m
     assert names(result) == ["Portal 2", "Dota 2"]
 
 
+def test_scan_steam_reads_the_other_libraries_when_one_cannot_be_opened(tmp_path, steam_manifest, unopenable):
+    steamapps = tmp_path / "Steam" / "steamapps"
+    other = tmp_path / "drive2" / "steamapps"
+    locked = tmp_path / "locked" / "SteamLibrary"
+    steam_manifest(steamapps, 620, "Portal 2")
+    steam_manifest(other, 570, "Dota 2")
+    steam_manifest(locked / "steamapps", 730, "Counter-Strike 2")
+    write_library_index(steamapps / "libraryfolders.vdf", [tmp_path / "Steam", locked, other.parent])
+    unopenable(tmp_path / "locked")
+    found, result = scan(tmp_path / "Steam")
+    assert found
+    assert names(result) == ["Portal 2", "Dota 2"]
+    assert result.libraries == [steamapps, other]
+    assert len(result.errors) == 1
+    assert result.errors[0].startswith(f"{locked / 'steamapps'}: ")
+
+
+def test_scan_steam_reports_a_library_it_cannot_open_once_for_two_scans(tmp_path, steam_manifest, unopenable):
+    steamapps = tmp_path / "Steam" / "steamapps"
+    locked = tmp_path / "locked" / "SteamLibrary"
+    steam_manifest(steamapps, 620, "Portal 2")
+    (locked / "steamapps").mkdir(parents=True)
+    write_library_index(steamapps / "libraryfolders.vdf", [tmp_path / "Steam", locked])
+    unopenable(tmp_path / "locked")
+    result = ScanResult()
+    assert scan_steam(tmp_path / "Steam", result)
+    assert scan_steam(steamapps, result)
+    assert len(result.errors) == 1
+
+
 def test_scan_steam_reads_a_library_listed_twice_once(tmp_path, steam_manifest):
     steamapps = tmp_path / "Steam" / "steamapps"
     other = tmp_path / "drive2" / "steamapps"

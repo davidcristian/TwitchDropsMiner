@@ -50,7 +50,11 @@ folder. A `~name` that names no user on Linux or macOS gives the line `<folder a
 other folders are still scanned. It runs both scanners on every folder, because one folder can hold both kinds
 of install, and adds `No Steam or Epic games found in: ...` when neither recognizes it. A Legendary or Heroic
 index in the home folder, or an Epic launcher folder that holds a manifest, makes the Epic scanner recognize
-every folder, so the line does not appear then. It then keeps the first
+every folder, so the line does not appear then. A scanner can raise `OSError`, such as `PermissionError` for a
+path inside a folder the user may not open. The scan of that folder then ends with the line `<folder>: <reason>`,
+as for an unknown user. The games found in it before the error are kept, and the other folders are still
+scanned. On Python 3.14, `Path.is_dir` and `Path.is_file` return `False` there instead of raising, so such a folder gets
+`No Steam or Epic games found in: ...`. It then keeps the first
 game of each lower case name and platform, and sorts by lower case name. A Steam library or an Epic manifest
 folder that is already in `result.libraries` is not read again.
 
@@ -61,7 +65,9 @@ folder that is already in `result.libraries` is not read again.
    `libraryfolders.vdf`.
 2. The library index is `steamapps/libraryfolders.vdf`, or `config/libraryfolders.vdf` next to `steamapps` in the
    older layout. For each `"path"` value in it, the `steamapps` folder under that path is another library when it
-   exists. One added folder therefore covers the Steam libraries on other drives.
+   exists. One added folder therefore covers the Steam libraries on other drives. A library that cannot be
+   checked gets the line `<library>: <reason>` once, and the other libraries are still read. On Python 3.14 it
+   is skipped without a line.
 3. Each `appmanifest_*.acf` gives `name`, `appid` and `installdir`. The parser reads only flat `"key" "value"`
    pairs with a regular expression, and the first value of a key is used.
 4. An entry is skipped when its `name` is empty, when its `appid` is in `STEAM_TOOL_APPIDS` (Steamworks Common

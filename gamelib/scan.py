@@ -28,10 +28,15 @@ def scan_directories(directories: abc.Iterable[Path | str]) -> ScanResult:
         except OSError as exc:
             result.errors.append(f"{directory}: {exc}")
             continue
-        recognized = scan_steam(directory, result)
-        # NOTE: not an elif, because a single folder can hold both, and probing is cheap
-        if scan_epic(directory, result):
-            recognized = True
+        try:
+            recognized = scan_steam(directory, result)
+            # NOTE: not an elif, because a single folder can hold both, and probing is cheap
+            if scan_epic(directory, result):
+                recognized = True
+        except OSError as exc:
+            # Path.is_dir and Path.is_file raise it for a path inside a folder the user may not open
+            result.errors.append(f"{directory}: {exc}")
+            continue
         if not recognized:
             result.errors.append(f"No Steam or Epic games found in: {directory}")
     # de-duplicate, keeping the first occurrence of each name per platform
