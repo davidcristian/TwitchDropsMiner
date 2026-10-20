@@ -83,9 +83,10 @@ in `result.libraries` is not read again.
 **Epic Games Launcher** (`epic.py`): the manifests are the `*.item` JSON files in the added folder, in its
 `Manifests` subfolder, and in the launcher's own folders that `launcher_indexes` lists. The launcher's folders
 are read whatever folder was added.
-Each manifest gives `DisplayName`, `AppName` and `InstallLocation`. A manifest is skipped when it is not valid
-JSON (logged at `DEBUG`), is not an object, has an empty `DisplayName`, belongs to an add-on (`MainGameAppName`
-is set and differs from `AppName`), or has `bIsIncompleteInstall` set.
+Each manifest gives `DisplayName`, `AppName` and `InstallLocation`. A field that is not a string, such as `null`,
+counts as missing, here and in the Legendary index. A manifest is skipped when it is not valid JSON (logged at
+`DEBUG`), is not an object, has an empty `DisplayName`, belongs to an add-on (`MainGameAppName` is set and differs
+from `AppName`), or has `bIsIncompleteInstall` set.
 
 **Legendary and Heroic** (`epic.py`): `installed.json` in the added folder and each Legendary or Heroic index
 that `launcher_indexes` lists are read when they exist, for every added folder. Each key is an app name and each

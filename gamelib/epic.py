@@ -57,6 +57,12 @@ def launcher_indexes(platform: str, environ: abc.Mapping[str, str], home: Path) 
     return LauncherIndexes(tuple(manifests), tuple(indexes))
 
 
+def _text(entry: abc.Mapping[str, object], key: str) -> str:
+    """Returns the value of a JSON field when it is a string, and an empty string when it is missing or not one."""
+    value = entry.get(key)
+    return value if isinstance(value, str) else ""
+
+
 def _epic_manifest_dirs(directory: Path, launcher_folders: tuple[Path, ...]) -> list[Path]:
     """
     Returns the folders holding Epic's '.item' manifests, including the launcher's own folders.
@@ -86,18 +92,18 @@ def _scan_epic_manifests(manifests: Path, result: ScanResult) -> None:
             continue
         if not isinstance(data, dict):
             continue
-        name: str = str(data.get("DisplayName", "")).strip()
+        name: str = _text(data, "DisplayName").strip()
         if not name:
             continue
-        app_name: str = str(data.get("AppName", ""))
-        main_app: str = str(data.get("MainGameAppName", ""))
+        app_name: str = _text(data, "AppName")
+        main_app: str = _text(data, "MainGameAppName")
         # DLC and add-ons point back at the game they belong to. Skip them, because
         # they would only ever produce duplicate or bogus matches
         if main_app and app_name and main_app != app_name:
             continue
         if data.get("bIsIncompleteInstall"):
             continue
-        install_location: str = str(data.get("InstallLocation", ""))
+        install_location: str = _text(data, "InstallLocation")
         result.games.append(
             LocalGame(
                 name=name,
@@ -132,10 +138,10 @@ def _scan_legendary(directory: Path, result: ScanResult, indexes: tuple[Path, ..
         for app_name, entry in data.items():
             if not isinstance(entry, dict):
                 continue
-            title: str = str(entry.get("title", "")).strip()
+            title: str = _text(entry, "title").strip()
             if not title:
                 continue
-            install_path: str = str(entry.get("install_path", ""))
+            install_path: str = _text(entry, "install_path")
             result.games.append(
                 LocalGame(
                     name=title,
