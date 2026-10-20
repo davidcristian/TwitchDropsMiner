@@ -1,6 +1,6 @@
 # ADR-0012: One check command
 
-**Status:** Accepted (2026-10-18)
+**Status:** Accepted (2026-10-20)
 
 ## Context
 
@@ -49,10 +49,17 @@ lint rules without its formatter or pyright.
    find mistakes such as an unused import or an undefined name.
 4. **Two commit-msg hooks check each commit message**: conventional-pre-commit for the type and format, and
    `scripts/commitlint.py` for the subject length and case, the body's width and word count, the banned words,
-   the dashes, and numbered references and commit hashes. Trailers such as `BREAKING CHANGE:` are not counted
-   as body words. `decision 7`, `item 4` and `section 2` are numbered references wherever they stand; `check 3`
-   and `step 2` are only after `as` or `see`, or before `in` or `of` and a doc name, so that a count such as
-   `check 20 channels` passes. They run on the machine that commits, not in CI.
+   the dashes, and numbered references and commit hashes. They run on the machine that commits, not in CI.
+   - A paste is read for the banned words and the references, as AGENTS.md says, and not for the width, the
+     word count or the dashes.
+   - A last paragraph of trailers is not counted as body words when each key is one that git, GitHub or
+     Conventional Commits writes, such as `BREAKING CHANGE` or `Co-authored-by`. Other `Key: value` lines are.
+   - `decision 7`, `item 4`, `rule 4` and `section 2` are numbered references wherever they stand. `check 3`
+     and `step 2` are only after `as` or `see`, or before `in` or `of` and a doc name, so that a count such as
+     `check 20 channels` passes. `line 4` is only before `in` or `of` and a file name.
+   - git runs the hook with `GIT_EDITOR=:` when no editor opens, as for `git commit -m`, and then keeps a line
+     that starts with `#`, so the hook reads it. After an editor, git removes those lines and everything below
+     the scissors line, and the hook skips them.
 5. **The tool versions are set exactly in `requirements-dev.txt`,** which no build installs: `rust-just` (the `just` binary
    from PyPI, so one `pip install` sets up every tool on every OS), ruff, pytest, pytest-cov and pre-commit, each
    a release at least two weeks old when it was chosen.
@@ -72,6 +79,8 @@ lint rules without its formatter or pyright.
 - The Validate job installs `requirements-dev.txt` and runs `just check` on Python 3.10, and the four builds wait
   for it.
 - Commits from upstream keep their own messages, and a commit made without the hooks is not checked.
+- The hook does not see `--cleanup`, `commit.cleanup` or `core.commentChar`. With a cleanup mode other than
+  git's default, it can skip a `#` line that git keeps, or read one that git removes.
 
 ## Alternatives rejected
 

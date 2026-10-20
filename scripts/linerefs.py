@@ -10,7 +10,7 @@ from sources import Problem, markdown_lines
 _EXTENSIONS = r"py|spec|md|txt|json|toml|ya?ml|sh|bat"
 # A path that ends in one of the extensions, or names the justfile, a LICENSE or a dotfile such as .gitignore.
 # A bare extension such as `.py` names a kind of file, not a file.
-_FILE = (
+FILE = (
     rf"(?<![\w./-])(?:[\w./-]*\w\.(?i:{_EXTENSIONS})"
     rf"|(?:[\w.-]+/)*(?:justfile|LICENSE(?:\.MIT)?|\.(?!(?:{_EXTENSIONS})\b)[a-z][\w-]*))"
 )
@@ -19,10 +19,10 @@ _LINES = r"(?i:lines?)\s+\d+(?:\s*(?:-|,|to|and)\s*\d+)*(?!\w)"
 _AFTER_FILE = r"[`*]*\]?(?:\([^)\s]*\))?[`*]*[,:]?\s+"
 _ITEM = re.compile(r"[ \t]*(?:[-+*]|\d{1,9}[.)])(?:[ \t]|$)")
 _CITATIONS = (
-    re.compile(rf"(?P<cited>{_FILE}(?::\d+(?!\w)|#L\d+(?:-L\d+)?(?![\w-])))"),
+    re.compile(rf"(?P<cited>{FILE}(?::\d+(?!\w)|#L\d+(?:-L\d+)?(?![\w-])))"),
     re.compile(rf"\((?P<cited>{_LINES})"),
-    re.compile(rf"{_FILE}{_AFTER_FILE}(?P<cited>{_LINES})"),
-    re.compile(rf"(?<!\w)(?P<cited>{_LINES})\s+(?:of|in)\s+[`*\[]*{_FILE}"),
+    re.compile(rf"{FILE}{_AFTER_FILE}(?P<cited>{_LINES})"),
+    re.compile(rf"(?<!\w)(?P<cited>{_LINES})\s+(?:of|in)\s+[`*\[]*{FILE}"),
 )
 
 

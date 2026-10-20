@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -9,6 +10,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 import bannedwords
+from linerefs import FILE
 from sources import FENCES, ROOT
 
 
@@ -19,9 +21,13 @@ EXEMPT = ("Merge ", "Revert \"", "fixup! ", "squash! ", "amend! ")
 SCISSORS = "# ------------------------ >8 ------------------------"
 _HEADER = re.compile(r"(?P<type>[a-z]+)(?:\((?P<scope>[^)]*)\))?!?: (?P<subject>.+)")
 _PROMPT = re.compile(r"\s*\$ \S")
-_HEX = re.compile(r"\b[0-9a-f]{7,40}\b")
-# A trailer such as "Co-authored-by: Name <mail>" in the last paragraph, which git reads as data, not prose.
-_TRAILER = re.compile(r"(?:[A-Za-z0-9-]+|BREAKING CHANGE): \S")
+_HEX = re.compile(r"\b[0-9a-f]{7,40}\b", re.IGNORECASE)
+# Trailer keys that git, GitHub and Conventional Commits write. A last paragraph of only these is data, not prose.
+TRAILER_KEYS = (
+    "BREAKING CHANGE", "BREAKING-CHANGE", "Signed-off-by", "Co-authored-by", "Reviewed-by", "Acked-by", "Tested-by",
+    "Reported-by", "Suggested-by", "Helped-by", "Refs", "Cc",
+)
+_TRAILER = re.compile(rf"(?:{'|'.join(map(re.escape, TRAILER_KEYS))}): \S", re.IGNORECASE)
 _DASHES = (
     (re.compile("\u2014"), "an em dash"),
     (re.compile("\u2013"), "an en dash"),
@@ -33,17 +39,19 @@ _NUMBERS = r"\d+(?:(?:\s*[,-]\s*|\s+(?:and|or|to|through)\s+)\d+)*"
 _STEP = rf"(?:check|step)s? {_NUMBERS}"
 _DOC = r"(?:\S*\.md\b|(?-i:AGENTS|README)\b|docs/)"
 # "decision 7" always points into a document. "check 3" does only after "as" or "see", or before "in" or "of"
-# and a doc name, so that a count such as "check 20 channels" passes. Aligned table columns are not pointers.
+# and a doc name, so that a count such as "check 20 channels" passes. "line 4" does only before "in" or "of" and
+# a file name. Aligned table columns are not pointers.
 _POINTERS = (
-    re.compile(rf"\b(?P<ref>(?:decision|item|section)s? {_NUMBERS})", re.IGNORECASE),
+    re.compile(rf"\b(?P<ref>(?:decision|item|rule|section)s? {_NUMBERS})", re.IGNORECASE),
     re.compile(rf"\b(?:as|see)\s+[`'\"]?(?P<ref>{_STEP})", re.IGNORECASE),
     re.compile(rf"\b(?P<ref>{_STEP})[`'\"]?\s+(?:in|of)\s+(?:the\s+)?{_DOC}", re.IGNORECASE),
+    re.compile(rf"\b(?P<ref>lines? {_NUMBERS})\s+(?:in|of)\s+(?:the\s+)?[`*\[]*(?:{FILE}|{_DOC})", re.IGNORECASE),
 )
 _VOLATILE = (
-    (re.compile(r"\bADR[-\s]?\d", re.IGNORECASE), "a decision record number"),
+    (re.compile(r"\bADRs?[-\s]?\d", re.IGNORECASE), "a decision record number"),
     (re.compile(r"\btasks?\s*#?\d", re.IGNORECASE), "a backlog task number"),
-    (re.compile(r"\b(?:PR|pull request|issue)\s*#?\d", re.IGNORECASE), "a pull request or issue number"),
-    (re.compile(r"(?<![\w&])#\d+\b"), "an issue or pull request number"),
+    (re.compile(r"\b(?:PRs?|pull requests?|issues?)\s*#?\d", re.IGNORECASE), "a pull request or issue number"),
+    (re.compile(r"(?:[\w.-]+/[\w.-]+|(?<![\w&]))#\d+\b"), "an issue or pull request number"),
     (re.compile("\u00a7\\s*\\d"), "a numbered section"),
 )
 
@@ -56,10 +64,17 @@ class Line(NamedTuple):
     pasted: bool
 
 
-def message_lines(text: str) -> list[str]:
-    """Return the lines git keeps of a message: no comment lines and nothing below the scissors line."""
+def message_lines(text: str, edited: bool) -> list[str]:
+    """Return the lines git keeps: an edited message loses its comment lines and everything below the scissors line."""
+    if not edited:
+        return text.splitlines()
     text = text.split(SCISSORS, 1)[0]
     return [line for line in text.splitlines() if not line.startswith("#")]
+
+
+def is_fence(number: int, text: str) -> bool:
+    """Whether a line opens or closes a code fence; the header never does."""
+    return number > 1 and text.lstrip().startswith(FENCES)
 
 
 def classify(lines: list[str]) -> tuple[list[Line], int | None]:
@@ -67,10 +82,10 @@ def classify(lines: list[str]) -> tuple[list[Line], int | None]:
     classified: list[Line] = []
     opened: int | None = None
     for number, text in enumerate(lines, start=1):
-        is_fence = number > 1 and text.lstrip().startswith(FENCES)
-        if is_fence:
+        fence = is_fence(number, text)
+        if fence:
             opened = None if opened is not None else number
-        pasted = is_fence or opened is not None or bool(_PROMPT.match(text))
+        pasted = fence or opened is not None or bool(_PROMPT.match(text))
         classified.append(Line(number, text, number > 1 and pasted))
     return classified, opened
 
@@ -196,19 +211,20 @@ def reference_problems(lines: list[Line], repo: Path) -> list[str]:
 
 
 def word_problems(lines: list[Line], table: bannedwords.Table) -> list[str]:
-    """Return each banned word outside a paste."""
+    """Return each banned word, in a paste too."""
     pattern = bannedwords.compile_words(table.words)
-    own = [(line.number, line.text) for line in lines if not line.pasted]
+    # A fence line ends a run, so that a code span inside the paste does not start at the fence's backticks.
+    texts = [(line.number, line.text) for line in lines if not is_fence(line.number, line.text)]
     return [
         f'line {hit.line} uses the banned word "{hit.word}"; the table in AGENTS.md gives a replacement'
-        for run in bannedwords.runs(own)
+        for run in bannedwords.runs(texts)
         for hit in bannedwords.find_words(run, pattern)
     ]
 
 
-def check(text: str, table: bannedwords.Table, repo: Path) -> list[str]:
-    """Return every problem in one commit message."""
-    lines = message_lines(text)
+def check(text: str, table: bannedwords.Table, repo: Path, edited: bool) -> list[str]:
+    """Return every problem in one commit message; edited says whether git opened an editor for it."""
+    lines = message_lines(text, edited)
     header = lines[0] if lines else ""
     if header.startswith(EXEMPT):
         return []
@@ -227,7 +243,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args(argv)
     table = bannedwords.parse_table((args.root / "AGENTS.md").read_text(encoding="utf-8"))
-    problems = check(args.message_file.read_text(encoding="utf-8"), table, args.root)
+    # git runs the hook with GIT_EDITOR=: when no editor opens, and then keeps the lines that start with "#".
+    edited = os.environ.get("GIT_EDITOR") != ":"
+    problems = check(args.message_file.read_text(encoding="utf-8"), table, args.root, edited)
     for problem in problems:
         print(f"commitlint: {problem}", file=sys.stderr)
     return 1 if problems else 0

@@ -23,12 +23,13 @@ def repo(tmp_path):
 
 
 def lint(text: str, repo: Path) -> list[str]:
-    return commitlint.check(text, TABLE, repo)
+    return commitlint.check(text, TABLE, repo, edited=True)
 
 
-def test_message_lines_drops_comment_lines_and_everything_below_the_scissors_line():
+def test_message_lines_drops_comment_lines_and_everything_below_the_scissors_line_of_an_edited_message():
     text = f"fix: a\n\nbody\n# a comment\n{commitlint.SCISSORS}\ndiff --git a/x b/x\n+{SEAM}\n"
-    assert commitlint.message_lines(text) == ["fix: a", "", "body"]
+    assert commitlint.message_lines(text, edited=True) == ["fix: a", "", "body"]
+    assert commitlint.message_lines(text, edited=False) == text.splitlines()
 
 
 def test_classify_marks_fences_the_lines_between_them_and_prompt_lines_as_pasted():
@@ -199,10 +200,16 @@ def test_check_counts_a_last_paragraph_that_is_not_only_trailers(repo):
     assert lint(text, repo) == ["the body is 55 words; the limit is 50"]
 
 
+def test_check_counts_a_last_paragraph_of_lines_whose_key_is_not_a_known_trailer(repo):
+    body = "\n".join(["word " * 10] * 5)
+    notes = "\n".join(f"{key}: " + "word " * 11 for key in ("Cause", "Effect", "Fix", "Note"))
+    assert lint(f"fix: a\n\n{body}\n\n{notes}\n", repo) == ["the body is 98 words; the limit is 50"]
+
+
 def test_check_reads_the_trailers_for_every_rule_but_the_word_count(repo):
-    text = f"fix: a\n\nBody.\n\nCo-authored-by: One {EM} {SEAM} <a@b>\nNote: {'word ' * 14}end\nRefs: #12\n"
+    text = f"fix: a\n\nBody.\n\nCo-authored-by: One {EM} {SEAM} <a@b>\nCc: {'word ' * 15}end\nRefs: #12\n"
     assert lint(text, repo) == [
-        "line 6 is 79 characters; the body wraps at 72",
+        "line 6 is 82 characters; the body wraps at 72",
         "line 5 uses an em dash; restructure the sentence",
         "line 7 cites an issue or pull request number ('#12'); name the behavior instead",
         f'line 5 uses the banned word "{SEAM}"; the table in AGENTS.md gives a replacement',
@@ -213,30 +220,39 @@ def test_check_reads_the_trailers_for_every_rule_but_the_word_count(repo):
     ("lines", "numbers"),
     [
         (["fix: a", "", "Body.", "", "Co-authored-by: A <a@b>", "BREAKING CHANGE: it moves", "Refs: x"], {5, 6, 7}),
+        (["fix: a", "", "Body.", "", "signed-off-by: A <a@b>", "BREAKING-CHANGE: it moves"], {5, 6}),
         (["fix: a", "", "Body.", "", "Signed-off-by: A <a@b>", "", ""], {5}),
         (["fix: a", "", "Co-authored-by: A <a@b>"], {3}),
         (["fix: a", "", "Body.", "", "Co-authored-by: A <a@b>", "and more"], set()),
         (["fix: a", "", "Co-authored-by: A <a@b>", "", "Body."], set()),
         (["fix: a", "", "Body.", "", "Reviewed by: A <a@b>"], set()),
+        (["fix: a", "", "Body.", "", "Signed-off-by: A <a@b>", "Note: it moves"], set()),
         (["fix: a", "", "Body.", "", "Note:"], set()),
         (["fix: a"], set()),
     ],
     ids=[
-        "a block of trailers", "blank lines after it", "the only paragraph", "a line that is not a trailer",
-        "not the last paragraph", "a token with a space", "no value", "no body",
+        "a block of trailers", "keys in any case", "blank lines after it", "the only paragraph",
+        "a line that is not a trailer", "not the last paragraph", "a token with a space", "an unknown key",
+        "no value", "no body",
     ],
 )
 def test_trailers_returns_the_last_paragraph_only_when_every_line_is_a_trailer(lines, numbers):
     assert commitlint.trailers(commitlint.classify(lines)[0]) == numbers
 
 
-def test_check_reports_a_banned_word_in_the_header_and_body_but_not_in_a_paste_or_code(repo):
+def test_check_reports_a_banned_word_in_the_header_the_body_and_a_paste_but_not_in_code(repo):
     first, rest = HOOD.rsplit(" ", 1)
     text = f"fix: drop the {SEAM}\n\nIt ran {first}\n{rest} and `{SEAM}` here.\n$ grep {SEAM}\n```\n{SEAM}\n```\n"
     assert lint(text, repo) == [
         f'line 1 uses the banned word "{SEAM}"; the table in AGENTS.md gives a replacement',
         f'line 3 uses the banned word "{HOOD}"; the table in AGENTS.md gives a replacement',
+        f'line 5 uses the banned word "{SEAM}"; the table in AGENTS.md gives a replacement',
+        f'line 7 uses the banned word "{SEAM}"; the table in AGENTS.md gives a replacement',
     ]
+
+
+def test_check_reads_a_code_span_on_the_first_line_of_a_fence_as_code(repo):
+    assert lint(f"fix: a\n\nThe output:\n```\nrun `{SEAM}` now\n```\n", repo) == []
 
 
 @pytest.mark.parametrize(

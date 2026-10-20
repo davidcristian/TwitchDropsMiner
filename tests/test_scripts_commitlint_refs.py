@@ -40,15 +40,21 @@ def test_is_commit_returns_false_in_a_repo_without_commits(tmp_path):
     [
         ("See ADR-0003 for why.", "a decision record number", "ADR-0"),
         ("As adr 12 says.", "a decision record number", "adr 1"),
+        ("ADRs 4 and 5 say why.", "a decision record number", "ADRs 4"),
         ("This closes task 5.", "a backlog task number", "task 5"),
         ("Both tasks 31 and 32.", "a backlog task number", "tasks 3"),
         ("Taken from PR 12.", "a pull request or issue number", "PR 1"),
         ("The pull request 9 had it.", "a pull request or issue number", "pull request 9"),
         ("Reported as issue 7.", "a pull request or issue number", "issue 7"),
+        ("Issues 12 and 13 report it.", "a pull request or issue number", "Issues 1"),
+        ("Pull requests 7 and 8 had it.", "a pull request or issue number", "Pull requests 7"),
         ("Fixes the crash in #45.", "an issue or pull request number", "#45"),
+        ("Taken from DevilXD/TwitchDropsMiner#123.", "an issue or pull request number", "DevilXD/TwitchDropsMiner#123"),
         ("It fails check 3 of AGENTS.md.", "a numbered item of a document", "check 3"),
         ("Do step 2 in README first.", "a numbered item of a document", "step 2"),
         ("As decision 4 says.", "a numbered item of a document", "decision 4"),
+        ("Rule 4 of AGENTS.md says so.", "a numbered item of a document", "Rule 4"),
+        ("Line 12 of AGENTS.md says so.", "a numbered item of a document", "Line 12"),
         ("See \u00a7 2.", "a numbered section", "\u00a7 2"),
     ],
 )
@@ -86,6 +92,13 @@ def test_reference_problems_reports_the_hash_of_a_real_commit_but_not_other_hex(
     ]
 
 
+def test_reference_problems_reports_the_hash_of_a_real_commit_in_capitals(repo):
+    root, sha = repo
+    assert commitlint.reference_problems(body(f"Undoes {sha[:9].upper()}."), root) == [
+        f"line 2 cites the commit {sha[:9].upper()!r}; name the change instead"
+    ]
+
+
 def pointer(text: str, line: int = 2) -> list[str]:
     return [f"line {line} cites a numbered item of a document ({text!r}); name the behavior instead"]
 
@@ -100,10 +113,15 @@ def pointer(text: str, line: int = 2) -> list[str]:
         ("Both decisions 1, 2 or 5 hold", "decisions 1, 2 or 5"),
         ("Sections 2 to 4 say it", "Sections 2 to 4"),
         ("Items 2-4 say it", "Items 2-4"),
+        ("Per rule 4, the list stays.", "rule 4"),
+        ("Rules 1 to 3 say it", "Rules 1 to 3"),
     ],
-    ids=["item", "decision", "section", "plural items", "plural decisions", "plural sections", "a range"],
+    ids=[
+        "item", "decision", "section", "plural items", "plural decisions", "plural sections", "a range", "rule",
+        "plural rules",
+    ],
 )
-def test_pointer_problems_reports_decision_item_or_section_and_a_number_wherever_it_stands(text, found):
+def test_pointer_problems_reports_decision_item_rule_or_section_and_a_number_wherever_it_stands(text, found):
     assert commitlint.pointer_problems(body(text)) == pointer(found)
 
 
@@ -155,6 +173,35 @@ def test_pointer_problems_accepts_check_or_step_and_a_number_without_as_see_or_a
     assert commitlint.pointer_problems(body(text)) == []
 
 
+@pytest.mark.parametrize(
+    ("text", "found"),
+    [
+        ("It is set at line 600 of twitch.py.", "line 600"),
+        ("Lines 3 to 5 in `docs/building.md` say it", "Lines 3 to 5"),
+        ("See line 4 of the README.", "line 4"),
+        ("It starts at line 12 in the justfile", "line 12"),
+    ],
+    ids=["of a module", "a range in a doc in backticks", "of the README", "in the justfile"],
+)
+def test_pointer_problems_reports_a_line_cited_by_its_number_before_in_or_of_and_a_file_name(text, found):
+    assert commitlint.pointer_problems(body(text)) == pointer(found)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Line 3 is 73 characters.",
+        "The first line 2 times.",
+        "It breaks at line 4 of the output.",
+        '  File "twitch.py", line 600, in _run',
+        "line       3 of twitch.py",
+    ],
+    ids=["no in or of", "a count", "of a word that names no file", "a traceback", "aligned columns"],
+)
+def test_pointer_problems_accepts_a_line_number_without_in_or_of_and_a_file_name(text):
+    assert commitlint.pointer_problems(body(text)) == []
+
+
 def test_pointer_problems_accepts_a_word_and_a_number_in_two_aligned_table_columns():
     assert commitlint.pointer_problems(body("join two list items      1 of 47 tests fail")) == []
     assert commitlint.pointer_problems(body("as check       3 of README.md")) == []
@@ -198,7 +245,7 @@ def test_check_reports_a_reference_and_a_hash_through_the_whole_message(repo):
     root, sha = repo
     table = Table(("x" * 30,), 1, 1)
     text = f"revert: undo {sha[:8]}\n\nThe change in ADR-0002 broke the reload.\n"
-    assert commitlint.check(text, table, root) == [
+    assert commitlint.check(text, table, root, edited=True) == [
         f"line 1 cites the commit {sha[:8]!r}; name the change instead",
         "line 3 cites a decision record number ('ADR-0'); name the behavior instead",
     ]
