@@ -94,6 +94,10 @@ The executable ends up in `dist/`, and PyInstaller keeps its intermediate files 
 both in the current folder, so run the script from the repository folder. Pass `--nopause` to either script to
 skip the `Press any key` prompts, for example when another script calls it.
 
+`build.spec` finds `icons/` and `lang/` in its own folder, which PyInstaller passes to it as `SPECPATH`. It
+bundles every `lang/*.json` file except `English.json`, and the build fails with `FileNotFoundError` when
+`lang/` has no other file.
+
 These settings at the top of `build.spec` change the build:
 
 | Setting | Effect |

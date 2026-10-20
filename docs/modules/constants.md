@@ -18,7 +18,7 @@ on how the app runs:
 | How the app runs | `SELF_PATH` | `WORKING_DIR` |
 | --- | --- | --- |
 | From source, `python main.py` | `main.py` | the repo folder |
-| From source, `python gui.py`, or `pyinstaller build.spec` (which imports `constants`) | `main.py` next to `constants.py` | the repo folder |
+| From source, `python gui.py`, or a `sys.argv[0]` named `pyinstaller` | `main.py` next to `constants.py` | the repo folder |
 | PyInstaller build on Windows or Linux | the executable | the executable's folder |
 | macOS app bundle | the executable inside the bundle | `Contents/MacOS` inside the bundle |
 | AppImage | the `.AppImage` file, read from the `APPIMAGE` environment variable | the folder of the `.AppImage` file |
@@ -45,7 +45,7 @@ Bundled read only files (`lang/`, `icons/`) are found by `_resource_path`, which
 | `LOG_PATH` | `log.txt` |
 | `DUMP_PATH` | `dump.dat` |
 | `CACHE_PATH`, `CACHE_DB` | `cache/` and `cache/mapping.json` ([cache.md](cache.md)) |
-| `VENV_PATH`, `SITE_PACKAGES_PATH`, `SCRIPTS_PATH` | `env/` and its packages and scripts folders. `SYS_SITE_PACKAGES` and `SYS_SCRIPTS` hold the folder names for the platform. `build.spec` reads `SITE_PACKAGES_PATH`; autostart from source runs `pythonw` from `SCRIPTS_PATH` |
+| `VENV_PATH`, `SCRIPTS_PATH` | `env/` and its scripts folder. `SYS_SCRIPTS` holds the folder name for the platform. Autostart from source runs `pythonw` from `SCRIPTS_PATH` |
 
 `LANG_PATH` is `_resource_path("lang")`. [troubleshooting.md](../troubleshooting.md#where-the-app-keeps-its-files)
 says what each file holds.

@@ -9,11 +9,12 @@ from collections import abc
 from traceback import format_exc
 from typing import Any, TypeAlias, TYPE_CHECKING
 
-SELF_PATH = str(Path(".").resolve())
-if SELF_PATH not in sys.path:
-    sys.path.insert(0, SELF_PATH)
+# PyInstaller defines SPECPATH, the folder that holds this file
+SPEC_DIR = Path(SPECPATH)
+if str(SPEC_DIR) not in sys.path:
+    sys.path.insert(0, str(SPEC_DIR))
 
-from constants import WORKING_DIR, SITE_PACKAGES_PATH, DEFAULT_LANG
+from constants import DEFAULT_LANG
 
 if TYPE_CHECKING:
     from PyInstaller.building.splash import Splash
@@ -42,18 +43,18 @@ to_add: list[tuple[Path, str, bool]] = [
     (Path("icons/idle.ico"), "./icons", True),
     (Path("icons/error.ico"), "./icons", True),
     (Path("icons/maint.ico"), "./icons", True),
-    # SeleniumWire HTTPS/SSL cert file and key
-    (Path(SITE_PACKAGES_PATH, "seleniumwire/ca.crt"), "./seleniumwire", False),
-    (Path(SITE_PACKAGES_PATH, "seleniumwire/ca.key"), "./seleniumwire", False),
 ]
-for lang_filepath in WORKING_DIR.joinpath("lang").glob("*.json"):
-    if lang_filepath.stem != DEFAULT_LANG:
-        to_add.append((lang_filepath, "lang", True))
+translations: list[Path] = [
+    path for path in SPEC_DIR.joinpath("lang").glob("*.json") if path.stem != DEFAULT_LANG
+]
+if not translations:
+    raise FileNotFoundError(f"No translation file in {SPEC_DIR / 'lang'}")
+to_add.extend((path, "lang", True) for path in translations)
 
 # Ensure the required to-be-added data exists
 datas: list[tuple[Path, str]] = []
 for source_path, dest_path, required in to_add:
-    if source_path.exists():
+    if SPEC_DIR.joinpath(source_path).exists():
         datas.append((source_path, dest_path))
     elif required:
         raise FileNotFoundError(str(source_path))
@@ -62,10 +63,6 @@ hooksconfig: dict[str, Any] = {}
 binaries: list[tuple[Path, str]] = []
 hiddenimports: list[str] = [
     "PIL._tkinter_finder",
-    "setuptools._distutils.log",
-    "setuptools._distutils.dir_util",
-    "setuptools._distutils.file_util",
-    "setuptools._distutils.archive_util",
 ]
 
 if sys.platform == "linux":

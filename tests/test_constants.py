@@ -12,7 +12,6 @@ import constants
 from constants import ClientInfo, GQLPersistedQuery, GQLQuery, WebsocketTopic
 
 HASH = "0123abcd"
-PYTHON = f"python{sys.version_info.major}.{sys.version_info.minor}"
 
 
 def template(variables=None) -> GQLPersistedQuery:
@@ -257,15 +256,7 @@ def test_a_run_from_source_started_from_another_appimage_keeps_its_files_in_the_
     assert copy.COOKIES_PATH == tmp_path / "repo" / "cookies.jar"
 
 
-@pytest.mark.parametrize(
-    ("platform", "site_packages", "scripts"),
-    [
-        ("win32", "Lib/site-packages", "Scripts"),
-        ("linux", f"lib/{PYTHON}/site-packages", "bin"),
-        ("darwin", f"lib/{PYTHON}/site-packages", "bin"),
-    ],
-)
-def test_the_venv_folders_follow_the_platform(tmp_path, platform, site_packages, scripts):
+@pytest.mark.parametrize(("platform", "scripts"), [("win32", "Scripts"), ("linux", "bin"), ("darwin", "bin")])
+def test_the_venv_scripts_folder_follows_the_platform(tmp_path, platform, scripts):
     copy = load_constants(tmp_path / "main.py", platform=platform)
-    assert copy.SITE_PACKAGES_PATH == tmp_path / "env" / site_packages
     assert copy.SCRIPTS_PATH == tmp_path / "env" / scripts
