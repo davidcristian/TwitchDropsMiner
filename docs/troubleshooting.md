@@ -162,13 +162,13 @@ library it needs. A run from source needs the system packages listed in
 
 ## Reporting a problem
 
-Do not report problems with this project on DevilXD/TwitchDropsMiner, whose code differs. When you report a
-problem, include:
+Report a problem on this project's [Issues page](https://github.com/davidcristian/TwitchDropsMiner/issues). Do
+not report it on DevilXD/TwitchDropsMiner, whose code differs. Include:
 
 - the version, from `--version` or the window title;
 - your operating system and the build you use: Windows, macOS, AppImage, Linux PyInstaller or source;
 - the steps that lead to the problem;
-- a log made with `-vvv --log`, read first so that it contains nothing private. The app writes `<hidden>` in
-  place of your login token.
+- `log.txt` from a run with `-vvv --log`, read first so that it contains nothing private. The app writes
+  `<hidden>` in place of your login token.
 
 Never share `cookies.jar`.

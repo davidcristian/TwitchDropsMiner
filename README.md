@@ -83,7 +83,7 @@ To run the latest `master` from source or build your own executable, see [docs/b
 ### Support:
 
 - [docs/troubleshooting.md](docs/troubleshooting.md) explains common problems, the command line flags and how to get a log.
-- This project's code differs from the original, so do not report its problems on DevilXD/TwitchDropsMiner.
+- Report a problem on this project's [Issues page](https://github.com/davidcristian/TwitchDropsMiner/issues), with the details that [Reporting a problem](docs/troubleshooting.md#reporting-a-problem) lists. This project's code differs from the original, so do not report its problems on DevilXD/TwitchDropsMiner.
 
 ### Project goals:
 
