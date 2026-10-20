@@ -87,3 +87,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [042: The game folder dialog stops the miner while it is open](tasks/042-folder-dialog-stops-the-miner.md) | gui |
 | [043: A `drop-claim` event for a claimed drop runs the claim handling again](tasks/043-repeated-drop-claim-event.md) | twitch |
 | [044: The window is wider than a screen of 1366 pixels](tasks/044-window-wider-than-small-screens.md) | gui |
+| [045: A run from source started from another AppImage keeps its files in that AppImage's folder](tasks/045-run-from-source-inside-another-appimage.md) | constants |

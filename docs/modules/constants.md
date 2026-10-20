@@ -25,7 +25,9 @@ on how the app runs:
 
 `constants.py` has no branch for macOS: PyInstaller sets `sys.argv[0]` to the executable in `Contents/MacOS`.
 `IS_APPIMAGE` is true when `APPIMAGE` names an existing path. `IS_PACKAGED` is true for a PyInstaller build
-(`sys._MEIPASS` exists) or an AppImage.
+(`sys._MEIPASS` exists) or an AppImage. A run from source started from another AppImage inherits its `APPIMAGE`
+and counts as an AppImage, so it keeps its files next to that `.AppImage` file
+([task 045](../refinements/tasks/045-run-from-source-inside-another-appimage.md)).
 
 Bundled read only files (`lang/`, `icons/`) are found by `_resource_path`, which `utils` exports as
 `resource_path`. It returns a path under:

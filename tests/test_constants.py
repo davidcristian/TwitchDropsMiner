@@ -245,6 +245,18 @@ def test_an_appimage_variable_naming_a_missing_file_is_ignored(tmp_path):
     assert copy.WORKING_DIR == tmp_path / "app"
 
 
+@pytest.mark.xfail(strict=True, reason="docs/refinements/tasks/045-run-from-source-inside-another-appimage.md")
+def test_a_run_from_source_started_from_another_appimage_keeps_its_files_in_the_repo(tmp_path, monkeypatch):
+    other = tmp_path / "apps" / "Editor.AppImage"
+    other.parent.mkdir()
+    other.touch()
+    # the AppImage runtime sets APPDIR to the mounted image, and the editor's terminal passes both on
+    monkeypatch.setenv("APPDIR", str(tmp_path / "mount_editor"))
+    copy = load_constants(tmp_path / "repo" / "main.py", appimage=other)
+    assert not copy.IS_PACKAGED
+    assert copy.COOKIES_PATH == tmp_path / "repo" / "cookies.jar"
+
+
 @pytest.mark.parametrize(
     ("platform", "site_packages", "scripts"),
     [
