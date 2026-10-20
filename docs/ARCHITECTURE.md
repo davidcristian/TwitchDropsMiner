@@ -102,9 +102,9 @@ instead and is not restarted ([task 013](refinements/tasks/013-crashed-task-ends
    `video-playback-by-id` and `broadcast-settings-update` for each channel.
 4. **Choosing.** `can_watch` returns true for an online channel that streams a game in `wanted_games` with
    drops enabled and has a campaign for which `DropsCampaign.can_earn` is true; a special game
-   (`Game.is_special`) skips the game and drops checks. `should_switch` returns true for a channel that
-   `can_watch` accepts when nothing is watched or the watched channel fails `can_watch`, or when its game has a
-   higher priority, or an equal one and it has an ACL while the watched channel has none.
+   (`Game.is_special`) in `wanted_games` skips the game and drops checks. `should_switch` returns true for a
+   channel that `can_watch` accepts when nothing is watched or the watched channel fails `can_watch`, or when
+   its game has a higher priority, or an equal one and it has an ACL while the watched channel has none.
 5. **Watching.** Every `WATCH_INTERVAL` (20 seconds), `_watch_loop` calls `Channel.send_watch`. For a new
    stream it sends one `PlaybackAccessToken` request and keeps the last URL of the quality list from
    `usher.ttvnw.net`, usually the lowest quality. Each call downloads that playlist and sends a `HEAD` request

@@ -52,9 +52,10 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
 - `channels` is an `OrderedDict[int, Channel]` of at most `MAX_CHANNELS` (199) tracked channels. `inventory` is
   the `list[DropsCampaign]`, `wanted_games` the `list[Game]` to mine with the highest priority first, and
   `watching_channel` an `AwaitableValue[Channel]`. `_campaigns` maps a campaign ID to its `DropsCampaign`.
-- `can_watch(channel)` returns True when the channel is online, a campaign's `can_earn(channel)` is True, and
-  either the channel's game is in `wanted_games` with drops enabled, or that campaign is for a special game
-  ([inventory.md](inventory.md#special-games)).
+- `can_watch(channel)` returns True when the channel is online, a campaign of a game in `wanted_games` has
+  `can_earn(channel)` True, and either the channel's game is in `wanted_games` with drops enabled, or that
+  campaign is for a special game ([inventory.md](inventory.md#special-games)). A campaign whose game the Exclude
+  list or the "Priority list only" mode keeps out of `wanted_games` makes no channel watchable.
 - `get_priority(channel)` returns the index of the channel's game in `wanted_games`, or `MAX_INT` when the
   channel is offline or its game is not wanted. A lower number is a higher priority.
 - `should_switch(channel)` returns True when `can_watch(channel)` is True and no channel is watched, or the

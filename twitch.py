@@ -1017,9 +1017,10 @@ class Twitch:
             return False
         for campaign in self.inventory:
             if (
-                campaign.can_earn(channel)  # let the campaign do the "special games" check
+                # limit watching to the games the user wants
+                campaign.game in self.wanted_games
+                and campaign.can_earn(channel)  # let the campaign do the "special games" check
                 and (
-                    # limit watching to the games the user wants
                     channel.game is not None
                     and channel.drops_enabled
                     and channel.game in self.wanted_games
