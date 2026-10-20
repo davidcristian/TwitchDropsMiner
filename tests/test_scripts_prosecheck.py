@@ -30,6 +30,17 @@ def test_word_problems_does_not_join_a_phrase_across_a_blank_line():
     assert prosecheck.word_problems("a.md", f"It works {first}\n\n{rest} today.\n", TABLE) == []
 
 
+@pytest.mark.parametrize(
+    "quote",
+    ["> ", "> > ", ">> ", "  >"],
+    ids=["block quote", "nested block quote", "nested markers without a space", "indented marker without a space"],
+)
+def test_word_problems_reports_a_phrase_split_across_the_lines_of_a_block_quote(quote):
+    first, rest = HOOD.rsplit(" ", 1)
+    text = f"Intro.\n\n{quote}It works {first}\n{quote}{rest} today.\n"
+    assert prosecheck.word_problems("a.md", text, TABLE) == [banned("a.md", 3, HOOD)]
+
+
 @pytest.mark.parametrize("fence", ["```", "~~~"])
 def test_word_problems_ignores_a_banned_word_in_a_fence(fence):
     text = f"one\n{fence}\n{SEAM} = 1\n{fence}\n"

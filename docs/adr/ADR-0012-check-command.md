@@ -42,7 +42,8 @@ lint rules without its formatter or pyright.
      as a dash keep it, so that upstream fixes still apply. The reader checks it.
    - `prosecheck.py`: no word of the banned table in AGENTS.md in docs, comments, docstrings, the strings of
      `translate.py` or the other text files, and no comment block or docstring over three lines. It reads the
-     table from AGENTS.md, so the list is written in one place.
+     table from AGENTS.md, so the list is written in one place. It reads a block quote without its `>`
+     markers, so a phrase split across two quoted lines is found.
    - `docscheck.py`: every relative link between markdown files resolves to a file in the repo, with its
      heading anchor formed as GitHub forms it; no doc cites a source line by number; `docs/index.md` links every
      ADR and module doc, and the backlog index every task, with the record's title as the link text; every ADR

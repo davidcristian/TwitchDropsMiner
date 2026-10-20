@@ -20,6 +20,7 @@ PYTHON_SUFFIXES = (".py", ".spec")
 UI_TEXT = "translate.py"
 FENCES = ("```", "~~~")
 _FENCE = re.compile(r"(`{3,}|~{3,})(.*)")
+_QUOTE = re.compile(r"(?: {0,3}> ?)+")
 # Python skips a byte order mark at the start of a file, but ast.parse and compile of a str reject it.
 BOM = "\ufeff"
 # The Unicode dashes that Latin text uses as punctuation, without the hyphens and the minus sign U+2212.
@@ -180,10 +181,16 @@ def python_prose(name: str, source: str) -> list[list[Line]]:
     return runs
 
 
+def _unquoted(line: str) -> str:
+    """Return a markdown line with the block quote markers at its start replaced by spaces."""
+    found = _QUOTE.match(line)
+    return " " * found.end() + line[found.end():] if found else line
+
+
 def prose_runs(name: str, text: str) -> list[list[Line]]:
     """Return the prose of one repo file as runs of lines, read by the file's kind."""
     if name.endswith(".md"):
-        return [markdown_lines(text)]
+        return [[(number, _unquoted(line)) for number, line in markdown_lines(text)]]
     if name.endswith(PYTHON_SUFFIXES):
         try:
             return python_prose(name, text)
