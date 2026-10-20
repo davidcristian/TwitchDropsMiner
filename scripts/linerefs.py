@@ -14,14 +14,15 @@ FILE = (
     rf"(?<![\w./-])(?:[\w./-]*\w\.(?i:{_EXTENSIONS})"
     rf"|(?:[\w.-]+/)*(?:justfile|LICENSE(?:\.MIT)?|\.(?!(?:{_EXTENSIONS})\b)[a-z][\w-]*))"
 )
-_LINES = r"(?i:lines?)\s+\d+(?:\s*(?:-|,|to|and)\s*\d+)*(?!\w)"
+_LINES = r"(?i:lines?)\s+\d+(?:\s*(?:-|,|to|and|or|through)\s*\d+)*(?!\w)"
+_AT = r"(?:(?i:at|near|on|in|from|see)\s+)?"
 # What a file name may be wrapped in before "line N": backticks, bold, a link, then a comma or a colon.
 _AFTER_FILE = r"[`*]*\]?(?:\([^)\s]*\))?[`*]*[,:]?\s+"
 _ITEM = re.compile(r"[ \t]*(?:[-+*]|\d{1,9}[.)])(?:[ \t]|$)")
 _CITATIONS = (
     re.compile(rf"(?P<cited>{FILE}(?::\d+(?!\w)|#L\d+(?:-L\d+)?(?![\w-])))"),
-    re.compile(rf"\((?P<cited>{_LINES})"),
-    re.compile(rf"{FILE}{_AFTER_FILE}(?P<cited>{_LINES})"),
+    re.compile(rf"\({_AT}(?P<cited>{_LINES})"),
+    re.compile(rf"{FILE}{_AFTER_FILE}{_AT}(?P<cited>{_LINES}|L\d+(?:-L?\d+)?(?![\w-]))"),
     re.compile(rf"(?<!\w)(?P<cited>{_LINES})\s+(?:of|in)\s+[`*\[]*{FILE}"),
 )
 
@@ -29,7 +30,7 @@ _CITATIONS = (
 def line_number_problems(name: str, text: str) -> list[Problem]:
     """Return a problem for each place outside code fences that cites a line of a file by its number.
 
-    A citation is file:N, file#LN, "(line N", a file name before "line N", or "line N of" a file name.
+    A citation is file:N, file#LN, "(line N", a file name before "line N" or "LN", or "line N of" a file name.
     """
     found: dict[tuple[int, int], Problem] = {}
     for run in bannedwords.runs(markdown_lines(text)):

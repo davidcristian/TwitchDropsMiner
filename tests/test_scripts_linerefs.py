@@ -40,6 +40,13 @@ def cites(text: str) -> list[Problem]:
         ("The loop is line 553 of `twitch.py`.", "line 553"),
         ("Line 553 in twitch.py starts the loop.", "Line 553"),
         ("See lines 3 to 5 of [`gui.py`](../gui.py).", "lines 3 to 5"),
+        ("The loop is lines 600 through 650 of twitch.py.", "lines 600 through 650"),
+        ("Line 3 or 4 of `gui.py` sets it.", "Line 3 or 4"),
+        ("The loop waits there (at line 600).", "line 600"),
+        ("In twitch.py, near line 600, the loop waits.", "line 600"),
+        ("See `twitch.py` at lines 6 and 7.", "lines 6 and 7"),
+        ("See twitch.py L600.", "L600"),
+        ("See [`twitch.py`](../twitch.py) L600-L650.", "L600-L650"),
     ],
 )
 def test_line_number_problems_reports_a_line_cited_by_its_number(line, cited):
@@ -96,9 +103,10 @@ def test_line_number_problems_ignores_code_fences_and_numbers_that_cite_no_line(
         "1. Write the subject line\n2. Leave a blank line",
         "1. Find the `README.md` line\n2. Leave a blank line",
         "Retry the check 3 times.",
+        "The scan stops near line 40 of the log, in line with `README.md` and twitch.py Loop 2.",
     ],
     ids=["count after line", "a bare extension", "a bare extension in a rule", "no file", "commit message lines",
-         "at line without a file", "a numbered list", "a list after a file name", "no line"],
+         "at line without a file", "a numbered list", "a list after a file name", "no line", "near line of no file"],
 )
 def test_line_number_problems_ignores_line_n_that_is_not_in_a_citation_form(line):
     assert cites(f"{line}\n") == []
