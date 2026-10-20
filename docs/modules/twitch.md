@@ -66,7 +66,8 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
   channel that came online or changed its stream, if `should_switch` allows it, and enters
   `State.CHANNEL_SWITCH` when the watched channel can no longer be watched.
 - `get_live_streams(game, *, limit=20, drops_enabled=True)` sends one `GameDirectory` query and returns up to
-  `limit` live channels of the game. `bulk_check_online(channels)` is in [channel.md](channel.md#bulk-check).
+  `limit` live channels of the game, or none when the game is null. `bulk_check_online(channels)` is in
+  [channel.md](channel.md#bulk-check).
 
 ## GQL requests
 
@@ -79,9 +80,14 @@ POST, so a batch of 20 takes one slot. The code comment on the limiter says not 
 | Error message in the response | What `gql_request` does |
 | --- | --- |
 | `service error`, `PersistedQueryNotFound` | retries once, after at least 5 seconds; the second one raises `GQLException` |
-| `server error` | sets the data key the error path names to `None`, and returns the response |
+| `server error` | sets the field the error's `path` names to `None` and returns the response; when the path names no field, logs the error and returns the response as it is |
 | `service timeout`, `request cancelled`, `service unavailable`, `context deadline exceeded` | retries with `ExponentialBackoff(maximum=60)`, with no limit on the count |
 | any other message, or an `error` key | raises `GQLException` |
+
+`fetch_campaigns`, `get_live_streams` and `bulk_check_online` read the responses through
+[gqldata.md](gqldata.md), which leaves out an item that a server error set to null, so such an error does not
+end the run. Other reads still raise on a null field
+([task 037](../refinements/tasks/037-null-fields-in-other-gql-reads.md)).
 
 ## Login
 
@@ -105,7 +111,8 @@ code flow is the only login: the app has no password login ([ADR-0010](../adr/AD
 `Notifications` topics and enters `State.INVENTORY_FETCH`. It then handles one state per pass and waits for the
 next `change_state`. [ARCHITECTURE.md](../ARCHITECTURE.md#the-state-machine) has the table of the states, what
 each one does, the state that follows it and the events that change it. `fetch_inventory` builds a
-`DropsCampaign` for each campaign with a game, and `GAMES_UPDATE` computes the [wanted games](#wanted-games).
+`DropsCampaign` for each campaign whose `game`, `allow` and `timeBasedDrops` fields are not null
+([gqldata.md](gqldata.md#null-campaign-details)), and `GAMES_UPDATE` computes the [wanted games](#wanted-games).
 
 An offline channel has priority `MAX_INT`, so offline channels sort last and are the first ones cut at
 `MAX_CHANNELS` ([task 001](../refinements/tasks/001-offline-acl-channels-trimmed-first.md)).
@@ -208,5 +215,5 @@ once while it persists ([gamelib.md](gamelib.md)).
   during a run must be cleared there.
 - `channels` stays within `MAX_CHANNELS` ([websocket.md](websocket.md#the-199-channel-limit)).
 
-**Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `translate`, `redact`, `exceptions`,
-`utils` and `constants`. Third party: aiohttp and yarl.
+**Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `gqldata`, `translate`, `redact`,
+`exceptions`, `utils` and `constants`. Third party: aiohttp and yarl.

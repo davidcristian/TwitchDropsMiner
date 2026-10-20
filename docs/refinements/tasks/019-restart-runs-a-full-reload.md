@@ -98,3 +98,7 @@ The commit states the new worst case per hour, as AGENTS.md asks for a change to
 
 - 2026-10-18: Opened. While the consequences of ADR-0006 were written, the restart was found to start with a
   full reload, and the hourly rate was computed from ADR-0002's counts.
+- 2026-10-20: A field that a GQL server error sets to null in the campaign details, the game directory or the
+  available drops no longer ends the run, so it causes no restart ([gqldata.md](../../modules/gqldata.md)).
+  The task stays open for the errors that still end the run, such as an outdated hash and the reads in
+  [task 037](037-null-fields-in-other-gql-reads.md).

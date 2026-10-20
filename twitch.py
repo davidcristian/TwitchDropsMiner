@@ -7,7 +7,6 @@ import asyncio
 import logging
 from time import time
 from copy import deepcopy
-from itertools import chain
 from functools import partial
 from collections import abc, deque, OrderedDict
 from datetime import datetime, timedelta, timezone
@@ -31,6 +30,15 @@ from exceptions import (
     MinerException,
     RequestInvalid,
     RequestException,
+)
+from gqldata import (
+    get_field,
+    merge_data,
+    campaign_details,
+    channel_campaigns,
+    clear_error_field,
+    directory_streams,
+    complete_campaigns,
 )
 from utils import (
     CHARS_HEX_LOWER,
@@ -1342,12 +1350,13 @@ class Twitch:
                                 force_retry = True
                                 break
                             elif error_dict["message"] == "server error":
-                                # nullify the key the error path points to
-                                data_dict: JsonType = response_json["data"]
-                                path: list[str] = error_dict.get("path", [])
-                                for key in path[:-1]:
-                                    data_dict = data_dict[key]
-                                data_dict[path[-1]] = None
+                                if not clear_error_field(
+                                    response_json.get("data"), error_dict.get("path", [])
+                                ):
+                                    logger.error(
+                                        "Server error with no field to clear in "
+                                        f"{get_field(response_json, 'extensions', 'operationName')}"
+                                    )
                                 break
                             elif (
                                 error_dict["message"] in (
@@ -1373,26 +1382,6 @@ class Twitch:
             await asyncio.sleep(delay)
         raise RuntimeError("Retry loop was broken")
 
-    def _merge_data(self, primary_data: JsonType, secondary_data: JsonType) -> JsonType:
-        merged = {}
-        for key in set(chain(primary_data.keys(), secondary_data.keys())):
-            in_primary = key in primary_data
-            if in_primary and key in secondary_data:
-                vp = primary_data[key]
-                vs = secondary_data[key]
-                if not isinstance(vp, type(vs)) or not isinstance(vs, type(vp)):
-                    raise MinerException("Inconsistent merge data")
-                if isinstance(vp, dict):  # both are dicts
-                    merged[key] = self._merge_data(vp, vs)
-                else:
-                    # use primary value
-                    merged[key] = vp
-            elif in_primary:
-                merged[key] = primary_data[key]
-            else:  # in campaigns only
-                merged[key] = secondary_data[key]
-        return merged
-
     async def fetch_campaigns(
         self, campaigns_chunk: list[tuple[str, JsonType]]
     ) -> dict[str, JsonType]:
@@ -1406,11 +1395,7 @@ class Twitch:
                 for cid in campaign_ids
             ]
         )
-        fetched_data: dict[str, JsonType] = {
-            (campaign_data := response_json["data"]["user"]["dropCampaign"])["id"]: campaign_data
-            for response_json in response_list
-        }
-        return self._merge_data(campaign_ids, fetched_data)
+        return merge_data(campaign_ids, campaign_details(response_list))
 
     async def fetch_inventory(self) -> None:
         status_update = self.gui.status.update
@@ -1443,16 +1428,13 @@ class Twitch:
             for coro in asyncio.as_completed(fetch_campaigns_tasks):
                 chunk_campaigns_data = await coro
                 # merge the inventory and campaigns datas together
-                inventory_data = self._merge_data(inventory_data, chunk_campaigns_data)
+                inventory_data = merge_data(inventory_data, chunk_campaigns_data)
         except Exception:
             # asyncio.as_completed doesn't cancel tasks on errors
             for task in fetch_campaigns_tasks:
                 task.cancel()
             raise
-        # filter out invalid campaigns
-        for campaign_id in list(inventory_data.keys()):
-            if inventory_data[campaign_id]["game"] is None:
-                del inventory_data[campaign_id]
+        inventory_data = complete_campaigns(inventory_data)
 
         if self.settings.dump:
             # dump the campaigns data to the dump file
@@ -1570,15 +1552,10 @@ class Twitch:
             )
         except GQLException as exc:
             raise MinerException(f"Game: {game.slug}") from exc
-        if "game" in response["data"]:
-            return [
-                Channel.from_directory(
-                    self, stream_channel_data["node"], drops_enabled=drops_enabled
-                )
-                for stream_channel_data in response["data"]["game"]["streams"]["edges"]
-                if stream_channel_data["node"]["broadcaster"] is not None
-            ]
-        return []
+        return [
+            Channel.from_directory(self, stream_data, drops_enabled=drops_enabled)
+            for stream_data in directory_streams(response)
+        ]
 
     async def bulk_check_online(self, channels: abc.Iterable[Channel]):
         """
@@ -1599,7 +1576,7 @@ class Twitch:
             for coro in asyncio.as_completed(stream_gql_tasks):
                 response_list: list[JsonType] = await coro
                 for response_json in response_list:
-                    channel_data: JsonType = response_json["data"]["user"]
+                    channel_data: JsonType | None = get_field(response_json, "data", "user")
                     if channel_data is not None:
                         acl_streams_map[int(channel_data["id"])] = channel_data
         except Exception:
@@ -1621,12 +1598,7 @@ class Twitch:
             ]
             try:
                 for coro in asyncio.as_completed(available_gql_tasks):
-                    response_list = await coro
-                    for response_json in response_list:
-                        available_info: JsonType = response_json["data"]["channel"]
-                        acl_available_drops_map[int(available_info["id"])] = (
-                            available_info["viewerDropCampaigns"] or []
-                        )
+                    acl_available_drops_map.update(channel_campaigns(await coro))
             except Exception:
                 # asyncio.as_completed doesn't cancel tasks on errors
                 for task in available_gql_tasks:

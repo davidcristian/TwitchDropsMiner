@@ -12,6 +12,7 @@ from typing import Any, SupportsInt, cast, TYPE_CHECKING
 import aiohttp
 from yarl import URL
 
+from gqldata import get_field
 from utils import Game, json_minify, isonow
 from exceptions import MinerException, RequestException
 from constants import CALL, GQL_QUERIES, ONLINE_DELAY, URLType, GQLQuery
@@ -364,7 +365,8 @@ class Channel:
                 logger.log(CALL, f"AvailableDrops GQL call failed for channel: {self._login}")
             else:
                 stream.drops_enabled = self._check_drops_enabled(
-                    available_drops_campaigns["data"]["channel"]["viewerDropCampaigns"] or []
+                    get_field(available_drops_campaigns, "data", "channel", "viewerDropCampaigns")
+                    or []
                 )
         return stream
 

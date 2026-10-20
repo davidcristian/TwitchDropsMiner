@@ -47,7 +47,7 @@ watch requests that make drop progress. `Twitch` keeps the tracked channels in `
   extra request is sent.
 - With it on, `get_stream` sends one more GQL query, `AvailableDrops`. The stream counts as drops enabled when
   one of the campaigns it lists is in `Twitch._campaigns` and that campaign's
-  `can_earn(channel, ignore_channel_status=True)` is True.
+  `can_earn(channel, ignore_channel_status=True)` is True. A null `channel` in the response lists no campaigns.
 - A stream from `GameDirectory` takes `drops_enabled` from the caller instead. `CHANNELS_FETCH` queries the
   directory with the `DROPS_ENABLED` filter and passes True.
 
@@ -85,9 +85,10 @@ then calls `update_stream` once. More events during the wait start no second wai
 
 `Twitch.bulk_check_online(channels)`, in `twitch.py`, checks many channels at once. It sends their `stream_gql`
 operations in batches of 20 per GQL request. With the extra drops check on, it also sends `AvailableDrops` for the
-online channels, again 20 per request. It then calls `external_update` on each online channel. A channel that is
-offline or missing in the response keeps its current stream. So `n` channels cost `ceil(n / 20)` GQL requests,
-plus one per 20 online channels with the extra check.
+online channels, again 20 per request. It then calls `external_update` on each online channel, with no campaigns
+for one whose `AvailableDrops` result is null. A channel that is offline or missing in the response keeps its
+current stream. So `n` channels cost `ceil(n / 20)` GQL requests, plus one per 20 online channels with the
+extra check.
 
 ## Watching
 
@@ -124,6 +125,7 @@ spade URL that `get_spade_url` reads from the channel page, and `_send_watch_gql
   ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)).
 - `on_channel_update` ends with `display()`, so the GUI row matches the status after every change.
 
-**Dependencies.** `utils` (`Game`, `json_minify`, `isonow`), `exceptions` (`MinerException`,
-`RequestException`) and `constants` (`GQL_QUERIES`, `ONLINE_DELAY`, `CALL`, `URLType`, `GQLQuery`). Third party:
-aiohttp and yarl. `Twitch` and the GUI's `ChannelList` are imported for type checking only.
+**Dependencies.** `gqldata` (`get_field`), `utils` (`Game`, `json_minify`, `isonow`), `exceptions`
+(`MinerException`, `RequestException`) and `constants` (`GQL_QUERIES`, `ONLINE_DELAY`, `CALL`, `URLType`,
+`GQLQuery`). Third party: aiohttp and yarl. `Twitch` and the GUI's `ChannelList` are imported for type checking
+only.

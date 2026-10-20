@@ -52,6 +52,7 @@ burst of requests puts that account at risk.
 | `exceptions.py` | `MinerException` and its subclasses, including `ExitRequest` and `ReloadRequest` |
 | `redact.py` | `redact`, which hides the login token and other secrets in a value before a log call prints it |
 | `reconnect.py` | `ReconnectDelay`, the wait of a PubSub websocket before each reconnect |
+| `gqldata.py` | Reads GQL responses and leaves out the fields that a server error set to null |
 | `version.py` | `__version__`, to which CI appends the commit hash. Its doc is part of `docs/modules/constants.md` |
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
 | `docs/` | Listed in `docs/index.md`: `ARCHITECTURE.md`, the decisions (`adr/`), one contract doc per module (`modules/`), procedures (`runbooks/`), the deferred work (`refinements/`), and two pages for users, `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
@@ -208,9 +209,8 @@ upstream, keep their original style and are not reworded.
 
 ## Branches, pull requests and remotes
 
-- Work happens on a branch named `feat/...`, `fix/...`, `docs/...` or `chore/...` and reaches `master` through a
-  pull request on [davidcristian/TwitchDropsMiner](https://github.com/davidcristian/TwitchDropsMiner), one logical
-  concern per pull request.
+- Work happens on a `feat/...`, `fix/...`, `docs/...` or `chore/...` branch and reaches `master` through one pull
+  request per logical concern on [davidcristian/TwitchDropsMiner](https://github.com/davidcristian/TwitchDropsMiner).
 - Never force-push `master`. Rewriting a branch nobody else has pulled is fine.
 - DevilXD/TwitchDropsMiner (the `upstream` remote) is read only for this project: fetch from it, but never open an
   issue or a pull request there. Its fixes come in by cherry-pick or merge, never by rebasing `master`

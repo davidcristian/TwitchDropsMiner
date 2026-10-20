@@ -36,7 +36,8 @@ calls `Twitch.close()`, so the run ends without the restart
 - `Channel.get_stream` wraps a `MinerException` from `Twitch.gql_request` in a new one that names the channel.
   It also catches one from the `AvailableDrops` query, logs it at `CALL` level and continues.
 - `Twitch.get_live_streams` wraps a `GQLException` in a new one that names the game slug.
-- `Twitch._merge_data` raises it when the inventory and campaign data have different types for one key.
+- `gqldata.merge_data` raises it when the inventory and campaign data have values of different types for one
+  key, neither of them null.
 - `WebsocketPool.add_topics` raises it when the topics do not fit in `MAX_WEBSOCKETS` websockets.
 - `Translator.__call__` raises it for a key path that the current translation does not have
   ([translate.md](translate.md)).
@@ -90,7 +91,8 @@ frame.
 - Raised by `Twitch.gql_request` for a response with an `error` key, or with an `errors` list in which no
   message is one the method retries or clears. It retries `service error` and `PersistedQueryNotFound` once,
   retries `service timeout`, `request cancelled`, `service unavailable` and `context deadline exceeded`, and
-  sets the data at the error's path to `None` for `server error`.
+  sets the data at the error's path to `None` for `server error`, or logs the error when the path names no
+  field.
 - Caught by `BaseDrop._claim`, which returns `False` because the claim may have failed; by
   `Twitch._watch_loop` around the `CurrentDrop` query, which then uses no drop data; and by
   `Twitch.get_live_streams`, which raises a `MinerException` that names the game.
