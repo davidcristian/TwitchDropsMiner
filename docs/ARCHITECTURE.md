@@ -178,7 +178,7 @@ build and, with `IS_APPIMAGE`, in an AppImage; a packaged build reads `icons/` a
 The Python modules are in the [module map](../AGENTS.md#module-map). The other files, then the gitignored ones:
 
 ```
-lang/                  one translation file per language, named after the language; langcheck.py checks the JSON
+lang/                  one translation file per language, named after the language, checked by langcheck.py
 icons/                 pickaxe.ico (window and tray) and active, idle, error, maint: the tray icon states
 appimage/              AppImageBuilder.yml, the AppImage recipe, and pickaxe.png, its icon
 .github/workflows/     ci.yml: the Validate job (just check), the four builds and the dev-build pre-release

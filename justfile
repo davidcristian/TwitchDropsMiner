@@ -13,7 +13,7 @@ check: check-syntax check-lang check-ruff check-linecap check-dashcheck check-pr
 check-syntax:
     {{python}} scripts/syntaxcheck.py
 
-# Every lang/*.json file is a JSON object.
+# Every lang/*.json file is a JSON object, and its strings have no format field that the English string lacks.
 check-lang:
     {{python}} scripts/langcheck.py
 

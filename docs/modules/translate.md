@@ -88,7 +88,10 @@ it out of the PyInstaller build.
 - A key added to a `TypedDict` is added to `default_translation` too. A key missing there raises
   `MinerException` when it is read, in every language.
 - A translated template uses only the named fields of the English one. `str.format` raises `KeyError` for a
-  field the code does not pass.
+  field the code does not pass, and `ValueError` for a lone brace. `scripts/langcheck.py` fails on a field that
+  the English string at the same keys lacks. It fails on a lone brace or an unknown conversion such as `!x` only
+  where the English string has a field, because the code formats only those strings. It does not check a format
+  spec such as `:>3`, which `str.format` reads with the value.
 - Other languages need no edit for a new key, because the merge fills it in English
   ([task 008](../refinements/tasks/008-translations-for-new-strings.md)).
 

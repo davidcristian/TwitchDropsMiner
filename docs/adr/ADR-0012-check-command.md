@@ -23,7 +23,9 @@ lint rules without its formatter or pyright.
    tracks, and untracked files that `.gitignore` does not exclude, so a new file is checked before `git add`.
    `scripts/` is not at the top level, so the AppImage, which copies the top-level `*.py` files, leaves it out.
    - `syntaxcheck.py`: every Python file parses with `ast.parse(feature_version=(3, 10))`.
-   - `langcheck.py`: every `lang/*.json` file is a JSON object.
+   - `langcheck.py`: every `lang/*.json` file is a JSON object, and no string in it has a `str.format` field
+     that the English string at the same keys lacks. It reads `default_translation` from `translate.py` with
+     `ast`: `translate.py` imports `utils.py`, which imports Pillow, and the Validate job does not install it.
    - `linecap.py`: at most 300 lines per Python file and 250 per markdown file. The eight inherited modules over
      300 are named in `EXCEPTIONS`, and an entry fails once its module is under the limit, so the list only
      shrinks as [task 005](../refinements/tasks/005-modules-over-the-line-cap.md) splits them.

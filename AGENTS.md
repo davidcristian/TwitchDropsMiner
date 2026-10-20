@@ -103,11 +103,11 @@ the top-level `*.py` files; without it the AppImage fails at startup with a `Mod
 
 **`just check` is the single command, and it must pass.** The pre-commit hook and the Validate job in CI run it.
 [docs/building.md](docs/building.md#run-the-checks) sets it up, and [ADR-0012](docs/adr/ADR-0012-check-command.md)
-gives the reasons. In order, it runs `syntaxcheck.py` (Python 3.10 syntax), `langcheck.py` (`lang/*.json` is
-JSON), ruff (the rules in `pyproject.toml`), `linecap.py` (the line limits), `dashcheck.py` and `prosecheck.py`
-(the Prose rules a script can read), `docscheck.py` (the links between docs, line numbers, the two indexes and
-the record formats), `rostercheck.py` (the module map, the module docs, the settings keys, the `gui.py` mock and
-this list), and pytest over `tests/`, which fails below 80% branch coverage of the modules `pyproject.toml`
+gives the reasons. In order, it runs `syntaxcheck.py` (Python 3.10 syntax), `langcheck.py` (the JSON and the format
+fields of `lang/*.json`), ruff (the rules in `pyproject.toml`), `linecap.py` (the line limits), `dashcheck.py` and
+`prosecheck.py` (the Prose rules a script can read), `docscheck.py` (the links between docs, line numbers, the two
+indexes and the record formats), `rostercheck.py` (the module map, the module docs, the settings keys, the `gui.py`
+mock and this list), and pytest over `tests/`, which fails below 80% branch coverage of the modules `pyproject.toml`
 lists. No check finds 3.11+ names such as `typing.Self` and `tomllib`, which fail only on import: avoid them.
 
 The rest is checked by hand, and the report of a change shows the output of each:
