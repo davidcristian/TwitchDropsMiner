@@ -25,8 +25,9 @@ explains the detection design and [ADR-0005](../adr/ADR-0005-list-patterns.md) t
 - `Platform`: `STEAM`, `EPIC`. `str()` gives `Steam` or `Epic`.
 - `MatchKind`: `EXACT`, `VARIANT`, `FUZZY`, strongest first.
 - `LocalGame(name, platform, path=None, app_id="")`: a frozen dataclass for one installed game.
-- `GameMatch(game_name, local, kind, ratio=1.0)`: `game_name` is the Twitch name as the campaigns write it.
-  `ratio` is the similarity of a `FUZZY` match and 1.0 otherwise.
+- `GameMatch(game_name, local, kind, ratio=1.0, local_count=1)`: `game_name` is the Twitch name as the campaigns
+  write it. `ratio` is the similarity of a `FUZZY` match and 1.0 otherwise. `local_count` is the number of local
+  games that matched `game_name`, and `local` is the strongest of them.
 - `ScanResult`: `games`, `libraries` (the folders that were read) and `errors` (English text lines).
 - `LauncherIndexes(manifests, legendary)` (`epic.py`): the Epic manifest folders and the Legendary and Heroic
   `installed.json` files that `scan_epic` reads for every added folder.
@@ -174,8 +175,9 @@ when the inventory has both `Halo Infinite` and `Halo: Infinite`. The GUI shows 
 Two local games can match the same Twitch name, such as `Fortnite` from Steam and from Epic, or
 `Grand Theft Auto V` and its Premium Edition. `match_games` returns that name once, with the strongest match:
 `EXACT` before `VARIANT` before `FUZZY`, then the higher ratio, then the first in `local_games`. The Detected Games
-list therefore shows each name once, with `≈` only when no local game matched it exactly, and its count is the
-number of names.
+list therefore shows each name once, with `≈` only when no local game matched it exactly. The line under the list
+counts installed games on both sides: its first number adds up the `local_count` of each match, so `Fortnite` from
+Steam and from Epic reads `2 of 2 installed games matched`.
 
 ## Patterns
 

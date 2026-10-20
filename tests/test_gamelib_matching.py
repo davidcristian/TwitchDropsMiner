@@ -117,9 +117,13 @@ def test_match_games_counts_a_repeated_twitch_name_once():
     assert match_one("Warframe", ["Warframe", "Warframe"]) == [("Warframe", MatchKind.EXACT)]
 
 
-def test_match_games_returns_a_twitch_name_that_two_installed_games_match_once():
+def test_match_games_returns_a_twitch_name_that_two_installed_games_match_once_with_their_count():
     steam, epic = LocalGame("Fortnite", Platform.STEAM), LocalGame("Fortnite", Platform.EPIC)
-    assert match_games([steam, epic], ["Fortnite"]) == [GameMatch("Fortnite", steam, MatchKind.EXACT)]
+    other, unknown = LocalGame("Warframe", Platform.STEAM), LocalGame("Unknown Game", Platform.EPIC)
+    assert match_games([steam, other, epic, unknown], ["Fortnite", "Warframe"]) == [
+        GameMatch("Fortnite", steam, MatchKind.EXACT, local_count=2),
+        GameMatch("Warframe", other, MatchKind.EXACT),
+    ]
 
 
 @pytest.mark.parametrize(
@@ -136,7 +140,7 @@ def test_match_games_returns_a_twitch_name_that_two_installed_games_match_once()
 def test_match_games_keeps_the_strongest_match_of_a_twitch_name(local_names, kept, kind):
     local_games = [LocalGame(name, Platform.STEAM) for name in local_names]
     [match] = match_games(local_games, ["Grand Theft Auto V", "Stardew Valley"])
-    assert (match.local, match.kind) == (local_games[kept], kind)
+    assert (match.local, match.kind, match.local_count) == (local_games[kept], kind, len(local_games))
 
 
 def test_match_games_pairs_a_close_long_name_as_fuzzy_with_its_ratio():

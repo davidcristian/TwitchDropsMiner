@@ -52,6 +52,7 @@ class GameMatch:
     local: LocalGame
     kind: MatchKind
     ratio: float = 1.0
+    local_count: int = 1  # how many local games matched game_name; local is the strongest of them
 
 
 @dataclass

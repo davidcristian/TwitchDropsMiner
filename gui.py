@@ -2168,7 +2168,7 @@ class SettingsPanel:
             return
         self._detected_label.config(
             text=_("gui", "settings", "detect", "detected").format(
-                count=len(matches), total=installed
+                count=sum(match.local_count for match in matches), total=installed
             )
         )
 

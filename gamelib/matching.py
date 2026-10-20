@@ -5,6 +5,7 @@ import re
 import unicodedata
 from difflib import SequenceMatcher
 from collections import abc, defaultdict
+from dataclasses import replace
 
 from .common import GameMatch, LocalGame, MatchKind
 
@@ -161,8 +162,10 @@ def match_games(
         if match is None:
             continue
         kept = best.get(match.game_name)
+        count = kept.local_count + 1 if kept else 1
         if kept is None or (match.kind.value, -match.ratio) < (kept.kind.value, -kept.ratio):
-            best[match.game_name] = match
+            kept = match
+        best[match.game_name] = replace(kept, local_count=count)
     return sorted(best.values(), key=lambda m: m.game_name.lower())
 
 

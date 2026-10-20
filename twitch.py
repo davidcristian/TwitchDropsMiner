@@ -491,7 +491,7 @@ class Twitch:
             CALL,
             (
                 f"Game detection: {len(result.games)} installed, "
-                f"{len(matches)} matched to a campaign"
+                f"{sum(match.local_count for match in matches)} matched to a campaign"
             ),
         )
 
