@@ -1617,9 +1617,8 @@ class Twitch:
         for channel in channels:
             channel_id = channel.id
             if channel_id not in acl_streams_map:
+                # a server error also sets the user to null, so a missing channel keeps its stream
                 continue
             channel_data = acl_streams_map[channel_id]
-            if channel_data["stream"] is None:
-                continue
             available_drops: list[JsonType] = acl_available_drops_map.get(channel_id, [])
             channel.external_update(channel_data, available_drops)

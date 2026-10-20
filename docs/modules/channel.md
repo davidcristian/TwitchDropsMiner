@@ -26,8 +26,8 @@ watch requests that make drop progress. `Twitch` keeps the tracked channels in `
 - `get_stream()` fetches the stream with GQL and returns it, or None when the channel is offline.
   `update_stream()` stores that result, calls `Twitch.on_channel_update(channel, before, after)` and returns True
   when the channel is online.
-- `external_update(channel_data, available_drops)` sets the stream from data fetched elsewhere, by
-  [`bulk_check_online`](#bulk-check).
+- `external_update(channel_data, available_drops)` sets the stream from the `GetStreamInfo` data that
+  [`bulk_check_online`](#bulk-check) fetched, or drops it when that data has no stream.
 - `send_watch()` sends one watch cycle; see [Watching](#watching).
 - `display(*, add=False)` adds or updates the channel's row in the GUI. `remove()` removes the row and cancels a
   pending check.
@@ -55,8 +55,8 @@ watch requests that make drop progress. `Twitch` keeps the tracked channels in `
 
 These change a channel's status:
 
-1. `CHANNELS_FETCH` in `Twitch._run` creates directory channels with their stream, and checks new ACL channels
-   with `bulk_check_online`.
+1. `CHANNELS_FETCH` in `Twitch._run` creates directory channels with their stream, and checks the untracked
+   ACL channels with [`bulk_check_online`](#bulk-check).
 2. On the websocket ([websocket.md](websocket.md#topics)), `Twitch.process_stream_state` calls `check_online()`
    for a `stream-up` event and for a `viewcount` event on a channel that is not online. It calls `set_offline()`
    for `stream-down`, and stores the viewer count of a `viewcount` event on an online channel.
@@ -89,10 +89,18 @@ old and new stream to `Twitch.on_channel_update`, so the row shows the new statu
 
 `Twitch.bulk_check_online(channels)`, in `twitch.py`, checks many channels at once. It sends their `stream_gql`
 operations in batches of 20 per GQL request. With the extra drops check on, it also sends `AvailableDrops` for the
-online channels, again 20 per request. It then calls `external_update` on each online channel, with no campaigns
-for one whose `AvailableDrops` result is null. A channel that is offline or missing in the response keeps its
-current stream. So `n` channels cost `ceil(n / 20)` GQL requests, plus one per 20 online channels with the
-extra check.
+online channels, again 20 per request. So `n` channels cost `ceil(n / 20)` GQL requests, plus one per 20 online
+channels with the extra check.
+
+It then calls `external_update` on each channel in the response, with no campaigns for one whose
+`AvailableDrops` result is null. `external_update` drops the stream of an offline channel, so a channel that went
+offline after the cut at `MAX_CHANNELS` ranks as offline at the next `CHANNELS_FETCH`. A channel missing from
+the response, because its `user` is null, keeps its current stream: a server error also sets `user` to null
+([gqldata.md](gqldata.md)).
+
+`external_update` does not call `Twitch.on_channel_update`. `CHANNELS_FETCH` handles the new status after the
+check instead: it displays each channel it keeps, stops watching the watched channel when `can_watch` fails for
+it, and then enters `CHANNEL_SWITCH`.
 
 ## Watching
 
