@@ -39,19 +39,12 @@ EDITION_WORDS: frozenset[str] = frozenset({
     "year",
     "game",
 })
+# The roman numerals 2 to 39, each in its one correct form, so "iiii" and "xiix" stay words. l, c, d and m are left
+# out, because "xl", "dc" and "mix" are words in titles. A lone i, v or x is in SINGLE_LETTER_NUMERALS instead.
 ROMAN_NUMERALS: dict[str, str] = {
-    "ii": "2",
-    "iii": "3",
-    "iv": "4",
-    "vi": "6",
-    "vii": "7",
-    "viii": "8",
-    "ix": "9",
-    "xi": "11",
-    "xii": "12",
-    "xiii": "13",
-    "xiv": "14",
-    "xv": "15",
+    "x" * (number // 10) + ("", "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix")[number % 10]: str(number)
+    for number in range(2, 40)
+    if number not in (5, 10)
 }
 # Latin letters that have no accent to drop, written as the letters an English name would use.
 LATIN_LETTERS = str.maketrans({
