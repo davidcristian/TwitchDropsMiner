@@ -31,11 +31,17 @@ TABLE = (
 AGENTS = f"# Rules\n\nThe table of words.\n\n{TABLE}\nThe end.\n"
 
 
-def remove_git_variables(patch: pytest.MonkeyPatch) -> None:
-    """Remove every GIT_ environment variable until the patch is undone."""
+def isolate_git(patch: pytest.MonkeyPatch, home: Path) -> None:
+    """Remove every GIT_ variable and stop git from reading the machine's config, until the patch is undone.
+
+    home is an empty folder that becomes HOME, where git looks for the user's config and ignore files.
+    """
     for name in list(os.environ):
         if name.startswith("GIT_"):
             patch.delenv(name)
+    patch.setenv("HOME", str(home))
+    patch.setenv("XDG_CONFIG_HOME", str(home / ".config"))
+    patch.setenv("GIT_CONFIG_NOSYSTEM", "1")
 
 
 def git(root: Path, *args: str) -> str:

@@ -32,9 +32,14 @@ caller depends on, and chose rules about what tests assert plus a floor of 80% b
    floor applies to their total. A new such module is added to the list.
 5. **Tests do not read the machine they run on.** A test that looks for launchers, the registry or a home folder
    points that lookup at a temporary folder, so the suite gives the same result on every machine and in CI.
-   An autouse fixture in `tests/conftest.py` removes every `GIT_` environment variable for each test. The
-   pre-commit hook runs the suite with `GIT_DIR` and `GIT_INDEX_FILE` set to the repo being committed, and git
-   would then send a test's `init`, `add` and `commit` to that repo instead of the test's temporary one.
+   An autouse fixture in `tests/conftest.py` calls `isolate_git` from `tests/gitrepo.py` for each test:
+   - It removes every `GIT_` environment variable. The pre-commit hook runs the suite with `GIT_DIR` and
+     `GIT_INDEX_FILE` set to the repo being committed, and git would then send a test's `init`, `add` and
+     `commit` to that repo instead of the test's temporary one.
+   - It sets `HOME` and `XDG_CONFIG_HOME` to an empty folder and sets `GIT_CONFIG_NOSYSTEM`, so git reads no
+     global or system config and no global ignore file. A user's ignore file would hide a test repo's files from
+     `git ls-files`. The check scripts still follow the user's ignore files when `just check` runs them on the
+     repo, as git does.
 
 ## Consequences
 
@@ -44,7 +49,7 @@ caller depends on, and chose rules about what tests assert plus a floor of 80% b
 - The floor finds a listed module whose tests were forgotten. It does not find a missing edge case, which the
   rules in decision 2 cover.
 - A fixture with a scope wider than a function runs before the autouse fixture, so one that runs git calls
-  `remove_git_variables` from `tests/gitrepo.py` itself first.
+  `isolate_git` from `tests/gitrepo.py` itself first.
 - A branch that runs only on another OS, or only when a launcher is installed, counts as missed. The 20% margin
   leaves room for such branches without a test that fakes the OS.
 - `utils.py` and `settings.py` import `tkinter` and Pillow when they load, so their tests need

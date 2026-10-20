@@ -8,17 +8,17 @@ from types import SimpleNamespace
 
 import pytest
 
-from gitrepo import remove_git_variables
+from gitrepo import isolate_git
 
 # The Epic launcher's system folder as gamelib/epic.py names it
 EPIC_SYSTEM_MANIFESTS = "C:/ProgramData/Epic/EpicGamesLauncher/Data/Manifests"
 
 
 @pytest.fixture(autouse=True)
-def no_git_variables(monkeypatch):
-    # A git hook runs the suite with GIT_DIR and GIT_INDEX_FILE set to the repo being committed, and git
-    # then sends a test's commands to that repo instead of the test's temporary one.
-    remove_git_variables(monkeypatch)
+def isolated_git(monkeypatch, tmp_path_factory):
+    # A git hook runs the suite with GIT_DIR and GIT_INDEX_FILE set to the repo being committed, which would
+    # receive a test's git commands. A user's global ignore file would hide a test repo's files from git.
+    isolate_git(monkeypatch, tmp_path_factory.mktemp("home"))
 
 
 @pytest.fixture
