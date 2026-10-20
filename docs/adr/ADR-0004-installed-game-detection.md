@@ -30,9 +30,10 @@ a game the user never chose. A missed match costs little, because the user can s
      `STEAM_TOOL_APPIDS`, or whose name starts with one of `STEAM_TOOL_PREFIXES`, are runtimes, Proton
      builds or redistributables, and are skipped.
    - Epic (`scan_epic`): the `.item` manifests in the folder, in its `Manifests` subfolder and in the
-     launcher's fixed manifests folder. DLC (`MainGameAppName` differs from `AppName`) and incomplete
-     installs (`bIsIncompleteInstall`) are skipped. `_scan_legendary` reads the `installed.json` of Legendary
-     and Heroic, the usual way Epic games are installed on Linux.
+     launcher's own manifests folders for the running platform. DLC (`MainGameAppName` differs from `AppName`)
+     and incomplete installs (`bIsIncompleteInstall`) are skipped. `_scan_legendary` reads the `installed.json`
+     of Legendary and Heroic, the usual way Epic games are installed on Linux. `launcher_indexes` lists the
+     launcher folders of each platform.
 
    The index finds the libraries on other drives from one folder, and gives each game its display name and its
    ID. The scan skips Steam tool entries by AppID first, because a test on the ID is exact.

@@ -1,8 +1,8 @@
 """Finds installed games, and matches game names against Twitch games and list entries."""
 from __future__ import annotations
 
-from .epic import scan_epic
 from .scan import scan_directories
+from .epic import LauncherIndexes, launcher_indexes, scan_epic
 from .steam import STEAM_TOOL_APPIDS, STEAM_TOOL_PREFIXES, scan_steam
 from .common import GameMatch, LocalGame, MatchKind, Platform, ScanResult
 from .matching import (
@@ -28,6 +28,7 @@ __all__ = [
     "FUZZY_MIN_LENGTH",
     "FUZZY_THRESHOLD",
     "GameMatch",
+    "LauncherIndexes",
     "LocalGame",
     "MatchKind",
     "Platform",
@@ -39,6 +40,7 @@ __all__ = [
     "compile_pattern",
     "compile_patterns",
     "has_wildcard",
+    "launcher_indexes",
     "match_games",
     "match_rank",
     "matches",

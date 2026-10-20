@@ -1,16 +1,63 @@
 """Finds games installed through the Epic Games Launcher, Legendary or Heroic."""
 from __future__ import annotations
 
+import os
+import sys
 import json
 import logging
 from pathlib import Path
+from collections import abc
+from dataclasses import dataclass
 
 from .common import LocalGame, Platform, ScanResult, read_text
 
 logger = logging.getLogger("TwitchDrops")
 
+_EPIC_MANIFESTS = Path("Epic", "EpicGamesLauncher", "Data", "Manifests")
+_HEROIC_LEGENDARY = Path("heroic", "legendaryConfig", "legendary")
 
-def _epic_manifest_dirs(directory: Path) -> list[Path]:
+
+@dataclass(frozen=True)
+class LauncherIndexes:
+    """The launcher indexes that the Epic scan reads for every added folder."""
+    manifests: tuple[Path, ...]  # folders of Epic Games Launcher '.item' manifests
+    legendary: tuple[Path, ...]  # the 'installed.json' files of Legendary and Heroic
+
+
+def launcher_indexes(platform: str, environ: abc.Mapping[str, str], home: Path) -> LauncherIndexes:
+    """
+    Returns where the launchers keep their indexes on a platform, named as `sys.platform` names it.
+    """
+    config = home / ".config"
+    xdg_config = environ.get("XDG_CONFIG_HOME")
+    manifests = [config / _EPIC_MANIFESTS]
+    # Legendary reads LEGENDARY_CONFIG_PATH, else XDG_CONFIG_HOME/legendary, else ~/.config/legendary
+    legendary = [config / "legendary"]
+    if xdg_config:
+        legendary.append(Path(xdg_config) / "legendary")
+    if environ.get("LEGENDARY_CONFIG_PATH"):
+        legendary.append(Path(environ["LEGENDARY_CONFIG_PATH"]))
+    # Heroic keeps its own Legendary folder in Electron's appData folder
+    app_data = [config]
+    if platform == "win32":
+        manifests.insert(0, Path(environ.get("PROGRAMDATA") or "C:/ProgramData") / _EPIC_MANIFESTS)
+        if environ.get("APPDATA"):
+            app_data.append(Path(environ["APPDATA"]))
+    elif platform == "darwin":
+        support = home / "Library" / "Application Support"
+        manifests.append(support / _EPIC_MANIFESTS)
+        app_data.append(support)
+    else:
+        if xdg_config:
+            app_data.append(Path(xdg_config))
+        app_data.append(home / ".var" / "app" / "com.heroicgameslauncher.hgl" / "config")
+    legendary.extend(folder / _HEROIC_LEGENDARY for folder in app_data)
+    # XDG_CONFIG_HOME is often ~/.config, and an index listed twice would add its games twice
+    indexes = dict.fromkeys(folder / "installed.json" for folder in legendary)
+    return LauncherIndexes(tuple(manifests), tuple(indexes))
+
+
+def _epic_manifest_dirs(directory: Path, launcher_folders: tuple[Path, ...]) -> list[Path]:
     """
     Returns the folders holding Epic's '.item' manifests, including the launcher's own folders.
     """
@@ -21,10 +68,7 @@ def _epic_manifest_dirs(directory: Path) -> list[Path]:
     if nested.is_dir() and any(nested.glob("*.item")):
         dirs.append(nested)
     # the launcher's own index location, which is where installs are really tracked
-    for well_known in (
-        Path("C:/ProgramData/Epic/EpicGamesLauncher/Data/Manifests"),
-        Path.home() / ".config" / "Epic" / "EpicGamesLauncher" / "Data" / "Manifests",
-    ):
+    for well_known in launcher_folders:
         if well_known.is_dir() and any(well_known.glob("*.item")):
             dirs.append(well_known)
     return dirs
@@ -64,18 +108,13 @@ def _scan_epic_manifests(manifests: Path, result: ScanResult) -> None:
         )
 
 
-def _scan_legendary(directory: Path, result: ScanResult) -> bool:
+def _scan_legendary(directory: Path, result: ScanResult, indexes: tuple[Path, ...]) -> bool:
     """
     Read the install index used by Legendary and Heroic, the usual way Epic games
     end up installed on Linux.
     """
     found = False
-    candidates: list[Path] = [
-        directory / "installed.json",
-        Path.home() / ".config" / "legendary" / "installed.json",
-        Path.home() / ".config" / "heroic" / "legendaryConfig" / "legendary" / "installed.json",
-    ]
-    for index_path in candidates:
+    for index_path in (directory / "installed.json", *indexes):
         if not index_path.is_file():
             continue
         text = read_text(index_path)
@@ -108,18 +147,21 @@ def _scan_legendary(directory: Path, result: ScanResult) -> bool:
     return found
 
 
-def scan_epic(directory: Path, result: ScanResult) -> bool:
+def scan_epic(directory: Path, result: ScanResult, indexes: LauncherIndexes | None = None) -> bool:
     """
     Scan an Epic Games installation. Returns whether anything Epic-shaped was found.
+    `indexes` defaults to the launcher indexes of the running platform.
     """
+    if indexes is None:
+        indexes = launcher_indexes(sys.platform, os.environ, Path.home())
     found = False
-    for manifests in _epic_manifest_dirs(directory):
+    for manifests in _epic_manifest_dirs(directory, indexes.manifests):
         found = True
         # _epic_manifest_dirs returns the launcher's own folders for every added folder; each is read once.
         if manifests in result.libraries:
             continue
         result.libraries.append(manifests)
         _scan_epic_manifests(manifests, result)
-    if _scan_legendary(directory, result):
+    if _scan_legendary(directory, result, indexes.legendary):
         found = True
     return found

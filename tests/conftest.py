@@ -10,9 +10,6 @@ import pytest
 
 from gitrepo import isolate_git
 
-# The Epic launcher's system folder as gamelib/epic.py names it
-EPIC_SYSTEM_MANIFESTS = "C:/ProgramData/Epic/EpicGamesLauncher/Data/Manifests"
-
 
 @pytest.fixture(autouse=True)
 def isolated_git(monkeypatch, tmp_path_factory):
@@ -23,25 +20,20 @@ def isolated_git(monkeypatch, tmp_path_factory):
 
 @pytest.fixture
 def launcher_folders(tmp_path, monkeypatch):
-    import gamelib.epic
-
     home = tmp_path / "home"
     home.mkdir()
     # Path.home() and expanduser read HOME on Linux and USERPROFILE on Windows
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.setenv("USERPROFILE", str(home))
-    system = tmp_path / "ProgramData"
-    real_path = gamelib.epic.Path
-
-    def path(*parts):
-        # epic.py writes the system folder as a literal, so only that lookup is sent to tmp_path
-        if parts == (EPIC_SYSTEM_MANIFESTS,):
-            return system
-        return real_path(*parts)
-
-    path.home = real_path.home
-    monkeypatch.setattr(gamelib.epic, "Path", path)
-    return SimpleNamespace(home=home, system=system)
+    # launcher_indexes in gamelib/epic.py also reads these
+    for name in ("XDG_CONFIG_HOME", "LEGENDARY_CONFIG_PATH", "APPDATA"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("PROGRAMDATA", str(tmp_path / "ProgramData"))
+    return SimpleNamespace(
+        home=home,
+        manifests=home / ".config" / "Epic" / "EpicGamesLauncher" / "Data" / "Manifests",
+        system=tmp_path / "ProgramData" / "Epic" / "EpicGamesLauncher" / "Data" / "Manifests",
+    )
 
 
 @pytest.fixture

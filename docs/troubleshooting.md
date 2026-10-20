@@ -126,10 +126,12 @@ The app stops mining while the folder dialog is open and continues when it close
 - **Steam:** add the Steam folder, its `steamapps` folder or `steamapps/common`. One folder is enough, because
   the app reads `libraryfolders.vdf` and scans the Steam libraries on other drives as well.
 - **Epic Games Launcher:** add the games folder. The app also reads the launcher's own manifest folder when it
-  exists: `C:\ProgramData\Epic\EpicGamesLauncher\Data\Manifests` on Windows, or
-  `~/.config/Epic/EpicGamesLauncher/Data/Manifests`.
-- **Legendary and Heroic:** the app reads `~/.config/legendary/installed.json` and
-  `~/.config/heroic/legendaryConfig/legendary/installed.json`, so any added folder is enough.
+  exists: `%PROGRAMDATA%\Epic\EpicGamesLauncher\Data\Manifests` on Windows, usually in `C:\ProgramData`, and
+  `~/Library/Application Support/Epic/EpicGamesLauncher/Data/Manifests` on macOS.
+- **Legendary and Heroic:** the app reads the `installed.json` index of Legendary and of Heroic in their default
+  folders, also for Heroic as a Flatpak and when `XDG_CONFIG_HOME` or `LEGENDARY_CONFIG_PATH` is set, so any
+  added folder is enough. When the index is in another folder, add that folder.
+  [gamelib.md](modules/gamelib.md#launcher-indexes) lists the folders that are read.
 
 The Output box shows `Game scan: No Steam or Epic games found in: ...` when a folder holds neither. When the Epic
 launcher's manifests folder holds a game, or a Legendary or Heroic index exists, every folder counts as an Epic

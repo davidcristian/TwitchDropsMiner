@@ -127,11 +127,11 @@ def test_scan_directories_returns_an_empty_result_for_no_folders():
     assert scan_directories([]) == ScanResult()
 
 
-def test_scan_directories_reports_no_error_for_folders_that_share_the_system_launcher_folder(
+def test_scan_directories_reports_no_error_for_folders_that_share_the_launcher_folder(
     tmp_path, launcher_folders, steam_manifest, epic_manifest
 ):
     steam_manifest(tmp_path / "Steam" / "steamapps", 620, "Portal 2")
-    epic_manifest(launcher_folders.system, "Fortnite", "Fortnite")
+    epic_manifest(launcher_folders.manifests, "Fortnite", "Fortnite")
     (tmp_path / "Epic Games").mkdir()
     result = scan_directories([tmp_path / "Steam", tmp_path / "Epic Games"])
     assert names(result) == ["Fortnite", "Portal 2"]
@@ -149,11 +149,11 @@ def test_scan_directories_reports_the_folder_of_an_unknown_user(tmp_path, steam_
 def test_scan_directories_reads_the_launcher_folder_once_for_several_folders(
     tmp_path, launcher_folders, epic_manifest
 ):
-    epic_manifest(launcher_folders.system, "Fortnite", "Fortnite")
+    epic_manifest(launcher_folders.manifests, "Fortnite", "Fortnite")
     (tmp_path / "one").mkdir()
     (tmp_path / "two").mkdir()
     result = scan_directories([tmp_path / "one", tmp_path / "two"])
-    assert result.libraries.count(launcher_folders.system) == 1
+    assert result.libraries.count(launcher_folders.manifests) == 1
     assert names(result) == ["Fortnite"]
     assert result.errors == []
 

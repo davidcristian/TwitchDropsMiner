@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from gamelib import LocalGame, Platform, ScanResult, scan_epic
+from gamelib import LauncherIndexes, LocalGame, Platform, ScanResult, launcher_indexes, scan_epic
 
 pytestmark = pytest.mark.usefixtures("launcher_folders")
 
@@ -13,6 +13,17 @@ LEGENDARY_INDEXES = (
     ".config/legendary/installed.json",
     ".config/heroic/legendaryConfig/legendary/installed.json",
 )
+# Each environment value is a folder under the home folder
+PLATFORM_INDEXES = (
+    ("linux", {}, ".var/app/com.heroicgameslauncher.hgl/config/heroic/legendaryConfig/legendary/installed.json"),
+    ("linux", {"XDG_CONFIG_HOME": "xdg"}, "xdg/legendary/installed.json"),
+    ("linux", {"XDG_CONFIG_HOME": "xdg"}, "xdg/heroic/legendaryConfig/legendary/installed.json"),
+    ("darwin", {"XDG_CONFIG_HOME": "xdg"}, "xdg/legendary/installed.json"),
+    ("linux", {"LEGENDARY_CONFIG_PATH": "custom"}, "custom/installed.json"),
+    ("darwin", {}, "Library/Application Support/heroic/legendaryConfig/legendary/installed.json"),
+    ("win32", {"APPDATA": "AppData/Roaming"}, "AppData/Roaming/heroic/legendaryConfig/legendary/installed.json"),
+)
+ENVIRON = {"XDG_CONFIG_HOME": "xdg", "LEGENDARY_CONFIG_PATH": "custom", "APPDATA": "appdata", "PROGRAMDATA": "data"}
 
 
 def write_json(path, data):
@@ -20,9 +31,9 @@ def write_json(path, data):
     path.write_text(json.dumps(data), encoding="utf-8")
 
 
-def scan(directory):
+def scan(directory, indexes=None):
     result = ScanResult()
-    return scan_epic(directory, result), result
+    return scan_epic(directory, result, indexes), result
 
 
 def names(result):
@@ -51,10 +62,33 @@ def test_scan_epic_reads_the_system_launcher_folder_whatever_folder_was_added(
 ):
     epic_manifest(launcher_folders.system, "Fortnite", "Fortnite")
     (tmp_path / "Epic Games").mkdir()
-    found, result = scan(tmp_path / "Epic Games")
+    windows = launcher_indexes("win32", {"PROGRAMDATA": str(tmp_path / "ProgramData")}, launcher_folders.home)
+    found, result = scan(tmp_path / "Epic Games", windows)
     assert found
     assert names(result) == ["Fortnite"]
     assert result.libraries == [launcher_folders.system]
+
+
+@pytest.mark.parametrize("platform", ["linux", "darwin"])
+def test_scan_epic_reads_the_system_launcher_folder_only_on_windows(
+    tmp_path, epic_manifest, launcher_folders, platform
+):
+    epic_manifest(launcher_folders.system, "Fortnite", "Fortnite")
+    (tmp_path / "Epic Games").mkdir()
+    indexes = launcher_indexes(platform, {"PROGRAMDATA": str(tmp_path / "ProgramData")}, launcher_folders.home)
+    found, result = scan(tmp_path / "Epic Games", indexes)
+    assert not found
+    assert result == ScanResult()
+
+
+def test_scan_epic_reads_the_launcher_folder_on_macos(tmp_path, epic_manifest, launcher_folders):
+    support = launcher_folders.home / "Library" / "Application Support"
+    epic_manifest(support / "Epic" / "EpicGamesLauncher" / "Data" / "Manifests", "Fortnite", "Fortnite")
+    (tmp_path / "Epic Games").mkdir()
+    found, result = scan(tmp_path / "Epic Games", launcher_indexes("darwin", {}, launcher_folders.home))
+    assert found
+    assert names(result) == ["Fortnite"]
+    assert result.libraries == [support / "Epic" / "EpicGamesLauncher" / "Data" / "Manifests"]
 
 
 def test_scan_epic_reads_the_launcher_folder_in_the_home_folder(tmp_path, epic_manifest, launcher_folders):
@@ -144,6 +178,95 @@ def test_scan_epic_reads_a_legendary_or_heroic_index(tmp_path, launcher_folders,
     assert found
     assert result.games == [LocalGame("Fortnite", Platform.EPIC, Path("/games/Fortnite"), "Fortnite")]
     assert result.libraries == [index.parent]
+
+
+@pytest.mark.parametrize(("platform", "environ", "relative"), PLATFORM_INDEXES)
+def test_scan_epic_reads_the_legendary_or_heroic_index_of_the_platform(
+    tmp_path, launcher_folders, platform, environ, relative
+):
+    home = launcher_folders.home
+    write_json(home / relative, {"Fortnite": {"title": "Fortnite", "install_path": "/games/Fortnite"}})
+    (tmp_path / "Games").mkdir()
+    indexes = launcher_indexes(platform, {name: str(home / value) for name, value in environ.items()}, home)
+    found, result = scan(tmp_path / "Games", indexes)
+    assert found
+    assert result.games == [LocalGame("Fortnite", Platform.EPIC, Path("/games/Fortnite"), "Fortnite")]
+    assert result.libraries == [(home / relative).parent]
+
+
+def test_scan_epic_reads_an_index_once_when_xdg_config_home_is_the_default_folder(tmp_path, launcher_folders):
+    home = launcher_folders.home
+    write_json(home / ".config" / "legendary" / "installed.json", {"Fortnite": {"title": "Fortnite"}})
+    (tmp_path / "Games").mkdir()
+    indexes = launcher_indexes("linux", {"XDG_CONFIG_HOME": str(home / ".config")}, home)
+    found, result = scan(tmp_path / "Games", indexes)
+    assert names(result) == ["Fortnite"]
+
+
+def test_scan_epic_reads_the_environment_of_the_app_by_default(tmp_path, launcher_folders, monkeypatch):
+    write_json(tmp_path / "custom" / "installed.json", {"Fortnite": {"title": "Fortnite"}})
+    monkeypatch.setenv("LEGENDARY_CONFIG_PATH", str(tmp_path / "custom"))
+    (tmp_path / "Games").mkdir()
+    found, result = scan(tmp_path / "Games")
+    assert names(result) == ["Fortnite"]
+
+
+@pytest.mark.parametrize(("platform", "manifests", "legendary"), [
+    (
+        "linux",
+        [".config/Epic/EpicGamesLauncher/Data/Manifests"],
+        [
+            ".config/legendary",
+            "xdg/legendary",
+            "custom",
+            ".config/heroic/legendaryConfig/legendary",
+            "xdg/heroic/legendaryConfig/legendary",
+            ".var/app/com.heroicgameslauncher.hgl/config/heroic/legendaryConfig/legendary",
+        ],
+    ),
+    (
+        "darwin",
+        [
+            ".config/Epic/EpicGamesLauncher/Data/Manifests",
+            "Library/Application Support/Epic/EpicGamesLauncher/Data/Manifests",
+        ],
+        [
+            ".config/legendary",
+            "xdg/legendary",
+            "custom",
+            ".config/heroic/legendaryConfig/legendary",
+            "Library/Application Support/heroic/legendaryConfig/legendary",
+        ],
+    ),
+    (
+        "win32",
+        ["data/Epic/EpicGamesLauncher/Data/Manifests", ".config/Epic/EpicGamesLauncher/Data/Manifests"],
+        [
+            ".config/legendary",
+            "xdg/legendary",
+            "custom",
+            ".config/heroic/legendaryConfig/legendary",
+            "appdata/heroic/legendaryConfig/legendary",
+        ],
+    ),
+])
+def test_launcher_indexes_lists_the_locations_of_each_platform_in_order(tmp_path, platform, manifests, legendary):
+    environ = {name: str(tmp_path / value) for name, value in ENVIRON.items()}
+    assert launcher_indexes(platform, environ, tmp_path) == LauncherIndexes(
+        tuple(tmp_path / folder for folder in manifests),
+        tuple(tmp_path / folder / "installed.json" for folder in legendary),
+    )
+
+
+@pytest.mark.parametrize("platform", ["linux", "darwin", "win32"])
+def test_launcher_indexes_ignores_an_empty_environment_variable(tmp_path, platform):
+    empty = {name: "" for name in ENVIRON}
+    assert launcher_indexes(platform, empty, tmp_path) == launcher_indexes(platform, {}, tmp_path)
+
+
+def test_launcher_indexes_uses_the_default_programdata_folder_when_it_is_unset(tmp_path):
+    manifests = launcher_indexes("win32", {}, tmp_path).manifests
+    assert manifests[0] == Path("C:/ProgramData/Epic/EpicGamesLauncher/Data/Manifests")
 
 
 def test_scan_epic_skips_legendary_entries_without_a_title(tmp_path):

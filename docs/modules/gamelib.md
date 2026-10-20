@@ -13,7 +13,7 @@ explains the detection design and [ADR-0005](../adr/ADR-0005-list-patterns.md) t
 | `__init__.py` | Re-exports the public names listed in `__all__`. Callers import from `gamelib`, never from a submodule |
 | `common.py` | The shared types and `read_text`, which returns a file's text or `None` (logged at `DEBUG`) when it cannot be read |
 | `steam.py` | `scan_steam`, `STEAM_TOOL_APPIDS`, `STEAM_TOOL_PREFIXES` |
-| `epic.py` | `scan_epic`, for Epic manifests and the Legendary and Heroic index |
+| `epic.py` | `scan_epic`, for Epic manifests and the Legendary and Heroic index, and `launcher_indexes` with its `LauncherIndexes` |
 | `scan.py` | `scan_directories`, which runs both scanners on each folder |
 | `matching.py` | `normalize`, `match_games`, `EDITION_WORDS`, `ROMAN_NUMERALS`, `SINGLE_LETTER_NUMERALS`, `FUZZY_THRESHOLD`, `FUZZY_MIN_LENGTH` |
 | `patterns.py` | `compile_pattern`, `compile_patterns`, `matches`, `match_rank`, `any_match`, `matching_names`, `has_wildcard` |
@@ -28,13 +28,16 @@ explains the detection design and [ADR-0005](../adr/ADR-0005-list-patterns.md) t
 - `GameMatch(game_name, local, kind, ratio=1.0)`: `game_name` is the Twitch name as the campaigns write it.
   `ratio` is the similarity of a `FUZZY` match and 1.0 otherwise.
 - `ScanResult`: `games`, `libraries` (the folders that were read) and `errors` (English text lines).
+- `LauncherIndexes(manifests, legendary)` (`epic.py`): the Epic manifest folders and the Legendary and Heroic
+  `installed.json` files that `scan_epic` reads for every added folder.
 
 **Functions:**
 
 | Function | Returns |
 | --- | --- |
 | `scan_directories(directories)` | A `ScanResult` for the given folders, without duplicates and sorted by name ([The scan](#the-scan)) |
-| `scan_steam(directory, result)`, `scan_epic(directory, result)` | Whether the folder looked like that kind of install. Games are added to `result` |
+| `scan_steam(directory, result)`, `scan_epic(directory, result, indexes=None)` | Whether the folder looked like that kind of install. Games are added to `result`. `indexes` defaults to `launcher_indexes` for the running platform |
+| `launcher_indexes(platform, environ, home)` | The `LauncherIndexes` for a `sys.platform` value, an environment and a home folder ([Launcher indexes](#launcher-indexes)) |
 | `normalize(name)` | The comparable form of a name ([Matching rules](#matching-rules)) |
 | `match_games(local_games, game_names)` | A `GameMatch` for each local game with one clear Twitch match, sorted by Twitch name |
 | `compile_pattern(text)`, `compile_patterns(entries)` | A compiled list entry, or one per entry. `compile_pattern` keeps the 256 most recently used in an `lru_cache` |
@@ -49,14 +52,14 @@ explains the detection design and [ADR-0005](../adr/ADR-0005-list-patterns.md) t
 folder. A `~name` that names no user on Linux or macOS gives the line `<folder as written>: <reason>`, and the
 other folders are still scanned. It runs both scanners on every folder, because one folder can hold both kinds
 of install, and adds `No Steam or Epic games found in: ...` when neither recognizes it. A Legendary or Heroic
-index in the home folder, or an Epic launcher folder that holds a manifest, makes the Epic scanner recognize
-every folder, so the line does not appear then. A scanner can raise `OSError`, such as `PermissionError` for a
-path inside a folder the user may not open. The scan of that folder then ends with the line `<folder>: <reason>`,
-as for an unknown user. The games found in it before the error are kept, and the other folders are still
-scanned. On Python 3.14, `Path.is_dir` and `Path.is_file` return `False` there instead of raising, so such a folder gets
-`No Steam or Epic games found in: ...`. It then keeps the first
-game of each lower case name and platform, and sorts by lower case name. A Steam library or an Epic manifest
-folder that is already in `result.libraries` is not read again.
+index, or an Epic launcher folder that holds a manifest, among the [launcher indexes](#launcher-indexes) makes the
+Epic scanner recognize every folder, so the line does not appear then. A scanner can raise `OSError`, such as
+`PermissionError` for a path inside a folder the user may not open. The scan of that folder then ends with the
+line `<folder>: <reason>`, as for an unknown user. The games found in it before the error are kept, and the other
+folders are still scanned. On Python 3.14, `Path.is_dir` and `Path.is_file` return `False` there instead of
+raising, so such a folder gets `No Steam or Epic games found in: ...`. It then keeps the first game of each lower
+case name and platform, and sorts by lower case name. A Steam library or an Epic manifest folder that is already
+in `result.libraries` is not read again.
 
 **Steam** (`steam.py`):
 
@@ -76,16 +79,42 @@ folder that is already in `result.libraries` is not read again.
    `steamworks common`.
 
 **Epic Games Launcher** (`epic.py`): the manifests are the `*.item` JSON files in the added folder, in its
-`Manifests` subfolder, and in the launcher's own folders `C:/ProgramData/Epic/EpicGamesLauncher/Data/Manifests`
-and `~/.config/Epic/EpicGamesLauncher/Data/Manifests`. The launcher's folders are read whatever folder was added.
+`Manifests` subfolder, and in the launcher's own folders that `launcher_indexes` lists. The launcher's folders
+are read whatever folder was added.
 Each manifest gives `DisplayName`, `AppName` and `InstallLocation`. A manifest is skipped when it is not valid
 JSON (logged at `DEBUG`), is not an object, has an empty `DisplayName`, belongs to an add-on (`MainGameAppName`
 is set and differs from `AppName`), or has `bIsIncompleteInstall` set.
 
-**Legendary and Heroic** (`epic.py`): each of these indexes that exists is read, for every added folder:
-`installed.json` in the added folder, `~/.config/legendary/installed.json` and
-`~/.config/heroic/legendaryConfig/legendary/installed.json`. Each key is an app name and each entry gives
-`title` and `install_path`. An entry is skipped only when it is not an object or has an empty `title`.
+**Legendary and Heroic** (`epic.py`): `installed.json` in the added folder and each Legendary or Heroic index
+that `launcher_indexes` lists are read when they exist, for every added folder. Each key is an app name and each
+entry gives `title` and `install_path`. An entry is skipped only when it is not an object or has an empty `title`.
+
+## Launcher indexes
+
+`launcher_indexes(platform, environ, home)` is the one function in `gamelib` that checks the platform. It takes a
+`sys.platform` value (`win32`, `darwin`, and any other value counts as Linux), an environment and a home folder.
+`scan_epic` passes `sys.platform`, `os.environ` and `Path.home()`, and a test passes fakes. Every listed index that
+exists is read, not only the one that a launcher would choose, because the app can run with another environment
+than the launcher. An empty environment variable counts as unset. An index listed twice, as when
+`XDG_CONFIG_HOME` is `~/.config`, is read once.
+
+| Epic Games Launcher manifests folder | Platform | Source |
+| --- | --- | --- |
+| `%PROGRAMDATA%/Epic/EpicGamesLauncher/Data/Manifests`, in `C:/ProgramData` when `PROGRAMDATA` is unset | Windows | The launcher's own folder, which Legendary's `egl-sync` also reads (`EPCLFS` in `legendary/lfs/egl.py`) |
+| `~/Library/Application Support/Epic/EpicGamesLauncher/Data/Manifests` | macOS | The launcher's own folder on macOS (unconfirmed) |
+| `~/.config/Epic/EpicGamesLauncher/Data/Manifests` | all | No known launcher (unconfirmed). A folder without manifests costs one check |
+
+| Folder of a Legendary or Heroic `installed.json` | Platform | Source |
+| --- | --- | --- |
+| `$LEGENDARY_CONFIG_PATH`, `$XDG_CONFIG_HOME/legendary`, `~/.config/legendary` | all | `LGDLFS` in Legendary's `legendary/lfs/lgndry.py`, which uses the first of these that is set |
+| `heroic/legendaryConfig/legendary` in `~/.config` | all | Heroic's own Legendary folder (`legendaryConfigPath` in Heroic's `src/backend/constants.ts`) is in Electron's `appData` folder, which is `$XDG_CONFIG_HOME` or `~/.config` on Linux (Electron's `app.getPath` docs). Heroic does not use `~/.config` on Windows or macOS |
+| `heroic/legendaryConfig/legendary` in `$XDG_CONFIG_HOME` | Linux | The same |
+| `heroic/legendaryConfig/legendary` in `~/.var/app/com.heroicgameslauncher.hgl/config` | Linux | Heroic as a Flatpak from Flathub, app ID `com.heroicgameslauncher.hgl`. Flatpak sets `XDG_CONFIG_HOME` to `~/.var/app/<app ID>/config` |
+| `heroic/legendaryConfig/legendary` in `~/Library/Application Support` | macOS | Electron's `appData` folder on macOS (unconfirmed) |
+| `heroic/legendaryConfig/legendary` in `%APPDATA%` | Windows | Electron's `appData` folder on Windows (unconfirmed) |
+
+No path was checked against a real install. A path marked (unconfirmed) is not stated in the launcher's own code
+or documentation: it follows from the launcher's folder layout, or has no known source.
 
 ## Matching rules
 
