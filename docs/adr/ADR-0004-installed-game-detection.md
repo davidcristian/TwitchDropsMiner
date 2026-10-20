@@ -1,6 +1,6 @@
 # ADR-0004: Installed game detection
 
-**Status:** Accepted (2026-10-18)
+**Status:** Accepted (2026-10-20)
 
 ## Context
 
@@ -51,7 +51,8 @@ a game the user never chose. A missed match costs little, because the user can s
      `&` as `and` and turns the `™` and `℠` signs and other punctuation into spaces, keeping the letters and
      digits of every script;
    - variant (`MatchKind.VARIANT`): equal after the roman numerals in `ROMAN_NUMERALS` become digits or the
-     trailing `EDITION_WORDS` are removed, on either side;
+     trailing `EDITION_WORDS` are removed, on either side. `collection`, `remaster` and `remastered` are not
+     edition words;
    - fuzzy (`MatchKind.FUZZY`): a `difflib.SequenceMatcher` ratio of at least `FUZZY_THRESHOLD` (0.92), both
      normalized names at least `FUZZY_MIN_LENGTH` (8) characters long, the same numbers on both sides (each
      run of digits, also inside a word, and the roman numerals), and no second Twitch name also at or above
@@ -61,6 +62,11 @@ a game the user never chose. A missed match costs little, because the user can s
    The numeric token check separates a sequel from its prequel: an installed `Counter-Strike 2` gets no match
    against a campaign for `Counter-Strike`, and `Grand Theft Auto V` none against `Grand Theft Auto`. The Detected
    Games list marks a variant or fuzzy match with `≈`, so a wrong one is easy to find.
+
+   An edition word is removed because Twitch usually lists a re-release such as a Game of the Year Edition
+   under the plain name. A collection or a remaster is usually listed under its full name, and its plain name
+   is often another game: `Call of Duty: Modern Warfare` is the 2019 game, not `Modern Warfare Remastered`,
+   and `Star Wars: Battlefront` is not `Star Wars: Battlefront Classic Collection`.
 
 5. **Standard library only.** Steam's KeyValues files (`.vdf`, `.acf`) are read with one regular expression
    for flat `"key" "value"` pairs (`_KV_PATTERN` in `gamelib/steam.py`), because every field the scan needs is
@@ -80,6 +86,10 @@ a game the user never chose. A missed match costs little, because the user can s
   with and without it is not paired: `Mortal Kombat XL` against `Mortal Kombat X`, or
   `The Elder Scrolls V: Skyrim` against `The Elder Scrolls: Skyrim`. Such a game can be added to the Priority
   list by hand, while a sequel paired with its original would mine a game the user did not choose.
+- The other edition words can still pair a re-release with a different game of the same plain name. `classic`
+  and `legacy` stay edition words, so a name that ends in one of them alone still matches the name without
+  it. Only `collection`, `remaster` and `remastered` are left out, so every other edition match still pairs.
+  A wrong match shows with `≈`, and the Exclude list overrides it.
 - The scan reads local files only and sends no request to Twitch. A changed result enters
   `State.GAMES_UPDATE`, not `State.INVENTORY_FETCH`, so a `Rescan` never causes a full reload
   ([ADR-0002](ADR-0002-twitch-traffic-budget.md)). It does fetch the channels again: one `GameDirectory`

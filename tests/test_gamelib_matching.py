@@ -74,6 +74,20 @@ def test_match_games_removes_trailing_edition_words_as_variant(local_name, game_
     assert match_one(local_name, [game_name]) == [(game_name, MatchKind.VARIANT)]
 
 
+@pytest.mark.parametrize(
+    ("local_name", "game_name"),
+    [
+        ("STAR WARS™: Battlefront Classic Collection", "Star Wars: Battlefront"),
+        ("Mega Man Legacy Collection", "Mega Man"),
+        ("Call of Duty®: Modern Warfare® Remastered", "Call of Duty: Modern Warfare"),
+        ("Call of Duty®: Modern Warfare®", "Call of Duty: Modern Warfare Remastered"),
+        ("STAR WARS™: Dark Forces Remaster", "Star Wars: Dark Forces"),
+    ],
+)
+def test_match_games_keeps_a_collection_or_a_remaster_apart_from_its_plain_name(local_name, game_name):
+    assert match_one(local_name, [game_name]) == []
+
+
 def test_match_games_pairs_v_and_5_by_a_fuzzy_match_only():
     assert match_one("Grand Theft Auto 5", ["Grand Theft Auto V"]) == [("Grand Theft Auto V", MatchKind.FUZZY)]
 
@@ -84,8 +98,8 @@ def test_match_games_keeps_a_lone_x_as_a_letter_for_exact_and_variant_matches():
 
 
 def test_match_games_prefers_an_exact_match_to_a_variant():
-    assert match_one("Dark Souls Remastered", ["Dark Souls", "Dark Souls: Remastered"]) == [
-        ("Dark Souls: Remastered", MatchKind.EXACT)
+    assert match_one("Mafia Definitive Edition", ["Mafia", "Mafia: Definitive Edition"]) == [
+        ("Mafia: Definitive Edition", MatchKind.EXACT)
     ]
 
 

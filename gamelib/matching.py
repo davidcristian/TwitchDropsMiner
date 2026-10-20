@@ -9,13 +9,10 @@ from collections import abc, defaultdict
 from .common import GameMatch, LocalGame, MatchKind
 
 
-# Trailing words that describe a release variant rather than a different game.
-# Twitch lists games under their plain name far more often than the edition name,
-# so these are stripped as a fallback when the full name doesn't match anything.
+# Trailing words that describe a release variant rather than a different game, removed as a fallback.
+# Not "collection", "remaster" or "remastered": the plain name of such a release is often a different game.
 EDITION_WORDS: frozenset[str] = frozenset({
     "edition",
-    "remastered",
-    "remaster",
     "definitive",
     "deluxe",
     "ultimate",
@@ -23,7 +20,6 @@ EDITION_WORDS: frozenset[str] = frozenset({
     "enhanced",
     "goty",
     "anniversary",
-    "collection",
     "bundle",
     "standard",
     "premium",

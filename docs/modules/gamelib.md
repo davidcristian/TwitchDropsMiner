@@ -115,8 +115,12 @@ a candidate decides:
    name itself, the name with the `ROMAN_NUMERALS` (`ii` to `xv`) written as digits, and the name without its
    trailing `EDITION_WORDS`, with and without the digits. `Dark Souls 3` matches `Dark Souls III`, and
    `Mafia: Definitive Edition` matches `Mafia`. `of`, `the`, `year` and `game` are edition words, so all of
-   `Game of the Year Edition` is removed. `i`, `v` and `x` are not in `ROMAN_NUMERALS`, because a single letter
-   is often part of a title (`Mega Man X`), so `Grand Theft Auto 5` is not a variant of `Grand Theft Auto V`.
+   `Game of the Year Edition` is removed. `collection`, `remaster` and `remastered` are not edition words:
+   Twitch usually lists a collection or a remaster under its full name, and the plain name is often another game.
+   `Call of Duty: Modern Warfare Remastered` does not match `Call of Duty: Modern Warfare`, the 2019 game, and
+   `Mega Man Legacy Collection` does not match `Mega Man`. `i`, `v` and `x` are not in `ROMAN_NUMERALS`,
+   because a single letter is often part of a title (`Mega Man X`), so `Grand Theft Auto 5` is not a variant of
+   `Grand Theft Auto V`.
 3. **`FUZZY`**: only for normalized names of at least `FUZZY_MIN_LENGTH` (8) characters on both sides, and only
    when the numbers in both names are equal, in order: every run of digits, also inside a word (`lineage2`),
    the `ROMAN_NUMERALS` words, and a lone `i`, `v` or `x` (`SINGLE_LETTER_NUMERALS`). The
