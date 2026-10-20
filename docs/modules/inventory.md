@@ -16,7 +16,9 @@ reload ([twitch.md](twitch.md#state-machine)). The only request the module sends
   `image_url` (the game's box art without its size suffix), `starts_at`, `ends_at`, `timed_drops` (a
   `dict[str, TimedDrop]` by drop ID) and `drops` (its values).
 - `allowed_channels` is the ACL (access control list) as `Channel.from_acl` objects. It is empty when the campaign
-  has no ACL or its ACL is disabled, and then every channel passes the ACL check.
+  has no ACL or its ACL is disabled, and then every channel passes the ACL check. `Twitch.fetch_inventory` leaves
+  out a campaign whose `allow` is null ([gqldata.md](gqldata.md#null-campaign-details)). A null `allow` is not
+  read as no ACL, because the real ACL is then unknown and every channel of the game would pass the check.
 - Status: `active` is True when the campaign is valid (its status is not `EXPIRED`) and now is between
   `starts_at` and `ends_at`. `upcoming` is True when it is valid and has not started. `expired` is True when it is
   not valid or has ended.
@@ -24,7 +26,11 @@ reload ([twitch.md](twitch.md#state-machine)). The only request the module sends
   the "Enable partial support for badges and emotes" setting (`enable_badges_emotes`).
 - Totals: `total_drops`, `claimed_drops`, `remaining_drops`, `finished` (every drop is claimed or needs no
   minutes), `required_minutes` and `remaining_minutes` (the largest over the drops, with precondition chains),
-  `progress` (the mean of the drops' progress) and `availability` (the smallest over the drops).
+  `progress` (the mean of the drops' progress) and `availability` (the smallest over the drops). A campaign with
+  no drops has the totals of a campaign whose drops need no minutes: `required_minutes` and `remaining_minutes`
+  are 0, `progress` is 0.0 and `availability` is `math.inf`. The Inventory tab hides a campaign whose
+  `required_minutes` is 0, and `PriorityMode.LOW_AVBL_FIRST` orders it last. Such a campaign is kept, not left
+  out, so its game is still offered as a choice in the Priority and Exclude lists.
 - `first_drop` is the drop that can progress now with the fewest remaining minutes, or None.
 - `time_triggers` is the set of start and end times of the campaign and its drops. The maintenance task ends
   its sleep at these times ([twitch.md](twitch.md#maintenance-task)).
