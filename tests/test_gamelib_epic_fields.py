@@ -36,3 +36,12 @@ def test_scan_epic_reads_null_legendary_fields_as_missing(tmp_path):
         "Fortnite": {"title": "Fortnite", "install_path": None},
     }), encoding="utf-8")
     assert scan(tmp_path).games == [LocalGame("Fortnite", Platform.EPIC, None, "Fortnite")]
+
+
+def test_scan_epic_skips_a_legendary_dlc_and_keeps_its_game(tmp_path):
+    (tmp_path / "installed.json").write_text(json.dumps({
+        "Fortnite": {"title": "Fortnite", "is_dlc": False},
+        "FortniteSTW": {"title": "Fortnite Save the World", "is_dlc": True},
+        "Sugar": {"title": "Rocket League"},
+    }), encoding="utf-8")
+    assert [game.name for game in scan(tmp_path).games] == ["Fortnite", "Rocket League"]

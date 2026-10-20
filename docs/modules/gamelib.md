@@ -90,7 +90,9 @@ from `AppName`), or has `bIsIncompleteInstall` set.
 
 **Legendary and Heroic** (`epic.py`): `installed.json` in the added folder and each Legendary or Heroic index
 that `launcher_indexes` lists are read when they exist, for every added folder. Each key is an app name and each
-entry gives `title` and `install_path`. An entry is skipped only when it is not an object or has an empty `title`.
+entry gives `title` and `install_path`. An entry is skipped when it is not an object, has an empty `title`, or
+has `is_dlc` set to `true`, which Legendary writes for an installed DLC (`InstalledGame` in Legendary's
+`legendary/models/game.py`).
 
 ## Launcher indexes
 

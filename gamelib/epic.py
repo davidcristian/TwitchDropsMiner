@@ -139,7 +139,8 @@ def _scan_legendary(directory: Path, result: ScanResult, indexes: tuple[Path, ..
             if not isinstance(entry, dict):
                 continue
             title: str = _text(entry, "title").strip()
-            if not title:
+            # Legendary sets is_dlc on an installed DLC, which is skipped like an Epic add-on manifest
+            if not title or entry.get("is_dlc") is True:
                 continue
             install_path: str = _text(entry, "install_path")
             result.games.append(

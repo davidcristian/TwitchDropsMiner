@@ -32,8 +32,8 @@ a game the user never chose. A missed match costs little, because the user can s
    - Epic (`scan_epic`): the `.item` manifests in the folder, in its `Manifests` subfolder and in the
      launcher's own manifests folders for the running platform. DLC (`MainGameAppName` differs from `AppName`)
      and incomplete installs (`bIsIncompleteInstall`) are skipped. `_scan_legendary` reads the `installed.json`
-     of Legendary and Heroic, the usual way Epic games are installed on Linux. `launcher_indexes` lists the
-     launcher folders of each platform.
+     of Legendary and Heroic, the usual way Epic games are installed on Linux, and skips a DLC there too
+     (`is_dlc`). `launcher_indexes` lists the launcher folders of each platform.
 
    The index finds the libraries on other drives from one folder, and gives each game its display name and its
    ID. The scan skips Steam tool entries by AppID first, because a test on the ID is exact.
