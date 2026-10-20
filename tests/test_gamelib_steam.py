@@ -107,6 +107,23 @@ def test_scan_steam_reads_escaped_backslashes_in_library_paths(tmp_path, steam_m
     assert names(result) == ["Portal 2", "Dota 2"]
 
 
+@pytest.mark.parametrize(
+    ("written", "name"),
+    [
+        (r"The \"Quoted\" Game", 'The "Quoted" Game'),
+        (r"Tab\tand\nline", "Tab\tand\nline"),
+        (r"Back\\slash", "Back\\slash"),
+        (r"Back\\name", "Back\\name"),
+        (r"Other \q pair", "Other \\q pair"),
+    ],
+    ids=["quote", "tab and line break", "backslash", "backslash before n", "other pair"],
+)
+def test_scan_steam_reads_the_escapes_in_a_name_and_the_fields_after_it(tmp_path, steam_manifest, written, name):
+    steam_manifest(tmp_path / "steamapps", 620, written, "Quoted")
+    found, result = scan(tmp_path / "steamapps")
+    assert result.games == [LocalGame(name, Platform.STEAM, tmp_path / "steamapps" / "common" / "Quoted", "620")]
+
+
 def test_scan_steam_reads_the_other_libraries_when_one_cannot_be_opened(tmp_path, steam_manifest, unopenable):
     steamapps = tmp_path / "Steam" / "steamapps"
     other = tmp_path / "drive2" / "steamapps"

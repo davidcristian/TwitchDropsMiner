@@ -32,7 +32,15 @@ STEAM_TOOL_PREFIXES: tuple[str, ...] = (
 
 # Steam's KeyValues format is nested, but every field we need is a plain
 # '"key"    "value"' pair, so a full parser is not needed.
-_KV_PATTERN = re.compile(r'"([^"]+)"\s*"([^"]*)"')
+_KV_PATTERN = re.compile(r'"((?:[^"\\]|\\.)+)"\s*"((?:[^"\\]|\\.)*)"')
+# Steam writes a quote and a backslash inside a quoted string as \" and \\. These two, \n and \t are read
+# back as the characters they stand for, and any other backslash pair stays as written.
+_ESCAPES: dict[str, str] = {"\\": "\\", '"': '"', "n": "\n", "t": "\t"}
+_ESCAPE_PATTERN = re.compile(r'\\(["\\nt])')
+
+
+def _unescape(value: str) -> str:
+    return _ESCAPE_PATTERN.sub(lambda match: _ESCAPES[match.group(1)], value)
 
 
 def _parse_kv(text: str) -> dict[str, str]:
@@ -42,7 +50,7 @@ def _parse_kv(text: str) -> dict[str, str]:
     """
     result: dict[str, str] = {}
     for key, value in _KV_PATTERN.findall(text):
-        result.setdefault(key, value.replace("\\\\", "\\"))
+        result.setdefault(key, _unescape(value))
     return result
 
 
@@ -51,7 +59,7 @@ def _parse_kv_all(text: str, key: str) -> list[str]:
     Return every value stored under the given key, in document order.
     """
     return [
-        value.replace("\\\\", "\\")
+        _unescape(value)
         for found_key, value in _KV_PATTERN.findall(text)
         if found_key == key
     ]

@@ -72,7 +72,9 @@ in `result.libraries` is not read again.
    checked gets the line `<library>: <reason>` once, and the other libraries are still read. On Python 3.14 it
    is skipped without a line.
 3. Each `appmanifest_*.acf` gives `name`, `appid` and `installdir`. The parser reads only flat `"key" "value"`
-   pairs with a regular expression, and the first value of a key is used.
+   pairs with a regular expression, and the first value of a key is used. Steam writes a quote and a backslash
+   inside a quoted string as `\"` and `\\`. The parser reads these two, and `\n` and `\t` as a line break and a
+   tab. Any other backslash pair is kept as written.
 4. An entry is skipped when its `name` is empty, when its `appid` is in `STEAM_TOOL_APPIDS` (Steamworks Common
    Redistributables, Steam Linux Runtime 1.0, 2.0 and 3.0, Proton Experimental, Proton Hotfix, Proton 9.0), or
    when its lower case name starts with one of `STEAM_TOOL_PREFIXES`: `proton`, `steam linux runtime`,
