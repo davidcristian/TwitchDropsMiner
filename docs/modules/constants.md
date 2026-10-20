@@ -4,7 +4,9 @@
 and limits, the `State` and `PriorityMode` enums, the GQL operations, the Twitch client identities, the PubSub
 topic names and the logging levels. It computes the paths once, at import, from how the app was started. It
 reads the app version from [`version.py`](#versionpy). The module is 523 lines, over the 300 line soft cap in
-AGENTS.md ([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
+AGENTS.md ([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md)). `tests/test_constants.py`
+tests it with plain values, and loads a second copy of it with a test `sys.argv[0]`, `APPIMAGE` and `sys.platform`
+to check the paths.
 
 ## Public contract
 
@@ -145,7 +147,9 @@ with every request, and `twitch.py` adds its client ID to the login and GQL requ
 `WEBSOCKET_TOPICS` maps a category (`"User"` or `"Channel"`) and a name to the Twitch topic.
 `WebsocketTopic(category, topic_name, target_id, process)` is one subscription: `str()` gives
 `<topic>.<target_id>`, such as `video-playback-by-id.123`, and calling it passes `(target_id, message)` to
-`process`. It compares equal to another topic or a string with the same text. `WebsocketTopic.as_str` builds that
+`process`. It compares equal to another topic or a string with the same text, but its hash differs from the
+string's, so a set lookup by the text misses it
+([task 041](../refinements/tasks/041-topic-hash-differs-from-its-text.md)). `WebsocketTopic.as_str` builds that
 text without an object. [websocket.md](websocket.md) describes the pool.
 
 ### Logging and strings
@@ -167,6 +171,8 @@ on macOS and Linux) and does not commit the change. The AppImage job passes the 
 - Importing the module has side effects: it computes the paths from `sys.argv[0]` and `APPIMAGE`, registers the
   `CALL` level and picks the user agents. Most modules and `build.spec` import it, so it imports no repo
   module except `version`, which keeps it free of import cycles.
+- The CI test job installs only `requirements-dev.txt` and imports this module, so it imports no package outside
+  that file and the standard library.
 - `PriorityMode` is stored in `settings.json` by its value under the type name `PriorityMode`
   ([utils.md](utils.md)). After a rename of the class, the setting falls back to its default on the next load.
   After a stored value is removed from the enum, loading the settings raises `ValueError` and the app does not
