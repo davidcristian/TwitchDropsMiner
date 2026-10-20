@@ -43,7 +43,8 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
   returns the response JSON, or a list of them for a list. See [GQL requests](#gql-requests).
 - `get_auth()` checks the login, logs in when needed and returns the `_AuthState`. `wait_until_login()` returns
   a coroutine that ends once the login is valid. `get_session()` returns the `aiohttp.ClientSession` and creates
-  it on the first call, with timeouts of 5 and 10 seconds times `settings.connection_quality` (1 to 6).
+  it on the first call, with timeouts of 5 and 10 seconds times `settings.connection_quality` (1 to 6), and with
+  the cookies of `cookies.jar`. See [Login](#login) for a file that fails to load.
 - `_client_type` is `ClientType.ANDROID_APP`, and the GUI reads its `CLIENT_ID`. Updating it is in
   [the GQL runbook](../runbooks/gql-operations.md).
 
@@ -101,6 +102,12 @@ entered the code. An expired code raises `RequestInvalid`, and the flow starts a
 `https://id.twitch.tv/oauth2/validate` returns `user_id`. After a 401 it clears the domain's cookies, and after
 a token for another client ID it deletes `cookies.jar`. In both cases it logs in again. Each of the two checks
 runs at most twice, then raises `RuntimeError`. At the end it saves the cookie jar.
+
+When `cookies.jar` fails to load, `get_session` logs a warning with the error's class and text, empties the
+jar and goes on, so the login runs again. aiohttp reads a file that is not JSON as a pickle, so the error can
+be of many types, and `get_session` catches `Exception`. With aiohttp 3.14.3, an empty file raised `EOFError`,
+a cut off file `KeyError`, a JSON list `AttributeError` and a folder `IsADirectoryError`. None of these texts
+held a cookie value.
 
 The `Invalidate` button on the Help tab revokes the token at `https://id.twitch.tv/oauth2/revoke`. On a 200
 response it calls `invalidate(delete_cookies=True)`, and in every case it enters `State.RESTART`. The device

@@ -328,9 +328,10 @@ class Twitch:
         try:
             if COOKIES_PATH.exists():
                 cookie_jar.load(COOKIES_PATH)
-        except Exception:
-            # if loading in the cookies file ends up in an error, just ignore it
-            # clear the jar, just in case
+        except Exception as exc:
+            # aiohttp reads a file that is not JSON as a pickle, so a broken file raises errors of many types,
+            # and a load that fails halfway can leave some cookies in the jar
+            logger.warning(f"Could not load cookies.jar, so the app logs in again ({type(exc).__name__}: {exc})")
             cookie_jar.clear()
         # create timeouts
         # connection quality mulitiplier determines the magnitude of timeouts

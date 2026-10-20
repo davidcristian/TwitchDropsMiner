@@ -76,7 +76,8 @@ for a new one.
 **To log out or switch accounts**, press `Invalidate` on the Help tab. It ends the session at Twitch, deletes
 `cookies.jar` and starts the login again. Another way is to close the app, delete `cookies.jar` and start the app.
 Delete `cookies.jar` the same way when the login keeps failing. When Twitch rejects the saved session, the app
-deletes it and asks you to log in again by itself.
+deletes it and asks you to log in again by itself. When `cookies.jar` is damaged, the app asks you to log in
+again, and with `-v` the Output box shows "Could not load cookies.jar" with the error.
 
 **"Unexpected content type returned, usually due to being redirected."** Something between the app and Twitch
 sent the response instead of Twitch. This happens on networks that need a login page before they allow internet
