@@ -53,7 +53,7 @@ request counts this rule rests on.
 | `reconnect.py` | `ReconnectDelay`, the wait of a PubSub websocket before each reconnect |
 | `gqldata.py` | Reads GQL responses and leaves out the fields that a server error set to null |
 | `imagedata.py` | `decode_image`, which decodes a whole image download for `cache.py` or returns None for broken data |
-| `savefiles.py` | `save_each`, which runs the saves after an inventory fetch and reports a failed one instead of raising |
+| `savefiles.py` | `save_each`, which runs the saves after an inventory fetch and reports a failed one instead of raising, and `UnsavedChanges`, which writes a file only when it has a change not saved yet |
 | `ratelimit.py` | `RateLimiter`, which limits how many GQL requests start in any second and how many are open at once |
 | `instancelock.py` | `lock_file`, the lock on `lock.file` that lets one copy of the app run per folder |
 | `mousewheel.py` | `wheel_events` and `wheel_scroll`, which read a mouse wheel turn on each windowing system |

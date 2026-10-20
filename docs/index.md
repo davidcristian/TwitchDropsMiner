@@ -67,7 +67,7 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [reconnect.md](modules/reconnect.md) | `ReconnectDelay`: the wait of a websocket before each reconnect |
 | [gqldata.md](modules/gqldata.md) | `get_field`, `merge_data` and the readers that leave out a field a server error set to null |
 | [imagedata.md](modules/imagedata.md) | `decode_image`: the full decode of an image download, which returns None for broken data |
-| [savefiles.md](modules/savefiles.md) | `save_each`: the saves after an inventory fetch, where a failed save is logged and the run goes on |
+| [savefiles.md](modules/savefiles.md) | `save_each`: the saves after an inventory fetch, where a failed save is logged and the run goes on. `UnsavedChanges`: whether a file has a change to write |
 | [ratelimit.md](modules/ratelimit.md) | `RateLimiter`: at most 5 GQL requests start in any second and at most 5 are open |
 | [instancelock.md](modules/instancelock.md) | `lock_file`: the lock on `lock.file`, and the result for a file it cannot open or write |
 | [mousewheel.md](modules/mousewheel.md) | `wheel_events` and `wheel_scroll`: the wheel events of each windowing system and their direction |

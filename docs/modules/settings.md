@@ -20,7 +20,9 @@ the `gui.py` preview mock fails only when `python gui.py` runs.
 - `alter()` marks the settings as changed. A caller calls it after it changes a list or a set in place, such as
   `settings.priority.append(name)`, because that does not go through assignment. `SettingsPanel` does this for
   each change to the Priority, Exclude and game folder lists.
-- `save(force=False)` writes the file when the settings changed since the last save, or when `force` is true.
+- `save(force=False)` writes the file when the settings changed since the last successful save, or when `force`
+  is true. `UnsavedChanges` in [savefiles.md](savefiles.md) keeps that record: a save that raises, such as on a
+  full disk, leaves the changes marked, so the next save writes them.
 
 ## The keys
 
@@ -104,5 +106,5 @@ A `set`, `URL`, `Enum` or `datetime` value is written as `{"__type": <class name
   `SettingsPanel.__init__` too, which repeats the defaults 5 and 10
   ([task 026](../refinements/tasks/026-settings-defaults-written-twice.md)).
 
-**Dependencies.** Repo modules: `utils` (`json_load`, `json_save`), `constants` (`SETTINGS_PATH`,
-`DEFAULT_LANG`, `PriorityMode`), and `main` for type checking only. Third-party: `yarl`.
+**Dependencies.** Repo modules: `utils` (`json_load`, `json_save`), `savefiles` (`UnsavedChanges`), `constants`
+(`SETTINGS_PATH`, `DEFAULT_LANG`, `PriorityMode`), and `main` for type checking only. Third-party: `yarl`.

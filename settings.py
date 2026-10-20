@@ -5,6 +5,7 @@ from typing import Any, TypedDict, TYPE_CHECKING
 from yarl import URL
 
 from utils import json_load, json_save
+from savefiles import UnsavedChanges
 from constants import SETTINGS_PATH, DEFAULT_LANG, PriorityMode
 
 if TYPE_CHECKING:
@@ -74,12 +75,12 @@ class Settings:
     game_dirs: list[str]
     detected_games: list[str]
 
-    PASSTHROUGH = ("_settings", "_args", "_altered")
+    PASSTHROUGH = ("_settings", "_args", "_changes")
 
     def __init__(self, args: ParsedArgs):
         self._settings: SettingsFile = json_load(SETTINGS_PATH, default_settings)
         self._args: ParsedArgs = args
-        self._altered: bool = False
+        self._changes = UnsavedChanges(lambda: json_save(SETTINGS_PATH, self._settings, sort=True))
 
     # default logic of reading settings is to check args first, then the settings file
     def __getattr__(self, name: str, /) -> Any:
@@ -98,7 +99,7 @@ class Settings:
             return super().__setattr__(name, value)
         elif name in self._settings:
             self._settings[name] = value  # type: ignore[literal-required]
-            self._altered = True
+            self._changes.mark()
             return
         raise TypeError(f"{name} is missing a custom setter")
 
@@ -106,8 +107,7 @@ class Settings:
         raise RuntimeError("settings can't be deleted")
 
     def alter(self) -> None:
-        self._altered = True
+        self._changes.mark()
 
     def save(self, *, force: bool = False) -> None:
-        if self._altered or force:
-            json_save(SETTINGS_PATH, self._settings, sort=True)
+        self._changes.save(force=force)
