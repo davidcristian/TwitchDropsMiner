@@ -17,6 +17,7 @@ from constants import PING_INTERVAL, PING_TIMEOUT, MAX_WEBSOCKETS, WS_TOPICS_LIM
 from utils import (
     CHARS_ASCII,
     chunk,
+    start_task,
     task_wrapper,
     create_nonce,
     json_minify,
@@ -101,7 +102,7 @@ class Websocket:
     def stop_nowait(self, *, remove: bool = False):
         # weird syntax but that's what we get for using a decorator for this
         # return type of 'task_wrapper' is a coro, so we need to instance it for the task
-        asyncio.create_task(task_wrapper(self.stop)(remove=remove))
+        start_task(task_wrapper(self.stop)(remove=remove))
 
     async def _backoff_connect(
         self, ws_url: str, **kwargs
@@ -280,7 +281,7 @@ class Websocket:
         topic = self.topics.get(message["data"]["topic"])
         if topic is not None:
             # use a task to not block the websocket
-            asyncio.create_task(topic(json.loads(message["data"]["message"])))
+            start_task(topic(json.loads(message["data"]["message"])))
 
     async def _handle_recv(self):
         """

@@ -2,7 +2,7 @@
 
 **Purpose.** Holds the helpers that several modules share: reading and writing JSON files, the delays between
 retries (`ExponentialBackoff`), running tasks, the `Game` class and small helpers for time, random IDs and the
-browser. None of them sends a request to Twitch by itself. The module is 389 lines, over the 300 line soft cap in
+browser. None of them sends a request to Twitch by itself. The module is 402 lines, over the 300 line soft cap in
 AGENTS.md ([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md)). `RateLimiter`, which
 limits the GQL requests, is in [ratelimit.md](ratelimit.md), and `lock_file`, the single instance lock, in
 [instancelock.md](instancelock.md).
@@ -60,6 +60,10 @@ it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays
   `Twitch._watch_loop`, `Twitch._maintenance_task` and `Websocket._handle`. Without `critical` it wraps the
   PubSub handlers `process_stream_state`, `process_stream_update`, `process_drops` and `process_notifications`
   in `twitch.py`, `Websocket.stop` and, in `gui.py`, `Twitch.detect_games` and `HelpTab._invalidate_token`.
+- **`start_task(coro)`** starts a task that runs `coro`, keeps it in a module level set until it ends and returns
+  it. The event loop keeps only a weak reference to a task, so a task that nothing else references can be
+  collected before it ends. `SettingsPanel.rescan_games` and `HelpTab.invalidate_token` in `gui.py`, and
+  `Websocket.stop_nowait` and `Websocket._handle_message` in `websocket.py`, start their tasks with it.
 - **`AwaitableValue[T]`** is a value that coroutines can wait for: `get()` waits until `set()` is called. It
   also has `has_value()`, `wait()`, `get_with_default(default)` and `clear()`. `Twitch.watching_channel` is one,
   and `Websocket._ws` holds each websocket's connection in one.
@@ -97,6 +101,8 @@ empty or includes it (`inventory.py`, `twitch.py`). `inventory.py`, `channel.py`
 - A new type stored in a JSON file needs a branch in `_serialize` (every `Enum` already has one) and an entry in
   `SERIALIZE_ENV`. Without the entry, the key is dropped on load and reset to its default. An `IntEnum` is
   written as a plain number and read back as one.
+- A task whose result the caller does not keep is started with `start_task`, not with `asyncio.create_task`.
+  `ruff check --select RUF006` lists the `asyncio.create_task` calls whose result is not kept.
 - `utils` imports `tkinter` and Pillow at the top, so even its JSON helpers need both installed. It imports
   `twitch` only inside `task_wrapper`, which avoids an import cycle.
 

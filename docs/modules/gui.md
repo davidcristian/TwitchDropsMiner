@@ -68,9 +68,10 @@ The asyncio event loop and Tk run on one thread, so Tk callbacks and coroutines 
 - `Twitch._run` calls `start()` at the beginning of each run. `stop()` cancels the poll task and the progress
   timer; [main.py](main.md) calls it after the window is closed.
 - A Tk callback that needs async work starts a task: `HelpTab.invalidate_token` and
-  `SettingsPanel.rescan_games` call `asyncio.create_task(task_wrapper(...)())`. A button that changes the state
-  uses `Twitch.state_change(state)`, which returns a `partial` of `Twitch.change_state`. `change_state` keeps only
-  the last state set, so `_run` can replace a press that comes during a fetch
+  `SettingsPanel.rescan_games` call `start_task(task_wrapper(...)())`, which keeps a reference to the task until
+  it ends ([utils.md](utils.md#tasks)). A button that changes the state uses `Twitch.state_change(state)`, which
+  returns a `partial` of `Twitch.change_state`. `change_state` keeps only the last state set, so `_run` can
+  replace a press that comes during a fetch
   ([task 012](../refinements/tasks/012-button-requests-lost-during-a-fetch.md)).
 - `close()` sets `_close_requested` and calls `Twitch.close()`, which sets `State.EXIT`. The window's close
   button, the tray menu's "Quit" and, on Linux, SIGINT and SIGTERM call it. On Windows, `wnd_proc` replaces the

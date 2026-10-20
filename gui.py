@@ -45,7 +45,7 @@ from gamelib import (
 )
 from exceptions import MinerException, ExitRequest
 from mousewheel import wheel_events, wheel_scroll
-from utils import resource_path, set_root_icon, webopen, task_wrapper, Game, _T
+from utils import resource_path, set_root_icon, webopen, start_task, task_wrapper, Game, _T
 from constants import (
     MAX_INT,
     SELF_PATH,
@@ -2168,7 +2168,7 @@ class SettingsPanel:
         )
 
     def rescan_games(self) -> None:
-        asyncio.create_task(task_wrapper(self._manager._twitch.detect_games)())
+        start_task(task_wrapper(self._manager._twitch.detect_games)())
 
     def game_dir_add(self) -> None:
         directory: str = filedialog.askdirectory(
@@ -2436,7 +2436,7 @@ class HelpTab:
 
     def invalidate_token(self) -> None:
         # sync to async bridge
-        asyncio.create_task(task_wrapper(self._invalidate_token)())
+        start_task(task_wrapper(self._invalidate_token)())
 
     async def _invalidate_token(self) -> None:
         auth_state = await self._twitch.get_auth()

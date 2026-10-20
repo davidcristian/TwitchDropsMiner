@@ -133,6 +133,19 @@ def task_wrapper(
     return decorator(afunc)
 
 
+# The event loop keeps only a weak reference to a task, so a task that nothing else references
+# can be collected before it ends.
+_running_tasks: set[asyncio.Task[Any]] = set()
+
+
+def start_task(coro: abc.Coroutine[Any, Any, _T]) -> asyncio.Task[_T]:
+    """Start a task that runs coro, and keep a reference to it until it ends."""
+    task = asyncio.create_task(coro)
+    _running_tasks.add(task)
+    task.add_done_callback(_running_tasks.discard)
+    return task
+
+
 def invalidate_cache(instance, *attrnames):
     """
     To be used to invalidate `functools.cached_property`.

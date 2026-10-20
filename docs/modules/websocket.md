@@ -142,8 +142,8 @@ warning and skipped, and the rest of its batch is handled. The handlers and what
   ([task 024](../refinements/tasks/024-websocket-pool-keeps-empty-connections.md)).
 - The module is over the 300 line cap ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
 
-**Dependencies.** `utils` (`ExponentialBackoff`, `AwaitableValue`, `task_wrapper`, `chunk`, `create_nonce`,
-`json_minify`, `format_traceback`, `CHARS_ASCII`), `exceptions` (`MinerException`, `WebsocketClosed`),
-`constants` (`PING_INTERVAL`, `PING_TIMEOUT`, `MAX_WEBSOCKETS`, `WS_TOPICS_LIMIT`, `WS_MIN_UPTIME`),
-`reconnect` (`ReconnectDelay`), `redact` for the log lines that print a message, and `translate` for the status
-texts. Third party: aiohttp.
+**Dependencies.** `utils` (`ExponentialBackoff`, `AwaitableValue`, `start_task`, `task_wrapper`, `chunk`,
+`create_nonce`, `json_minify`, `format_traceback`, `CHARS_ASCII`), `exceptions` (`MinerException`,
+`WebsocketClosed`), `constants` (`PING_INTERVAL`, `PING_TIMEOUT`, `MAX_WEBSOCKETS`, `WS_TOPICS_LIMIT`,
+`WS_MIN_UPTIME`), `reconnect` (`ReconnectDelay`), `redact` for the log lines that print a message, and
+`translate` for the status texts. Third party: aiohttp.
