@@ -185,8 +185,9 @@ table on the Settings tab shows the list.
 `detect_games` runs `gamelib.scan_directories(settings.game_dirs)` in a thread, matches the result to the
 campaigns' games with `gamelib.match_games` and stores the matched names in `settings.detected_games`. A changed
 list enters `State.GAMES_UPDATE`, with no reload. It runs on every `INVENTORY_FETCH`, from the `Rescan` button
-and after a game folder is added or removed. A call during a scan returns at once, and a scan error is printed
-once while it persists ([gamelib.md](gamelib.md)).
+and after a game folder is added or removed. A call during a scan returns at once. The thread scans a copy of
+`game_dirs`, and when a folder is added or removed during the scan, the result is dropped and the folders are
+scanned again. A scan error is printed once while it persists ([gamelib.md](gamelib.md)).
 
 ## Websocket handlers
 

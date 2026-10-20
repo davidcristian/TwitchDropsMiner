@@ -437,7 +437,8 @@ class Twitch:
         Scans the game folders and stores the Twitch names of the installed games that match
         a campaign's game in the detected_games setting.
         """
-        game_dirs: list[str] = self.settings.game_dirs
+        # a copy, because the scan thread must not read the list while a folder button changes it
+        game_dirs: list[str] = list(self.settings.game_dirs)
         if not game_dirs:
             # nothing configured - make sure we don't keep a stale list around
             if self.settings.detected_games:
@@ -448,7 +449,7 @@ class Twitch:
             self.gui.settings.set_detected([])
             return
         if self._scanning_games:
-            # a scan is already in flight - a second one would only redo the same work
+            # the running scan checks the folders when it ends, and scans again if they changed
             return
         self._scanning_games = True
         self.gui.settings.set_scanning(True)
@@ -463,6 +464,9 @@ class Twitch:
             return
         finally:
             self._scanning_games = False
+        if self.settings.game_dirs != game_dirs:
+            await self.detect_games()
+            return
         for error in result.errors:
             if error not in self._scan_errors_printed:
                 self.print(_("gui", "settings", "detect", "scan_error").format(error=error))
