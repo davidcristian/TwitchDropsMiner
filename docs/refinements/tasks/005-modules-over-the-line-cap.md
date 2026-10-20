@@ -13,7 +13,7 @@ for the split now.
 
 | Module | Lines |
 | --- | --- |
-| `gui.py` | 3218 |
+| `gui.py` | 3224 |
 | `twitch.py` | 1625 |
 | `translate.py` | 597 |
 | `constants.py` | 519 |
@@ -80,3 +80,5 @@ Splits cost no Twitch requests.
   `ratelimit.py`.
 - 2026-10-20: Measured again after `lock_file` moved from `utils.py` to the new module `instancelock.py`, and
   `translate.py` gained the two strings of the "Cannot start" dialog.
+- 2026-10-20: Measured `gui.py` again after the Inventory tab's wheel binding gained the X11 buttons. The logic
+  went to the new module `mousewheel.py`.

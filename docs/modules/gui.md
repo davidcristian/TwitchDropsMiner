@@ -36,7 +36,9 @@ from [translate.md](translate.md).
   `Twitch._watch_loop` calls it to decide whether to send the `CurrentDrop` GQL query.
 - **`InventoryOverview.add_campaign`** is a coroutine, because it awaits `ImageCache.get` for the campaign and
   reward images ([cache.md](cache.md)). The filters are "Not linked", "Upcoming", "Expired", "Excluded" and
-  "Finished". `refresh()` applies them again, and it runs each time the Inventory tab is opened.
+  "Finished". `refresh()` applies them again, and it runs each time the Inventory tab is opened. The campaigns are on
+  a `tk.Canvas`. When the pointer enters it, `bind_all` binds the events that `wheel_events` returns, and leaving it
+  removes them. `wheel_scroll` gives the direction, and Shift scrolls sideways ([mousewheel.md](mousewheel.md)).
 - **`SettingsPanel`** has the sections "Games Being Mined" (filled by `set_wanted_games`), "General", "Advanced",
   "Priority", "Exclude" and "Detected Games". It writes each change to `Settings` at once
   ([settings.md](settings.md)). "Reload" sets `State.INVENTORY_FETCH` through `Twitch.state_change`, a full
@@ -176,7 +178,7 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
   needs. It has no `detect_games`, `get_auth` or `_client_type`, so "Rescan" and the folder buttons raise
   `AttributeError` in the preview.
 
-**Dependencies.** Repo modules: `translate`, `cache`, `gamelib`, `exceptions`, `utils`, `constants`, and
-`registry` on Windows; `twitch`, `channel`, `settings` and `inventory` for type checking only. Third-party:
-`pystray`, Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on Windows, `AppKit` on macOS, and
-`aiohttp` in the preview.
+**Dependencies.** Repo modules: `translate`, `cache`, `gamelib`, `exceptions`, `mousewheel`, `utils`, `constants`, and
+`registry` on Windows; `twitch`, `channel`, `settings` and `inventory` for type checking only. Third-party: `pystray`,
+Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on Windows, `AppKit` on macOS, and `aiohttp` in the
+preview.

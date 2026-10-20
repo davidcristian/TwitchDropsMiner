@@ -164,6 +164,7 @@ Nothing sends `ClaimCommunityPoints`, `ChannelPointsContext`, `SlugRedirect`, `N
 | Closing | a WndProc hook (pywin32) handles `WM_CLOSE` and `WM_QUERYENDSESSION`, so a Windows shutdown closes the app | `WM_DELETE_WINDOW`; SIGINT and SIGTERM call `GUIManager.close` | `WM_DELETE_WINDOW` |
 | Dark mode | the `clam` ttk theme and the title bar color through DWM | the `clam` ttk theme | `NSAppearance` through AppKit |
 | Lock file | `msvcrt.locking` | `fcntl.lockf` | `fcntl.lockf` |
+| Mouse wheel in the Inventory tab | `<MouseWheel>` | `<Button-4>` and `<Button-5>` on X11, through `mousewheel.py` | `<MouseWheel>` |
 | App files | the folder of the executable | the folder of the `.AppImage` file or the executable | `Contents/MacOS` inside the `.app` |
 | Other | | `main.py` sets `XMODIFIERS=@im=none` when it is unset; `webopen` restores `LD_LIBRARY_PATH` in a packaged build before it opens a browser | the notebook tab and checkbutton style changes are skipped |
 

@@ -44,6 +44,7 @@ from gamelib import (
     compile_patterns,
 )
 from exceptions import MinerException, ExitRequest
+from mousewheel import wheel_events, wheel_scroll
 from utils import resource_path, set_root_icon, webopen, task_wrapper, Game, _T
 from constants import (
     MAX_INT,
@@ -1278,10 +1279,9 @@ class InventoryOverview:
         self._canvas.configure(xscrollcommand=xscroll.set, yscrollcommand=yscroll.set)
         self._canvas.bind("<Configure>", self._canvas_update)
         self._main_frame = ttk.Frame(self._canvas)
-        self._canvas.bind(
-            "<Enter>", lambda e: self._canvas.bind_all("<MouseWheel>", self._on_mousewheel)
-        )
-        self._canvas.bind("<Leave>", lambda e: self._canvas.unbind_all("<MouseWheel>"))
+        self._wheel_events = wheel_events(self._canvas.tk.call("tk", "windowingsystem"))
+        self._canvas.bind("<Enter>", self._bind_wheel)
+        self._canvas.bind("<Leave>", self._unbind_wheel)
         self._canvas.create_window(0, 0, anchor="nw", window=self._main_frame)
         self._campaigns: dict[DropsCampaign, CampaignDisplay] = {}
         self._drops: dict[str, ttk.Label] = {}
@@ -1350,14 +1350,20 @@ class InventoryOverview:
         self._canvas.update_idletasks()
         self._canvas.configure(scrollregion=self._canvas.bbox("all"))
 
-    def _on_mousewheel(self, event: tk.Event[tk.Misc]):
-        delta = -1 if event.delta > 0 else 1
-        state: int = event.state if isinstance(event.state, int) else 0
-        if state & 1:
-            scroll = self._canvas.xview_scroll
+    def _bind_wheel(self, event: tk.Event[tk.Canvas]) -> None:
+        for sequence in self._wheel_events:
+            self._canvas.bind_all(sequence, self._on_mousewheel)
+
+    def _unbind_wheel(self, event: tk.Event[tk.Canvas]) -> None:
+        for sequence in self._wheel_events:
+            self._canvas.unbind_all(sequence)
+
+    def _on_mousewheel(self, event: tk.Event[tk.Misc]) -> None:
+        scroll = wheel_scroll(event.delta, event.num, event.state)
+        if scroll.axis == "x":
+            self._canvas.xview_scroll(scroll.units, "units")
         else:
-            scroll = self._canvas.yview_scroll
-        scroll(delta, "units")
+            self._canvas.yview_scroll(scroll.units, "units")
 
     async def add_campaign(self, campaign: DropsCampaign) -> None:
         campaign_frame = ttk.Frame(self._main_frame, relief="ridge", borderwidth=1, padding=4)

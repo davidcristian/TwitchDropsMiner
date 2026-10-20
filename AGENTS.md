@@ -56,6 +56,7 @@ request counts this rule rests on.
 | `savefiles.py` | `save_each`, which runs the saves after an inventory fetch and reports a failed one instead of raising |
 | `ratelimit.py` | `RateLimiter`, which limits how many GQL requests start in any second and how many are open at once |
 | `instancelock.py` | `lock_file`, the lock on `lock.file` that lets one copy of the app run per folder |
+| `mousewheel.py` | `wheel_events` and `wheel_scroll`, which read a mouse wheel turn on each windowing system |
 | `version.py` | `__version__`, to which CI appends the commit hash. Its doc is part of `docs/modules/constants.md` |
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
 | `docs/` | Listed in `docs/index.md`: `ARCHITECTURE.md`, the decisions (`adr/`), one contract doc per module (`modules/`), procedures (`runbooks/`), the deferred work (`refinements/`), and two pages for users, `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
@@ -80,7 +81,6 @@ New code follows these ([ADR-0014](docs/adr/ADR-0014-code-rules.md)), and so doe
 ## Recipes
 
 **A new setting** touches four places, and missing the third is silent:
-
 1. `SettingsFile`, `default_settings` and the attribute list on `Settings`, in `settings.py`.
 2. The widget in `SettingsPanel`, in `gui.py`.
 3. The `settings=SimpleNamespace(...)` mock under `if __name__ == "__main__":` at the end of `gui.py`. Without it

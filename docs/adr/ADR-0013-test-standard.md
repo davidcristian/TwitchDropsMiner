@@ -28,8 +28,8 @@ caller depends on, and chose rules about what tests assert plus a floor of 80% b
    `unittest.mock`, because a mock asserts which calls the code makes rather than what it returns.
 4. **The suite fails below 80% branch coverage** of the modules listed under `[tool.coverage.run]` in
    `pyproject.toml`: the modules that need neither Twitch nor a display, today `redact`, `reconnect`, `gamelib`,
-   `gqldata`, `imagedata`, `savefiles`, `ratelimit`, `instancelock` and the `scripts/` folder. The floor applies
-   to their total. A new such module is added to the list.
+   `gqldata`, `imagedata`, `savefiles`, `ratelimit`, `instancelock`, `mousewheel` and the `scripts/` folder. The
+   floor applies to their total. A new such module is added to the list.
 5. **Tests do not read the machine they run on.** A test that looks for launchers, the registry or a home folder
    points that lookup at a temporary folder, so the suite gives the same result on every machine and in CI.
    An autouse fixture in `tests/conftest.py` removes every `GIT_` environment variable for each test. The
