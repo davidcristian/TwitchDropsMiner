@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import asyncio
 import logging
-from time import time
+from time import time, monotonic
 from contextlib import suppress
 from typing import Any, Literal, TYPE_CHECKING
 
@@ -11,8 +11,9 @@ import aiohttp
 
 from translate import _
 from redact import redact
+from reconnect import ReconnectDelay
 from exceptions import MinerException, WebsocketClosed
-from constants import PING_INTERVAL, PING_TIMEOUT, MAX_WEBSOCKETS, WS_TOPICS_LIMIT
+from constants import PING_INTERVAL, PING_TIMEOUT, MAX_WEBSOCKETS, WS_TOPICS_LIMIT, WS_MIN_UPTIME
 from utils import (
     CHARS_ASCII,
     chunk,
@@ -116,31 +117,35 @@ class Websocket:
         self, ws_url: str, **kwargs
     ) -> abc.AsyncGenerator[aiohttp.ClientWebSocketResponse, None]:
         session = await self._twitch.get_session()
-        backoff = ExponentialBackoff(**kwargs)
+        delays = ReconnectDelay(ExponentialBackoff(**kwargs), WS_MIN_UPTIME.total_seconds(), monotonic)
         if self._twitch.settings.proxy:
             proxy = self._twitch.settings.proxy
         else:
             proxy = None
-        for delay in backoff:
+        while True:
             try:
                 async with session.ws_connect(ws_url, proxy=proxy) as websocket:
+                    delays.opened()
                     yield websocket
-                    backoff.reset()
             except (
                 asyncio.TimeoutError,
                 aiohttp.ClientResponseError,
                 aiohttp.ClientConnectionError,
             ):
+                delay = delays.next_delay()
                 ws_logger.info(
                     f"Websocket[{self._idx}] connection problem (sleep: {round(delay)}s)"
                 )
-                await asyncio.sleep(delay)
             except RuntimeError:
                 ws_logger.warning(
                     f"Websocket[{self._idx}] exiting backoff connect loop "
                     "because session is closed (RuntimeError)"
                 )
                 break
+            else:
+                delay = delays.next_delay()
+                ws_logger.info(f"Websocket[{self._idx}] connection ended (sleep: {round(delay)}s)")
+            await asyncio.sleep(delay)
 
     @task_wrapper(critical=True)
     async def _handle(self):

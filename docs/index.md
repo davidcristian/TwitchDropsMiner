@@ -64,4 +64,5 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [registry.md](modules/registry.md) | The Windows registry wrapper and autostart on each OS |
 | [exceptions.md](modules/exceptions.md) | Each exception class, what raises it and what catches it |
 | [redact.md](modules/redact.md) | `redact`: the secret key names it hides before a log call prints a value |
+| [reconnect.md](modules/reconnect.md) | `ReconnectDelay`: the wait of a websocket before each reconnect |
 | [gamelib.md](modules/gamelib.md) | The installed game scan, name matching and the list patterns |

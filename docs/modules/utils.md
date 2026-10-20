@@ -52,7 +52,7 @@ it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays
 | --- | --- | --- |
 | `Twitch.request` | 180 | a status of 500 or above and connection errors |
 | `Twitch.gql_request` | 60 | `service error` and `PersistedQueryNotFound` once, after at least 5 seconds; `service timeout`, `request cancelled`, `service unavailable` and `context deadline exceeded` each time |
-| `Websocket._backoff_connect` in `websocket.py` | 180 | connection errors; `reset()` after each connection |
+| `Websocket._backoff_connect` in `websocket.py`, through `ReconnectDelay` | 180 | connection errors and connections that ended within `WS_MIN_UPTIME`; `reset()` after a connection that stayed open that long |
 
 ### Tasks
 

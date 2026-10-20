@@ -3,10 +3,10 @@
 **Status:** open
 **Area:** module layout
 **Origin:** [AGENTS.md](../../../AGENTS.md#module-map)
-**Verified:** 2026-10-19
+**Verified:** 2026-10-20
 
 AGENTS.md sets a limit of 300 lines per module, and `scripts/linecap.py` checks it. Eight modules are over it,
-measured with `wc -l` on 2026-10-19, and linecap.py names them in `EXCEPTIONS`. An entry there fails once its
+measured with `wc -l` on 2026-10-20, and linecap.py names them in `EXCEPTIONS`. An entry there fails once its
 module is under the limit, so a split removes it. AGENTS.md forbids adding a new responsibility to any of them:
 new work goes into a new module that they call. This task records where each one can be split. It does not ask
 for the split now.
@@ -16,11 +16,11 @@ for the split now.
 | `gui.py` | 3215 |
 | `twitch.py` | 1639 |
 | `translate.py` | 588 |
-| `constants.py` | 518 |
+| `constants.py` | 519 |
 | `inventory.py` | 504 |
 | `channel.py` | 492 |
 | `utils.py` | 458 |
-| `websocket.py` | 405 |
+| `websocket.py` | 410 |
 
 `main.py` (203), `cache.py` (142), `settings.py` (113), `registry.py` (112), `exceptions.py` (71) and every
 module in `gamelib/` (at most 200) are under the cap.
@@ -60,7 +60,7 @@ Line counts are of the class or block today.
 - **`utils.py`**: four groups. The JSON helpers (`json_load`, `json_save`, `merge_json` and the private
   helpers they call), `ExponentialBackoff` with `RateLimiter`, `Game`, and the task helpers such as
   `task_wrapper` and `first_to_complete`.
-- **`websocket.py`**: `Websocket` (295) and `WebsocketPool` (69).
+- **`websocket.py`**: `Websocket` (299) and `WebsocketPool` (69).
 
 A split changes imports in other modules, and `gui.py` edits follow the AGENTS.md recipe for repeated lines. A
 new package follows the "A new package" recipe, which adds the folder to `appimage/AppImageBuilder.yml`.
@@ -74,3 +74,5 @@ Splits cost no Twitch requests.
   line counts were measured again after the comments and docstrings over three lines were shortened.
 - 2026-10-19: Measured again after the removal of the password login, which shortened `gui.py`, `twitch.py`,
   `translate.py`, `constants.py`, `main.py` and `exceptions.py`.
+- 2026-10-20: Measured again after the websocket reconnect wait, which lengthened `websocket.py` and
+  `constants.py`. The new module `reconnect.py` holds the logic of the wait.

@@ -144,7 +144,7 @@ Nothing sends `ClaimCommunityPoints`, `ChannelPointsContext`, `SlugRedirect`, `N
 | `GUIManager._poll` | `GUIManager.start`, at the start of `_run` | every 0.05 seconds |
 | `Twitch._watch_loop` | `_run`, once per run | every `WATCH_INTERVAL` (20 seconds); the `CurrentDrop` check 15 seconds into a cycle |
 | `Twitch._maintenance_task` | the end of each `fetch_inventory` | sleeps until the earliest of: `refresh_interval` minutes plus up to `REFRESH_JITTER` (60 seconds); the start or end of a campaign or drop that can progress within the hour; one hour after it started, when it moves to `INVENTORY_FETCH` and ends |
-| `Websocket._handle`, one per connection | `WebsocketPool.start` and `WebsocketPool.add_topics` | each pass collects messages until 0.5 seconds pass with no message; a `PING` every 3 minutes; reconnects with backoff up to 3 minutes |
+| `Websocket._handle`, one per connection | `WebsocketPool.start` and `WebsocketPool.add_topics` | each pass collects messages until 0.5 seconds pass with no message; a `PING` every 3 minutes; reconnects at once after a connection that stayed open `WS_MIN_UPTIME` (60 seconds), and otherwise after a backoff delay of up to 3 minutes |
 | `Channel._online_delay`, one per channel | `Channel.check_online` | once, `ONLINE_DELAY` (120 seconds) after the event |
 | `CampaignProgress._timer_loop` | `CampaignProgress.start_timer` | once a second, for one minute |
 | a PubSub topic handler | `Websocket._handle_message` | one task per message |

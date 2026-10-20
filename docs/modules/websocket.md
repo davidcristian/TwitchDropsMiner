@@ -74,16 +74,20 @@ raises the `MinerException`.
 
 1. It waits until `Twitch` is logged in (`wait_until_login`), then connects, through `settings.proxy` when one is
    set.
-2. A failed connect (a timeout, a response error or a connection error) waits with
-   `ExponentialBackoff(maximum=3*60)`: about 1, 2, 4 seconds and so on, at most 3 minutes. The backoff starts
-   again from the beginning after a connection that worked.
+2. Before it connects again, it waits the time that `ReconnectDelay` returns ([reconnect.md](reconnect.md)),
+   from `ExponentialBackoff(maximum=3*60)`: about 1, 2, 4 seconds and so on, at most 3 minutes. A failed connect
+   (a timeout, a response error or a connection error) waits, and so does a connection that ended less than
+   `WS_MIN_UPTIME` (60 seconds) after it opened. After a connection that stayed open that long, it connects
+   again at once and the backoff starts again from the first delay. Each connection sends a `PING` and its
+   `LISTEN` messages, so without the wait a server that closes every connection at once would get them as fast
+   as the handshake allows.
 3. While connected, it repeats three steps. It sends a `PING` every `PING_INTERVAL` (3 minutes). When topics
    changed, it sends `LISTEN` for the added ones and `UNLISTEN` for the removed ones, 20 topics per message,
    with the access token. It collects incoming messages until 0.5 seconds pass with no message, and handles
    them.
 4. It reconnects when no `PONG` arrives within `PING_TIMEOUT` (10 seconds) of a `PING`, when Twitch sends
    `RECONNECT`, when Twitch closes the connection, and after any exception in the loop. The new connection is
-   opened at once and subscribes every topic of the connection again.
+   opened after the wait of step 2 and subscribes every topic of the connection again.
 5. It ends when `stop()` closed the connection, or when the HTTP session is closed.
 
 Every message the app sends, except `PING`, has a random 30 character nonce. The GUI's Websocket Status box shows
@@ -120,5 +124,6 @@ type is logged. The handlers and what they do are in [twitch.md](twitch.md#webso
 
 **Dependencies.** `utils` (`ExponentialBackoff`, `AwaitableValue`, `task_wrapper`, `chunk`, `create_nonce`,
 `json_minify`, `format_traceback`, `CHARS_ASCII`), `exceptions` (`MinerException`, `WebsocketClosed`),
-`constants` (`PING_INTERVAL`, `PING_TIMEOUT`, `MAX_WEBSOCKETS`, `WS_TOPICS_LIMIT`), `redact` for the `sent:`
-log line, and `translate` for the status texts. Third party: aiohttp.
+`constants` (`PING_INTERVAL`, `PING_TIMEOUT`, `MAX_WEBSOCKETS`, `WS_TOPICS_LIMIT`, `WS_MIN_UPTIME`),
+`reconnect` (`ReconnectDelay`), `redact` for the `sent:` log line, and `translate` for the status texts. Third
+party: aiohttp.

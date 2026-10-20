@@ -52,6 +52,7 @@ says what each file holds.
 | --- | --- | --- |
 | `PING_INTERVAL` | 3 minutes | Time between PING messages on each PubSub websocket ([websocket.md](websocket.md)) |
 | `PING_TIMEOUT` | 10 seconds | How long a websocket waits for the PONG |
+| `WS_MIN_UPTIME` | 60 seconds | How long a websocket connection stays open before its reconnect skips the backoff wait ([reconnect.md](reconnect.md)) |
 | `ONLINE_DELAY` | 120 seconds | Wait after a stream-up event before `Channel` checks the stream again, because Twitch sends the event before the stream is live. [Task 002](../refinements/tasks/002-online-delay-single-try.md) covers the single check |
 | `WATCH_INTERVAL` | 20 seconds | Time between the `Channel.send_watch` calls of `Twitch._watch_loop` |
 | `REFRESH_JITTER` | 60 seconds | Largest random delay added to the `refresh_interval` setting in `_maintenance_task` ([ADR-0003](../adr/ADR-0003-stream-refresh.md)) |
