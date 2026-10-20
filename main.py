@@ -6,9 +6,14 @@ from multiprocessing import freeze_support
 
 if __name__ == "__main__":
     freeze_support()
+    import sys
+
+    # truststore and utils.py need Python 3.10, so the check comes before they are imported
+    if sys.version_info < (3, 10):
+        raise RuntimeError("Python 3.10 or higher is required")
+
     import io
     import os
-    import sys
     import signal
     import asyncio
     import logging
@@ -37,9 +42,6 @@ if __name__ == "__main__":
 
     # import tracemalloc
     # tracemalloc.start(3)
-
-    if sys.version_info < (3, 10):
-        raise RuntimeError("Python 3.10 or higher is required")
 
     # Suppress X11 Input Method registration on Linux to prevent
     # XWayland/Mutter lockups during heavy Tkinter layout updates.

@@ -8,16 +8,16 @@ type checking only.
 ## Startup order
 
 1. `freeze_support()` from `multiprocessing`, which a PyInstaller build needs to start.
-2. `truststore.inject_into_ssl()`, so that TLS connections check certificates against the operating system's
+2. The version check, which raises `RuntimeError("Python 3.10 or higher is required")` on an older Python. The
+   `__main__` block imports only `sys` before it, because `truststore` and `utils.py`, which imports
+   `typing.ParamSpec`, need 3.10.
+3. `truststore.inject_into_ssl()`, so that TLS connections check certificates against the operating system's
    certificate store. It runs before `twitch` imports `aiohttp`, because `aiohttp/connector.py` creates its
    default SSL context when it is imported.
-3. The imports. Importing `translate` rewrites `lang/English.json` in a run from source
+4. The imports. Importing `translate` rewrites `lang/English.json` in a run from source
    ([translate.md](translate.md)).
-4. `warnings.simplefilter("default", ResourceWarning)`, which shows the `ResourceWarning` for an unclosed
+5. `warnings.simplefilter("default", ResourceWarning)`, which shows the `ResourceWarning` for an unclosed
    resource, hidden by default, once per code location.
-5. The version check, which raises `RuntimeError("Python 3.10 or higher is required")`. It runs after the
-   imports, so on Python 3.9 it is never reached: `import truststore` in step 2 already raises `ImportError`,
-   and `utils.py` imports `typing.ParamSpec`, which 3.9 does not have.
 6. On Linux, when `XMODIFIERS` is not set, it is set to `@im=none`. This turns off the X input method, which the
    code comment names as the cause of XWayland and Mutter lockups during large Tk layout updates.
 7. A hidden `tk.Tk` root with the app icon, as the parent of the message boxes in steps 8, 9 and 11.
@@ -112,8 +112,10 @@ box.
 
 ## Invariants
 
+- The version check stays before every import that needs Python 3.10, so that an older Python shows its
+  message ([Startup order](#startup-order), step 2).
 - `truststore.inject_into_ssl()` stays before the first import of `aiohttp`, for the reason in
-  [Startup order](#startup-order), step 2.
+  [Startup order](#startup-order), step 3.
 - `freeze_support()` stays the first call in the `__main__` block, where the `multiprocessing` documentation
   requires it for a frozen executable.
 - `client.save(force=True)` stays after `wait_until_closed()`, for the reason in
