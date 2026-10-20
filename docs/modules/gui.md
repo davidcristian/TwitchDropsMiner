@@ -78,7 +78,8 @@ The asyncio event loop and Tk run on one thread, so Tk callbacks and coroutines 
   window procedure so that `WM_CLOSE` and `WM_QUERYENDSESSION` call it, and `ShutdownBlockReasonCreate`
   registers "Exiting..." as the text Windows shows while the app finishes during a system shutdown.
 - `coro_unless_closed(coro)` returns the result of `coro`, or cancels it and raises `ExitRequest` when the
-  window closes first. `Twitch.request` runs every HTTP request through it.
+  window closes first. When its caller is cancelled, it cancels `coro` too. `Twitch.request` runs every HTTP
+  request through it.
 - `prevent_close()` clears the close request, so the window stays open to show a fatal error.
 - `close_window()` stops the tray icon, removes the log handler and destroys the Tk root.
 

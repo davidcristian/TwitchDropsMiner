@@ -2632,7 +2632,13 @@ class GUIManager:
         tasks = [asyncio.ensure_future(coro), asyncio.ensure_future(self._close_requested.wait())]
         done: set[asyncio.Task[Any]]
         pending: set[asyncio.Task[Any]]
-        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        try:
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        except asyncio.CancelledError:
+            # asyncio.wait does not cancel the tasks it waits for
+            for task in tasks:
+                task.cancel()
+            raise
         for task in pending:
             task.cancel()
         if self._close_requested.is_set():
