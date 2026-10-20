@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, TypedDict, TYPE_CHECKING
 
 from yarl import URL
 
 from utils import json_load, json_save
 from savefiles import UnsavedChanges
+from settingsdata import drop_non_text_items
 from constants import SETTINGS_PATH, DEFAULT_LANG, PriorityMode
 
 if TYPE_CHECKING:
     from main import ParsedArgs
+
+
+logger = logging.getLogger("TwitchDrops")
 
 
 class SettingsFile(TypedDict):
@@ -79,6 +84,8 @@ class Settings:
 
     def __init__(self, args: ParsedArgs):
         self._settings: SettingsFile = json_load(SETTINGS_PATH, default_settings)
+        for key, item in drop_non_text_items(self._settings):
+            logger.warning(f"Removed {item!r} from {key} in settings.json, because it is not text")
         self._args: ParsedArgs = args
         self._changes = UnsavedChanges(lambda: json_save(SETTINGS_PATH, self._settings, sort=True))
 

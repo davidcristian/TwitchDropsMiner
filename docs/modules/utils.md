@@ -30,7 +30,7 @@ whole file with the newest contents, and `json_load` reads it in place of `path`
 
 | Caller | File | Notes |
 | --- | --- | --- |
-| `settings.py` | `settings.json` | merged with `default_settings` |
+| `settings.py` | `settings.json` | merged with `default_settings`, then `Settings` removes the items that are not strings from its lists and sets ([settings.md](settings.md#loading-settingsjson)) |
 | `cache.py` | `cache/mapping.json` | `merge=False`; catches `json.JSONDecodeError` ([cache.md](cache.md)) |
 | `translate.py` | `lang/*.json` | merged with `default_translation`. From source it also saves `lang/English.json` |
 

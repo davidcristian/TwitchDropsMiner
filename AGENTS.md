@@ -1,9 +1,8 @@
 # TwitchDropsMiner engineering rules
 
-Every agent and every person working in this repo follows these rules. A change that breaks one of them is **not
-done**, even when it works. If a rule here conflicts with a request, follow the rule and say so. This file is the
-contract, and the detail lives in `docs/`: the index [docs/index.md](docs/index.md), the map
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), the decisions `docs/adr/`.
+Every agent and every person working in this repo follows these rules. A change that breaks one of them is **not done**,
+even when it works. If a rule here conflicts with a request, follow the rule and say so. This file is the contract, and
+the detail lives in `docs/`: the [index](docs/index.md), the [map](docs/ARCHITECTURE.md), the decisions `docs/adr/`.
 
 ## What this is
 
@@ -54,6 +53,7 @@ request counts this rule rests on.
 | `gqldata.py` | Reads GQL responses and leaves out the fields that a server error set to null |
 | `imagedata.py` | `decode_image`, which decodes a whole image download for `cache.py` or returns None for broken data |
 | `savefiles.py` | `save_each`, which runs the saves after an inventory fetch and reports a failed one instead of raising, and `UnsavedChanges`, which writes a file only when it has a change not saved yet |
+| `settingsdata.py` | `drop_non_text_items`, which removes the items that are not strings from the list and set settings at load |
 | `ratelimit.py` | `RateLimiter`, which limits how many GQL requests start in any second and how many are open at once |
 | `instancelock.py` | `lock_file`, the lock on `lock.file` that lets one copy of the app run per folder |
 | `mousewheel.py` | `wheel_events` and `wheel_scroll`, which read a mouse wheel turn on each windowing system |

@@ -71,4 +71,5 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [ratelimit.md](modules/ratelimit.md) | `RateLimiter`: at most 5 GQL requests start in any second and at most 5 are open |
 | [instancelock.md](modules/instancelock.md) | `lock_file`: the lock on `lock.file`, and the result for a file it cannot open or write |
 | [mousewheel.md](modules/mousewheel.md) | `wheel_events` and `wheel_scroll`: the wheel events of each windowing system and their direction |
+| [settingsdata.md](modules/settingsdata.md) | `drop_non_text_items`: the check that removes items that are not strings from the list and set settings |
 | [gamelib.md](modules/gamelib.md) | The installed game scan, name matching and the list patterns |

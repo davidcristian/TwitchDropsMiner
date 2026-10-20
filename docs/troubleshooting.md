@@ -54,7 +54,9 @@ From source, the same command is `env/bin/python main.py -vvv --log`.
 - **A "Settings error" dialog.** `settings.json` is not valid JSON. Correct the file or delete it. Without it the
   app starts with the default settings, so your lists and game folders are lost. Close the app before you edit
   `settings.json`, because the app writes the file when it closes. Without a message, the app drops a setting
-  with an unknown name and resets a value of the wrong type to its default.
+  with an unknown name and resets a value of the wrong type to its default. It removes an entry that is not text,
+  such as a number, from the Priority, Exclude and game folder lists, and prints a warning for each to the
+  terminal it was started from.
 - **An "Argument Parser Error" dialog.** The app was started with a flag it does not know. Check the shortcut or
   the command against the table above. After `--version`, this dialog shows the version and is not an error
   ([task 025](refinements/tasks/025-version-and-help-shown-as-error.md)).

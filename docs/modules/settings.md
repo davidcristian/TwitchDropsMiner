@@ -72,9 +72,18 @@ widget and is changed only by the app or by editing the file.
    whose type is not exactly the type of the default is replaced by the default, and a missing key gets the
    default. All three happen without a message.
 
-The type check compares `type(value)` with `type(default)`, so `1` for a `bool` is reset to the default, and the
-items of a list or set are not checked. A value saved as `{"__type": ..., "data": ...}` with a `__type` that
-`utils.SERIALIZE_ENV` does not name is removed and then refilled with the default.
+The type check compares `type(value)` with `type(default)`, so `1` for a `bool` is reset to the default. A value
+saved as `{"__type": ..., "data": ...}` with a `__type` that `utils.SERIALIZE_ENV` does not name is removed and
+then refilled with the default.
+
+The merge does not check the items of a list or set. `Settings.__init__` then removes each item that is not a
+string from the list and set settings through `drop_non_text_items` ([settingsdata.md](settingsdata.md)), and
+logs a warning for each one. Without that, a number in `exclude` makes `SettingsPanel` raise `TypeError` while
+the window is built, and one in `priority` makes `compile_patterns` raise. An item is removed rather than
+converted to a string, because a number or a nested list names no game or folder. `Settings` is created before
+`main()` sets up logging, so the `logging.lastResort` handler of Python prints the warning to stderr, which a
+run from a terminal shows. The Output box and `log.txt` do not show it. The file keeps the removed items until a
+change to the settings is saved.
 
 Some values with the right type are corrected later. `SettingsPanel.__init__` sets a `refresh_interval` that is
 not in its list to 5, a `restart_delay` that is not in its list to 10, and an unknown `priority_mode` to
@@ -102,9 +111,12 @@ A `set`, `URL`, `Enum` or `datetime` value is written as `{"__type": <class name
 - A new type of setting value needs a branch in `utils._serialize` and an entry in `SERIALIZE_ENV`. Without the
   branch, `json_save` raises `TypeError`. Without the entry, the saved value is dropped and reset to the default
   on the next start.
+- Every list and set setting holds strings. A list or set setting with items of another type needs a change to
+  `drop_non_text_items`, which would otherwise remove all its items at load.
 - A default changed in `default_settings` for `refresh_interval` or `restart_delay` is changed in
   `SettingsPanel.__init__` too, which repeats the defaults 5 and 10
   ([task 026](../refinements/tasks/026-settings-defaults-written-twice.md)).
 
-**Dependencies.** Repo modules: `utils` (`json_load`, `json_save`), `savefiles` (`UnsavedChanges`), `constants`
-(`SETTINGS_PATH`, `DEFAULT_LANG`, `PriorityMode`), and `main` for type checking only. Third-party: `yarl`.
+**Dependencies.** Repo modules: `utils` (`json_load`, `json_save`), `savefiles` (`UnsavedChanges`),
+`settingsdata` (`drop_non_text_items`), `constants` (`SETTINGS_PATH`, `DEFAULT_LANG`, `PriorityMode`), and `main`
+for type checking only. Third-party: `yarl`.

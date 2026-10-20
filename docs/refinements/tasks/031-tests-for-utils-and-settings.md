@@ -40,3 +40,6 @@ Twitch requests: none.
   `tests/test_ratelimit.py` tests, so it left the `utils` candidate.
 - 2026-10-20: `lock_file` moved from `utils.py` to the new module `instancelock.py`, which
   `tests/test_instancelock.py` tests.
+- 2026-10-21: The check that removes the items that are not strings from the list and set settings after the
+  load is in the new module `settingsdata.py`, which `tests/test_settingsdata.py` tests. `json_load`,
+  `json_save` and `merge_json` still have no tests.
