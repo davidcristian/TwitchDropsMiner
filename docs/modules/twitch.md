@@ -216,6 +216,9 @@ once while it persists ([gamelib.md](gamelib.md)).
   clear `_campaigns` ([task 027](../refinements/tasks/027-campaigns-never-cleared.md)). A new field filled
   during a run must be cleared there.
 - `channels` stays within `MAX_CHANNELS` ([websocket.md](websocket.md#the-199-channel-limit)).
+- `CHANNELS_FETCH` keeps the old channels in `channels` during its requests and replaces them after the last
+  one, with no `await` in between. So `process_stream_state` and `process_stream_update` find the channel of an
+  event that arrives during the requests, and a `stream-down` for the watched channel still makes the app switch.
 
 **Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `gqldata`, `translate`, `redact`,
 `savefiles`, `exceptions`, `utils` and `constants`. Third party: aiohttp and yarl.

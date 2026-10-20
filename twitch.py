@@ -719,10 +719,9 @@ class Twitch:
                     self.change_state(State.IDLE)
             elif self._state is State.CHANNELS_FETCH:
                 self.gui.status.update(_("gui", "status", "gathering"))
-                # start with all current channels, clear the memory
+                # start with all current channels
                 # NOTE: the GUI list is only rebuilt further below, and only if needed
                 new_channels: set[Channel] = set(channels.values())
-                channels.clear()
                 # gather and add ACL channels from campaigns
                 # NOTE: we consider only campaigns that can be progressed
                 # NOTE: we use another set so that we can set them online separately
@@ -762,7 +761,7 @@ class Twitch:
                 to_remove_channels = ordered_channels[MAX_CHANNELS:]
                 ordered_channels = ordered_channels[:MAX_CHANNELS]
                 if to_remove_channels:
-                    # tracked channels were cleared earlier, and the gui list is rebuilt below,
+                    # the tracked channels and the gui list are replaced below,
                     # so just make sure to unsubscribe from their topics
                     to_remove_topics = []
                     for channel in to_remove_channels:
@@ -784,6 +783,9 @@ class Twitch:
                     gui_selection = self.gui.channels.get_selection()
                     self.gui.channels.clear()
                 # set our new channel list
+                # NOTE: a stream event during the awaits above looks up its channel in this map,
+                # so the old channels stay in it until no await is left
+                channels.clear()
                 for channel in ordered_channels:
                     channels[channel.id] = channel
                     channel.display(add=True)
