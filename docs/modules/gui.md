@@ -167,7 +167,10 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
   ends the scan, and the record does not reach the Output box
   ([task 021](../refinements/tasks/021-scan-thread-logs-into-tk.md)).
 - A Tk callback returns quickly and starts a task for slow work. The window and the miner share one thread, so a
-  slow callback stops both.
+  slow callback stops both. One callback breaks this rule: `SettingsPanel.game_dir_add` calls
+  `filedialog.askdirectory`, which returns only when the folder dialog closes. While it is open no task runs, so
+  the miner sends no watch request or PubSub ping and the countdown stops. Tk has no folder dialog that returns
+  at once ([task 042](../refinements/tasks/042-folder-dialog-stops-the-miner.md)).
 - Widget text comes from `_()`, except for the hard-coded strings that
   [task 014](../refinements/tasks/014-hard-coded-strings.md) lists, such as the "Language" label. Widgets read
   it when they are built, so a language change needs a restart. `SettingsPanel` reads its choice names in
