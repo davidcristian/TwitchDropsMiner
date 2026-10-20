@@ -135,6 +135,7 @@ def match_games(
 ) -> list[GameMatch]:
     """
     Pairs installed games with the Twitch games that have campaigns, keeping only clear matches.
+    Each Twitch name comes once, with its strongest match.
     """
     # build the lookup of Twitch names, keeping every name variant
     exact_lookup: dict[str, set[str]] = defaultdict(set)
@@ -149,16 +150,20 @@ def match_games(
         for variant in _variants(normalized):
             variant_lookup[variant].add(game_name)
 
-    matches: list[GameMatch] = []
+    # Two installed copies of a game, as from Steam and Epic, match the same Twitch name.
+    # MatchKind lists the strongest kind first, and a tie keeps the higher ratio, then the first copy.
+    best: dict[str, GameMatch] = {}
     for local in local_games:
         local_normalized = normalize(local.name)
         if not local_normalized:
             continue
         match = _match_one(local, local_normalized, exact_lookup, variant_lookup, normalized_names)
-        if match is not None:
-            matches.append(match)
-    matches.sort(key=lambda m: m.game_name.lower())
-    return matches
+        if match is None:
+            continue
+        kept = best.get(match.game_name)
+        if kept is None or (match.kind.value, -match.ratio) < (kept.kind.value, -kept.ratio):
+            best[match.game_name] = match
+    return sorted(best.values(), key=lambda m: m.game_name.lower())
 
 
 def _match_one(

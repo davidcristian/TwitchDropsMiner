@@ -140,11 +140,10 @@ The Output box shows `Game scan: No Steam or Epic games found in: ...` when a fo
 launcher's manifests folder holds a game, or a Legendary or Heroic index exists, every folder counts as an Epic
 folder, so the line does not appear. A line `Game scan: <path>: <reason>` names a folder, or a Steam library
 that `libraryfolders.vdf` lists, that the app could not read, for example because the user may not open it. The
-other folders and libraries are still scanned. The Detected
-Games section shows how many installed games matched a game with a campaign. Only games with a campaign can
-match, and a name that is not a clear match is left out. A name shown with `≈` was not an exact match; when it is
-the wrong game, add that game to the Exclude list. When an installed game is missing, add it to the Priority
-list by hand.
+other folders and libraries are still scanned. The Detected Games section lists the games with a campaign that an
+installed game matched, each once even when two launchers installed it. Only games with a campaign can match, and
+a name that is not a clear match is left out. A name shown with `≈` was not an exact match; when it is the wrong
+game, add that game to the Exclude list. When an installed game is missing, add it to the Priority list by hand.
 
 ## The tray icon on Linux
 

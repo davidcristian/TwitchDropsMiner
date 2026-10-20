@@ -39,7 +39,7 @@ explains the detection design and [ADR-0005](../adr/ADR-0005-list-patterns.md) t
 | `scan_steam(directory, result)`, `scan_epic(directory, result, indexes=None)` | Whether the folder looked like that kind of install. Games are added to `result`. `indexes` defaults to `launcher_indexes` for the running platform |
 | `launcher_indexes(platform, environ, home)` | The `LauncherIndexes` for a `sys.platform` value, an environment and a home folder ([Launcher indexes](#launcher-indexes)) |
 | `normalize(name)` | The comparable form of a name ([Matching rules](#matching-rules)) |
-| `match_games(local_games, game_names)` | A `GameMatch` for each local game with one clear Twitch match, sorted by Twitch name |
+| `match_games(local_games, game_names)` | One `GameMatch` for each Twitch name that a local game clearly matches, sorted by Twitch name ([Matching rules](#matching-rules)) |
 | `compile_pattern(text)`, `compile_patterns(entries)` | A compiled list entry, or one per entry. `compile_pattern` keeps the 256 most recently used in an `lru_cache` |
 | `matches(pattern, game_name)`, `any_match(patterns, game_name)` | Whether one entry, or any entry, covers the name |
 | `match_rank(patterns, game_name)` | The index of the first entry that covers the name, or `None` |
@@ -170,6 +170,12 @@ A step that finds more than one Twitch name gives no match, and the next step is
 also dropped when a second Twitch name reaches the threshold. For example, a local `Halo Infinite` gets no match
 when the inventory has both `Halo Infinite` and `Halo: Infinite`. The GUI shows a match that is not `EXACT` with
 `≈` before its name in the Detected Games list.
+
+Two local games can match the same Twitch name, such as `Fortnite` from Steam and from Epic, or
+`Grand Theft Auto V` and its Premium Edition. `match_games` returns that name once, with the strongest match:
+`EXACT` before `VARIANT` before `FUZZY`, then the higher ratio, then the first in `local_games`. The Detected Games
+list therefore shows each name once, with `≈` only when no local game matched it exactly, and its count is the
+number of names.
 
 ## Patterns
 

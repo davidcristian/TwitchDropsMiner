@@ -63,7 +63,9 @@ a game the user never chose. A missed match costs little, because the user can s
 
    The numeric token check separates a sequel from its prequel: an installed `Counter-Strike 2` gets no match
    against a campaign for `Counter-Strike`, and `Grand Theft Auto V` none against `Grand Theft Auto`. The Detected
-   Games list marks a variant or fuzzy match with `≈`, so a wrong one is easy to find.
+   Games list marks a variant or fuzzy match with `≈`, so a wrong one is easy to find. When two installed games
+   match one Twitch name, as `Fortnite` from Steam and from Epic, `match_games` returns the name once with the
+   strongest match, so the list shows it once and marks it only when no match was exact.
 
    An edition word is removed because Twitch usually lists a re-release such as a Game of the Year Edition
    under the plain name. A collection or a remaster is usually listed under its full name, and its plain name

@@ -117,6 +117,28 @@ def test_match_games_counts_a_repeated_twitch_name_once():
     assert match_one("Warframe", ["Warframe", "Warframe"]) == [("Warframe", MatchKind.EXACT)]
 
 
+def test_match_games_returns_a_twitch_name_that_two_installed_games_match_once():
+    steam, epic = LocalGame("Fortnite", Platform.STEAM), LocalGame("Fortnite", Platform.EPIC)
+    assert match_games([steam, epic], ["Fortnite"]) == [GameMatch("Fortnite", steam, MatchKind.EXACT)]
+
+
+@pytest.mark.parametrize(
+    ("local_names", "kept", "kind"),
+    [
+        (["Grand Theft Auto 5", "Grand Theft Auto V: Premium Edition", "Grand Theft Auto V"], 2, MatchKind.EXACT),
+        (["Grand Theft Auto V", "Grand Theft Auto V: Premium Edition", "Grand Theft Auto 5"], 0, MatchKind.EXACT),
+        (["Grand Theft Auto 5", "Grand Theft Auto V: Premium Edition"], 1, MatchKind.VARIANT),
+        (["Stardew Valey", "Stardew Vallley"], 1, MatchKind.FUZZY),
+        (["Stardew Vallley", "Stardew Valey"], 0, MatchKind.FUZZY),
+    ],
+    ids=["exact last", "exact first", "variant before fuzzy", "higher ratio last", "higher ratio first"],
+)
+def test_match_games_keeps_the_strongest_match_of_a_twitch_name(local_names, kept, kind):
+    local_games = [LocalGame(name, Platform.STEAM) for name in local_names]
+    [match] = match_games(local_games, ["Grand Theft Auto V", "Stardew Valley"])
+    assert (match.local, match.kind) == (local_games[kept], kind)
+
+
 def test_match_games_pairs_a_close_long_name_as_fuzzy_with_its_ratio():
     local = LocalGame("Stardew Valey", Platform.STEAM)
     [match] = match_games([local], ["Stardew Valley", "Star Wars Outlaws"])
