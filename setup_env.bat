@@ -4,16 +4,6 @@ REM Get the directory path of the script
 set "dirpath=%~dp0"
 if "%dirpath:~-1%" == "\" set "dirpath=%dirpath:~0,-1%"
 
-REM Check if git is installed
-git --version > nul 2>&1
-if %errorlevel% NEQ 0 (
-    echo:
-    echo No git executable found in PATH!
-    echo:
-    pause
-    exit /b 1
-)
-
 REM Create the virtual environment if it doesn't exist
 if not exist "%dirpath%\env" (
     echo:

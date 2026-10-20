@@ -2,15 +2,6 @@
 
 dirpath=$(dirname "$(readlink -f "$0")")
 
-# Check if git is installed
-if ! command -v git &> /dev/null; then
-    echo
-    echo "No git executable found in PATH!"
-    echo
-    read -p "Press any key to continue..."
-    exit 1
-fi
-
 # Check if the virtual environment exists
 if [ ! -d "$dirpath/env" ]; then
     echo

@@ -8,7 +8,6 @@ is the reference when this page and a build disagree. For problems while running
 ## Requirements
 
 - Python 3.10 or newer. CI builds with Python 3.10, and `main.py` stops on an older version.
-- `git` in `PATH`. Both setup scripts stop without it.
 - On Debian and Ubuntu, `python3 -m venv` needs the `python3-venv` package.
 - On Linux, `tkinter` and the tray icon libraries come from system packages. CI installs these on Ubuntu 22.04:
 
@@ -24,9 +23,8 @@ is the reference when this page and a build disagree. For problems while running
 
 Run `setup_env.bat` on Windows or `./setup_env.sh` on Linux and macOS. The script:
 
-1. checks that `git` is in `PATH`;
-2. creates the `env/` virtual environment if it does not exist, with `python` on Windows and `python3` elsewhere;
-3. upgrades pip, then installs `wheel` and everything in `requirements.txt` into `env/`.
+1. creates the `env/` virtual environment if it does not exist, with `python` on Windows and `python3` elsewhere;
+2. upgrades pip, then installs `wheel` and everything in `requirements.txt` into `env/`.
 
 Run the script again after `requirements.txt` changes. It keeps the existing `env/` and installs the new packages.
 
