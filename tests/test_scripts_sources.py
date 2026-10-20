@@ -265,12 +265,12 @@ def test_prose_runs_reads_every_line_of_a_python_file_that_does_not_parse(name, 
     assert prose_runs(name, text) == [[(1, first), (2, second)]]
 
 
-def test_prose_runs_reads_every_line_of_a_python_file_that_does_not_tokenize(monkeypatch):
-    def python_prose(name, source):
-        raise tokenize.TokenError("EOF in multi-line statement", (2, 0))
-
-    monkeypatch.setattr(sources, "python_prose", python_prose)
-    assert prose_runs("tool.py", "x = 1\n# Note.\n") == [[(1, "x = 1"), (2, "# Note.")]]
+def test_prose_runs_reads_every_line_of_a_python_file_that_does_not_tokenize():
+    # Python 3.10 and 3.11 parse this last lone backslash and tokenize rejects it; Python 3.12 does not parse it
+    text = "x = 1\r\n# Note.\r\n\\\r\n"
+    with pytest.raises(tokenize.TokenError if sys.version_info < (3, 12) else SyntaxError):
+        python_prose("tool.py", text)
+    assert prose_runs("tool.py", text) == [[(1, "x = 1"), (2, "# Note."), (3, "\\")]]
 
 
 # A new interpreter has loaded no module of scripts/ yet, so it shows what importing one script loads.
