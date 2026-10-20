@@ -41,7 +41,7 @@ def block_problems(name: str, source: str) -> list[Problem]:
         long_runs: list[list[Line]] = [run for run in comment_runs(source) if len(run) > MAX_BLOCK_LINES]
     except (SyntaxError, tokenize.TokenError):
         # syntaxcheck.py reports a file that does not parse. tokenize rejects some files that do parse,
-        # such as one with only CR line endings in Python 3.12, and this check skips those.
+        # such as one that ends in a backslash and a CRLF in Python 3.10, and this check skips those.
         return []
     problems = [
         Problem(name, run[0][0], f"comment block of {len(run)} lines; the limit is {MAX_BLOCK_LINES}")

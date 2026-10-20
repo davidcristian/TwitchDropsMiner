@@ -110,16 +110,19 @@ def test_block_problems_reads_a_file_that_starts_with_a_utf8_bom():
     ]
 
 
-@pytest.mark.parametrize(
-    "source",
-    ["import os\r\r# a\r# b\rx = 1\r", "x = 1\r\n\\\r\n"],
-    ids=[
-        "only CR line endings, as Python 3.12 reads them",
-        "CRLF and a last lone backslash, as Python 3.10 reads them",
-    ],
-)
-def test_block_problems_returns_nothing_when_tokenize_rejects_a_file_that_ast_parse_accepts(source):
-    assert prosecheck.block_problems("tool.py", source) == []
+def test_block_problems_returns_nothing_when_tokenize_rejects_a_file_that_ast_parse_accepts():
+    # Python 3.10 and 3.11 parse this last lone backslash and tokenize rejects it; Python 3.12 does not parse it
+    assert prosecheck.block_problems("tool.py", "x = 1\r\n\\\r\n") == []
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r\n", "\r"], ids=["LF", "CRLF", "CR"])
+def test_check_reads_the_comments_of_a_python_file_with_any_line_ending_at_their_lines(tmp_path, newline):
+    source = newline.join(["x = 1", f"# a {SEAM}", "# b", "# c", "# d", "y = 2", ""])
+    root = make_repo(tmp_path, {"AGENTS.md": AGENTS, "tool.py": source.encode()})
+    assert prosecheck.check(root) == (2, [
+        banned("tool.py", 2, SEAM),
+        Problem("tool.py", 2, "comment block of 4 lines; the limit is 3"),
+    ])
 
 
 def test_check_reads_only_the_comments_and_docstrings_of_a_python_file_saved_with_a_bom(tmp_path):

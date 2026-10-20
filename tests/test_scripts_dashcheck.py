@@ -95,6 +95,10 @@ def test_dash_problems_reads_only_the_comments_and_docstrings_of_python_code():
     assert sorted(problems) == [Problem("tool.py", 2, SPACED), Problem("tool.py", 3, SPACED)]
 
 
+def test_dash_problems_reads_the_comments_of_a_python_file_with_only_cr_line_endings_at_their_lines():
+    assert dashcheck.dash_problems("tool.py", "x = 1\r# one -- two\ry = a -- b\r") == [Problem("tool.py", 2, SPACED)]
+
+
 def test_dash_problems_reads_every_line_of_a_txt_file():
     assert dashcheck.dash_problems("notes.txt", "a -- b\n") == [Problem("notes.txt", 1, SPACED)]
 

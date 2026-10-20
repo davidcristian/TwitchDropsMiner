@@ -120,7 +120,8 @@ def comment_runs(source: str) -> list[list[Line]]:
     """Return the comments of a Python source, consecutive full-line comments grouped in one run."""
     runs: list[list[Line]] = []
     previous_full = -2
-    for token in tokenize.generate_tokens(io.StringIO(source).readline):
+    # newline=None also ends a line at a lone CR, as ast.parse does, so that the line numbers agree.
+    for token in tokenize.generate_tokens(io.StringIO(source, newline=None).readline):
         if token.type != tokenize.COMMENT:
             continue
         number = token.start[0]
