@@ -377,6 +377,7 @@ class Twitch:
             self._session = None
         self._drops.clear()
         self.channels.clear()
+        self.gui.channels.clear()
         self.inventory.clear()
         self._auth_state.clear()
         self.wanted_games.clear()

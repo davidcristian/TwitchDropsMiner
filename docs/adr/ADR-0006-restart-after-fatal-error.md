@@ -34,8 +34,8 @@ all reconnect at the same moment.
 4. **Closing the window during the wait exits at once.** The wait is
    `asyncio.wait_for(self.gui.wait_until_closed(), ...)`, so it ends when the user closes the window, and
    `Twitch.run` leaves its loop when `gui.close_requested` is set. During the wait the tray icon is `error`,
-   the Status box shows `Restarting at {time}`, and the Output box shows
-   `Restarting automatically at {time}...`.
+   the Status box shows `Restarting at {time}`, the Output box shows
+   `Restarting automatically at {time}...`, and the channel list is empty.
 
 5. **Never stops on the error.** With `restart_delay` set to `0`, `_await_restart` returns `False` and
    `Twitch.run` raises the error. `main.py` prints it, shows "Terminated" and keeps the window open until the
@@ -56,6 +56,9 @@ all reconnect at the same moment.
   keeps every campaign fetched since the app started
   ([027](../refinements/tasks/027-campaigns-never-cleared.md)). `shutdown` also clears `_no_channel_printed`
   and `_scan_errors_printed`, so the next run prints those messages again.
+- `shutdown` also empties the channel list in the window. A row left from the old run would show a status that
+  no longer changes, and would keep its old `Channel` for `get_selection()` until a `CHANNELS_FETCH` replaces
+  it. A selection made before the error is lost, as it is after a fresh start.
 - Only `Exception` subclasses restart the run. `ExitRequest` ends it, and `ReloadRequest` restarts it at once.
 - An exception in a critical task (`_watch_loop`, `_maintenance_task` or `Websocket._handle`) does not leave
   `_run`. `task_wrapper` calls `Twitch.close`, so the app stops without a restart

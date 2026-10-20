@@ -1016,6 +1016,9 @@ class ChannelList:
         if channel.viewers is not None:
             viewers = str(channel.viewers)
         if iid in self._channel_map:
+            if add:
+                # get_selection returns the stored object, so keep the one the caller passes now
+                self._channel_map[iid] = channel
             self._set(iid, "game", game)
             self._set(iid, "drops", drops)
             self._set(iid, "status", status)

@@ -28,7 +28,9 @@ from [translate.md](translate.md).
 
 - **`ChannelList`** has the columns Channel, Status, Game, 🎁 (drops enabled), Viewers and 📋 (the channel is on a
   campaign's list of allowed channels). "Switch" sends `State.CHANNEL_SWITCH`. `Twitch` then reads
-  `get_selection()` and watches the selected channel when `Twitch.can_watch` allows it.
+  `get_selection()` and watches the selected channel when `Twitch.can_watch` allows it. `display(channel,
+  add=True)` adds a row, or updates the row with the same `iid` and stores the new object for it, so
+  `get_selection()` returns the object that `Twitch.channels` holds and not an older one with the same `id`.
 - **`CampaignProgress`** counts down the current minute in its own `_timer_loop` task, one step per second.
   `minute_almost_done()` returns `True` when no countdown runs or `ALMOST_DONE_SECONDS` (10) or fewer are left;
   `Twitch._watch_loop` calls it to decide whether to send the `CurrentDrop` GQL query.
