@@ -13,17 +13,17 @@ for the split now.
 
 | Module | Lines |
 | --- | --- |
-| `gui.py` | 3215 |
-| `twitch.py` | 1639 |
-| `translate.py` | 588 |
+| `gui.py` | 3218 |
+| `twitch.py` | 1625 |
+| `translate.py` | 590 |
 | `constants.py` | 519 |
-| `inventory.py` | 504 |
-| `channel.py` | 492 |
-| `utils.py` | 458 |
-| `websocket.py` | 410 |
+| `inventory.py` | 506 |
+| `channel.py` | 505 |
+| `utils.py` | 413 |
+| `websocket.py` | 404 |
 
-`main.py` (203), `cache.py` (142), `settings.py` (113), `registry.py` (112), `exceptions.py` (71) and every
-module in `gamelib/` (at most 200) are under the cap.
+`main.py` (203), `cache.py` (147), `settings.py` (113), `registry.py` (112), `exceptions.py` (71) and every
+module in `gamelib/` (at most 225) are under the cap.
 
 ## Split points
 
@@ -58,8 +58,8 @@ Line counts are of the class or block today.
   in another.
 - **`channel.py`**: `Stream` (131) and `Channel` (332). `Channel` stays over the cap after that split.
 - **`utils.py`**: four groups. The JSON helpers (`json_load`, `json_save`, `merge_json` and the private
-  helpers they call), `ExponentialBackoff` with `RateLimiter`, `Game`, and the task helpers such as
-  `task_wrapper` and `first_to_complete`.
+  helpers they call), `ExponentialBackoff`, `Game`, and the task helpers such as `task_wrapper` and
+  `first_to_complete`.
 - **`websocket.py`**: `Websocket` (299) and `WebsocketPool` (69).
 
 A split changes imports in other modules, and `gui.py` edits follow the AGENTS.md recipe for repeated lines. A
@@ -76,3 +76,5 @@ Splits cost no Twitch requests.
   `translate.py`, `constants.py`, `main.py` and `exceptions.py`.
 - 2026-10-20: Measured again after the websocket reconnect wait, which lengthened `websocket.py` and
   `constants.py`. The new module `reconnect.py` holds the logic of the wait.
+- 2026-10-20: Measured the modules again after `RateLimiter` moved from `utils.py` to the new module
+  `ratelimit.py`.

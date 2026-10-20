@@ -20,6 +20,7 @@ import gamelib
 from translate import _
 from redact import redact
 from savefiles import save_each
+from ratelimit import RateLimiter
 from gui import GUIManager
 from channel import Channel
 from websocket import WebsocketPool
@@ -47,7 +48,6 @@ from utils import (
     timestamp,
     create_nonce,
     task_wrapper,
-    RateLimiter,
     AwaitableValue,
     ExponentialBackoff,
 )

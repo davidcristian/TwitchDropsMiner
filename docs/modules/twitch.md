@@ -74,10 +74,9 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
 ## GQL requests
 
 Every GQL request in the app goes through `gql_request`. Each POST takes a slot in `_qgl_limiter`, a
-`RateLimiter(capacity=5, window=1)` from [utils.md](utils.md): at most 5 POSTs start in each 1 second window,
-which begins with the first POST after a reset, and at most 5 run at the same time. A list of operations is one
-POST, so a batch of 20 takes one slot. The code comment on the limiter says not to change these values
-([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)).
+`RateLimiter(capacity=5, window=1)` from [ratelimit.md](ratelimit.md): at most 5 POSTs start in any span of 1
+second, and at most 5 run at the same time. A list of operations is one POST, so a batch of 20 takes one slot.
+The code comment on the limiter says not to change these values ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)).
 
 | Error message in the response | What `gql_request` does |
 | --- | --- |
@@ -228,4 +227,4 @@ once while it persists ([gamelib.md](gamelib.md)).
   event that arrives during the requests, and a `stream-down` for the watched channel still makes the app switch.
 
 **Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `gqldata`, `translate`, `redact`,
-`savefiles`, `exceptions`, `utils` and `constants`. Third party: aiohttp and yarl.
+`savefiles`, `ratelimit`, `exceptions`, `utils` and `constants`. Third party: aiohttp and yarl.

@@ -1,6 +1,6 @@
 # ADR-0002: The Twitch traffic budget
 
-**Status:** Accepted (2026-10-18)
+**Status:** Accepted (2026-10-20)
 
 ## Context
 
@@ -27,8 +27,8 @@ nor allow setting it such".
 
 1. **Every GQL request goes through `Twitch.gql_request`.** It is the only code that posts to the GQL endpoint.
    Each pass of its retry loop enters `Twitch._qgl_limiter`, which `Twitch.__init__` builds as
-   `RateLimiter(capacity=5, window=1)` (`utils.py`). At most 5 entries start in each 1-second window, and at
-   most 5 are in flight at once. `Twitch.request` retries a status of 500 or more, or a connection error,
+   `RateLimiter(capacity=5, window=1)` (`ratelimit.py`). At most 5 entries start in any span of 1 second, and
+   at most 5 are in flight at once. `Twitch.request` retries a status of 500 or more, or a connection error,
    inside the same entry, so the limiter does not count those retries. One entry point means no caller can
    send GQL outside the limit. The comment at the constructor says that GQL "breaks everything if one runs
    into their rate limit".
@@ -109,12 +109,15 @@ matches the maintainer's figure of 2500.
   requests.
 - **A higher limit than 5 requests per second.** The code comment at the limiter asks to keep the safe default,
   and nothing measures how close 5 per second is to Twitch's own limit.
+- **Fixed windows of 1 second, each opened by the first request after the last one closed.** Requests at the end
+  of one window and the start of the next add up to 9 starts within one second. The limiter keeps the start
+  times of the last 5 requests instead, which gives the same average of 5 per second.
 
 ## Related
 
 - [ADR-0003](ADR-0003-stream-refresh.md): the stream refresh that re-enters the channel fetch.
 - [ADR-0006](ADR-0006-restart-after-fatal-error.md): the restart that runs `_run` again.
-- [twitch.md](../modules/twitch.md), [utils.md](../modules/utils.md), [channel.md](../modules/channel.md),
-  [constants.md](../modules/constants.md), [cache.md](../modules/cache.md).
+- [twitch.md](../modules/twitch.md), [ratelimit.md](../modules/ratelimit.md), [utils.md](../modules/utils.md),
+  [channel.md](../modules/channel.md), [constants.md](../modules/constants.md), [cache.md](../modules/cache.md).
 - [The one hard rule](../../AGENTS.md#the-one-hard-rule) in AGENTS.md and
   [Project goals](../../README.md#project-goals) in the README.

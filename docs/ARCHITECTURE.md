@@ -131,7 +131,7 @@ tab. [ADR-0002](adr/ADR-0002-twitch-traffic-budget.md) sets the request budget.
 
 | Kind | Sent by | Sent to | Limits and retries |
 | --- | --- | --- | --- |
-| GQL, Twitch's GraphQL API | `Twitch.gql_request`, with the operations and hashes in `GQL_QUERIES` ([runbook](runbooks/gql-operations.md)) | `https://gql.twitch.tv/gql` | `RateLimiter(capacity=5, window=1)`: at most 5 POSTs start in each 1-second window, which opens with the first POST after the last window ended, and at most 5 are open. A batch of operations is one POST. Retries with backoff up to 60 seconds. |
+| GQL, Twitch's GraphQL API | `Twitch.gql_request`, with the operations and hashes in `GQL_QUERIES` ([runbook](runbooks/gql-operations.md)) | `https://gql.twitch.tv/gql` | `RateLimiter(capacity=5, window=1)`: at most 5 POSTs start in any span of 1 second, and at most 5 are open. A batch of operations is one POST. Retries with backoff up to 60 seconds. |
 | HTTP | `Twitch.request` | `id.twitch.tv` (login, `Invalidate`), `www.twitch.tv`, `usher.ttvnw.net`, the stream playlist and its segment URLs, image URLs from campaign data (`ImageCache`) | No rate limit. Retries a 5xx status or a connection error with backoff up to 3 minutes. |
 | PubSub | `Websocket` | `wss://pubsub-edge.twitch.tv/v1` | Up to `MAX_WEBSOCKETS` (8) connections with up to `WS_TOPICS_LIMIT` (50) topics each. `LISTEN` and `UNLISTEN` go in groups of 20 topics. A `PING` every `PING_INTERVAL` (3 minutes); a connection with no `PONG` within `PING_TIMEOUT` (10 seconds) reconnects. |
 

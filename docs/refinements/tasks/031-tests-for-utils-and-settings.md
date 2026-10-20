@@ -4,14 +4,12 @@
 **Area:** utils, settings, tests
 **Origin:** [ADR-0013](../../adr/ADR-0013-test-standard.md), and the candidates of
 [task 003](003-test-suite.md)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-20
 
-The test suite covers `redact`, `gamelib` and `scripts/`. Two candidates of task 003 are left: the helpers in
-`utils.py` and the loading of `settings.json`.
+The test suite covers `redact`, `reconnect`, `gamelib`, `gqldata`, `imagedata`, `savefiles`, `ratelimit` and
+`scripts/`. Two candidates of task 003 are left: the helpers in `utils.py` and the loading of `settings.json`.
 
-- **`utils`**: `chunk`, `deduplicate`, `ExponentialBackoff`, `Game.slug`, and `RateLimiter`, which enforces the 5
-  GQL requests per second of [ADR-0002](../../adr/ADR-0002-twitch-traffic-budget.md). A test of `RateLimiter`
-  enters it six times within one window and asserts that the sixth waits.
+- **`utils`**: `chunk`, `deduplicate`, `ExponentialBackoff` and `Game.slug`.
 - **Settings loading**: `json_load`, `json_save` and `merge_json` in `utils`, with `default_settings` from
   `settings`. `Settings.__init__` reads the fixed `SETTINGS_PATH`, so a test calls
   `json_load(path, default_settings)` with a temporary path. For example, a saved file with
@@ -27,10 +25,9 @@ them:
 - **Install `requirements.txt` in the Validate job.** On Ubuntu that needs the system packages that
   [building.md](../../building.md#requirements) lists, because pip builds PyGObject from source, and a Python
   with `tkinter`. The tests then need no change to the code.
-- **Split `utils.py` first** ([task 005](005-modules-over-the-line-cap.md)). The JSON helpers, `RateLimiter`
-  with `ExponentialBackoff`, and the task helpers need neither `tkinter` nor Pillow, so as modules of their own
-  they can be tested with the standard library and `yarl` alone, and added to the coverage list in
-  `pyproject.toml`.
+- **Split `utils.py` first** ([task 005](005-modules-over-the-line-cap.md)). The JSON helpers,
+  `ExponentialBackoff` and the task helpers need neither `tkinter` nor Pillow, so as modules of their own they
+  can be tested with the standard library and `yarl` alone, and added to the coverage list in `pyproject.toml`.
 
 Twitch requests: none.
 
@@ -38,3 +35,5 @@ Twitch requests: none.
 
 - 2026-10-18: Opened. Task 003 closed with the suite for `redact`, `gamelib` and `scripts/`, and these two
   candidates were left because their imports need `requirements.txt`.
+- 2026-10-20: `RateLimiter` moved from `utils.py` to the new module `ratelimit.py`, which
+  `tests/test_ratelimit.py` tests, so it left the `utils` candidate.

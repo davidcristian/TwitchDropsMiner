@@ -1,10 +1,10 @@
 # `utils.py`
 
-**Purpose.** Holds the helpers that several modules share: reading and writing JSON files, pacing requests
-(`RateLimiter`, `ExponentialBackoff`), running tasks, the `Game` class and small helpers for time, random IDs,
-the single instance lock and the browser. None of them sends a request to Twitch by itself. The module is 458
-lines, over the 300 line soft cap in AGENTS.md
-([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
+**Purpose.** Holds the helpers that several modules share: reading and writing JSON files, the delays between
+retries (`ExponentialBackoff`), running tasks, the `Game` class and small helpers for time, random IDs, the
+single instance lock and the browser. None of them sends a request to Twitch by itself. The module is 413 lines,
+over the 300 line soft cap in AGENTS.md ([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
+`RateLimiter`, which limits the GQL requests, is in [ratelimit.md](ratelimit.md).
 
 ## Public contract
 
@@ -37,16 +37,6 @@ whole file with the newest contents, and `json_load` reads it in place of `path`
 watch payloads, which only uncalled methods read ([channel.md](channel.md#watching)).
 
 ### Request pacing
-
-**`RateLimiter(*, capacity, window)`** is an async context manager. A request may start when both the number
-started in the current window and the number in progress are below `capacity`. The window starts with the first
-request after a reset and lasts `window` seconds. `Twitch.__init__` creates
-`RateLimiter(capacity=5, window=1)`, and `Twitch.gql_request` enters it around each POST. A POST that
-`Twitch.request` sends again after a 5xx status or a connection error stays in the same slot. Callers put up to 20
-operations into one POST with `chunk(ops, 20)`, and a POST counts once. Called with 12 short requests at once,
-it starts them in groups of 5, 5 and 2, one second apart. Called with 7 requests of 2.5 seconds each, it starts 5
-at once and the other 2 when the first ones end. [ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md) explains
-the limit.
 
 **`ExponentialBackoff(*, base=2, variance=0.1, shift=0, maximum=300)`** is an iterator of delays in seconds:
 `base ** steps`, times a random factor between `1 - variance` and `1 + variance` (or the two ends of a tuple),
@@ -104,8 +94,6 @@ empty or includes it (`inventory.py`, `twitch.py`). `inventory.py`, `channel.py`
 
 ## Invariants
 
-- Every GQL request passes through the `RateLimiter` in `Twitch.gql_request`
-  ([AGENTS.md](../../AGENTS.md#the-one-hard-rule)). A GQL request sent another way is not counted.
 - A new type stored in a JSON file needs a branch in `_serialize` (every `Enum` already has one) and an entry in
   `SERIALIZE_ENV`. Without the entry, the key is dropped on load and reset to its default. An `IntEnum` is
   written as a plain number and read back as one.

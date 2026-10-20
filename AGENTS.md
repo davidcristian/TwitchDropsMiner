@@ -19,9 +19,10 @@ under the MIT License ([LICENSE.MIT](LICENSE.MIT)). [ADR-0001](docs/adr/ADR-0001
 ## The one hard rule
 
 **Twitch sees no more traffic than a diligent person would cause.** The app runs on the user's own account, and a
-burst of requests puts that account at risk.
+burst of requests puts that account at risk. [ADR-0002](docs/adr/ADR-0002-twitch-traffic-budget.md) gives the
+request counts this rule rests on.
 
-- Every GQL request goes through `Twitch.gql_request`, where a `RateLimiter` (`utils.py`) allows 5 per second.
+- Every GQL request goes through `Twitch.gql_request`, where a `RateLimiter` (`ratelimit.py`) allows 5 per second.
   Never send GQL another way.
 - A full reload (`State.INVENTORY_FETCH`) can send thousands of GQL operations, batched 20 to a request, when a
   campaign lists many channels. It runs at startup and on every new run (the Invalidate button, a restart after a
@@ -30,8 +31,6 @@ burst of requests puts that account at risk.
 - New periodic work re-enters `State.CHANNELS_CLEANUP`, which moves on to `State.CHANNELS_FETCH` and costs a few
   requests, rather than reloading.
 - A change that adds requests states how many per cycle in its commit body.
-
-[ADR-0002](docs/adr/ADR-0002-twitch-traffic-budget.md) gives the request counts this rule rests on.
 
 ## Module map
 
@@ -46,7 +45,7 @@ burst of requests puts that account at risk.
 | `settings.py` | `settings.json`: the `SettingsFile` type, its defaults, loading and saving |
 | `constants.py` | Paths, intervals, `State`, `PriorityMode`, and the GQL queries with their hashes |
 | `translate.py` | The `Translation` types and the English strings. Other languages are in `lang/` |
-| `utils.py` | JSON helpers, `RateLimiter`, `ExponentialBackoff` and task helpers |
+| `utils.py` | JSON helpers, `ExponentialBackoff` and task helpers |
 | `cache.py` | The image cache for game and drop artwork |
 | `registry.py` | Windows registry access, used for starting with Windows |
 | `exceptions.py` | `MinerException` and its subclasses, including `ExitRequest` and `ReloadRequest` |
@@ -55,6 +54,7 @@ burst of requests puts that account at risk.
 | `gqldata.py` | Reads GQL responses and leaves out the fields that a server error set to null |
 | `imagedata.py` | `decode_image`, which decodes a whole image download for `cache.py` or returns None for broken data |
 | `savefiles.py` | `save_each`, which runs the saves after an inventory fetch and reports a failed one instead of raising |
+| `ratelimit.py` | `RateLimiter`, which limits how many GQL requests start in any second and how many are open at once |
 | `version.py` | `__version__`, to which CI appends the commit hash. Its doc is part of `docs/modules/constants.md` |
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
 | `docs/` | Listed in `docs/index.md`: `ARCHITECTURE.md`, the decisions (`adr/`), one contract doc per module (`modules/`), procedures (`runbooks/`), the deferred work (`refinements/`), and two pages for users, `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |

@@ -59,7 +59,7 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [settings.md](modules/settings.md) | Every `settings.json` key with its type and default, loading and saving |
 | [constants.md](modules/constants.md) | Paths, intervals and limits, `State`, `PriorityMode`, the GQL operations, the client types, and `version.py` |
 | [translate.md](modules/translate.md) | The translation types, `default_translation`, loading `lang/*.json` and the English fallback |
-| [utils.md](modules/utils.md) | JSON loading and saving, `RateLimiter`, `ExponentialBackoff` and the task helpers |
+| [utils.md](modules/utils.md) | JSON loading and saving, `ExponentialBackoff` and the task helpers |
 | [cache.md](modules/cache.md) | `ImageCache`: where images are stored, their expiry and broken data |
 | [registry.md](modules/registry.md) | The Windows registry wrapper and autostart on each OS |
 | [exceptions.md](modules/exceptions.md) | Each exception class, what raises it and what catches it |
@@ -68,4 +68,5 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [gqldata.md](modules/gqldata.md) | `get_field`, `merge_data` and the readers that leave out a field a server error set to null |
 | [imagedata.md](modules/imagedata.md) | `decode_image`: the full decode of an image download, which returns None for broken data |
 | [savefiles.md](modules/savefiles.md) | `save_each`: the saves after an inventory fetch, where a failed save is logged and the run goes on |
+| [ratelimit.md](modules/ratelimit.md) | `RateLimiter`: at most 5 GQL requests start in any second and at most 5 are open |
 | [gamelib.md](modules/gamelib.md) | The installed game scan, name matching and the list patterns |
