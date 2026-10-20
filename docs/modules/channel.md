@@ -63,6 +63,8 @@ These change a channel's status:
 3. `Twitch.process_stream_update` calls `check_online()` for every message on the `broadcast-settings-update`
    topic, to read the new title, game and drops status. The delay groups several changes in a row into one fetch.
 4. `Stream.get_stream_url` calls `set_offline()` when the request for the stream qualities returns an error.
+5. `send_watch` calls `check_online()` when the watched channel's playlist request fails
+   ([Watching](#watching)).
 
 ### After a stream-up event
 
@@ -77,8 +79,9 @@ then calls `update_stream` once. More events during the wait start no second wai
 - Offline to offline: the result is only logged. Nothing checks the channel again until its next websocket
   event, such as a `viewcount`, or until `CHANNELS_FETCH` adds it anew. A tracked ACL channel stays tracked, so
   that happens at the next reload ([task 002](../refinements/tasks/002-online-delay-single-try.md)).
-- Online before the check, after a settings update: when the watched channel can no longer be watched, `Twitch`
-  enters `State.CHANNEL_SWITCH`, and prints "`{channel} goes OFFLINE, switching...`" when the stream ended.
+- Online before the check, after a settings update or a failed playlist request: when the watched channel can
+  no longer be watched, `Twitch` enters `State.CHANNEL_SWITCH`, and prints
+  "`{channel} goes OFFLINE, switching...`" when the stream ended.
   Another channel that is still online is watched when `should_switch` allows it.
 
 ## Bulk check
@@ -101,7 +104,8 @@ extra check.
    comment says is usually the lowest quality, and caches it on the `Stream`. For a JSON response it returns
    None. When that response has an `error` key, the error is logged and the channel is set offline.
 2. A GET of that media playlist with `Connection: close`. A status of 400 or above returns False; the playlist
-   returns 404 once the stream has ended. For a JSON response it also returns False.
+   returns 404 once the stream has ended. `Twitch.request` retries a status of 500 or above, so only a 4xx
+   status gets here. For a JSON response it also returns False.
 3. A HEAD request to each segment URL in the playlist, which is each line that starts with `http`. The code
    comment counts about 15 segments of about 2 seconds each. A status other than 200 returns False.
 
@@ -112,6 +116,21 @@ stream, a cycle sends one GET and about 15 HEAD requests to the hosts the playli
 Two other watch methods remain, and nothing calls them: `_send_watch_spade` POSTs a `minute-watched` event to the
 spade URL that `get_spade_url` reads from the channel page, and `_send_watch_gql` sends the same event with the
 `sendSpadeEvents` GQL mutation ([task 022](../refinements/tasks/022-unused-code.md)).
+
+### A failed playlist request
+
+A missed `stream-down` event leaves an ended stream online in the app. So when the playlist request returns a
+status of 400 or above and no online check waits, `send_watch` also clears the cached URL and calls
+`check_online()`:
+
+- The next cycle sends `PlaybackAccessToken` and the usher GET again. When usher returns an error,
+  `get_stream_url` sets the channel offline, which cancels the check.
+- Otherwise the check sends `GetStreamInfo` 120 seconds later. A response with no stream sets the channel
+  offline. A response with a stream replaces the `Stream`, so the next cycle requests usher once more.
+- While the check waits, a failed playlist request clears nothing, so usher is not requested every cycle. A
+  playlist that fails every cycle while Twitch reports the stream live costs at most 30 `GetStreamInfo`, 60
+  `PlaybackAccessToken` and 60 usher GETs an hour ([ADR-0009](../adr/ADR-0009-watch-method.md#the-cost-of-watching)).
+- Nothing changes when the channel's stream changed during the request, such as after a `stream-down` event.
 
 ## Invariants
 

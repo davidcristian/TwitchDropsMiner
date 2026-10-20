@@ -116,7 +116,9 @@ instead and is not restarted ([task 013](refinements/tasks/013-crashed-task-ends
 7. **Stream changes.** `stream-up`, `broadcast-settings-update` or a viewer count for an offline channel calls
    `Channel.check_online`, which sends `GetStreamInfo` once, after `ONLINE_DELAY` (120 seconds)
    ([task 002](refinements/tasks/002-online-delay-single-try.md)). `stream-down` sets the channel offline at
-   once. Both end in `on_channel_update`.
+   once. Both end in `on_channel_update`. A playlist request that returns a status of 400 or above, which it
+   does once the stream has ended, also calls `check_online` and makes the next cycle request usher again,
+   in case `stream-down` was missed ([channel.md](modules/channel.md#a-failed-playlist-request)).
 8. **Claiming.** A `drop-claim` event contains the drop instance ID, and `TimedDrop.claim` sends `ClaimDrop`.
    Then `process_drops` sends `CurrentDrop` until Twitch reports another drop, at most 8 times, and ends the
    watch loop's wait ([task 028](refinements/tasks/028-watch-restart-dropped.md)) when the campaign continues

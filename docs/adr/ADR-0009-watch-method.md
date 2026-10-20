@@ -1,6 +1,6 @@
 # ADR-0009: Watching by playlist HEAD requests
 
-**Status:** Accepted (2026-10-09)
+**Status:** Accepted (2026-10-20)
 
 ## Context
 
@@ -18,7 +18,7 @@ The original project has switched between these methods five times since 2024-06
 ([task 022](../refinements/tasks/022-unused-code.md#how-it-came-about) lists the commits). The last switch,
 "Change the mining method to playlist HEAD requests" (2026-10-09), made `send_watch` the HEAD method with a
 `HEAD` request for every segment instead of only the last one, and changed `WATCH_INTERVAL` from 59 to 20
-seconds. This project took it unchanged, and no later commit changes `channel.py` or `_watch_loop`.
+seconds. This project took it and added one step: an online check after a failed playlist request.
 None of the five commits has a message body, so the code comments are the only written reasons, quoted below.
 
 ## Decision
@@ -37,6 +37,10 @@ None of the five commits has a message body, so the code comments are the only w
 
    It returns False when the playlist request returns a status of 400 or more or JSON, or at the first
    segment request that returns a status other than 200, and True when every segment returned 200.
+
+   After a playlist status of 400 or more, when no online check waits, it also clears the stored playlist
+   URL and calls `check_online()`. The code comment says the playlist returns 404 once the stream has ended.
+   This step stops a missed `stream-down` event from keeping the app on an ended stream until the next reload.
 
 2. **A cycle starts every `WATCH_INTERVAL`, 20 seconds** (`constants.py`). The `send_watch` docstring says:
    "Optimally, send every ~20 seconds to advance drops." `_watch_loop` notes the time and awaits `send_watch`.
@@ -65,25 +69,36 @@ One cycle, once the `Stream` has its playlist URL, sends:
 
 A new `Stream` object adds 1 `PlaybackAccessToken` query and 1 GET of the usher list. The watched channel gets
 a new `Stream` object when a full reload builds the channel list again, and when `update_stream` runs for it,
-`ONLINE_DELAY` (120 seconds) after a `stream-up` or `broadcast-settings-update` PubSub event
-([channel.md](../modules/channel.md#online-checks)). A stream refresh keeps each tracked `Channel` object that
-its cleanup does not remove, with its `Stream` ([ADR-0003](ADR-0003-stream-refresh.md)).
+`ONLINE_DELAY` (120 seconds) after a `stream-up` or `broadcast-settings-update` PubSub event or a failed
+playlist request ([channel.md](../modules/channel.md#online-checks)). A stream refresh keeps each tracked
+`Channel` object that its cleanup does not remove, with its `Stream` ([ADR-0003](ADR-0003-stream-refresh.md)).
 
 At one cycle per 20 seconds, an hour has 180 cycles: 180 playlist GETs and about 2700 `HEAD` requests, about
 2880 HTTP requests in all, and at most 180 `CurrentDrop` queries. These figures are counted from the code and
 the comment's segment count. Nothing in this repo measures the segment count of a real playlist.
+
+A playlist request that fails every cycle while `GetStreamInfo` still returns the stream adds, per online check
+of about 120 seconds, 1 `GetStreamInfo` and 2 each of `PlaybackAccessToken` and the usher GET: one after the
+URL is cleared, one for the `Stream` object that the check stores. That is at most 30, 60 and 60 an hour, plus
+30 `AvailableDrops` with the extra drops check on. While a check waits, a failed playlist request clears
+nothing, so usher is not requested every cycle.
 
 ### What else follows
 
 - The requests of one call go one at a time. `Twitch.request` retries a status of 500 or more, or a connection
   error, with backoff up to 3 minutes, so a failing server makes the cycle longer and sends none in parallel.
 - A failed watch is logged at the `CALL` level as "Watch requested failed for channel", and the loop goes on.
-  The stored playlist URL stays, so each cycle requests the same playlist until the `Stream` object is
-  replaced. The code comment says the playlist returns 404 once the stream has ended. The `stream-down` event
-  sets the channel offline, and the next cycle stops watching it.
+  The `stream-down` event sets the channel offline, and the next cycle stops watching it. When that event is
+  missed, the next cycle requests usher, because decision 1 cleared the stored URL, and `get_stream_url` sets
+  the channel offline when usher returns an error. When usher still lists a playlist, the online check sets
+  the channel offline 120 seconds later, once `GetStreamInfo` returns no stream. A failed segment request
+  changes nothing.
 - An exception from `send_watch`, or one other than `GQLException` from the `CurrentDrop` check, ends
   `_watch_loop`, which runs under `task_wrapper(critical=True)`, and so ends the app
-  ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)).
+  ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)). After a failed playlist request,
+  `PlaybackAccessToken` is sent for a stream that may have ended. A null `streamPlaybackAccessToken` raises
+  `TypeError` ([task 037](../refinements/tasks/037-null-fields-in-other-gql-reads.md)), and nothing in this
+  repo shows whether Twitch returns a token for an ended stream.
 - The README warns against watching a stream on the account the app uses ([Notes](../../README.md#notes)). No
   code comment or commit links that warning to a watch method, so this record states nothing about it.
 

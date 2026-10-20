@@ -423,10 +423,11 @@ class Channel:
         to simulate watching the stream.
         Optimally, send every ~20 seconds to advance drops.
         """
-        if self._stream is None:
+        stream = self._stream
+        if stream is None:
             return False
         # get the stream url
-        stream_url = await self._stream.get_stream_url()
+        stream_url = await stream.get_stream_url()
         if stream_url is None:
             return False
         # fetch a list of chunks available to download for the stream
@@ -436,7 +437,11 @@ class Channel:
             "GET", stream_url, headers={"Connection": "close"}
         ) as chunks_response:
             if chunks_response.status >= 400:
-                # if the stream goes OFFLINE, trying to get a list of chunks returns a 404
+                # The playlist returns 404 once the stream has ended, and stream-down can be missed.
+                # Request usher again and check the stream, once per online check, not every cycle.
+                if self._stream is stream and self._pending_stream_up is None:
+                    stream._stream_url = None
+                    self.check_online()
                 return False
             available_chunks: str = await chunks_response.text()
         # the response may contain some invalid JSON with duplicate double quotes
