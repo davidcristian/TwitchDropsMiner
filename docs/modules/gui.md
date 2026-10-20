@@ -118,9 +118,9 @@ The GUI calls back into `Twitch` through `settings`, `change_state`, `state_chan
 - On macOS, `minimize()` does nothing, the button is hidden and `--tray` is ignored.
 - `change_icon(state)` takes `pickaxe`, `active`, `idle`, `error` or `maint`, the files in `icons/`, and raises
   `ValueError` for any other name. It stores the state when no icon exists yet.
-- `update_title(drop)` sets the tooltip to the app name, game, rewards, progress and claimed count. `get_title`
-  shortens the rewards, then the game name, to fit 127 characters, and raises `MinerException` when that is not
-  enough.
+- `update_title(drop)` sets the tooltip to three lines: the app name, the game, and the rewards with the progress
+  and claimed count. `get_title` shortens the rewards, then the game name, to fit 127 characters, and raises
+  `MinerException` when that is not enough.
 - `notify(message, title)` shows a notification for 10 seconds when `tray_notifications` is on and the icon
   exists. `BaseDrop.claim` calls it after a claim with the title "Mined Drop".
 

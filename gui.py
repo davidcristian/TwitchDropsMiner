@@ -1086,7 +1086,8 @@ class TrayIcon:
         campaign = drop.campaign
         title_parts: list[str] = [
             f"{self.TITLE}\n",
-            f"{campaign.game.name}\n",
+            campaign.game.name,
+            "\n",
             drop.rewards_text(),
             f" {drop.progress:.1%} ({campaign.claimed_drops}/{campaign.total_drops})"
         ]
@@ -1095,7 +1096,7 @@ class TrayIcon:
         missing_len = len(''.join(title_parts)) - max_len
         if missing_len > 0:
             # try shortening the reward text
-            title_parts[2] = self._shorten(title_parts[2], missing_len, min_len)
+            title_parts[3] = self._shorten(title_parts[3], missing_len, min_len)
             missing_len = len(''.join(title_parts)) - max_len
         if missing_len > 0:
             # try shortening the game name
