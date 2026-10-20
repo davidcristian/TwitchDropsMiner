@@ -80,10 +80,11 @@ not in its list to 5, a `restart_delay` that is not in its list to 10, and an un
 
 ## Saving `settings.json`
 
-`Twitch.save()` calls `Settings.save()` together with the image cache's save. It runs after each inventory fetch
-(`State.INVENTORY_FETCH`) without `force`, and once with `force=True` in `main()` after the window closes. A
-changed setting is therefore written at the next reload or when the app closes. When the process is killed,
-the changes since the last save are lost.
+After each inventory fetch (`State.INVENTORY_FETCH`), `Twitch._run` calls `Settings.save()` without `force`,
+through `save_each` ([savefiles.md](savefiles.md)): an `OSError`, such as from a full disk, is logged and the run
+goes on. After the window closes, `main()` calls `Twitch.save(force=True)`, which saves the image cache and the
+settings, and there an `OSError` passes up ([main.md](main.md)). A changed setting is therefore written at the
+next reload or when the app closes. When the process is killed, the changes since the last save are lost.
 
 `json_save` writes `settings.json.new` and then renames it over `settings.json` with `Path.replace`, so a save
 that stops halfway leaves the previous `settings.json` unchanged. It sorts the keys and indents by 4 spaces.

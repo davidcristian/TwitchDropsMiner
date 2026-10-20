@@ -67,4 +67,5 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [reconnect.md](modules/reconnect.md) | `ReconnectDelay`: the wait of a websocket before each reconnect |
 | [gqldata.md](modules/gqldata.md) | `get_field`, `merge_data` and the readers that leave out a field a server error set to null |
 | [imagedata.md](modules/imagedata.md) | `decode_image`: the full decode of an image download, which returns None for broken data |
+| [savefiles.md](modules/savefiles.md) | `save_each`: the saves after an inventory fetch, where a failed save is logged and the run goes on |
 | [gamelib.md](modules/gamelib.md) | The installed game scan, name matching and the list patterns |

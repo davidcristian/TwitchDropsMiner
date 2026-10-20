@@ -17,7 +17,7 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
   and clears the run's data. It takes at least half a second, so aiohttp can close the session.
 - `close()` sets `State.EXIT`, and `GUIManager.close` calls it. `prevent_close()` clears the GUI's close
   request, so the window stays open to show an error. `print(message)` writes to the Output box, and
-  `save(force=False)` saves the GUI state and the settings.
+  `save(force=False)` saves the GUI state and the settings; `main()` calls it at exit.
 - `change_state(state)` stores the next `State` and sets the event `_run` waits on. After `State.EXIT` the
   state no longer changes, so a late call cannot restart an app that is closing. Only the last call is kept,
   so a call made while a handler awaits is replaced by the state that handler sets next
@@ -113,6 +113,8 @@ next `change_state`. [ARCHITECTURE.md](../ARCHITECTURE.md#the-state-machine) has
 each one does, the state that follows it and the events that change it. `fetch_inventory` builds a
 `DropsCampaign` for each campaign whose `game`, `allow` and `timeBasedDrops` fields are not null
 ([gqldata.md](gqldata.md#null-campaign-details)), and `GAMES_UPDATE` computes the [wanted games](#wanted-games).
+`INVENTORY_FETCH` saves the image cache and the settings through `save_each`, which logs a save that raises
+`OSError`, so a full disk does not end the run ([savefiles.md](savefiles.md)).
 
 An offline channel has priority `MAX_INT`, so offline channels sort last and are the first ones cut at
 `MAX_CHANNELS` ([task 001](../refinements/tasks/001-offline-acl-channels-trimmed-first.md)).
@@ -216,4 +218,4 @@ once while it persists ([gamelib.md](gamelib.md)).
 - `channels` stays within `MAX_CHANNELS` ([websocket.md](websocket.md#the-199-channel-limit)).
 
 **Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `gqldata`, `translate`, `redact`,
-`exceptions`, `utils` and `constants`. Third party: aiohttp and yarl.
+`savefiles`, `exceptions`, `utils` and `constants`. Third party: aiohttp and yarl.

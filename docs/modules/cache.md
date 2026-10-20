@@ -13,7 +13,8 @@ keeps them on disk between runs, and returns them as Tk `PhotoImage` objects of 
   `None` keeps the image's own size. `InventoryOverview.add_campaign` asks for campaign art at `(108, 144)` and
   reward images at `(80, 80)`.
 - **`save(*, force=False)`** writes the mapping when anything changed since it was loaded, or when `force` is
-  true. `GUIManager.save` calls it. `Twitch.save` calls that after each `INVENTORY_FETCH`, and `main.py` calls
+  true. `GUIManager.save` calls it. `Twitch._run` calls that through `save_each` after each `INVENTORY_FETCH`,
+  which logs an `OSError` and goes on ([savefiles.md](savefiles.md)), and `main.py` calls
   `Twitch.save(force=True)` at exit.
 - **`LIFETIME`** is 7 days.
 

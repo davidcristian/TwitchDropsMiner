@@ -19,6 +19,7 @@ from yarl import URL
 import gamelib
 from translate import _
 from redact import redact
+from savefiles import save_each
 from gui import GUIManager
 from channel import Channel
 from websocket import WebsocketPool
@@ -603,7 +604,10 @@ class Twitch:
                 # match installed games against the campaigns we've just fetched
                 await self.detect_games()
                 # Save state on every inventory fetch
-                self.save()
+                save_each(
+                    (self.gui.save, self.settings.save),
+                    lambda error: logger.error(_("error", "save_failed").format(error=error)),
+                )
                 self.change_state(State.GAMES_UPDATE)
             elif self._state is State.GAMES_UPDATE:
                 # claim drops from expired and active campaigns

@@ -84,7 +84,8 @@ message box titled "Argument Parser Error" when argparse exits, also for `--help
    `grab_attention(sound=True)` shows the window and rings the bell.
 6. `await client.gui.wait_until_closed()` waits until the user closes the window.
 7. `client.save(force=True)` writes the settings and the image cache. It runs after the wait, because the user
-   can still change settings in the window after the run ends.
+   can still change settings in the window after the run ends. An `OSError` from it passes up out of `main()`,
+   so the calls below do not run: Python prints the traceback and exits with code 1.
 8. `client.gui.stop()`, `client.gui.close_window()` and `sys.exit` with the exit code.
 
 A fatal error during the run shows no dialog. The traceback is in the Output box, and the window stays open with

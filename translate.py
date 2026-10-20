@@ -38,6 +38,7 @@ class LoginMessages(TypedDict):
 class ErrorMessages(TypedDict):
     no_connection: str
     site_down: str
+    save_failed: str
 
 
 class GUIStatus(TypedDict):
@@ -309,6 +310,7 @@ default_translation: Translation = {
     "error": {
         "site_down": "Twitch is down, retrying in {seconds} seconds...",
         "no_connection": "Cannot connect to Twitch, retrying in {seconds} seconds... ({url})",
+        "save_failed": "Saving failed, retrying at the next reload: {error}",
     },
     "gui": {
         "output": "Output",

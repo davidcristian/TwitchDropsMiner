@@ -12,7 +12,7 @@ lines, over the 300 line soft cap in AGENTS.md
 
 | Helper | What it does |
 | --- | --- |
-| `json_save(path, contents, *, sort=False)` | Writes `<name>.new` with an indent of 4, then replaces `path` with it, so a crash during the write leaves the old file whole |
+| `json_save(path, contents, *, sort=False)` | Writes `<name>.new` with an indent of 4, then replaces `path` with it, so a crash during the write leaves the old file whole. When the write or the rename raises `OSError`, the error passes to the caller and `<name>.new` stays |
 | `json_load(path, defaults, *, merge=True)` | Reads `<name>.new` first when it exists and deletes it when it is not valid JSON, then reads `path` only when `<name>.new` gave nothing. When neither exists, returns a shallow copy of `defaults`. A `path` that is not valid JSON raises `json.JSONDecodeError` |
 | `merge_json(obj, template)` | Called by `json_load` when `merge` is true. Deletes keys that `template` lacks, replaces a value whose type differs from the template's, recurses into dicts and adds missing keys |
 | `json_minify(data)` | Returns JSON without spaces, for request and websocket payloads |
@@ -21,6 +21,11 @@ lines, over the 300 line soft cap in AGENTS.md
 `{"__type": "<class name>", "data": ...}`. Any other type that JSON cannot hold raises `TypeError`. `json_load`
 rebuilds these objects through `SERIALIZE_ENV`, which knows `set`, `URL`, `PriorityMode` and `datetime`. It
 drops a key whose `__type` is not in `SERIALIZE_ENV`, and the merge then puts the default back.
+
+`json_save` does not delete the `<name>.new` that a failed save leaves, because `json_load` handles both kinds.
+A write that the disk cut off leaves a file that is not valid JSON (`json.dump` writes the closing `}` last),
+and `json_load` deletes it. A failed rename, such as on Windows while another program has `path` open, leaves a
+whole file with the newest contents, and `json_load` reads it in place of `path`.
 
 | Caller | File | Notes |
 | --- | --- | --- |

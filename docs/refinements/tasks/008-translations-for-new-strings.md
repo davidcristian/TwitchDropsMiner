@@ -3,10 +3,10 @@
 **Status:** open
 **Area:** lang
 **Origin:** found on 2026-10-18 while the docs were written
-**Verified:** 2026-10-19
+**Verified:** 2026-10-20
 
-`default_translation` in `translate.py` has 150 strings. Each of the 20 files in `lang/` other than
-`English.json` lacks between 33 and 49 of them. `English.json` is left out because it is gitignored and every
+`default_translation` in `translate.py` has 151 strings. Each of the 20 files in `lang/` other than
+`English.json` lacks between 34 and 50 of them. `English.json` is left out because it is gitignored and every
 run from source writes it again from `default_translation`. The counts come from comparing the nested key
 paths of `default_translation`, read from `translate.py` with the `ast` module, with the key paths of each
 file.
@@ -16,7 +16,7 @@ A missing key shows in English. `Translator.set_language` loads a language with
 `default_translation`. It also deletes every key that `default_translation` lacks, so a string at the wrong
 path shows in English as well ([023](023-language-file-keys-dropped.md)).
 
-## The 33 keys every language lacks
+## The 34 keys every language lacks
 
 These are the strings of this project's own features:
 
@@ -27,6 +27,7 @@ These are the strings of this project's own features:
 - The About box, `gui.help.about`: 4 keys.
 - The new stream check, `gui.settings.general.refresh_interval` and `gui.settings.refresh_intervals`: 3 keys.
 - Priority and Exclude patterns, `gui.settings.pattern_matches` and `gui.settings.pattern_empty`: 2 keys.
+- A failed save during the run, `error.save_failed`: 1 key.
 
 ## Older keys some languages lack
 
@@ -44,13 +45,13 @@ These are the strings of this project's own features:
 
 ## Missing keys per language
 
-- 49: Čeština.
-- 46: Nederlandse.
-- 45: Deutsch.
-- 44: Dansk, Indonesian, Italiano, Português, Română, العربية and 日本語.
-- 40: Français and Українська.
-- 35: Magyar, Norsk, Polski, Türkçe and Русский.
-- 33: Español, 简体中文 and 繁體中文.
+- 50: Čeština.
+- 47: Nederlandse.
+- 46: Deutsch.
+- 45: Dansk, Indonesian, Italiano, Português, Română, العربية and 日本語.
+- 41: Français and Українська.
+- 36: Magyar, Norsk, Polski, Türkçe and Русский.
+- 34: Español, 简体中文 and 繁體中文.
 
 ## What closes it
 
@@ -68,3 +69,5 @@ Cost: no Twitch requests.
   file with `default_translation`.
 - 2026-10-19: Counts checked again after the password login's 10 strings left `default_translation`: 150
   strings, and Čeština lacks 49 of them.
+- 2026-10-20: Counts checked again after `error.save_failed` was added: 151 strings, and Čeština lacks 50
+  of them.

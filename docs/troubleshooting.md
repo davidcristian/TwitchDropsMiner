@@ -17,6 +17,11 @@ The app keeps its files in the folder it runs from: the folder of the executable
 | `dump.dat` | Campaign data, written only when the app starts with `--dump`. |
 | `cache/` | Game and drop images. |
 
+**"Saving failed, retrying at the next reload"** in the Output box means the app could not write `settings.json`
+or `cache/mapping.json`, for example because the disk is full or another program has the file open. The app
+keeps running and writes the files again at the next reload and when it closes. Free some disk space or close the
+other program, because a setting changed since the last save is lost when the app ends before a save succeeds.
+
 ## Command line flags
 
 Add the flags after the program name, in a terminal or in a shortcut. For example:

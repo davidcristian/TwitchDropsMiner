@@ -54,6 +54,7 @@ burst of requests puts that account at risk.
 | `reconnect.py` | `ReconnectDelay`, the wait of a PubSub websocket before each reconnect |
 | `gqldata.py` | Reads GQL responses and leaves out the fields that a server error set to null |
 | `imagedata.py` | `decode_image`, which decodes a whole image download for `cache.py` or returns None for broken data |
+| `savefiles.py` | `save_each`, which runs the saves after an inventory fetch and reports a failed one instead of raising |
 | `version.py` | `__version__`, to which CI appends the commit hash. Its doc is part of `docs/modules/constants.md` |
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
 | `docs/` | Listed in `docs/index.md`: `ARCHITECTURE.md`, the decisions (`adr/`), one contract doc per module (`modules/`), procedures (`runbooks/`), the deferred work (`refinements/`), and two pages for users, `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
@@ -114,10 +115,9 @@ lists. No check finds 3.11+ names such as `typing.Self` and `tomllib`, which fai
 
 The rest is checked by hand, and the report of a change shows the output of each:
 
-1. **Tests assert behavior** ([ADR-0013](docs/adr/ADR-0013-test-standard.md)). A bug fix adds a test that fails
-   without it. A module that needs neither Twitch nor a display tests each public function with its error and edge
-   cases, with fakes, not mocks, and no test only to reach a line. A known defect is a strict `xfail` test that
-   names its task file.
+1. **Tests assert behavior** ([ADR-0013](docs/adr/ADR-0013-test-standard.md)). A bug fix adds a test that fails without
+   it. A module that needs neither Twitch nor a display tests each public function with its error and edge cases, with
+   fakes, not mocks, and no test only to reach a line. A known defect is a strict `xfail` test that names its task file.
 2. A GUI change is run in `python gui.py` or `python main.py`. When the GUI cannot start, the GUI part is reported
    as unverified and the change is not done. [The headless runbook](docs/runbooks/gui-preview-headless.md) runs it
    on Linux without a display.
