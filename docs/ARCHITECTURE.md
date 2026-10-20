@@ -219,5 +219,6 @@ lang/English.json      rewritten from default_translation on every run from sour
 env/                   the virtual environment from setup_env
 build/, dist/          PyInstaller output; *.exe, *.zip, *.tmp, *.app and "Twitch Drops Miner/" too
 AppDir/, *.AppImage    AppImage output; appimage-build/, appimage-builder/ and *.AppImage.zsync too
+.claude/worktrees/     Claude Code's git worktrees; .claude/settings.local.json too
 __pycache__, .mypy_cache, .DS_Store
 ```

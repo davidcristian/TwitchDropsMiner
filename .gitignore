@@ -29,3 +29,6 @@ settings.json
 # Check output
 .coverage
 .ruff_cache
+# Claude Code worktrees and personal settings
+/.claude/worktrees/
+/.claude/settings.local.json
