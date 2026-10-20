@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 import sources
-from gitrepo import commit, make_repo
+from gitrepo import commit, make_repo, write
 from sources import (
     BOM,
     Docstring,
@@ -22,6 +22,7 @@ from sources import (
     prose_runs,
     python_prose,
     read_text,
+    read_texts,
     repo_files,
     string_literals,
 )
@@ -65,6 +66,16 @@ def test_read_text_returns_none_for_bytes_that_are_not_utf8(tmp_path):
     path = tmp_path / "latin1.txt"
     path.write_bytes("caf\u00e9".encode("latin-1"))
     assert read_text(path) is None
+
+
+def test_read_texts_returns_the_text_of_each_utf8_file_and_leaves_out_a_file_with_a_nul_byte(tmp_path):
+    write(tmp_path, {"a.md": "caf\u00e9\n", "docs/b.txt": "", "icon.ico": b"\0\0\x01\0\xff"})
+    assert read_texts(tmp_path, ["a.md", "docs/b.txt", "icon.ico"]) == ({"a.md": "caf\u00e9\n", "docs/b.txt": ""}, [])
+
+
+def test_read_texts_reports_a_file_that_is_not_utf8_at_the_line_of_its_first_bad_byte(tmp_path):
+    write(tmp_path, {"notes.md": "one\ntwo \u2014\nthree \u00e9\n".encode("cp1252")})
+    assert read_texts(tmp_path, ["notes.md"]) == ({}, [Problem("notes.md", 2, "is not UTF-8 text")])
 
 
 @pytest.mark.parametrize(

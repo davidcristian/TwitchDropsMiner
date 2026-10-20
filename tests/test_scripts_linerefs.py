@@ -124,6 +124,6 @@ def test_check_reports_a_line_cited_by_its_number_in_every_markdown_file_but_not
         "README.md": "# Read me\n\nSee `main.py:10`.\n",
         "docs/notes.md": "# Notes\n\n```\nmain.py:10\n```\n",
         "lang/notes.md": "See main.py:10.\n",
-        "docs/binary.md": b"See main.py:10.\n\xff\xfe\n",
+        "docs/binary.md": b"See main.py:10.\n\0\xff\n",
     })
     assert docscheck.check(root) == (3, [Problem("README.md", 3, f'"main.py:10" {MESSAGE}')])

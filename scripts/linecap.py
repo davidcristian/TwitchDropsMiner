@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from sources import ROOT, Problem, read_text, repo_files
+from sources import ROOT, Problem, read_texts, repo_files
 
 
 LIMITS = {".py": 300, ".md": 250}
@@ -49,14 +49,9 @@ def cap_problems(lengths: dict[str, int]) -> list[Problem]:
 
 def check(root: Path) -> tuple[int, list[Problem]]:
     """Return the number of files measured and every problem in them."""
-    lengths: dict[str, int] = {}
-    for name in repo_files(root):
-        if limit_for(name) is None:
-            continue
-        text = read_text(root / name)
-        if text is not None:
-            lengths[name] = len(text.splitlines())
-    return len(lengths), cap_problems(lengths)
+    texts, problems = read_texts(root, [name for name in repo_files(root) if limit_for(name) is not None])
+    lengths = {name: len(text.splitlines()) for name, text in texts.items()}
+    return len(lengths), problems + cap_problems(lengths)
 
 
 def main(argv: list[str] | None = None) -> int:

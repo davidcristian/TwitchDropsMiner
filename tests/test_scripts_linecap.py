@@ -62,10 +62,10 @@ def test_check_counts_a_last_line_without_a_newline(tmp_path, monkeypatch):
     assert linecap.check(root)[1] == [Problem("a.py", 301, "301 lines; the limit is 300, so split it")]
 
 
-def test_check_skips_a_file_that_is_not_utf8(tmp_path, monkeypatch):
+def test_check_reports_a_measured_file_that_is_not_utf8_and_skips_a_binary_file(tmp_path, monkeypatch):
     monkeypatch.setattr(linecap, "EXCEPTIONS", frozenset())
-    root = make_repo(tmp_path, {"a.py": b"\xff\n" * 400})
-    assert linecap.check(root) == (0, [])
+    root = make_repo(tmp_path, {"a.py": b"x = 1\n" + b"\xff\n" * 400, "b.md": b"\0\xff\n" * 400, "c.json": b"\xff"})
+    assert linecap.check(root) == (0, [Problem("a.py", 2, "is not UTF-8 text")])
 
 
 def test_check_reports_an_exception_whose_module_is_now_short(tmp_path, monkeypatch):

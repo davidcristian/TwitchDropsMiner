@@ -149,6 +149,16 @@ def test_check_skips_the_licenses_the_translations_and_binary_files(tmp_path):
     assert dashcheck.check(root) == (1, [])
 
 
+def test_check_reports_a_text_file_of_any_kind_that_is_not_utf8_but_not_a_license_or_a_translation(tmp_path):
+    root = make_repo(tmp_path, {
+        "build.sh": f"echo one\necho a {EM} b\n".encode("cp1252"),
+        "LICENSE": f"a {EM} b\n".encode("cp1252"),
+        "lang/Deutsch.json": f'{{"a": "b {EM} c"}}'.encode("cp1252"),
+        "docs/a.md": "fine\n",
+    })
+    assert dashcheck.check(root) == (1, [Problem("build.sh", 2, "is not UTF-8 text")])
+
+
 def test_check_returns_the_problems_of_every_file_in_order(tmp_path):
     root = make_repo(tmp_path, {"b.md": f"x {EM} y\n", "a.md": "one\ntwo -- three\n"})
     assert dashcheck.check(root) == (2, [

@@ -138,6 +138,16 @@ def test_check_reports_words_and_blocks_and_skips_licenses_translations_and_bina
     ])
 
 
+def test_check_reports_a_text_file_of_any_kind_that_is_not_utf8_but_not_a_license_or_a_binary(tmp_path):
+    root = make_repo(tmp_path, {
+        "AGENTS.md": AGENTS,
+        "notes.txt": f"A {SEAM} \u00e9.\n".encode("cp1252"),
+        "LICENSE": f"A {SEAM} \u00e9.\n".encode("cp1252"),
+        "blob.bin": b"\0\xff" + SEAM.encode(),
+    })
+    assert prosecheck.check(root) == (1, [Problem("notes.txt", 1, "is not UTF-8 text")])
+
+
 def test_check_reports_a_comment_block_of_four_lines_in_a_spec_file(tmp_path):
     root = make_repo(tmp_path, {"AGENTS.md": AGENTS, "build.spec": "# a\n# b\n# c\n# d\nx = 1\n"})
     assert prosecheck.check(root)[1] == [Problem("build.spec", 1, "comment block of 4 lines; the limit is 3")]

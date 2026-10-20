@@ -9,7 +9,7 @@ from pathlib import Path
 
 import bannedwords
 from sources import (
-    BOM, PYTHON_SUFFIXES, ROOT, Line, Problem, comment_runs, docstrings, is_prose_file, prose_runs, read_text,
+    BOM, PYTHON_SUFFIXES, ROOT, Line, Problem, comment_runs, docstrings, is_prose_file, prose_runs, read_texts,
     repo_files,
 )
 
@@ -58,17 +58,12 @@ def block_problems(name: str, source: str) -> list[Problem]:
 def check(root: Path) -> tuple[int, list[Problem]]:
     """Return the number of files read and every problem in them."""
     table = bannedwords.parse_table((root / RULES).read_text(encoding="utf-8"))
-    count = 0
-    problems: list[Problem] = []
-    for name in repo_files(root):
-        text = read_text(root / name)
-        if text is None or not is_prose_file(name):
-            continue
-        count += 1
+    texts, problems = read_texts(root, [name for name in repo_files(root) if is_prose_file(name)])
+    for name, text in texts.items():
         problems.extend(word_problems(name, text, table))
         if name.endswith(PYTHON_SUFFIXES):
             problems.extend(block_problems(name, text))
-    return count, sorted(problems)
+    return len(texts), sorted(problems)
 
 
 def main(argv: list[str] | None = None) -> int:

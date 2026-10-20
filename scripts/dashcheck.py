@@ -8,7 +8,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from bannedwords import mask_run, runs
-from sources import PYTHON_SUFFIXES, ROOT, Line, Problem, is_prose_file, prose_runs, read_text, repo_files
+from sources import PYTHON_SUFFIXES, ROOT, Line, Problem, is_prose_file, prose_runs, read_texts, repo_files
 
 
 DASHES = {"\u2014": "an em dash", "\u2013": "an en dash"}
@@ -53,15 +53,10 @@ def dash_problems(name: str, text: str) -> list[Problem]:
 
 def check(root: Path) -> tuple[int, list[Problem]]:
     """Return the number of files read and every problem in them."""
-    count = 0
-    problems: list[Problem] = []
-    for name in repo_files(root):
-        text = read_text(root / name)
-        if text is None or not is_prose_file(name):
-            continue
-        count += 1
+    texts, problems = read_texts(root, [name for name in repo_files(root) if is_prose_file(name)])
+    for name, text in texts.items():
         problems.extend(dash_problems(name, text))
-    return count, sorted(problems)
+    return len(texts), sorted(problems)
 
 
 def main(argv: list[str] | None = None) -> int:

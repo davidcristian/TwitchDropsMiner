@@ -7,6 +7,7 @@ import io
 import re
 import subprocess
 import tokenize
+from collections.abc import Iterable
 from pathlib import Path
 from typing import NamedTuple
 
@@ -54,15 +55,27 @@ def repo_files(root: Path) -> list[str]:
     return sorted(name for name in names if (root / name).is_file())
 
 
+def read_texts(root: Path, names: Iterable[str]) -> tuple[dict[str, str], list[Problem]]:
+    """Return the text of each named file under root, and a problem for each that is not UTF-8 text.
+
+    A file with a NUL byte is binary, such as an icon, and is left out of both.
+    """
+    texts: dict[str, str] = {}
+    problems: list[Problem] = []
+    for name in names:
+        data = (root / name).read_bytes()
+        if b"\0" in data:
+            continue
+        try:
+            texts[name] = data.decode("utf-8")
+        except UnicodeDecodeError as error:
+            problems.append(Problem(name, data.count(b"\n", 0, error.start) + 1, "is not UTF-8 text"))
+    return texts, problems
+
+
 def read_text(path: Path) -> str | None:
-    """Return the file's text, or None when it is not UTF-8 text."""
-    data = path.read_bytes()
-    if b"\0" in data:
-        return None
-    try:
-        return data.decode("utf-8")
-    except UnicodeDecodeError:
-        return None
+    """Return the file's text, or None when it is binary or not UTF-8 text."""
+    return read_texts(path.parent, [path.name])[0].get(path.name)
 
 
 def is_prose_file(name: str) -> bool:

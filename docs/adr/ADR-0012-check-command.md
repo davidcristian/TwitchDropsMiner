@@ -21,7 +21,10 @@ lint rules without its formatter or pyright.
 2. **The scans are standard-library Python scripts in `scripts/`,** one per rule, each with a `check(root)` that
    returns its problems and a `main()` that prints them and returns 1 when there are any. They read the files git
    tracks, and untracked files that `.gitignore` does not exclude, so a new file is checked before `git add`.
-   `scripts/` is not at the top level, so the AppImage, which copies the top-level `*.py` files, leaves it out.
+   `linecap.py`, `dashcheck.py`, `prosecheck.py` and `docscheck.py` report a file they read that is not UTF-8
+   text, and skip a file with a NUL byte as a binary file, such as an icon. `syntaxcheck.py` and `langcheck.py`
+   report both. `scripts/` is not at the top level, so the AppImage, which copies the top-level `*.py` files,
+   leaves it out.
    - `syntaxcheck.py`: every Python file parses with `ast.parse(feature_version=(3, 10))`.
    - `langcheck.py`: every `lang/*.json` file is a JSON object, and no string in it has a `str.format` field
      that the English string at the same keys lacks. It reads `default_translation` from `translate.py` with

@@ -10,7 +10,7 @@ from pathlib import Path
 
 import bannedwords
 from linerefs import line_number_problems
-from sources import ROOT, Line, Problem, markdown_lines, read_text, repo_files
+from sources import ROOT, Line, Problem, markdown_lines, read_texts, repo_files
 
 
 DOCS_INDEX = "docs/index.md"
@@ -244,15 +244,11 @@ def record_problems(texts: dict[str, str], banned: re.Pattern[str]) -> list[Prob
 def check(root: Path) -> tuple[int, list[Problem]]:
     """Return the number of markdown files read and every problem in them."""
     files = repo_files(root)
-    texts: dict[str, str] = {}
-    for name in files:
-        if name.endswith(".md") and not name.startswith("lang/"):
-            text = read_text(root / name)
-            if text is not None:
-                texts[name] = text
+    markdown = [name for name in files if name.endswith(".md") and not name.startswith("lang/")]
+    texts, problems = read_texts(root, markdown)
     table = bannedwords.parse_table(texts.get("AGENTS.md", ""))
     paths = known_paths(files)
-    problems = [problem for name in texts for problem in link_problems(name, texts, paths)]
+    problems.extend(problem for name in texts for problem in link_problems(name, texts, paths))
     problems.extend(problem for name, text in texts.items() for problem in line_number_problems(name, text))
     problems.extend(index_problems(DOCS_INDEX, ADR_NAME, texts, "decision record"))
     problems.extend(index_problems(DOCS_INDEX, MODULE_NAME, texts, "module"))

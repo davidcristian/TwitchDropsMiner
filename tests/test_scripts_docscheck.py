@@ -228,6 +228,16 @@ def test_check_reports_a_link_to_a_folder_that_holds_only_files_git_ignores(tmp_
     assert docscheck.check(root)[1] == [Problem("README.md", 1, "link to cache/, which does not exist")]
 
 
+def test_check_reports_a_markdown_file_that_is_not_utf8_but_not_a_file_of_another_kind(tmp_path):
+    root = make_repo(tmp_path, {
+        "AGENTS.md": AGENTS,
+        "docs/notes.md": "# Notes\n\nSee [gone](gone.md) \u2014 here.\n".encode("cp1252"),
+        "notes.txt": b"\xff",
+        "lang/notes.md": b"\xff",
+    })
+    assert docscheck.check(root) == (1, [Problem("docs/notes.md", 3, "is not UTF-8 text")])
+
+
 def test_link_problems_reports_a_reference_link_whose_target_is_missing(repo):
     text = "See [the map][map].\n\n[map]: gone.md\n"
     assert problems_of(repo, text) == [Problem("docs/index.md", 3, "link to gone.md, which does not exist")]
