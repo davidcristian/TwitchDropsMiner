@@ -13,7 +13,7 @@ The app keeps its files in the folder it runs from: the folder of the executable
 | `cookies.jar` | The login session. Anyone who has this file can use your Twitch account. |
 | `settings.json` | The settings from the Settings tab, including the Priority and Exclude lists and the game folders. |
 | `lock.file` | The lock that stops a second copy of the app from starting in the same folder. |
-| `log.txt` | The log, written only when the app starts with `--log`. |
+| `log.txt` | The log in UTF-8, written only when the app starts with `--log`. |
 | `dump.dat` | Campaign data, written only when the app starts with `--dump`. |
 | `cache/` | Game and drop images. |
 

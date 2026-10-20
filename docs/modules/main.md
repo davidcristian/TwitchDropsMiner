@@ -64,7 +64,9 @@ message box titled "Argument Parser Error" when argparse exits, also for `--help
 
 - When the level is above DEBUG, a `logging.NullHandler` is added to the root logger. Records from other
   libraries' loggers then end there instead of in Python's last resort handler, which prints to stderr.
-- The `TwitchDrops` logger gets the level from `-v`, and with `--log` a `logging.FileHandler` for `log.txt`.
+- The `TwitchDrops` logger gets the level from `-v`, and with `--log` a `logging.FileHandler` that writes
+  `log.txt` in UTF-8. Without an encoding it would write the code page of the locale, such as cp1252 on a Western
+  Windows, and a line with a character outside it, such as a Korean channel name, would be lost.
 - `TwitchDrops.gql` and `TwitchDrops.websocket` are set to DEBUG by their debug flag, to INFO at `-vvvv` or more
   so that the raw requests and messages stay hidden, and otherwise to NOTSET, which uses the `TwitchDrops` level.
 - `GUIManager` adds the handler that writes each record from the event loop thread to the Output box
