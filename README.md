@@ -93,7 +93,7 @@ Twitch Drops Miner is built for these goals:
 - Easy to use. It has a GUI and comes as a ready-to-run executable that needs no Python installation.
 - A helper that runs in the background. It starts with your PC, runs through the day and closes when the PC shuts down. It should run for at least 24 hours without help.
 - Little attention. The app finds new streams, mines your installed games and restarts after a fatal error by itself, so checking it once or twice a day is enough.
-- Low Twitch traffic. Twitch sees no more traffic than a diligent person would cause, because the app runs on your own account and a burst of requests puts that account at risk. Requests to GQL, the GraphQL API that the Twitch website uses, are limited to 5 per second. A full reload, which can send thousands of GQL operations in batches of 20, runs at startup, once an hour, after a drop is claimed and when you press `Reload`. The checks for new streams between reloads cost a few requests each.
+- Low Twitch traffic. Twitch sees no more traffic than a diligent person would cause, because the app runs on your own account and a burst of requests puts that account at risk. Requests to GQL, the GraphQL API that the Twitch website uses, are limited to 5 per second. A full reload, which can send thousands of GQL operations in batches of 20, runs at startup, once an hour, after a restart that follows a fatal error, after a drop is claimed or Twitch sends a reward notification, and when you press `Invalidate` or `Reload`. The checks for new streams between reloads cost a few requests each.
 - One account. The app mines on a single Twitch account.
 
 The app is not built for:
