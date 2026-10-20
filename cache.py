@@ -3,11 +3,12 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timedelta, timezone
 
-import io
 import json
+import logging
 from typing import Dict, TypedDict, NewType, TYPE_CHECKING
 
 from utils import json_load, json_save
+from imagedata import decode_image
 from constants import URLType, CACHE_PATH, CACHE_DB
 
 from PIL import Image as Image_module
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
     from typing_extensions import TypeAlias
 
 
+logger = logging.getLogger("TwitchDrops")
 ImageHash = NewType("ImageHash", str)
 ImageSize: TypeAlias = "tuple[int, int]"
 
@@ -111,9 +113,12 @@ class ImageCache:
                 try:
                     async with self._twitch.request("GET", url) as response:
                         if response.status != 404:
-                            image = Image_module.open(io.BytesIO(await response.read()))
-                except Exception:
-                    pass
+                            image = decode_image(await response.read(), Image_module.open)
+                        if image is None:
+                            logger.warning(f"Image download gave no whole image (status {response.status}): {url}")
+                except Exception as exc:
+                    # not repr(exc): the repr of a connection error shows the proxy password
+                    logger.warning(f"Image download failed ({type(exc).__name__}: {exc}): {url}")
                 if image is None:
                     # use a blank white image as a fallback
                     image = Image_module.new("RGB", (10, 10), (255, 255, 255))

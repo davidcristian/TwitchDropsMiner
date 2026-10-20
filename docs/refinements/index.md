@@ -80,3 +80,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [035: A game folder that names an unknown user ends the scan of every folder](tasks/035-unknown-user-ends-the-game-scan.md) | gamelib |
 | [036: A name that holds a native title and an English one does not match the English Twitch name](tasks/036-mixed-script-names-unmatched.md) | gamelib |
 | [037: Some GQL reads still raise on a null field](tasks/037-null-fields-in-other-gql-reads.md) | twitch, inventory |
+| [038: A downloaded CMYK image ends the run](tasks/038-cmyk-image-download-ends-the-run.md) | cache |

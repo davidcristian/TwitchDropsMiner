@@ -53,6 +53,7 @@ burst of requests puts that account at risk.
 | `redact.py` | `redact`, which hides the login token and other secrets in a value before a log call prints it |
 | `reconnect.py` | `ReconnectDelay`, the wait of a PubSub websocket before each reconnect |
 | `gqldata.py` | Reads GQL responses and leaves out the fields that a server error set to null |
+| `imagedata.py` | `decode_image`, which decodes a whole image download for `cache.py` or returns None for broken data |
 | `version.py` | `__version__`, to which CI appends the commit hash. Its doc is part of `docs/modules/constants.md` |
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
 | `docs/` | Listed in `docs/index.md`: `ARCHITECTURE.md`, the decisions (`adr/`), one contract doc per module (`modules/`), procedures (`runbooks/`), the deferred work (`refinements/`), and two pages for users, `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
@@ -135,10 +136,9 @@ Write comments, docstrings, docs and commit messages in plain English that a new
   code cannot show, a Twitch behavior the code depends on, or a directive a tool reads (`# noqa`). Delete one that
   repeats the code, tells history ("was X, now Y"), cites an ADR for background, or says what a better name would
   say. A comment is one or two lines, three at most.
-- **Docstrings** are one line saying what the module, class or function does; delete one that only repeats the
-  name. Tests have none, because the test name says what it checks. A second or third line only explains an
-  argument or return value that its name and type do not, and never more: design reasons go in an ADR or a module
-  doc, history in git.
+- **Docstrings** are one line saying what the module, class or function does; delete one that only repeats the name.
+  Tests have none: the test name says what it checks. A second or third line only explains an argument or return
+  value that its name and type do not, and never more: design reasons go in an ADR or a module doc, history in git.
 - **Docs** are short and written for a reader who has never seen this repo: what a thing is and does, then why,
   when the why is not obvious. Keep facts, numbers, commands, file paths and decisions, and name code by its
   function or class, never by a line number. Cut the story of how the code got here, repeated explanations (link

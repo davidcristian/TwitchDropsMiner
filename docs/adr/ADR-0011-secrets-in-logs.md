@@ -52,6 +52,8 @@ The log lines are f-strings, so a value is already text when a log handler recei
 - Of the proxy errors checked in aiohttp 3.14.3 (a rejected request, a closed port, a rejected websocket
   connection), only `ClientHttpProxyError` shows the password in its text. `Websocket` logs a connection
   error without its text.
+- The `repr` of an aiohttp connection error shows the proxy URL and password of its connection. A log call
+  prints such an error's class and text, never its `repr`, as `ImageCache.get` does for a failed download.
 - `--debug-gql` still writes Twitch's GQL responses on `TwitchDrops.gql`. They hold account data but not the login
   token, and [gql-operations.md](../runbooks/gql-operations.md) says not to share that output.
 - `redact()` runs for every request at every log level, because Python builds an f-string before the logger

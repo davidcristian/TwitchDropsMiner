@@ -66,4 +66,5 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [redact.md](modules/redact.md) | `redact`: the secret key names it hides before a log call prints a value |
 | [reconnect.md](modules/reconnect.md) | `ReconnectDelay`: the wait of a websocket before each reconnect |
 | [gqldata.md](modules/gqldata.md) | `get_field`, `merge_data` and the readers that leave out a field a server error set to null |
+| [imagedata.md](modules/imagedata.md) | `decode_image`: the full decode of an image download, which returns None for broken data |
 | [gamelib.md](modules/gamelib.md) | The installed game scan, name matching and the list patterns |

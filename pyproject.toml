@@ -19,7 +19,7 @@ addopts = "--strict-markers"
 [tool.coverage.run]
 branch = true
 # The modules that need neither Twitch nor a display. A new such module is added here.
-source = ["redact", "reconnect", "gamelib", "gqldata", "scripts"]
+source = ["redact", "reconnect", "gamelib", "gqldata", "imagedata", "scripts"]
 
 [tool.coverage.report]
 fail_under = 80

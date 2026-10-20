@@ -3,15 +3,15 @@
 **Status:** open
 **Area:** cache
 **Origin:** Found on 2026-10-18 while the docs were written, [cache.md](../../modules/cache.md#broken-data)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-20
 
 `ImageCache.get(url, size)` in `cache.py` downloads an image it does not have through `Twitch.request`. In three
-cases it uses a 10 by 10 white image instead: the status is 404, `Image.open` cannot read the body, or the
-request raises an exception (`except Exception`). It then stores the white image like a real one: `_hash` names
-it, it is saved in `cache/`, and `_hashes[url]` maps the URL to it with `expires` set to now plus `LIFETIME`
-(7 days). Each later `get()` for that URL finds the mapping, sets `expires` to 7 days from then, loads the white
-file and sends no request. `ImageCache.__init__` removes an entry only after its date has passed. So the white
-image stays until the URL goes 7 days without a `get()`.
+cases it logs a warning and uses a 10 by 10 white image instead: the status is 404, `decode_image` cannot decode
+the whole body, or the request raises an exception (`except Exception`). It then stores the white image like a
+real one: `_hash` names it, it is saved in `cache/`, and `_hashes[url]` maps the URL to it with `expires` set to
+now plus `LIFETIME` (7 days). Each later `get()` for that URL finds the mapping, sets `expires` to 7 days from
+then, loads the white file and sends no request. `ImageCache.__init__` removes an entry only after its date has
+passed. So the white image stays until the URL goes 7 days without a `get()`.
 
 ## Which failures reach the fallback
 
@@ -21,7 +21,8 @@ does not produce a white image: the download waits and then succeeds. These case
 
 - a 404, for an image that Twitch removed;
 - another status below 500, such as 403 or 429, whose body is not an image;
-- a 200 whose body is not an image, such as the login page of a hotel network;
+- a 200 whose body is not an image, such as the login page of a hotel network, or is an image cut off after
+  its header;
 - an exception that `Twitch.request` passes up: `ClientConnectorCertificateError` (it re-raises that one),
   `aiohttp.InvalidURL`, `ClientHttpProxyError` from a proxy, or `ExitRequest`. `ExitRequest` is raised when the
   window is closed during the download, and it is a subclass of `Exception`, so `get()` catches it and maps the
@@ -76,3 +77,5 @@ of `Twitch.request`.
 - 2026-10-18: Opened while the docs were written. `ImageCache.get` and `Twitch.request` were called with stubbed
   network responses. The claim that a passing network error leaves a blank image did not hold: `Twitch.request`
   retries those errors. The task names the failures that do reach the fallback.
+- 2026-10-20: `get()` decodes the whole body with `decode_image` and logs a warning for each fallback, so an
+  image cut off after its header also gets the white image. The task's problem is unchanged.
