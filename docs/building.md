@@ -130,7 +130,8 @@ The `linux-appimage` job in `ci.yml` builds the AppImage on Ubuntu 22.04 with
 - takes its system packages, including `python3-tk` and `gir1.2-ayatanaappindicator3-0.1`, from the Ubuntu 22.04
   archives;
 - builds libXft 2.3.9, because the app does not start with libXft 2.3.3 when an emoji font is installed;
-- copies the top-level `*.py` files, `gamelib/`, `lang/` and `icons/`, and installs `requirements.txt`.
+- copies the top-level `*.py` files, `gamelib/`, `lang/` and `icons/`, and installs `requirements.txt`;
+- sets no update information and no signing key, so the AppImage has neither.
 
 The job installs appimage-builder from a fixed commit, sets the `ARCH`, `ARCH_APT` and `APP_VERSION` environment
 variables, and runs:

@@ -160,5 +160,3 @@ AppImage:
   arch: '{{ARCH}}'
   file_name: Twitch.Drops.Miner-{{ARCH}}.AppImage
   comp: zstd
-  sign-key: None
-  update-information: guess
