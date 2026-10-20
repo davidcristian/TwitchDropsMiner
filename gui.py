@@ -754,6 +754,8 @@ class CampaignProgress:
 
 
 class ConsoleOutput:
+    MAX_LINES = 5000
+
     def __init__(self, manager: GUIManager, master: ttk.Widget):
         frame = ttk.LabelFrame(master, text=_("gui", "output"), padding=(4, 0, 4, 4))
         frame.grid(column=0, row=3, columnspan=3, sticky="nsew", padx=2)
@@ -785,6 +787,8 @@ class ConsoleOutput:
             message = message.replace('\n', f"\n{stamp}: ")
         self._text.config(state="normal")
         self._text.insert("end", f"{stamp}: {message}\n")
+        # keep the last MAX_LINES lines: "end" is two lines below the last line written
+        self._text.delete("1.0", f"end - {self.MAX_LINES + 1} lines")
         self._text.see("end")  # scroll to the newly added line
         self._text.config(state="disabled")
 

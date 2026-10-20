@@ -31,6 +31,8 @@ from [translate.md](translate.md).
   `get_selection()` and watches the selected channel when `Twitch.can_watch` allows it. `display(channel,
   add=True)` adds a row, or updates the row with the same `iid` and stores the new object for it, so
   `get_selection()` returns the object that `Twitch.channels` holds and not an older one with the same `id`.
+- **`ConsoleOutput.print`** deletes the oldest lines past `MAX_LINES` (5000). A line costs about 0.4 KB, so the
+  box stays near 2 MB of memory in a run of any length. With `--log`, `log.txt` keeps every log line.
 - **`CampaignProgress`** counts down the current minute in its own `_timer_loop` task, one step per second.
   `minute_almost_done()` returns `True` when no countdown runs or `ALMOST_DONE_SECONDS` (10) or fewer are left;
   `Twitch._watch_loop` calls it to decide whether to send the `CurrentDrop` GQL query.

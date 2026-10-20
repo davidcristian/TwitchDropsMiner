@@ -34,7 +34,7 @@ From source, the same command is `env/bin/python main.py -vvv --log`.
 
 | Flag | What it does |
 | --- | --- |
-| `-v` | Shows more messages in the Output box. Repeat it for more detail: `-vv`, `-vvv`, up to `-vvvv`. |
+| `-v` | Shows more messages in the Output box. Repeat it for more detail: `-vv`, `-vvv`, up to `-vvvv`. The Output box keeps the last 5000 lines. |
 | `--log` | Also writes the log messages to `log.txt`, with the detail that `-v` sets. These are the Output lines that start with a level, such as `ERROR:`; the other lines are not written. |
 | `--dump` | Writes the campaign data to `dump.dat`, without your user ID in the drop IDs, then closes the app. It runs one full reload, so use it once, not on every start. |
 | `--tray` | Starts the app hidden in the tray. On macOS it has no effect. |
