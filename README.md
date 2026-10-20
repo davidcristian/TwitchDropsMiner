@@ -72,6 +72,7 @@ Every 20 seconds, the app asks Twitch for the list of the newest video segments 
 ### Notes about the macOS build:
 
 - The macOS version is packaged using PyInstaller into a standalone `.app` bundle, distributed as a ZIP archive.
+- The macOS build runs only on Macs with Apple silicon (`arm64`), because CI builds it on an Apple silicon runner. On an Intel Mac, run the app from source as [docs/building.md](docs/building.md) explains.
 - Since this application is not signed with a paid Apple Developer Certificate, **macOS Gatekeeper will block it** on the first run (saying it "The application is damaged and can't be opened").
   - **To fix this**: Either open the Terminal in the folder the app is in (or navigating with `cd path/to/folder`) and enter `xattr -cr Twitch Drops Miner.app` or just type `xattr -cr ` (make sure to put a space at the end), drag and drop the `Twitch Drops Miner.app` file into the terminal window (this will auto-fill the path) and enter
 - Persistent files (like `cookies.jar`, `settings.json`, `lock.file` and the `cache` folder) are stored inside the application bundle in `Twitch Drops Miner.app/Contents/MacOS` (to access them Right-click the application and select `Show Package Contents`)
