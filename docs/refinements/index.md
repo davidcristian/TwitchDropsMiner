@@ -85,3 +85,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [040: No test can import `translate` or a module that imports it](tasks/040-tests-cannot-import-translate.md) | translate, tests |
 | [041: A `WebsocketTopic` equals its text but has a different hash](tasks/041-topic-hash-differs-from-its-text.md) | constants, websocket |
 | [042: The game folder dialog stops the miner while it is open](tasks/042-folder-dialog-stops-the-miner.md) | gui |
+| [043: A `drop-claim` event for a claimed drop runs the claim handling again](tasks/043-repeated-drop-claim-event.md) | twitch |

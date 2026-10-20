@@ -194,7 +194,8 @@ once while it persists ([gamelib.md](gamelib.md)).
 
 - `process_drops`: `drop-progress` updates the drop's minutes. `drop-claim` stores the claim ID, claims the drop
   and sends `CurrentDrop` up to 8 times, 2 seconds apart, until Twitch reports another drop. Then it restarts
-  watching, or enters `State.INVENTORY_FETCH` when the campaign has nothing left on the channel.
+  watching, or enters `State.INVENTORY_FETCH` when the campaign has nothing left on the channel. It does so also
+  for a drop that was already claimed ([task 043](../refinements/tasks/043-repeated-drop-claim-event.md)).
 - `process_notifications`: a drop or emote reward notification enters `State.INVENTORY_FETCH` and deletes the
   notification with `NotificationsDelete`. `process_stream_state` and `process_stream_update` pass stream
   events to `Channel` ([channel.md](channel.md#online-checks)).

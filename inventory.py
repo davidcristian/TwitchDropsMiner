@@ -159,6 +159,8 @@ class BaseDrop:
         return delim.join(benefit.name for benefit in self.benefits)
 
     async def claim(self) -> bool:
+        if self.is_claimed:
+            return True
         result = await self._claim()
         if result:
             self.is_claimed = result
@@ -181,8 +183,6 @@ class BaseDrop:
         """
         Returns True if the claim succeeded, False otherwise.
         """
-        if self.is_claimed:
-            return True
         if not self.can_claim:
             return False
         try:

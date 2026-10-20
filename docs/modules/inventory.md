@@ -117,8 +117,10 @@ minutes the campaign also displays its `first_drop`.
   event through `update_claim`.
 - `can_claim` is True when `claim_id` is set, the drop is not claimed, and now is less than 24 hours after the
   campaign's `ends_at`. The code comment cites the Twitch help page for this 24 hour window.
-- `claim()` sends nothing for a drop that is already claimed, which counts as a success, or when `can_claim` is
-  False, which counts as a failure. Otherwise it sends one `ClaimDrop` GQL mutation with the `dropInstanceID`.
+- `claim()` returns True at once for a drop that is already claimed: it sends nothing, prints no line and shows
+  no notification. So a drop that `State.GAMES_UPDATE` claims before its `drop-claim` event arrives, or whose
+  event comes twice, is reported once. When `can_claim` is False it sends nothing and the claim counts as a
+  failure. Otherwise it sends one `ClaimDrop` GQL mutation with the `dropInstanceID`.
   A `claimDropRewards.status` of `ELIGIBLE_FOR_ALL` or `DROP_INSTANCE_ALREADY_CLAIMED` is a success: the drop is
   marked claimed, its minutes are set to `required_minutes`, a line goes to the Output box and the tray shows a
   notification when tray notifications are on. A `GQLException` or any other response is a failure, which is
