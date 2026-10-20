@@ -13,9 +13,9 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
 - `Twitch(settings)` stores the settings and creates the GUI, the websocket pool and `_AuthState`.
 - `await run()` runs `_run` until the app exits. On `ReloadRequest` it calls `shutdown()` and runs `_run` again.
   On `ExitRequest` it returns. Any other exception goes to the [restart](#restart-after-a-fatal-error).
-- `await shutdown()` stops watching, the tasks and the websockets, saves `cookies.jar`, closes the HTTP session
-  and clears the run's data and the channel list in the window. It takes at least half a second, so aiohttp can
-  close the session.
+- `await shutdown()` stops watching, the tasks, the online checks of the channels and the websockets, saves
+  `cookies.jar`, closes the HTTP session and clears the run's data and the channel list in the window. It takes
+  at least half a second, so aiohttp can close the session.
 - `close()` sets `State.EXIT`, and `GUIManager.close` calls it. `prevent_close()` clears the GUI's close
   request, so the window stays open to show an error. `print(message)` writes to the Output box, and
   `save(force=False)` saves the GUI state and the settings; `main()` calls it at exit.
@@ -118,7 +118,9 @@ each one does, the state that follows it and the events that change it. `fetch_i
 `OSError`, so a full disk does not end the run ([savefiles.md](savefiles.md)).
 
 An offline channel has priority `MAX_INT`, so offline channels sort last and are the first ones cut at
-`MAX_CHANNELS` ([task 001](../refinements/tasks/001-offline-acl-channels-trimmed-first.md)).
+`MAX_CHANNELS` ([task 001](../refinements/tasks/001-offline-acl-channels-trimmed-first.md)). The cut unsubscribes
+a channel's topics and cancels its online check ([channel.md](channel.md#invariants)), and the rebuilt channel
+list has no row for it.
 
 ## Watch loop
 
@@ -212,8 +214,9 @@ once while it persists ([gamelib.md](gamelib.md)).
 - `_watch_loop` and `_maintenance_task` use `task_wrapper(critical=True)`. An exception in either is logged and
   sets `State.EXIT`, so the run ends without the automatic restart
   ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)).
-- `shutdown` clears the channels, the GUI channel list, inventory, drops, login state, wanted games and triggers,
-  and resets `_no_channel_printed` and `_scan_errors_printed`, so the next `_run` starts as a fresh one would.
+- `shutdown` cancels the online check of each tracked channel, clears the channels, the GUI channel list,
+  inventory, drops, login state, wanted games and triggers, and resets `_no_channel_printed` and
+  `_scan_errors_printed`, so the next `_run` starts as a fresh one would.
   It does not clear `_campaigns` ([task 027](../refinements/tasks/027-campaigns-never-cleared.md)). A new field
   filled during a run must be cleared there.
 - `channels` stays within `MAX_CHANNELS` ([websocket.md](websocket.md#the-199-channel-limit)).

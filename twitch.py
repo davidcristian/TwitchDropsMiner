@@ -376,6 +376,8 @@ class Twitch:
             await self._session.close()
             self._session = None
         self._drops.clear()
+        for channel in self.channels.values():
+            channel.cancel_online_check()
         self.channels.clear()
         self.gui.channels.clear()
         self.inventory.clear()
@@ -763,9 +765,10 @@ class Twitch:
                 ordered_channels = ordered_channels[:MAX_CHANNELS]
                 if to_remove_channels:
                     # the tracked channels and the gui list are replaced below,
-                    # so just make sure to unsubscribe from their topics
+                    # so unsubscribe from their topics and cancel their online checks
                     to_remove_topics = []
                     for channel in to_remove_channels:
+                        channel.cancel_online_check()
                         to_remove_topics.append(
                             WebsocketTopic.as_str("Channel", "StreamState", channel.id)
                         )

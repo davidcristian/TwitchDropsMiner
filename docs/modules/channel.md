@@ -18,11 +18,11 @@ watch requests that make drop progress. `Twitch` keeps the tracked channels in `
 - Properties: `id`, `name` (the display name, or the login), `url`, `iid` (the row key in the GUI channel list),
   `game`, `viewers` (settable), `drops_enabled`, `acl_based`, and `stream_gql`, the `GetStreamInfo` operation for
   this channel.
-- Status: `online` is True when the channel has a `Stream`. `pending_online` is True while an online check waits
-  and there is no stream yet; the channel list shows it as `OFFLINE ⏳`. `offline` is True when neither is.
-- `check_online()` starts the delayed check [below](#after-a-stream-up-event), unless one is already waiting.
-- `set_offline()` cancels a waiting check. When the channel was online, it drops the stream and calls
-  `Twitch.on_channel_update`.
+- Status: `online` is True when the channel has a `Stream`. `pending_online` is True while an online check is
+  pending and there is no stream yet; the channel list shows it as `OFFLINE ⏳`. `offline` is True when neither is.
+- `check_online()` starts the delayed check [below](#after-a-stream-up-event), unless one is already pending.
+- `cancel_online_check()` cancels a pending check. `set_offline()` cancels it too, and when the channel was
+  online, it drops the stream and calls `Twitch.on_channel_update`.
 - `get_stream()` fetches the stream with GQL and returns it, or None when the channel is offline.
   `update_stream()` stores that result, calls `Twitch.on_channel_update(channel, before, after)` and returns True
   when the channel is online.
@@ -30,7 +30,7 @@ watch requests that make drop progress. `Twitch` keeps the tracked channels in `
   [`bulk_check_online`](#bulk-check).
 - `send_watch()` sends one watch cycle; see [Watching](#watching).
 - `display(*, add=False)` adds or updates the channel's row in the GUI. `remove()` removes the row and cancels a
-  waiting check.
+  pending check.
 
 ### `Stream`
 
@@ -70,9 +70,10 @@ These change a channel's status:
 
 Twitch sends `stream-up` before the stream data is available, as the `pending_online` docstring says. So
 `check_online` does not fetch at once. It starts `_online_delay`, which waits `ONLINE_DELAY` (120 seconds) and
-then calls `update_stream` once. More events during the wait start no second wait. `update_stream` sends one
-`GetStreamInfo` query, plus `AvailableDrops` when the extra check is on, and passes the old and new stream to
-`Twitch.on_channel_update`:
+then calls `update_stream` once. `update_stream` sends one `GetStreamInfo` query, plus `AvailableDrops` when the
+extra check is on. The check stays pending until that request returns, so events during the wait or the request
+start no second check, and a cancelled check stores no result. The check ends before `update_stream` passes the
+old and new stream to `Twitch.on_channel_update`, so the row shows the new status:
 
 - Offline to online: `Twitch` watches the channel when `should_switch` allows it, and prints
   "`{channel} goes ONLINE, switching...`".
@@ -120,14 +121,14 @@ spade URL that `get_spade_url` reads from the channel page, and `_send_watch_gql
 ### A failed playlist request
 
 A missed `stream-down` event leaves an ended stream online in the app. So when the playlist request returns a
-status of 400 or above and no online check waits, `send_watch` also clears the cached URL and calls
+status of 400 or above and no online check is pending, `send_watch` also clears the cached URL and calls
 `check_online()`:
 
 - The next cycle sends `PlaybackAccessToken` and the usher GET again. When usher returns an error,
   `get_stream_url` sets the channel offline, which cancels the check.
 - Otherwise the check sends `GetStreamInfo` 120 seconds later. A response with no stream sets the channel
   offline. A response with a stream replaces the `Stream`, so the next cycle requests usher once more.
-- While the check waits, a failed playlist request clears nothing, so usher is not requested every cycle. A
+- While the check is pending, a failed playlist request clears nothing, so usher is not requested every cycle. A
   playlist that fails every cycle while Twitch reports the stream live costs at most 30 `GetStreamInfo`, 60
   `PlaybackAccessToken` and 60 usher GETs an hour ([ADR-0009](../adr/ADR-0009-watch-method.md#the-cost-of-watching)).
 - Nothing changes when the channel's stream changed during the request, such as after a `stream-down` event.
@@ -135,10 +136,11 @@ status of 400 or above and no online check waits, `send_watch` also clears the c
 ## Invariants
 
 - A channel's identity is its `id`. `CHANNELS_FETCH` builds the channel list with sets, and `set.update` keeps
-  the tracked object when a new one has the same `id`, so a tracked channel keeps its stream and its waiting check.
-- Each channel has at most one waiting check (`_pending_stream_up`). `remove()` and `set_offline()` cancel it, so
-  a removed channel does not call `on_channel_update` later. A tracked channel that `CHANNELS_FETCH` cuts at
-  `MAX_CHANNELS` loses its topics but does not go through `remove()`, so its waiting check still runs.
+  the tracked object when a new one has the same `id`, so a tracked channel keeps its stream and its pending check.
+- Each channel has at most one pending check (`_pending_stream_up`). `cancel_online_check()` cancels it, and
+  `remove()` and `set_offline()` call it, so a removed channel does not call `on_channel_update` later. `Twitch`
+  calls it for every channel in `shutdown`, and for each channel that `CHANNELS_FETCH` cuts at `MAX_CHANNELS`.
+  It does not call `remove()` there, because a new channel that is cut has no row to remove.
 - `Channel` uses `__slots__`, so a new attribute must be added to the `__slots__` tuple.
 - Every GQL query goes through `Twitch.gql_request`, and every other request through `Twitch.request`
   ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)).

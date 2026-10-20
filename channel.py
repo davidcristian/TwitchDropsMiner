@@ -292,10 +292,13 @@ class Channel:
     def display(self, *, add: bool = False):
         self._gui_channels.display(self, add=add)
 
-    def remove(self):
+    def cancel_online_check(self) -> None:
         if self._pending_stream_up is not None:
             self._pending_stream_up.cancel()
             self._pending_stream_up = None
+
+    def remove(self):
+        self.cancel_online_check()
         self._gui_channels.remove(self)
 
     async def get_spade_url(self) -> URLType:
@@ -375,10 +378,17 @@ class Channel:
         Fetches the current channel stream, and if one exists,
         updates it's game, title, tags and viewers. Updates channel status in general.
         """
+        try:
+            stream = await self.get_stream()
+        finally:
+            # An online check can be cancelled until its request returns, and ends
+            # before on_channel_update displays the new status.
+            if self._pending_stream_up is asyncio.current_task():
+                self._pending_stream_up = None
         old_stream = self._stream
-        self._stream = await self.get_stream()
-        self._twitch.on_channel_update(self, old_stream, self._stream)
-        return self._stream is not None
+        self._stream = stream
+        self._twitch.on_channel_update(self, old_stream, stream)
+        return stream is not None
 
     async def _online_delay(self):
         """
@@ -386,7 +396,6 @@ class Channel:
         so just wait a bit and check if it's actually online by then.
         """
         await asyncio.sleep(ONLINE_DELAY.total_seconds())
-        self._pending_stream_up = None  # for 'display' to work properly
         await self.update_stream()
 
     def check_online(self):
@@ -403,11 +412,8 @@ class Channel:
 
         This is called externally, if we receive an event indicating the channel is now OFFLINE.
         """
-        needs_display: bool = False
-        if self._pending_stream_up is not None:
-            self._pending_stream_up.cancel()
-            self._pending_stream_up = None
-            needs_display = True
+        needs_display: bool = self._pending_stream_up is not None
+        self.cancel_online_check()
         if self.online:
             old_stream = self._stream
             self._stream = None
