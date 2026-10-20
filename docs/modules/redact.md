@@ -1,7 +1,9 @@
 # `redact.py`
 
-**Purpose.** Hides the login token and other secrets in a value before a log call prints it. Three log calls
-use it: the `Request:` and `Response:` lines of `Twitch.request` and the `sent:` line of `Websocket.send`.
+**Purpose.** Hides the login token and other secrets in a value before a log call prints it. Six log calls use
+it: the `Request:` and `Response:` lines of `Twitch.request`, the `sent:` line of `Websocket.send`, the
+`received:` line of `Websocket._gather_recv`, and the warnings of `Websocket._handle_recv` about a message of an
+unknown type or a malformed one.
 `Twitch.request` also passes the request info of a `ClientHttpProxyError` through it before it raises the
 error again, because the error's text shows the proxy URL with its password.
 [ADR-0011](../adr/ADR-0011-secrets-in-logs.md) gives the reasons.

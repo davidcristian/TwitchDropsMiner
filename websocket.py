@@ -250,11 +250,18 @@ class Websocket:
                 raw_message: aiohttp.WSMessage = await ws.receive(timeout=timeout)
             except aiohttp.ClientConnectionError:
                 raise WebsocketClosed(received=False)
-            ws_logger.debug(f"Websocket[{self._idx}] received: {raw_message}")
             if raw_message.type is WSMsgType.TEXT:
-                message: JsonType = json.loads(raw_message.data)
+                try:
+                    message: JsonType = json.loads(raw_message.data)
+                except ValueError as exc:
+                    ws_logger.warning(f"Websocket[{self._idx}] skipped a message that is not JSON: {exc}")
+                    continue
+                # logged once parsed, because redact reads the keys of a dict, not of JSON text
+                ws_logger.debug(f"Websocket[{self._idx}] received: {redact(message)}")
                 messages.append(message)
-            elif raw_message.type is WSMsgType.CLOSE:
+                continue
+            ws_logger.debug(f"Websocket[{self._idx}] received: {raw_message}")
+            if raw_message.type is WSMsgType.CLOSE:
                 raise WebsocketClosed(received=True)
             elif raw_message.type is WSMsgType.CLOSED:
                 raise WebsocketClosed(received=False)
@@ -285,21 +292,26 @@ class Websocket:
             await self._gather_recv(messages, timeout=0.5)
         # process them
         for message in messages:
-            msg_type = message["type"]
-            if msg_type == "MESSAGE":
-                self._handle_message(message)
-            elif msg_type == "PONG":
-                # move the timestamp to something much later
-                self._max_pong = self._next_ping
-            elif msg_type == "RESPONSE":
-                # no special handling for these (for now)
-                pass
-            elif msg_type == "RECONNECT":
-                # We've received a reconnect request
-                ws_logger.warning(f"Websocket[{self._idx}] requested reconnect.")
-                self.request_reconnect()
-            else:
-                ws_logger.warning(f"Websocket[{self._idx}] received unknown payload: {message}")
+            try:
+                msg_type = message["type"]
+                if msg_type == "MESSAGE":
+                    self._handle_message(message)
+                elif msg_type == "PONG":
+                    # move the timestamp to something much later
+                    self._max_pong = self._next_ping
+                elif msg_type == "RESPONSE":
+                    # no special handling for these (for now)
+                    pass
+                elif msg_type == "RECONNECT":
+                    # We've received a reconnect request
+                    ws_logger.warning(f"Websocket[{self._idx}] requested reconnect.")
+                    self.request_reconnect()
+                else:
+                    ws_logger.warning(f"Websocket[{self._idx}] received unknown payload: {redact(message)}")
+            except (KeyError, TypeError, ValueError) as exc:
+                ws_logger.warning(
+                    f"Websocket[{self._idx}] skipped a malformed message ({exc!r}): {redact(message)}"
+                )
 
     def add_topics(self, topics_set: set[WebsocketTopic]):
         changed: bool = False

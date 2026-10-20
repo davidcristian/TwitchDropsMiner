@@ -115,12 +115,16 @@ A `MESSAGE` from Twitch names its topic. `Websocket._handle_message` looks the t
 `topics`, decodes the JSON message inside, and starts a task that calls the `WebsocketTopic`. The topic calls its
 handler in `Twitch` with the target ID and the message. A message for a topic that is no longer subscribed is
 dropped. A `PONG` sets the pong deadline to the time of the next ping, a `RESPONSE` is ignored and an unknown
-type is logged. The handlers and what they do are in [twitch.md](twitch.md#websocket-handlers).
+type is logged. A message that is not JSON, or that lacks a field that this handling reads, is logged as a
+warning and skipped, and the rest of its batch is handled. The handlers and what they do are in
+[twitch.md](twitch.md#websocket-handlers).
 
 ## Invariants
 
 - `send` logs each message at DEBUG through `redact`, so the `auth_token` of a `LISTEN` or `UNLISTEN` message
-  shows as `<hidden>` ([redact.md](redact.md)). A new log call that prints a message does the same.
+  shows as `<hidden>` ([redact.md](redact.md)). The `received:` line and the warnings about an unknown or a
+  malformed message print the parsed message through `redact` too. A new log call that prints a message does
+  the same ([ADR-0011](../adr/ADR-0011-secrets-in-logs.md)).
 - The pool holds at most `MAX_WEBSOCKETS * WS_TOPICS_LIMIT` (400) topics, and `Twitch` stays within this through
   `MAX_CHANNELS`. A new topic for each channel must increase `TOPICS_PER_CHANNEL`, and a new user topic must
   increase `BASE_TOPICS`, so that `MAX_CHANNELS` goes down to match.
@@ -141,5 +145,5 @@ type is logged. The handlers and what they do are in [twitch.md](twitch.md#webso
 **Dependencies.** `utils` (`ExponentialBackoff`, `AwaitableValue`, `task_wrapper`, `chunk`, `create_nonce`,
 `json_minify`, `format_traceback`, `CHARS_ASCII`), `exceptions` (`MinerException`, `WebsocketClosed`),
 `constants` (`PING_INTERVAL`, `PING_TIMEOUT`, `MAX_WEBSOCKETS`, `WS_TOPICS_LIMIT`, `WS_MIN_UPTIME`),
-`reconnect` (`ReconnectDelay`), `redact` for the `sent:` log line, and `translate` for the status texts. Third
-party: aiohttp.
+`reconnect` (`ReconnectDelay`), `redact` for the log lines that print a message, and `translate` for the status
+texts. Third party: aiohttp.

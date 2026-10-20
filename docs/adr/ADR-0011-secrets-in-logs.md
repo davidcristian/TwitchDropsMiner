@@ -4,10 +4,13 @@
 
 ## Context
 
-Three log calls print a whole request, response or websocket message. `Twitch.request` logs its arguments
+Six log calls print a whole request, response or websocket message. `Twitch.request` logs its arguments
 (`Request:`) and each response (`Response:`) at DEBUG on the `TwitchDrops` logger, which `-vvvv` turns on.
-`Websocket.send` logs each message it sends (`sent:`) at DEBUG on `TwitchDrops.websocket`, which `--debug-ws`
-turns on at any `-v` count. `--log` writes both to `log.txt`, and both appear in the Output box.
+`Websocket.send` logs each message it sends (`sent:`), and `Websocket._gather_recv` each text message it
+receives (`received:`), at DEBUG on `TwitchDrops.websocket`, which `--debug-ws` turns on at any `-v` count.
+`Websocket._handle_recv` logs a received message of an unknown type (`received unknown payload`) or one it
+skips as malformed (`skipped a malformed message`) at WARNING on the same logger, which `-v` turns on. `--log`
+writes all of them to `log.txt`, and all of them appear in the Output box.
 
 Those values hold secrets: the OAuth access token in the `Authorization` header of every GQL request and of
 the token check, in the `token` field of the revoke request and in the `auth_token` of every `LISTEN` and
@@ -48,6 +51,10 @@ The log lines are f-strings, so a value is already text when a log handler recei
 
 - A new log call that prints a header, a request body, a cookie or a websocket message uses `redact()`.
   AGENTS.md check 6 states this.
+- `redact()` reads the keys of a dict, not of JSON text. So `received:` logs a text message after it is parsed,
+  and a message that is not JSON is logged with the parse error only. A frame of another type, such as a close
+  frame, holds no keys and is logged as it is. The `message` field of a PubSub `MESSAGE` is JSON text, which
+  `redact()` does not read.
 - A secret under a key name that is not in `SECRET_KEYS` is logged until its name is added.
 - Of the proxy errors checked in aiohttp 3.14.3 (a rejected request, a closed port, a rejected websocket
   connection), only `ClientHttpProxyError` shows the password in its text. `Websocket` logs a connection
@@ -70,7 +77,7 @@ The log lines are f-strings, so a value is already text when a log handler recei
   let through now.
 - **Hiding passwords in the text of every traceback.** Each place that prints or logs a traceback would need
   the change, and a log call formats the traceback inside `logging`.
-- **Removing the three log lines.** They are the only record of what the app sent and received.
+- **Removing these log lines.** They are the only record of what the app sent and received.
 - **Leaving the lines to a level that users do not set.** `-vvvv` is listed for users in troubleshooting.md, and
   `--debug-ws` turns its logger on at any `-v` count.
 
