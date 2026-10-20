@@ -39,6 +39,8 @@ class ErrorMessages(TypedDict):
     no_connection: str
     site_down: str
     save_failed: str
+    cannot_start: str
+    folder_not_writable: str
 
 
 class GUIStatus(TypedDict):
@@ -311,6 +313,11 @@ default_translation: Translation = {
         "site_down": "Twitch is down, retrying in {seconds} seconds...",
         "no_connection": "Cannot connect to Twitch, retrying in {seconds} seconds... ({url})",
         "save_failed": "Saving failed, retrying at the next reload: {error}",
+        "cannot_start": "Cannot start",
+        "folder_not_writable": (
+            "The application cannot write to the folder it runs from, where it keeps its files:\n\n{error}\n\n"
+            "Move the application to a folder you can write to."
+        ),
     },
     "gui": {
         "output": "Output",

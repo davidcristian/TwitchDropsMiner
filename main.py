@@ -26,7 +26,8 @@ if __name__ == "__main__":
     from twitch import Twitch
     from settings import Settings
     from version import __version__
-    from utils import lock_file, resource_path, set_root_icon
+    from instancelock import lock_file
+    from utils import resource_path, set_root_icon
     from constants import LOGGING_LEVELS, SELF_PATH, FILE_FORMATTER, LOG_PATH, LOCK_PATH
 
     if TYPE_CHECKING:
@@ -128,6 +129,20 @@ if __name__ == "__main__":
             f"There was an error while loading the settings file:\n\n{traceback.format_exc()}"
         )
         sys.exit(4)
+    try:
+        _.set_language(settings.language)
+    except ValueError:
+        # this language doesn't exist - stick to English
+        pass
+    lock = lock_file(LOCK_PATH)
+    if lock.error is not None:
+        messagebox.showerror(
+            _("error", "cannot_start"), _("error", "folder_not_writable").format(error=lock.error)
+        )
+        sys.exit(5)
+    if lock.file is None:
+        # another copy of the app runs from this folder
+        sys.exit(3)
     # dummy window isn't needed anymore
     root.destroy()
     # get rid of unneeded objects
@@ -135,13 +150,6 @@ if __name__ == "__main__":
 
     # client run
     async def main():
-        # set language
-        try:
-            _.set_language(settings.language)
-        except ValueError:
-            # this language doesn't exist - stick to English
-            pass
-
         # handle logging stuff
         if settings.logging_level > logging.DEBUG:
             # redirect the root logger into a NullHandler, effectively ignoring all logging calls
@@ -191,13 +199,5 @@ if __name__ == "__main__":
         client.gui.close_window()
         sys.exit(exit_status)
 
-    try:
-        # use lock_file to check if we're not already running
-        success, file = lock_file(LOCK_PATH)
-        if not success:
-            # already running - exit
-            sys.exit(3)
-
+    with lock.file:
         asyncio.run(main())
-    finally:
-        file.close()

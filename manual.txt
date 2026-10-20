@@ -29,3 +29,4 @@ Exit codes:
 • 2: Incorrect command line arguments
 • 3: Application already running
 • 4: Loading of the settings file failed
+• 5: Writing of the lock file failed, for example in a read-only folder

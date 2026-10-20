@@ -50,7 +50,7 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 
 | Document | What it covers |
 | --- | --- |
-| [main.md](modules/main.md) | The entry point: flags, logging, the lock file, the argument and settings error dialogs, the exit codes |
+| [main.md](modules/main.md) | The entry point: flags, logging, the argument, settings and lock file error dialogs, the exit codes |
 | [twitch.md](modules/twitch.md) | `Twitch`: requests and the GQL limiter, login, the state machine, the maintenance task, the wanted games |
 | [inventory.md](modules/inventory.md) | `DropsCampaign` and `TimedDrop`: what can be mined, progress, claiming |
 | [channel.md](modules/channel.md) | `Channel` and `Stream`: online checks, the batched bulk check, the watch requests |
@@ -69,4 +69,5 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [imagedata.md](modules/imagedata.md) | `decode_image`: the full decode of an image download, which returns None for broken data |
 | [savefiles.md](modules/savefiles.md) | `save_each`: the saves after an inventory fetch, where a failed save is logged and the run goes on |
 | [ratelimit.md](modules/ratelimit.md) | `RateLimiter`: at most 5 GQL requests start in any second and at most 5 are open |
+| [instancelock.md](modules/instancelock.md) | `lock_file`: the lock on `lock.file`, and the result for a file it cannot open or write |
 | [gamelib.md](modules/gamelib.md) | The installed game scan, name matching and the list patterns |

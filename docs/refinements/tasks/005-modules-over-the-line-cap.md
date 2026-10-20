@@ -15,11 +15,11 @@ for the split now.
 | --- | --- |
 | `gui.py` | 3218 |
 | `twitch.py` | 1625 |
-| `translate.py` | 590 |
+| `translate.py` | 597 |
 | `constants.py` | 519 |
 | `inventory.py` | 506 |
 | `channel.py` | 505 |
-| `utils.py` | 413 |
+| `utils.py` | 389 |
 | `websocket.py` | 404 |
 
 `main.py` (203), `cache.py` (147), `settings.py` (113), `registry.py` (112), `exceptions.py` (71) and every
@@ -78,3 +78,5 @@ Splits cost no Twitch requests.
   `constants.py`. The new module `reconnect.py` holds the logic of the wait.
 - 2026-10-20: Measured the modules again after `RateLimiter` moved from `utils.py` to the new module
   `ratelimit.py`.
+- 2026-10-20: Measured again after `lock_file` moved from `utils.py` to the new module `instancelock.py`, and
+  `translate.py` gained the two strings of the "Cannot start" dialog.

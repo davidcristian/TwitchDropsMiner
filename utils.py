@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import os
 import re
 import sys
@@ -68,29 +67,6 @@ def format_traceback(exc: BaseException, **kwargs: Any) -> str:
     Any additional `**kwargs` are passed to the underlaying `traceback.format_exception`.
     """
     return ''.join(traceback.format_exception(type(exc), exc, **kwargs))
-
-
-def lock_file(path: Path) -> tuple[bool, io.TextIOWrapper]:
-    file = path.open('w', encoding="utf8")
-    file.write('ツ')
-    file.flush()
-    if sys.platform == "win32":
-        import msvcrt
-        try:
-            # we need to lock at least one byte for this to work
-            msvcrt.locking(file.fileno(), msvcrt.LK_NBLCK, max(path.stat().st_size, 1))
-        except Exception:
-            return False, file
-        return True, file
-    if sys.platform in ("linux", "darwin"):
-        import fcntl
-        try:
-            fcntl.lockf(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except Exception:
-            return False, file
-        return True, file
-    # for unsupported systems, just always return True
-    return True, file
 
 
 def json_minify(data: JsonType | list[JsonType]) -> str:

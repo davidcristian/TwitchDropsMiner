@@ -20,12 +20,17 @@ type checking only.
    and `utils.py` imports `typing.ParamSpec`, which 3.9 does not have.
 6. On Linux, when `XMODIFIERS` is not set, it is set to `@im=none`. This turns off the X input method, which the
    code comment names as the cause of XWayland and Mutter lockups during large Tk layout updates.
-7. A hidden `tk.Tk` root with the app icon, as the parent of the message boxes in steps 8 and 9.
+7. A hidden `tk.Tk` root with the app icon, as the parent of the message boxes in steps 8, 9 and 11.
 8. `Parser.parse_args` into a `ParsedArgs` namespace.
 9. `Settings(args)` ([settings.md](settings.md)). Any exception shows the "Settings error" message box with the
-   traceback and exits with code 4. The hidden root is then destroyed.
-10. `lock_file(LOCK_PATH)`. When another process holds the lock, the app exits with code 3.
-11. `asyncio.run(main())`. The lock file is closed in a `finally` block after it.
+   traceback and exits with code 4.
+10. `_.set_language(settings.language)`, so the window and the message box of step 11 use the chosen language.
+    A `ValueError` for an unknown language keeps English.
+11. `lock_file(LOCK_PATH)` takes the lock on `lock.file` in the app's folder ([instancelock.md](instancelock.md)).
+    When the file cannot be opened or written, for example in a read only folder, the "Cannot start" message box
+    shows the error and the app exits with code 5. When another process holds the lock, the app exits with code
+    3 and shows nothing. The hidden root is then destroyed.
+12. `asyncio.run(main())` in a `with` block on the lock file, which closes the file after the run.
 
 ## Public contract
 
@@ -57,8 +62,6 @@ message box titled "Argument Parser Error" when argparse exits, also for `--help
 
 `main()` sets up logging before it creates `Twitch`:
 
-- `_.set_language(settings.language)` comes first, so the window is built in the chosen language. A
-  `ValueError` for an unknown language keeps English.
 - When the level is above DEBUG, a `logging.NullHandler` is added to the root logger. Records from other
   libraries' loggers then end there instead of in Python's last resort handler, which prints to stderr.
 - The `TwitchDrops` logger gets the level from `-v`, and with `--log` a `logging.FileHandler` for `log.txt`.
@@ -89,7 +92,8 @@ message box titled "Argument Parser Error" when argparse exits, also for `--help
 8. `client.gui.stop()`, `client.gui.close_window()` and `sys.exit` with the exit code.
 
 A fatal error during the run shows no dialog. The traceback is in the Output box, and the window stays open with
-the error tray icon. Only the argument and settings errors before the window exists use a message box.
+the error tray icon. Only the argument, settings and lock file errors before the window exists use a message
+box.
 
 ## Exit codes
 
@@ -100,16 +104,9 @@ the error tray icon. Only the argument and settings errors before the window exi
 | 2 | argparse found an error in the command line, such as an unknown flag. |
 | 3 | Another process holds `lock.file`. |
 | 4 | `Settings(args)` raised, for example because `settings.json` is not valid JSON. |
+| 5 | `lock.file` cannot be opened or written, for example because the app's folder is read only. |
 
-[`manual.txt`](../../manual.txt), which is shipped with each release, lists the same five codes.
-
-## The lock file
-
-`utils.lock_file` opens `lock.file` in the app's folder (`WORKING_DIR`, the folder of the executable, the
-`.AppImage` file or `main.py`) for writing, writes one character and locks it without waiting:
-`msvcrt.locking` with `LK_NBLCK` on Windows, and `fcntl.lockf` with `LOCK_EX | LOCK_NB` on Linux and macOS. On
-any other platform it returns success without a lock. The operating system releases the lock when the process
-ends, also after a crash. The lock is per folder: two copies started from different folders both run.
+[`manual.txt`](../../manual.txt), which is shipped with each release, lists the same six codes.
 
 ## Invariants
 
@@ -124,5 +121,5 @@ ends, also after a crash. The lock is per folder: two copies started from differ
 - A flag with the name of a `SettingsFile` key hides that key, because `Settings` reads `ParsedArgs` attributes
   before the settings file ([settings.md](settings.md)).
 
-**Dependencies.** Repo modules: `translate`, `twitch`, `settings`, `version`, `exceptions`, `utils`, `constants`.
-Third-party: `truststore`. Standard library: `argparse`, `asyncio`, `logging`, `signal`, `tkinter`.
+**Dependencies.** Repo modules: `translate`, `twitch`, `settings`, `version`, `exceptions`, `instancelock`, `utils`,
+`constants`. Third-party: `truststore`. Standard library: `argparse`, `asyncio`, `logging`, `signal`, `tkinter`.

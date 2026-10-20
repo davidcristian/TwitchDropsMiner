@@ -1,10 +1,11 @@
 # `utils.py`
 
 **Purpose.** Holds the helpers that several modules share: reading and writing JSON files, the delays between
-retries (`ExponentialBackoff`), running tasks, the `Game` class and small helpers for time, random IDs, the
-single instance lock and the browser. None of them sends a request to Twitch by itself. The module is 413 lines,
-over the 300 line soft cap in AGENTS.md ([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
-`RateLimiter`, which limits the GQL requests, is in [ratelimit.md](ratelimit.md).
+retries (`ExponentialBackoff`), running tasks, the `Game` class and small helpers for time, random IDs and the
+browser. None of them sends a request to Twitch by itself. The module is 389 lines, over the 300 line soft cap in
+AGENTS.md ([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md)). `RateLimiter`, which
+limits the GQL requests, is in [ratelimit.md](ratelimit.md), and `lock_file`, the single instance lock, in
+[instancelock.md](instancelock.md).
 
 ## Public contract
 
@@ -80,7 +81,6 @@ empty or includes it (`inventory.py`, `twitch.py`). `inventory.py`, `channel.py`
 
 | Helper | What it does | Caller |
 | --- | --- | --- |
-| `lock_file(path)` | Opens `path`, writes one character and locks it with `msvcrt.locking` on Windows or `fcntl.lockf` on Linux and macOS. Returns `(locked, file)`; on other systems `locked` is always true | `main.py`, the single instance lock on `lock.file` |
 | `resource_path(relative_path)` | `constants._resource_path` ([constants.md](constants.md#working-directory-and-paths)) | `main.py`, `gui.py` |
 | `set_root_icon(root, image_path)` | Sets the window icon and keeps a reference to the image | `main.py`, `gui.py` |
 | `webopen(url)` | Opens `url` in a new browser tab. In a packaged Linux build it restores `LD_LIBRARY_PATH` from `LD_LIBRARY_PATH_ORIG` for the call, because PyInstaller points it at the bundled libraries | `gui.py` |

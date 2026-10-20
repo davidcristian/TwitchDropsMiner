@@ -55,6 +55,7 @@ request counts this rule rests on.
 | `imagedata.py` | `decode_image`, which decodes a whole image download for `cache.py` or returns None for broken data |
 | `savefiles.py` | `save_each`, which runs the saves after an inventory fetch and reports a failed one instead of raising |
 | `ratelimit.py` | `RateLimiter`, which limits how many GQL requests start in any second and how many are open at once |
+| `instancelock.py` | `lock_file`, the lock on `lock.file` that lets one copy of the app run per folder |
 | `version.py` | `__version__`, to which CI appends the commit hash. Its doc is part of `docs/modules/constants.md` |
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
 | `docs/` | Listed in `docs/index.md`: `ARCHITECTURE.md`, the decisions (`adr/`), one contract doc per module (`modules/`), procedures (`runbooks/`), the deferred work (`refinements/`), and two pages for users, `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
@@ -112,7 +113,6 @@ fields of `lang/*.json`), ruff (the rules in `pyproject.toml`), `linecap.py` (th
 indexes and the record formats), `rostercheck.py` (the module map, the module docs, the settings keys, the `gui.py`
 mock and this list), and pytest over `tests/`, which fails below 80% branch coverage of the modules `pyproject.toml`
 lists. No check finds 3.11+ names such as `typing.Self` and `tomllib`, which fail only on import: avoid them.
-
 The rest is checked by hand, and the report of a change shows the output of each:
 
 1. **Tests assert behavior** ([ADR-0013](docs/adr/ADR-0013-test-standard.md)). A bug fix adds a test that fails without

@@ -48,6 +48,9 @@ From source, the same command is `env/bin/python main.py -vvv --log`.
   maybe hidden in the tray. The second copy exits without a message. Close the first copy, or end it in the task
   manager. You never need to delete `lock.file`: the lock ends when the copy that holds it ends, even after a
   crash.
+- **A "Cannot start" dialog.** The app cannot write to the folder it runs from, where it keeps its files, for
+  example because the folder is read only or only an administrator can change it. The dialog shows the error.
+  Move the app to a folder you can write to, such as one in your home folder.
 - **A "Settings error" dialog.** `settings.json` is not valid JSON. Correct the file or delete it. Without it the
   app starts with the default settings, so your lists and game folders are lost. Close the app before you edit
   `settings.json`, because the app writes the file when it closes. Without a message, the app drops a setting

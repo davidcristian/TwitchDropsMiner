@@ -6,8 +6,9 @@
 [task 003](003-test-suite.md)
 **Verified:** 2026-10-20
 
-The test suite covers `redact`, `reconnect`, `gamelib`, `gqldata`, `imagedata`, `savefiles`, `ratelimit` and
-`scripts/`. Two candidates of task 003 are left: the helpers in `utils.py` and the loading of `settings.json`.
+The test suite covers `redact`, `reconnect`, `gamelib`, `gqldata`, `imagedata`, `savefiles`, `ratelimit`,
+`instancelock` and `scripts/`. Two candidates of task 003 are left: the helpers in `utils.py` and the loading of
+`settings.json`.
 
 - **`utils`**: `chunk`, `deduplicate`, `ExponentialBackoff` and `Game.slug`.
 - **Settings loading**: `json_load`, `json_save` and `merge_json` in `utils`, with `default_settings` from
@@ -37,3 +38,5 @@ Twitch requests: none.
   candidates were left because their imports need `requirements.txt`.
 - 2026-10-20: `RateLimiter` moved from `utils.py` to the new module `ratelimit.py`, which
   `tests/test_ratelimit.py` tests, so it left the `utils` candidate.
+- 2026-10-20: `lock_file` moved from `utils.py` to the new module `instancelock.py`, which
+  `tests/test_instancelock.py` tests.
