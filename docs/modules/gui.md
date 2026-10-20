@@ -2,10 +2,10 @@
 
 **Purpose.** The whole tkinter window: four tabs, the tray icon, the light and dark themes, and a preview that
 opens the window with mock data. `Twitch.__init__` creates one `GUIManager`, and the rest of the app changes the
-window only through that object and the parts it exposes as attributes. The file has about 3300 lines, over ten
-times the 300 line cap in [AGENTS.md](../../AGENTS.md#module-map), so new logic that does not need tkinter goes in
-a new module ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md)). Before a search and replace edit
-in this file, read the `gui.py` recipe in [AGENTS.md](../../AGENTS.md#recipes).
+window only through that object and the parts it exposes as attributes. The file is far over the 300 line cap
+in [AGENTS.md](../../AGENTS.md#module-map), so new logic that does not need tkinter goes in a new module
+([task 005](../refinements/tasks/005-modules-over-the-line-cap.md) gives its line count). Before a search and
+replace edit in this file, read the `gui.py` recipe in [AGENTS.md](../../AGENTS.md#recipes).
 
 ## The window
 

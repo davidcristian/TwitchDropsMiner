@@ -2,10 +2,10 @@
 
 **Purpose.** Holds the helpers that several modules share: reading and writing JSON files, the delays between
 retries (`ExponentialBackoff`), running tasks, the `Game` class and small helpers for time, random IDs and the
-browser. None of them sends a request to Twitch by itself. The module is 402 lines, over the 300 line soft cap in
-AGENTS.md ([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md)). `RateLimiter`, which
-limits the GQL requests, is in [ratelimit.md](ratelimit.md), and `lock_file`, the single instance lock, in
-[instancelock.md](instancelock.md).
+browser. None of them sends a request to Twitch by itself. The module is over the 300 line cap in AGENTS.md
+([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md) gives its line count).
+`RateLimiter`, which limits the GQL requests, is in [ratelimit.md](ratelimit.md), and `lock_file`, the single
+instance lock, in [instancelock.md](instancelock.md).
 
 ## Public contract
 

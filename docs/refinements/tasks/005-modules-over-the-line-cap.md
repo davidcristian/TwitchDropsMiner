@@ -3,27 +3,27 @@
 **Status:** open
 **Area:** module layout
 **Origin:** [AGENTS.md](../../../AGENTS.md#module-map)
-**Verified:** 2026-10-20
+**Verified:** 2026-10-21
 
 AGENTS.md sets a limit of 300 lines per module, and `scripts/linecap.py` checks it. Eight modules are over it,
-measured with `wc -l` on 2026-10-20, and linecap.py names them in `EXCEPTIONS`. An entry there fails once its
+measured with `wc -l` on 2026-10-21, and linecap.py names them in `EXCEPTIONS`. An entry there fails once its
 module is under the limit, so a split removes it. AGENTS.md forbids adding a new responsibility to any of them:
 new work goes into a new module that they call. This task records where each one can be split. It does not ask
 for the split now.
 
 | Module | Lines |
 | --- | --- |
-| `gui.py` | 3224 |
-| `twitch.py` | 1625 |
+| `gui.py` | 3235 |
+| `twitch.py` | 1629 |
 | `translate.py` | 597 |
 | `constants.py` | 519 |
 | `inventory.py` | 506 |
 | `channel.py` | 505 |
-| `utils.py` | 389 |
-| `websocket.py` | 404 |
+| `utils.py` | 402 |
+| `websocket.py` | 418 |
 
 `main.py` (203), `cache.py` (147), `settings.py` (113), `registry.py` (112), `exceptions.py` (71) and every
-module in `gamelib/` (at most 225) are under the cap.
+module in `gamelib/` (at most 221) are under the cap.
 
 ## Split points
 
@@ -33,34 +33,34 @@ Line counts are of the class or block today.
   - The generic widgets `PlaceholderEntry`, `PlaceholderCombobox`, `PaddedListbox`, `MouseOverLabel`,
     `LinkLabel`, `SelectMenu` and `SelectCombobox`, about 330 lines together.
   - The Main tab panels: `StatusBar`, `WebsocketStatus`, `LoginForm`, `CampaignProgress` (163),
-    `ConsoleOutput` and `ChannelList` (236).
-  - `TrayIcon` (125), `InventoryOverview` (315) and `HelpTab` (103), one module each.
+    `ConsoleOutput` and `ChannelList` (239).
+  - `TrayIcon` (126), `InventoryOverview` (320) and `HelpTab` (103), one module each.
   - `SettingsPanel` (801), which is over the cap by itself. Its `__init__` is 378 lines and builds each frame:
     Games Being Mined, General, Advanced, Priority, Exclude, Detected Games and the Reload row. Each frame can
     become its own class.
-  - `GUIManager` (495), of which `apply_theme` is 210 lines and can move to a theme module.
+  - `GUIManager` (501), of which `apply_theme` is 213 lines and can move to a theme module.
   - The mock under `if __name__ == "__main__":` (260). Moving it to its own preview script changes the
     `python gui.py` command that AGENTS.md and `docs/building.md` give.
 - **`twitch.py`**
   - `_AuthState` (198): login, the OAuth flow, cookies and request headers.
   - HTTP and GQL requests: `get_session`, `request` and `gql_request`.
-  - Inventory fetching: `fetch_campaigns`, `fetch_inventory` (122) and `_merge_data`.
+  - Inventory fetching: `fetch_campaigns`, `fetch_inventory` (119) and `_merge_data`.
   - The PubSub handlers: `process_stream_state`, `process_stream_update`, `on_channel_update`, `process_drops`
     and `process_notifications`.
   - Channel discovery: `get_live_streams` and `bulk_check_online`.
-  - `Twitch._run` (320). The wanted games ranking in its `State.GAMES_UPDATE` branch and the channel order in
+  - `Twitch._run` (324). The wanted games ranking in its `State.GAMES_UPDATE` branch and the channel order in
     its `State.CHANNELS_FETCH` branch need no I/O. As functions in their own module they can be tested
     ([003](003-test-suite.md)).
-- **`translate.py`**: the `TypedDict` classes (about 265 lines), `default_translation` (248) and `Translator`.
+- **`translate.py`**: the `TypedDict` classes (about 265 lines), `default_translation` (254) and `Translator`.
 - **`constants.py`**: `ClientInfo` and `ClientType`, the GQL classes with `GQL_QUERIES` (about 190 lines), and
   `WebsocketTopic` with `WEBSOCKET_TOPICS`.
-- **`inventory.py`**: `Benefit`, `BaseDrop` (152) and `TimedDrop` (118) in one module, `DropsCampaign` (173)
+- **`inventory.py`**: `Benefit`, `BaseDrop` (152) and `TimedDrop` (118) in one module, `DropsCampaign` (175)
   in another.
-- **`channel.py`**: `Stream` (131) and `Channel` (332). `Channel` stays over the cap after that split.
+- **`channel.py`**: `Stream` (131) and `Channel` (344). `Channel` stays over the cap after that split.
 - **`utils.py`**: four groups. The JSON helpers (`json_load`, `json_save`, `merge_json` and the private
   helpers they call), `ExponentialBackoff`, `Game`, and the task helpers such as `task_wrapper` and
   `first_to_complete`.
-- **`websocket.py`**: `Websocket` (299) and `WebsocketPool` (69).
+- **`websocket.py`**: `Websocket` (304) and `WebsocketPool` (71).
 
 A split changes imports in other modules, and `gui.py` edits follow the AGENTS.md recipe for repeated lines. A
 new package follows the "A new package" recipe, which adds the folder to `appimage/AppImageBuilder.yml`.
@@ -82,3 +82,6 @@ Splits cost no Twitch requests.
   `translate.py` gained the two strings of the "Cannot start" dialog.
 - 2026-10-20: Measured `gui.py` again after the Inventory tab's wheel binding gained the X11 buttons. The logic
   went to the new module `mousewheel.py`.
+- 2026-10-21: Measured the modules and the classes again after changes to `gui.py`, `twitch.py`, `utils.py`,
+  `websocket.py`, `channel.py`, `inventory.py`, `translate.py` and `gamelib/`. The module docs now link here for
+  the line counts instead of giving their own.

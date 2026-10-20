@@ -3,10 +3,10 @@
 **Purpose.** Holds the values that the other modules share: the working directory and file paths, the intervals
 and limits, the `State` and `PriorityMode` enums, the GQL operations, the Twitch client identities, the PubSub
 topic names and the logging levels. It computes the paths once, at import, from how the app was started. It
-reads the app version from [`version.py`](#versionpy). The module is 523 lines, over the 300 line soft cap in
-AGENTS.md ([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md)). `tests/test_constants.py`
-tests it with plain values, and loads a second copy of it with a test `sys.argv[0]`, `APPIMAGE` and `sys.platform`
-to check the paths.
+reads the app version from [`version.py`](#versionpy). The module is over the 300 line cap in AGENTS.md
+([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md) gives its line count).
+`tests/test_constants.py` tests it with plain values, and loads a second copy of it with a test `sys.argv[0]`,
+`APPIMAGE` and `sys.platform` to check the paths.
 
 ## Public contract
 
