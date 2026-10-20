@@ -29,13 +29,50 @@ def test_syntax_problems_returns_nothing_for_python_310_code():
             # ast.parse of Python 3.12 accepts these quotes even with feature_version, as syntaxcheck.py says
             marks=pytest.mark.skipif(sys.version_info >= (3, 12), reason="found only by Python 3.10 and 3.11"),
         ),
+        ("x = 1\ny = a[\n    1, *b]\n", 3),
+        ("x = 1\n\nasync def f(*args: *Ts): pass\n", 3),
     ],
-    ids=["except star of 3.11", "type parameters of 3.12", "nested f-string quotes of 3.12"],
+    ids=[
+        "except star of 3.11",
+        "type parameters of 3.12",
+        "nested f-string quotes of 3.12",
+        "starred subscript of 3.11",
+        "starred args annotation of 3.11",
+    ],
 )
 def test_syntax_problems_reports_syntax_newer_than_python_310_at_its_line(source, line):
     [problem] = syntaxcheck.syntax_problems("new.py", source)
     assert (problem.path, problem.line) == ("new.py", line)
     assert problem.message.startswith("does not parse as Python 3.10: ")
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "x = a[(*b,)]\n",
+        "x = a[c, (*b,)]\n",
+        "x = a[(c, *(b))]\n",
+        "x = a[\n    (c,\n     *b  # )\n    )\n]\n",
+        "x = a[f(*b), [*c]]\n",
+        "x = a[()]\n",
+        "def f(*args: int, **kwargs: str): pass\n",
+        "f = lambda *args: args\n",
+    ],
+)
+def test_syntax_problems_accepts_the_starred_forms_of_python_310(source):
+    assert syntaxcheck.syntax_problems("ok.py", source) == []
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="ast.parse of Python 3.10 rejects these forms first")
+def test_syntax_problems_reports_each_starred_form_of_python_311_in_line_order():
+    source = "def f(*args: *Ts):\n    return a[*b,]\n\n\nx = a[(c), *(d)]\ny = a[*e,\n      *f]\n"
+    assert syntaxcheck.syntax_problems("new.py", source) == [
+        Problem("new.py", 1, "does not parse as Python 3.10: a starred expression as the annotation of *args"),
+        Problem("new.py", 2, "does not parse as Python 3.10: a starred expression in a subscript"),
+        Problem("new.py", 5, "does not parse as Python 3.10: a starred expression in a subscript"),
+        Problem("new.py", 6, "does not parse as Python 3.10: a starred expression in a subscript"),
+        Problem("new.py", 7, "does not parse as Python 3.10: a starred expression in a subscript"),
+    ]
 
 
 def test_syntax_problems_reports_an_error_that_only_the_compiler_finds():

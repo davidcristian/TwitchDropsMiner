@@ -25,7 +25,9 @@ lint rules without its formatter or pyright.
    text, and skip a file with a NUL byte as a binary file, such as an icon. `syntaxcheck.py` and `langcheck.py`
    report both. `scripts/` is not at the top level, so the AppImage, which copies the top-level `*.py` files,
    leaves it out.
-   - `syntaxcheck.py`: every Python file parses with `ast.parse(feature_version=(3, 10))`.
+   - `syntaxcheck.py`: every Python file parses with `ast.parse(feature_version=(3, 10))`, and has no starred
+     item in a subscript (`a[*b]`) or starred `*args` annotation, which that call accepts on Python 3.11 and
+     later. Run on Python 3.12, it does not find nested f-string quotes, which the Validate job on 3.10 finds.
    - `langcheck.py`: every `lang/*.json` file is a JSON object, and no string in it has a `str.format` field
      that the English string at the same keys lacks. It reads `default_translation` from `translate.py` with
      `ast`: `translate.py` imports `utils.py`, which imports Pillow, and the Validate job does not install it.
