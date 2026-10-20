@@ -74,8 +74,6 @@ class Websocket:
         )
 
     def request_reconnect(self):
-        # reset our ping interval, so we send a PING after reconnect right away
-        self._next_ping = time()
         self._reconnect_requested.set()
 
     def start_nowait(self):
@@ -153,6 +151,9 @@ class Websocket:
         ):
             self._ws.set(websocket)
             self._reconnect_requested.clear()
+            # send a PING at once, and drop the PONG deadline of a PING sent on the previous connection
+            self._next_ping = time()
+            self._max_pong = self._next_ping + PING_TIMEOUT.total_seconds()
             # NOTE: _topics_changed doesn't start set,
             # because there's no initial topics we can sub to right away
             self.set_status(_("gui", "websocket", "connected"))

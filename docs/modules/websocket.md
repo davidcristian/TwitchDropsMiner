@@ -81,13 +81,14 @@ raises the `MinerException`.
    again at once and the backoff starts again from the first delay. Each connection sends a `PING` and its
    `LISTEN` messages, so without the wait a server that closes every connection at once would get them as fast
    as the handshake allows.
-3. While connected, it repeats three steps. It sends a `PING` every `PING_INTERVAL` (3 minutes). When topics
-   changed, it sends `LISTEN` for the added ones and `UNLISTEN` for the removed ones, 20 topics per message,
-   with the access token. It collects incoming messages until 0.5 seconds pass with no message, and handles
-   them.
-4. It reconnects when no `PONG` arrives within `PING_TIMEOUT` (10 seconds) of a `PING`, when Twitch sends
-   `RECONNECT`, when Twitch closes the connection, and after any exception in the loop. The new connection is
-   opened after the wait of step 2 and subscribes every topic of the connection again.
+3. While connected, it repeats three steps. It sends a `PING` at once on each new connection and then every
+   `PING_INTERVAL` (3 minutes). When topics changed, it sends `LISTEN` for the added ones and `UNLISTEN` for the
+   removed ones, 20 topics per message, with the access token. It collects incoming messages until 0.5 seconds
+   pass with no message, and handles them.
+4. It reconnects when no `PONG` arrives within `PING_TIMEOUT` (10 seconds) of a `PING` sent on the same
+   connection, when Twitch sends `RECONNECT`, when Twitch closes the connection, and after any exception in the
+   loop. The new connection is opened after the wait of step 2 and subscribes every topic of the connection
+   again.
 5. It ends when `stop()` closed the connection, or when the HTTP session is closed. `stop()` waits up to 2
    seconds for the task to end and then cancels it, so a task that waits before a reconnect stops within 2
    seconds.
