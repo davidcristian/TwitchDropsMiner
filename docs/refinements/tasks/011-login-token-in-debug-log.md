@@ -129,3 +129,6 @@ after  -vvvv --debug-ws --debug-gql:  0 secrets                                 
   line and the device code.
 - 2026-10-18: Closed. `redact()` hides the secrets in the three log lines, and the before and after runs of the
   check above show no secret in the log after the fix.
+- 2026-10-20: A proxy that rejects a request makes aiohttp raise `ClientHttpProxyError`, whose traceback
+  showed the proxy password in the Output box and in `log.txt`, which this close did not cover.
+  `Twitch.request` now passes the error's request info through `redact()` before it raises the error again.

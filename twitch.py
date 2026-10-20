@@ -1268,6 +1268,10 @@ class Twitch:
             except aiohttp.ClientConnectorCertificateError:
                 # for a case where SSL verification fails
                 raise
+            except aiohttp.ClientHttpProxyError as exc:
+                # the text of this error shows the proxy URL with its password
+                exc.request_info = redact(exc.request_info)
+                raise
             except (
                 aiohttp.ClientConnectionError, asyncio.TimeoutError, aiohttp.ClientPayloadError
             ):

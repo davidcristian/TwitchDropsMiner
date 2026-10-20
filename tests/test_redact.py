@@ -1,4 +1,6 @@
 import copy
+from collections.abc import Mapping
+from typing import NamedTuple
 
 import pytest
 from multidict import CIMultiDict, CIMultiDictProxy
@@ -14,10 +16,33 @@ DOCUMENTED_SECRET_KEYS = (
     "cookie",
     "device_code",
     "password",
+    "proxy-authorization",
     "refresh_token",
     "set-cookie",
     "token",
 )
+PROXY_BASIC_AUTH = "Basic dXNlcjpzM2NyZXQ="  # user:s3cret in base64
+
+
+# The name and fields of aiohttp's RequestInfo, because the CI test job does not install aiohttp.
+class RequestInfo(NamedTuple):
+    url: URL
+    method: str
+    headers: Mapping[str, str]
+    real_url: URL
+
+
+def proxy_connect_info():
+    headers = CIMultiDictProxy(CIMultiDict([
+        ("Host", "gql.twitch.tv"),
+        ("Proxy-Authorization", PROXY_BASIC_AUTH),
+    ]))
+    return RequestInfo(
+        URL("https://gql.twitch.tv/gql"),
+        "CONNECT",
+        headers,
+        URL("http://user:s3cret@proxy.example:8080"),
+    )
 
 
 @pytest.mark.parametrize("key", DOCUMENTED_SECRET_KEYS)
@@ -73,6 +98,28 @@ def test_redact_hides_the_password_of_a_url():
 def test_redact_returns_a_url_without_a_password_as_it_is():
     url = URL("http://user@proxy.example:8080")
     assert redact(url) is url
+
+
+def test_redact_hides_the_proxy_password_in_a_request_info():
+    result = redact(proxy_connect_info())
+    assert type(result) is RequestInfo
+    assert result.url == URL("https://gql.twitch.tv/gql")
+    assert result.method == "CONNECT"
+    assert result.headers == {"Host": "gql.twitch.tv", "Proxy-Authorization": HIDDEN}
+    assert str(result.real_url) == "http://user:%3Chidden%3E@proxy.example:8080"
+
+
+def test_redact_reads_a_tuple_with_the_same_fields_and_another_name_as_a_tuple():
+    class Other(NamedTuple):
+        url: URL
+        method: str
+        headers: Mapping[str, str]
+        real_url: URL
+
+    value = Other(URL("https://a.example"), "GET", {"Authorization": "OAuth s3cret"}, URL("https://a.example"))
+    result = redact(value)
+    assert type(result) is tuple
+    assert result[2] == {"Authorization": HIDDEN}
 
 
 def test_redact_does_not_change_its_argument():
