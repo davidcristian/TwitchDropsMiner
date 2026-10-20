@@ -117,9 +117,10 @@ there instead of `build.sh`.
 
 ## Package the Windows build
 
-`pack.bat` copies `dist\*.exe` and `manual.txt` into a `Twitch Drops Miner` folder, puts that folder into
-`Twitch Drops Miner.zip`, tests the archive and deletes the folder. It needs `7z.exe` in the current folder and
-skips the packaging without it. CI does not use `pack.bat`; it creates its zip file with PowerShell.
+`pack.bat` copies `dist\*.exe`, `manual.txt`, `LICENSE` and `LICENSE.MIT` into a `Twitch Drops Miner` folder,
+puts that folder into `Twitch Drops Miner.zip`, tests the archive and deletes the folder. It needs `7z.exe` in the
+current folder and skips the packaging without it. CI does not use `pack.bat`; it creates its zip file with
+PowerShell.
 
 ## Build the AppImage
 
@@ -147,8 +148,9 @@ A new package folder must be added to the recipe's `cp` and `compileall` lines, 
 
 CI runs on every push to `master`, on every pull request and when it is started by hand. It builds for
 Windows, macOS, Linux with PyInstaller and Linux as an AppImage, both Linux builds for `x86_64` and `aarch64`,
-and appends the short commit hash to the version in `version.py`. After a run that is not for a pull request,
-CI replaces the `dev-build` pre-release on the
+and appends the short commit hash to the version in `version.py`. Each build's zip file contains a
+`Twitch Drops Miner` folder with the build, `manual.txt`, `LICENSE` and `LICENSE.MIT`. After a run that is not
+for a pull request, CI replaces the `dev-build` pre-release on the
 [Releases page](https://github.com/davidcristian/TwitchDropsMiner/releases) with the new builds. A pull request
 builds but publishes nothing.
 

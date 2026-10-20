@@ -4,6 +4,8 @@ IF NOT EXIST "Twitch Drops Miner" mkdir "Twitch Drops Miner"
 rem Prepare files
 copy /y /v dist\*.exe "Twitch Drops Miner"
 copy /y /v manual.txt "Twitch Drops Miner"
+copy /y /v LICENSE "Twitch Drops Miner"
+copy /y /v LICENSE.MIT "Twitch Drops Miner"
 IF EXIST "Twitch Drops Miner.zip" (
     rem Add action
     set action=a

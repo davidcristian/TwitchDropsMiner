@@ -87,6 +87,7 @@ jobs:
           New-Item $FolderName -ItemType Directory
           Copy-Item dist\*.exe $FolderName
           Copy-Item manual.txt $FolderName
+          Copy-Item LICENSE, LICENSE.MIT $FolderName
           Compress-Archive -Path $FolderName -DestinationPath Twitch.Drops.Miner.Windows.zip
 
       - name: Upload build artifact
@@ -138,7 +139,7 @@ jobs:
           FOLDER="Twitch Drops Miner"
           mkdir -p "$FOLDER"
           cp -r "dist/Twitch Drops Miner.app" "$FOLDER/"
-          cp manual.txt "$FOLDER/"
+          cp manual.txt LICENSE LICENSE.MIT "$FOLDER/"
           zip -r Twitch.Drops.Miner.MacOS.zip "$FOLDER"
 
       - name: Upload build artifact
@@ -220,7 +221,7 @@ jobs:
         run: |
           folder='Twitch Drops Miner'
           mkdir "${folder}"
-          cp manual.txt dist/* "${folder}"
+          cp manual.txt LICENSE LICENSE.MIT dist/* "${folder}"
           7z a 'Twitch.Drops.Miner.Linux.PyInstaller-${{matrix.arch}}.zip' "${folder}"
 
       - name: Upload build artifact
@@ -284,7 +285,7 @@ jobs:
         run: |
           folder='Twitch Drops Miner'
           mkdir "${folder}"
-          cp *.AppImage manual.txt "${folder}"
+          cp *.AppImage manual.txt LICENSE LICENSE.MIT "${folder}"
           7z a 'Twitch.Drops.Miner.Linux.AppImage-${{matrix.arch}}.zip' "${folder}"
 
       - name: Upload build artifact

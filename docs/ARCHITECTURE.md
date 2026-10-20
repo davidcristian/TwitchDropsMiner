@@ -191,7 +191,7 @@ build.spec             PyInstaller spec: one-file build, icons, translations, Li
 setup_env.sh, .bat     create env/ and install requirements.txt into it
 build.sh, build.bat    install PyInstaller into env/ and run build.spec
 run_dev.bat            starts main.py from env/ on Windows, with or without a console
-pack.bat               zips dist\*.exe and manual.txt into "Twitch Drops Miner.zip" with 7z.exe
+pack.bat               zips dist\*.exe, manual.txt and the license files into "Twitch Drops Miner.zip" with 7z.exe
 manual.txt             command line flags and exit codes; every release build includes it
 requirements.txt       aiohttp, Pillow, pystray, PyGObject (Linux), pywin32 (Windows), truststore
 requirements-dev.txt   the tools of just check: just, ruff, pytest, pytest-cov, pre-commit; no build installs it
@@ -202,7 +202,7 @@ pyproject.toml         the ruff, pytest and coverage settings; the app is not a 
 scripts/               the check scripts that just check runs, and commitlint.py for commit messages
 tests/                 the pytest suite, one file per module under test
 version.py             __version__; CI appends the short commit hash
-LICENSE, LICENSE.MIT   GNU AGPL v3 for the project; MIT for the code from DevilXD/TwitchDropsMiner
+LICENSE, LICENSE.MIT   GNU AGPL v3 for the project; MIT for the code from DevilXD; every release includes both
 README.md, AGENTS.md   the user guide; the engineering rules, which CLAUDE.md includes
 docs/                  index.md, ARCHITECTURE.md, building.md, troubleshooting.md
 docs/adr/, modules/    decision records (format in adr/README.md); one contract page per Python module
