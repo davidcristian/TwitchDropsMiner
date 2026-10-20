@@ -7,9 +7,9 @@
 
 `WebsocketPool.stop(clear_topics=True)` in `websocket.py` calls `Websocket.stop(remove=True)` on each connection.
 That closes the connection, clears its `topics` and removes its row from the Websocket Status box, but the pool
-keeps the `Websocket` object in `websockets`. `WebsocketPool.start()` then calls `start()` on every object in the
-list. `add_topics` fills the connections in order from index 0, so when the next run has fewer topics, the last
-connections stay connected with none.
+keeps the `Websocket` object in `websockets`. `WebsocketPool.start()` then calls `start_nowait()` on every object
+in the list. `add_topics` fills the connections in order from index 0, so when the next run has fewer topics, the
+last connections stay connected with none.
 
 ## When it is called
 
@@ -65,7 +65,8 @@ Status box.
 When `clear_topics` is set, `WebsocketPool.stop` empties `websockets` after the connections have stopped. The
 next `add_topics` then creates only the connections it needs, and starts each one at once because the pool is
 running, as on the first run after launch. The fix removes requests and adds none. A test needs no Twitch
-connection: it replaces `Websocket.start` and `start_nowait` as the second script did.
+connection: it replaces `start_nowait` as the second script did. No test can import `websocket.py` yet
+([task 040](040-tests-cannot-import-translate.md)).
 
 How it came about: `clear_topics` and its call in `shutdown()` came from the original project on 2022-09-17
 ("Add clear_topics to websocket stop" and "Hard-reload on integrity expiring during request"). Restart after a
@@ -75,3 +76,5 @@ fatal error added the third path through `shutdown()` on 2026-08-25.
 
 - 2026-10-18: Opened while the docs were written. The writer's script and a second script with stubbed
   connections confirmed it, and reading `Twitch._run` showed when `remove_topics` stops the empty connections.
+- 2026-10-20: `WebsocketPool.start()` now calls `start_nowait()` on each connection and does not wait for it,
+  and `Websocket.start` was removed. The empty connections still start, so the task stays open.

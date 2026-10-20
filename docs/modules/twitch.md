@@ -109,7 +109,9 @@ code flow is the only login: the app has no password login ([ADR-0010](../adr/AD
 ## State machine
 
 `_run` logs in, starts the websocket pool and `_watch_loop`, subscribes to the user's `Drops` and
-`Notifications` topics and enters `State.INVENTORY_FETCH`. It then handles one state per pass and waits for the
+`Notifications` topics and enters `State.INVENTORY_FETCH`. It does not wait for a PubSub connection, so the run
+goes on and the window can close while PubSub cannot be reached
+([websocket.md](websocket.md#starting-without-a-connection)). It then handles one state per pass and waits for the
 next `change_state`. [ARCHITECTURE.md](../ARCHITECTURE.md#the-state-machine) has the table of the states, what
 each one does, the state that follows it and the events that change it. `fetch_inventory` builds a
 `DropsCampaign` for each campaign whose `game`, `allow` and `timeBasedDrops` fields are not null

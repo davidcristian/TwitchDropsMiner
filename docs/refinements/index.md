@@ -82,3 +82,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [037: Some GQL reads still raise on a null field](tasks/037-null-fields-in-other-gql-reads.md) | twitch, inventory |
 | [038: A downloaded CMYK image ends the run](tasks/038-cmyk-image-download-ends-the-run.md) | cache |
 | [039: On a full disk, the cookie and image writes still end the run](tasks/039-full-disk-other-writes.md) | twitch, cache |
+| [040: No test can import `translate` or a module that imports it](tasks/040-tests-cannot-import-translate.md) | translate, tests |

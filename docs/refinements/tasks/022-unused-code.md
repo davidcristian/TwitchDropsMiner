@@ -18,9 +18,9 @@ No code in the repo calls, reads or reaches the code below. The module docs name
   `b64encode`, `json_minify`, `isonow`, `RequestException` and `GQLQuery`.
 - **`BaseDrop.generate_claim`**, `inventory.py`. It builds a claim ID as `<user ID>#<campaign ID>#<drop ID>`.
 - **`DropsCampaign.get_drop`**, `inventory.py`. `Twitch.process_drops` finds a drop in `Twitch._drops` instead.
-- **`websocket.py`:** the `Websocket.connected` property and `WebsocketPool.wait_until_connected`. The one call
-  of a `wait_until_connected`, in `Websocket.start`, calls the `Websocket` method of that name.
-- **`utils.py`:** `first_to_complete`, `CHARS_HEX_UPPER`, `deduplicate` and `invalidate_cache`.
+- **`websocket.py`:** the `Websocket.connected` property and `WebsocketPool.wait_until_connected`.
+- **`utils.py`:** `first_to_complete`, `CHARS_HEX_UPPER`, `deduplicate`, `invalidate_cache` and
+  `AwaitableValue.wait`.
 - **Five `GQL_QUERIES` entries, `constants.py`:** `ClaimCommunityPoints`, `ChannelPointsContext`,
   `SlugRedirect`, `NotificationsView` and `NotificationsList`.
 - **`SelectMenu`**, `gui.py`. The four drop-down lists of the General frame use `SelectCombobox`.
@@ -105,3 +105,5 @@ cycle, so that change states its count, as [AGENTS.md](../../../AGENTS.md#the-on
 
 - 2026-10-18: Opened. The module docs named most of this code as unused while they were written, and an
   `ast` scan of the tracked `.py` files confirmed that nothing references any of it.
+- 2026-10-20: `WebsocketPool.start` no longer waits for a connection, so `Websocket.start` and
+  `Websocket.wait_until_connected` were removed. `AwaitableValue.wait` lost its one caller and is now listed here.

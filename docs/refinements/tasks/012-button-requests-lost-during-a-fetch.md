@@ -10,7 +10,7 @@ Three handlers in `Twitch._run` await requests and then end with `change_state(<
 
 | Handler | What it awaits | Last call |
 | --- | --- | --- |
-| `State.INVENTORY_FETCH` | `websocket.start`, `fetch_inventory` (its GQL queries and the campaign images), `detect_games` (a folder scan in a thread) | `change_state(State.GAMES_UPDATE)` |
+| `State.INVENTORY_FETCH` | `fetch_inventory` (its GQL queries and the campaign images), `detect_games` (a folder scan in a thread) | `change_state(State.GAMES_UPDATE)` |
 | `State.GAMES_UPDATE` | one `TimedDrop.claim` per drop that can be claimed; nothing when there is none | `change_state(State.CHANNELS_CLEANUP)` |
 | `State.CHANNELS_FETCH` | `bulk_check_online` for the untracked ACL channels, one `get_live_streams` per wanted game with a campaign without an ACL | `change_state(State.CHANNEL_SWITCH)` |
 
@@ -121,3 +121,5 @@ restores the hourly reload and the stream refresh that the schedule in
 
 - 2026-10-18: Opened. While twitch.md was written, `change_state` was found to keep only the last state. A run
   of the real `_run` with stubs showed which presses are replaced in each handler.
+- 2026-10-20: `INVENTORY_FETCH` no longer awaits `websocket.start`, which now returns at once, so the table
+  leaves it out.

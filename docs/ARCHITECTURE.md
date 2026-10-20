@@ -46,8 +46,8 @@ clears `_campaigns`, not even `shutdown` ([task 027](refinements/tasks/027-campa
 continues at once; `IDLE`, and `CHANNEL_SWITCH` when it watches a channel, clear the event and wait. `_state`
 holds one value, so the next state a handler sets replaces any request made during its `await` calls
 ([task 012](refinements/tasks/012-button-requests-lost-during-a-fetch.md)). `EXIT` is never replaced. Before
-the loop, `_run` starts the GUI poll task, logs in with `get_auth`, starts the websocket pool and `_watch_loop`,
-subscribes the user's two PubSub topics and moves to `INVENTORY_FETCH`.
+the loop, `_run` starts the GUI poll task, logs in with `get_auth`, starts the websocket pool without waiting for
+a connection, starts `_watch_loop`, subscribes the user's two PubSub topics and moves to `INVENTORY_FETCH`.
 
 | State | What `_run` does | Next |
 | --- | --- | --- |

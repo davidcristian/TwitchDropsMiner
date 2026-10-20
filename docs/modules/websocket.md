@@ -12,8 +12,8 @@ this module.
 
 `Twitch` creates one pool, as `Twitch.websocket`.
 
-- `await start()` sets `running` and starts every `Websocket` in `websockets`, then waits until each one is
-  connected.
+- `start()` sets `running` and starts the task of every `Websocket` in `websockets`. It returns at once and
+  does not wait for a connection ([below](#starting-without-a-connection)).
 - `await stop(*, clear_topics=False)` clears `running` and stops every connection. With `clear_topics`, as
   `Twitch.shutdown` calls it, it also removes their topics and their rows in the GUI's Websocket Status box. The
   `Websocket` objects stay in `websockets`.
@@ -28,9 +28,9 @@ this module.
 
 ### `Websocket(pool, index)`
 
-One connection. `topics` maps a topic string to its `WebsocketTopic`. `start()`, `start_nowait()`,
-`stop(*, remove=False)`, `stop_nowait(*, remove=False)`, `request_reconnect()` and `send(message)` are used by
-the pool and by the connection's own task. Nothing reads the `connected` property
+One connection. `topics` maps a topic string to its `WebsocketTopic`. `start_nowait()`, `stop(*, remove=False)`,
+`stop_nowait(*, remove=False)`, `request_reconnect()` and `send(message)` are used by the pool and by the
+connection's own task. Nothing reads the `connected` property
 ([task 022](../refinements/tasks/022-unused-code.md)).
 
 ### Topics
@@ -88,10 +88,25 @@ raises the `MinerException`.
 4. It reconnects when no `PONG` arrives within `PING_TIMEOUT` (10 seconds) of a `PING`, when Twitch sends
    `RECONNECT`, when Twitch closes the connection, and after any exception in the loop. The new connection is
    opened after the wait of step 2 and subscribes every topic of the connection again.
-5. It ends when `stop()` closed the connection, or when the HTTP session is closed.
+5. It ends when `stop()` closed the connection, or when the HTTP session is closed. `stop()` waits up to 2
+   seconds for the task to end and then cancels it, so a task that waits before a reconnect stops within 2
+   seconds.
 
 Every message the app sends, except `PING`, has a random 30 character nonce. The GUI's Websocket Status box shows
 each connection's state and topic count.
+
+## Starting without a connection
+
+`_run` in `twitch.py` calls `start()` before it subscribes the user topics and again at each `INVENTORY_FETCH`,
+and goes on at once. So while PubSub cannot be reached, the run still fetches the inventory, claims drops and
+switches channels, and closing the window ends it. With no events, `_watch_loop` reads the drop progress with
+`CurrentDrop` ([twitch.md](twitch.md#watch-loop)), and a finished drop is claimed at the next inventory fetch,
+at most an hour later.
+
+The fetch can then start before the user topics are subscribed: at startup, after a restart, and at an hourly
+reload while a connection reconnects. A drop event sent in between is lost, with the same effect. At startup and
+after a restart, the run watches no channel before that fetch ends, so such an event can only come from watching
+before the run started.
 
 ## How events reach `Twitch`
 

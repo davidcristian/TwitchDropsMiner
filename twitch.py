@@ -573,7 +573,7 @@ class Twitch:
         """
         self.gui.start()
         auth_state = await self.get_auth()
-        await self.websocket.start()
+        self.websocket.start()
         # NOTE: watch task is explicitly restarted on each new run
         if self._watching_task is not None:
             self._watching_task.cancel()
@@ -601,7 +601,7 @@ class Twitch:
             elif self._state is State.INVENTORY_FETCH:
                 self.gui.tray.change_icon("maint")
                 # ensure the websocket is running
-                await self.websocket.start()
+                self.websocket.start()
                 await self.fetch_inventory()
                 self.gui.set_games(set(campaign.game for campaign in self.inventory))
                 # match installed games against the campaigns we've just fetched

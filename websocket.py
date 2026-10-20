@@ -68,9 +68,6 @@ class Websocket:
     def connected(self) -> bool:
         return self._ws.has_value()
 
-    def wait_until_connected(self):
-        return self._ws.wait()
-
     def set_status(self, status: str | None = None, refresh_topics: bool = False):
         self._twitch.gui.websockets.update(
             self._idx, status=status, topics=(len(self.topics) if refresh_topics else None)
@@ -80,11 +77,6 @@ class Websocket:
         # reset our ping interval, so we send a PING after reconnect right away
         self._next_ping = time()
         self._reconnect_requested.set()
-
-    async def start(self):
-        async with self._state_lock:
-            self.start_nowait()
-            await self.wait_until_connected()
 
     def start_nowait(self):
         if self._handle_task is None or self._handle_task.done():
@@ -352,9 +344,11 @@ class WebsocketPool:
     def wait_until_connected(self) -> abc.Coroutine[Any, Any, Literal[True]]:
         return self._running.wait()
 
-    async def start(self):
+    def start(self) -> None:
+        """Start every connection without waiting for it to connect."""
         self._running.set()
-        await asyncio.gather(*(ws.start() for ws in self.websockets))
+        for ws in self.websockets:
+            ws.start_nowait()
 
     async def stop(self, *, clear_topics: bool = False):
         self._running.clear()
