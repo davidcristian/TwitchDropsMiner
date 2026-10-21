@@ -1,9 +1,9 @@
 # `main.py`
 
 **Purpose.** The entry point. It parses the command line, loads the settings, takes the single instance lock,
-sets up logging, runs `Twitch` and sets the exit code. Apart from two imports, all of the file is inside
-`if __name__ == "__main__":`, so importing `main` runs nothing. `settings.py` imports `ParsedArgs` from it for
-type checking only.
+sets up logging, runs `Twitch` and sets the exit code. Apart from its imports and `log_file_handler`, all of the
+file is inside `if __name__ == "__main__":`, so importing `main` runs nothing. `settings.py` imports `ParsedArgs`
+from it for type checking only.
 
 ## Startup order
 
@@ -40,6 +40,9 @@ The interface of `main.py` is its command line flags and its exit codes, both be
 from `ParsedArgs`. `SettingsPanel` writes `-v` and `--tray` into the autostart command
 ([gui.md](gui.md)), so a renamed flag breaks an autostart entry that is already saved.
 
+`log_file_handler(path, formatter)` returns a `logging.FileHandler` that appends to the file at `path` in UTF-8
+and formats each record with `formatter` ([Logging](#logging)). It is the one function a test can import.
+
 ## Command line flags
 
 `Parser` subclasses `argparse.ArgumentParser`. It collects argparse's output in a `StringIO` and shows it in a
@@ -66,9 +69,10 @@ message box titled "Argument Parser Error" when argparse exits, also for `--help
 
 - When the level is above DEBUG, a `logging.NullHandler` is added to the root logger. Records from other
   libraries' loggers then end there instead of in Python's last resort handler, which prints to stderr.
-- The `TwitchDrops` logger gets the level from `-v`, and with `--log` a `logging.FileHandler` that writes
-  `log.txt` in UTF-8. Without an encoding it would write the code page of the locale, such as cp1252 on a Western
-  Windows, and a line with a character outside it, such as a Korean channel name, would be lost.
+- The `TwitchDrops` logger gets the level from `-v`, and with `--log` the handler that
+  `log_file_handler(LOG_PATH, FILE_FORMATTER)` returns, which writes `log.txt` in UTF-8. Without an encoding it
+  would write the code page of the locale, such as cp1252 on a Western Windows, and a line with a character
+  outside it, such as a Korean channel name, would be lost.
 - `TwitchDrops.gql` and `TwitchDrops.websocket` are set to DEBUG by their debug flag, to INFO at `-vvvv` or more
   so that the raw requests and messages stay hidden, and otherwise to NOTSET, which uses the `TwitchDrops` level.
 - `GUIManager` adds the handler that writes each record from the event loop thread to the Output box
@@ -120,8 +124,10 @@ box.
   [Startup order](#startup-order), step 3.
 - `freeze_support()` stays the first call in the `__main__` block, where the `multiprocessing` documentation
   requires it for a frozen executable.
-- Everything except the two imports stays under `if __name__ == "__main__":`. In a run from source, the child
-  process of the folder dialog imports `main.py` as `__mp_main__` and must not run the app.
+- Everything except `log_file_handler` and the imports of standard library modules stays under
+  `if __name__ == "__main__":`. In a run from source, the child process of the folder dialog imports `main.py`
+  as `__mp_main__` and must not run the app. An older Python runs the code outside that block before the version
+  check, so that code imports nothing that needs Python 3.10.
 - `client.save(force=True)` stays after `wait_until_closed()`, for the reason in
   [The run and the exit](#the-run-and-the-exit), step 7.
 - A new flag gets an attribute on `ParsedArgs`, a line in `manual.txt` and a row in the flag table of
@@ -130,4 +136,5 @@ box.
   before the settings file ([settings.md](settings.md)).
 
 **Dependencies.** Repo modules: `translate`, `twitch`, `settings`, `version`, `exceptions`, `instancelock`, `utils`,
-`constants`. Third-party: `truststore`. Standard library: `argparse`, `asyncio`, `logging`, `signal`, `tkinter`.
+`constants`. Third-party: `truststore`. Standard library: `argparse`, `asyncio`, `logging`, `pathlib`, `signal`,
+`tkinter`.

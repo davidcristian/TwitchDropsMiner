@@ -1,10 +1,10 @@
 # No test checks that `log.txt` is written in UTF-8
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** main, tests
 **Origin:** The suite tests for the earlier fixes in `gui.py`, `websocket.py` and `utils.py`, which found no
 function in `main.py` that a test can call to create the log file handler
-**Verified:** 2026-10-21
+**Verified:** 2026-10-22
 
 With `--log`, `main()` in `main.py` adds a `logging.FileHandler(LOG_PATH, encoding="utf-8")` to the
 `TwitchDrops` logger ([main.md](../../modules/main.md#logging)). Without the encoding, a line with a character
@@ -26,3 +26,7 @@ Twitch requests: none.
 ## History
 
 - 2026-10-21: Opened. The tests of the other fixes were added to the suite, and this one was left without a test.
+- 2026-10-22: Done. `log_file_handler` in `main.py`, outside the `__main__` block, creates the handler. A test in
+  `tests/test_main.py` makes `io.text_encoding` name cp1252 for a file opened without an encoding, and reads a
+  line with Korean and Chinese text back from the file in UTF-8, in the format of `FILE_FORMATTER`. Without the
+  encoding the line is lost. A patch of `locale.getpreferredencoding` has no effect on `open()`.

@@ -1,7 +1,16 @@
 from __future__ import annotations
 
+import logging
 # import an additional thing for proper PyInstaller freeze support
 from multiprocessing import freeze_support
+from pathlib import Path
+
+
+def log_file_handler(path: Path, formatter: logging.Formatter) -> logging.FileHandler:
+    """Return a handler that appends log records to the file at path in UTF-8, whatever the locale's code page."""
+    handler = logging.FileHandler(path, encoding="utf-8")
+    handler.setFormatter(formatter)
+    return handler
 
 
 if __name__ == "__main__":
@@ -16,7 +25,6 @@ if __name__ == "__main__":
     import os
     import signal
     import asyncio
-    import logging
     import argparse
     import warnings
     import traceback
@@ -163,9 +171,7 @@ if __name__ == "__main__":
         logger = logging.getLogger("TwitchDrops")
         logger.setLevel(settings.logging_level)
         if settings.log:
-            handler = logging.FileHandler(LOG_PATH, encoding="utf-8")
-            handler.setFormatter(FILE_FORMATTER)
-            logger.addHandler(handler)
+            logger.addHandler(log_file_handler(LOG_PATH, FILE_FORMATTER))
         logging.getLogger("TwitchDrops.gql").setLevel(settings.debug_gql)
         logging.getLogger("TwitchDrops.websocket").setLevel(settings.debug_ws)
 
