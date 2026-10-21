@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -19,6 +20,15 @@ def isolated_git(monkeypatch, tmp_path_factory):
     # A git hook runs the suite with GIT_DIR and GIT_INDEX_FILE set to the repo being committed, which would
     # receive a test's git commands. A user's global ignore file would hide a test repo's files from git.
     isolate_git(monkeypatch, tmp_path_factory.mktemp("home"))
+
+
+@pytest.fixture
+def live_twitch(monkeypatch, tmp_path):
+    """Return a function that builds a real `Twitch` around a `FakeTwitch`, with cookies.jar in tmp_path."""
+    # imported here, because importing gui.py reads PYSTRAY_BACKEND, which this file sets after its imports
+    from livetwitch import build_twitch
+
+    return partial(build_twitch, monkeypatch, tmp_path / "cookies.jar")
 
 
 @pytest.fixture

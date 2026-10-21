@@ -27,13 +27,19 @@ installed none of these packages, so a fix in one of them was checked by a scrip
      function, but a bug fix in it adds a suite test as above. The test passes fakes, such as a fake `Twitch` or
      a session whose requests raise, and creates no Tk window, because the Validate job has no display.
      `tests/fakes.py` has a fake `Twitch`, which records each request and returns the responses a test gives it.
+     A test of `Twitch` itself takes the `live_twitch` fixture of `tests/conftest.py`, which builds a real
+     `Twitch` with the window, settings and responses of a fake one. `run_with_fast_clock` in
+     `tests/livetwitch.py` runs a test on an event loop whose clock moves to the next timer when no task can run,
+     so a test of code that waits for seconds takes milliseconds.
    - A test written only to reach a line is not allowed.
    - A known defect that is not fixed yet is a test of the correct behavior marked
      `pytest.mark.xfail(strict=True)`, whose reason names the task file. When the fix makes it pass, the strict
      mark fails the suite until the mark is removed.
 3. **Fakes rather than mocks.** A test writes real files to `tmp_path` and builds real values. `monkeypatch`
-   only points a path lookup or a module constant at a test value, or picks a platform branch. No test uses
-   `unittest.mock`, because a mock asserts which calls the code makes rather than what it returns.
+   only points a path lookup or a module constant at a test value, or picks a platform branch. The
+   `live_twitch` fixture also points `twitch.GUIManager` at the fake window, because `Twitch.__init__` creates
+   the real window, which needs a display. No test uses `unittest.mock`, because a mock asserts which calls the
+   code makes rather than what it returns.
 4. **The suite fails below 80% branch coverage** of the modules listed under `[tool.coverage.run]` in
    `pyproject.toml`: the modules that need neither Twitch nor a display, today `redact`, `reconnect`, `gamelib`,
    `gqldata`, `imagedata`, `savefiles`, `settingsdata`, `ratelimit`, `instancelock`, `mousewheel`, `constants`
