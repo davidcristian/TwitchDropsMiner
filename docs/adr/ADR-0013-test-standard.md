@@ -26,6 +26,7 @@ installed none of these packages, so a fix in one of them was checked by a scrip
    - A module that needs Twitch or a display, such as `twitch.py` or `gui.py`, needs no test of each public
      function, but a bug fix in it adds a suite test as above. The test passes fakes, such as a fake `Twitch` or
      a session whose requests raise, and creates no Tk window, because the Validate job has no display.
+     `tests/fakes.py` has a fake `Twitch`, which records each request and returns the responses a test gives it.
    - A test written only to reach a line is not allowed.
    - A known defect that is not fixed yet is a test of the correct behavior marked
      `pytest.mark.xfail(strict=True)`, whose reason names the task file. When the fix makes it pass, the strict
