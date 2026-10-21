@@ -91,8 +91,8 @@ The code comment on the limiter says not to change these values ([ADR-0002](../a
 The reads of `fetch_inventory`, `fetch_campaigns`, `get_live_streams`, `bulk_check_online`, `_watch_loop` and
 `process_drops` go through [gqldata.md](gqldata.md), which leaves out an item that a server error set to null, so such
 an error does not end the run. A null user or inventory in the `Inventory` or `Campaigns` response still ends it
-([gqldata.md](gqldata.md#a-null-inventory)). The `PlaybackAccessToken` read, a null channel in an ACL and a null value
-such as a time still raise ([task 037](../refinements/tasks/037-null-fields-in-other-gql-reads.md)).
+([gqldata.md](gqldata.md#a-null-inventory)). Some null values in a campaign, such as the game's ID, still raise
+([task 037](../refinements/tasks/037-null-fields-in-other-gql-reads.md)).
 
 ## Login
 

@@ -83,6 +83,11 @@ URL is cleared, one for the `Stream` object that the check stores. That is at mo
 30 `AvailableDrops` with the extra drops check on. While a check waits, a failed playlist request clears
 nothing, so usher is not requested every cycle.
 
+A `PlaybackAccessToken` response with a null token sends no usher GET and starts an online check. The `Stream`
+sends no second token query, so a token that stays null adds 1 `PlaybackAccessToken` and 1 `GetStreamInfo` per
+check: at most 30 of each an hour, plus 30 `AvailableDrops` with the extra drops check on
+([channel.md](../modules/channel.md#a-null-playback-token)).
+
 ### What else follows
 
 - The requests of one call go one at a time. `Twitch.request` retries a status of 500 or more, or a connection
@@ -96,9 +101,8 @@ nothing, so usher is not requested every cycle.
 - An exception from `send_watch`, or one other than `GQLException` from the `CurrentDrop` check, ends
   `_watch_loop`, which runs under `task_wrapper(critical=True)`, and so ends the app
   ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)). After a failed playlist request,
-  `PlaybackAccessToken` is sent for a stream that may have ended. A null `streamPlaybackAccessToken` raises
-  `TypeError` ([task 037](../refinements/tasks/037-null-fields-in-other-gql-reads.md)), and nothing in this
-  repo shows whether Twitch returns a token for an ended stream.
+  `PlaybackAccessToken` is sent for a stream that may have ended. A null token fails the cycle and starts an
+  online check, as above, and nothing in this repo shows whether Twitch returns a token for an ended stream.
 - The README warns against watching a stream on the account the app uses ([Notes](../../README.md#notes)). No
   code comment or commit links that warning to a watch method, so this record states nothing about it.
 

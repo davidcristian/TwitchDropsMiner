@@ -94,8 +94,8 @@ frame.
   sets the data at the error's path to `None` for `server error`, or logs the error when the path names no
   field.
 - Raised by `gqldata.user_inventory` and `gqldata.campaign_summaries` when the `Inventory` or `Campaigns`
-  response has a null user, inventory or claimed drop. `Twitch.fetch_inventory` does not catch it, so the run
-  ends ([gqldata.md](gqldata.md#a-null-inventory)).
+  response has a null user, inventory, claimed drop or award time. `Twitch.fetch_inventory` does not catch it,
+  so the run ends ([gqldata.md](gqldata.md#a-null-inventory)).
 - Caught by `BaseDrop._claim`, which returns `False` because the claim may have failed; by
   `Twitch._watch_loop` around the `CurrentDrop` query, which then uses no drop data; and by
   `Twitch.get_live_streams`, which raises a `MinerException` that names the game.

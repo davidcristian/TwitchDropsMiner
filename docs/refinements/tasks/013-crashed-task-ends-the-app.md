@@ -97,3 +97,5 @@ nothing, because the app stops.
   not called.
 - 2026-10-21: A null `currentUser` in the `CurrentDrop` response no longer ends `_watch_loop`. It counts as no
   drop data, and the loop adds an estimated minute ([twitch.md](../../modules/twitch.md#watch-loop)).
+- 2026-10-22: A null token in the `PlaybackAccessToken` response no longer ends `_watch_loop`. The cycle fails
+  and an online check starts ([channel.md](../../modules/channel.md#a-null-playback-token)).

@@ -62,7 +62,8 @@ These change a channel's status:
    for `stream-down`, and stores the viewer count of a `viewcount` event on an online channel.
 3. `Twitch.process_stream_update` calls `check_online()` for every message on the `broadcast-settings-update`
    topic, to read the new title, game and drops status. The delay groups several changes in a row into one fetch.
-4. `Stream.get_stream_url` calls `set_offline()` when the request for the stream qualities returns an error.
+4. `Stream.get_stream_url` calls `set_offline()` when the request for the stream qualities returns an error,
+   and `check_online()` when the token is null ([A null playback token](#a-null-playback-token)).
 5. `send_watch` calls `check_online()` when the watched channel's playlist request fails
    ([Watching](#watching)).
 
@@ -111,7 +112,8 @@ it, and then enters `CHANNEL_SWITCH`.
    the channel login, then GETs `https://usher.ttvnw.net/api/channel/hls/<login>.m3u8` with the token and its
    signature. The response lists the stream qualities. The method keeps the last URL in the list, which the code
    comment says is usually the lowest quality, and caches it on the `Stream`. For a JSON response it returns
-   None. When that response has an `error` key, the error is logged and the channel is set offline.
+   None. When that response has an `error` key, the error is logged and the channel is set offline. For a null
+   token it returns None ([A null playback token](#a-null-playback-token)).
 2. A GET of that media playlist with `Connection: close`. A status of 400 or above returns False; the playlist
    returns 404 once the stream has ended. `Twitch.request` retries a status of 500 or above, so only a 4xx
    status gets here. For a JSON response it also returns False.
@@ -141,6 +143,18 @@ status of 400 or above and no online check is pending, `send_watch` also clears 
   `PlaybackAccessToken` and 60 usher GETs an hour ([ADR-0009](../adr/ADR-0009-watch-method.md#the-cost-of-watching)).
 - Nothing changes when the channel's stream changed during the request, such as after a `stream-down` event.
 
+### A null playback token
+
+A server error can set `streamPlaybackAccessToken`, or its `value` or `signature`, to null
+([gqldata.md](gqldata.md#public-contract)). `get_stream_url` then logs a warning, marks the `Stream`, calls
+`check_online()` and returns None, so the cycle fails. For a marked `Stream` it sends no request: it calls
+`check_online()` again, which starts a check only when none is pending, and returns None. The check stores a new
+`Stream` when the channel is still live, and the next cycle requests a token for it.
+
+So a token that stays null costs one `PlaybackAccessToken` and one `GetStreamInfo` query per check, at most 30
+of each an hour, plus 30 `AvailableDrops` with the extra drops check on. No usher GET is sent. A check that
+fails leaves the marked `Stream` in place, and the next cycle starts another one.
+
 ## Invariants
 
 - A channel's identity is its `id`. `CHANNELS_FETCH` builds the channel list with sets, and `set.update` keeps
@@ -154,7 +168,7 @@ status of 400 or above and no online check is pending, `send_watch` also clears 
   ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)).
 - `on_channel_update` ends with `display()`, so the GUI row matches the status after every change.
 
-**Dependencies.** `gqldata` (`get_field`), `utils` (`Game`, `json_minify`, `isonow`), `exceptions`
-(`MinerException`, `RequestException`) and `constants` (`GQL_QUERIES`, `ONLINE_DELAY`, `CALL`, `URLType`,
-`GQLQuery`). Third party: aiohttp and yarl. `Twitch` and the GUI's `ChannelList` are imported for type checking
-only.
+**Dependencies.** `gqldata` (`get_field`, `playback_token`), `utils` (`Game`, `json_minify`, `isonow`),
+`exceptions` (`MinerException`, `RequestException`) and `constants` (`GQL_QUERIES`, `ONLINE_DELAY`, `CALL`,
+`URLType`, `GQLQuery`). Third party: aiohttp and yarl. `Twitch` and the GUI's `ChannelList` are imported for type
+checking only.

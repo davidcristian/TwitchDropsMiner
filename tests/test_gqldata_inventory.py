@@ -4,13 +4,17 @@ import logging
 import pytest
 
 from exceptions import GQLException
-from gqldata import current_drop, user_inventory, claim_succeeded, campaign_summaries, complete_campaigns
+from gqldata import TIME_FIELDS, current_drop, user_inventory, claim_succeeded, campaign_summaries, complete_campaigns
+
+START, END = "2020-01-01T00:00:00Z", "2099-01-01T00:00:00Z"
 
 
 def campaign(campaign_id, status="ACTIVE", **fields):
     return {
         "id": campaign_id,
         "status": status,
+        "startAt": START,
+        "endAt": END,
         "game": {"id": "1"},
         "self": {"isAccountConnected": True},
         "allow": {"channels": None, "isEnabled": True},
@@ -22,6 +26,8 @@ def campaign(campaign_id, status="ACTIVE", **fields):
 def drop(drop_id, *preconditions):
     return {
         "id": drop_id,
+        "startAt": START,
+        "endAt": END,
         "benefitEdges": [{"benefit": {"id": f"{drop_id}-benefit"}}],
         "preconditionDrops": [{"id": pre} for pre in preconditions] or None,
         "self": {"dropInstanceID": None, "isClaimed": False},
@@ -79,8 +85,67 @@ def test_complete_campaigns_leaves_out_every_drop_after_a_null_one():
     assert drops_of(complete_campaigns(campaign_with(None, drop("d2", "d1"), drop("d3", "d2")))) == []
 
 
+def without(data, field):
+    return {key: value for key, value in data.items() if key != field}
+
+
+@pytest.mark.parametrize("field", TIME_FIELDS)
+def test_complete_campaigns_leaves_out_a_drop_with_a_null_or_missing_time_and_every_drop_after_it(field, caplog):
+    drops = [drop("d1"), {**drop("d2"), field: None}, without(drop("d3"), field), drop("d4", "d2"), drop("d5", "d1")]
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        result = complete_campaigns(campaign_with(*drops))
+    assert drops_of(result) == [drop("d1"), drop("d5", "d1")]
+    assert [record.getMessage() for record in caplog.records] == [
+        "Skipped drop d2 of campaign A, which has a null start or end time",
+        "Skipped drop d3 of campaign A, which has a null start or end time",
+        "Skipped drop d4 of campaign A, whose precondition was skipped",
+    ]
+
+
+@pytest.mark.parametrize("field", TIME_FIELDS)
+def test_complete_campaigns_leaves_out_a_campaign_with_a_null_or_missing_time_and_logs_it(field, caplog):
+    campaigns = {"A": campaign("A"), "N": campaign("N", **{field: None}), "M": without(campaign("M"), field)}
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        result = complete_campaigns(campaigns)
+    assert result == {"A": campaign("A")}
+    assert [record.getMessage() for record in caplog.records] == [
+        "Skipped campaign N, which has a null start or end time",
+        "Skipped campaign M, which has a null start or end time",
+    ]
+
+
+def acl(*channels, enabled=True):
+    return {"channels": list(channels), "isEnabled": enabled}
+
+
+CHANNEL = {"id": "1", "name": "c1", "displayName": "C1"}
+NULL_CHANNELS = [None, {**CHANNEL, "id": None}, {**CHANNEL, "name": None}]
+
+
+def test_complete_campaigns_leaves_out_an_acl_channel_that_is_null_or_has_a_null_id_or_name(caplog):
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        result = complete_campaigns({"A": campaign("A", allow=acl(CHANNEL, *NULL_CHANNELS))})
+    assert result == {"A": campaign("A", allow=acl(CHANNEL))}
+    assert [record.getMessage() for record in caplog.records] == [
+        "Skipped 3 ACL channels of campaign A, which are null or have a null ID or name",
+    ]
+
+
+def test_complete_campaigns_leaves_out_a_campaign_whose_enabled_acl_has_only_null_channels(caplog):
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        result = complete_campaigns({"A": campaign("A"), "N": campaign("N", allow=acl(*NULL_CHANNELS))})
+    assert result == {"A": campaign("A")}
+    assert "Skipped campaign N, whose ACL has no readable channel" in caplog.text
+
+
+def test_complete_campaigns_keeps_a_campaign_whose_disabled_acl_has_only_null_channels():
+    result = complete_campaigns({"A": campaign("A", allow=acl(*NULL_CHANNELS, enabled=False))})
+    assert result == {"A": campaign("A", allow=acl(enabled=False))}
+
+
 def test_complete_campaigns_does_not_change_its_argument():
     campaigns = campaign_with(None, {**drop("d1"), "self": None, "benefitEdges": [None]}, drop("d2", "d0"))
+    campaigns["B"] = campaign("B", allow=acl(CHANNEL, None))
     before = copy.deepcopy(campaigns)
     complete_campaigns(campaigns)
     assert campaigns == before
@@ -111,9 +176,10 @@ def test_user_inventory_reads_a_null_list_of_campaigns_in_progress_as_empty():
     {"data": {"currentUser": {"inventory": None}}},
     inventory_response([campaign("P")], None),
     inventory_response([campaign("P")], [CLAIMED[0], None]),
+    inventory_response([campaign("P")], [CLAIMED[0], {**CLAIMED[0], "lastAwardedAt": None}]),
 ])
-def test_user_inventory_raises_for_a_null_inventory_or_claimed_drop(response):
-    with pytest.raises(GQLException, match="null inventory or claimed drop"):
+def test_user_inventory_raises_for_a_null_inventory_claimed_drop_or_award_time(response):
+    with pytest.raises(GQLException, match="null inventory, claimed drop or award time"):
         user_inventory(response)
 
 

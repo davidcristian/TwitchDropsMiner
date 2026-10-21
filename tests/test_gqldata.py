@@ -10,22 +10,31 @@ from gqldata import (
     campaign_details,
     channel_campaigns,
     clear_error_field,
+    playback_token,
     directory_streams,
     complete_campaigns,
 )
 
+START, END = "2020-01-01T00:00:00Z", "2099-01-01T00:00:00Z"
 SERVER_ERROR_DATA = {"user": {"dropCampaign": {"id": "A", "timeBasedDrops": [{"id": "d", "benefitEdges": []}]}}}
 
 
 def summary(campaign_id):
-    return {"id": campaign_id, "name": campaign_id, "game": {"id": "1"}, "self": {"isAccountConnected": True}}
+    return {
+        "id": campaign_id,
+        "name": campaign_id,
+        "startAt": START,
+        "endAt": END,
+        "game": {"id": "1"},
+        "self": {"isAccountConnected": True},
+    }
 
 
 def details(campaign_id):
     return {
         **summary(campaign_id),
         "allow": {"channels": None, "isEnabled": True},
-        "timeBasedDrops": [{"id": f"{campaign_id}-drop"}],
+        "timeBasedDrops": [{"id": f"{campaign_id}-drop", "startAt": START, "endAt": END}],
     }
 
 
@@ -185,3 +194,21 @@ def test_channel_campaigns_maps_each_channel_id_to_its_campaigns():
 def test_channel_campaigns_leaves_out_a_null_channel():
     responses = [available_response(None), available_response({"id": "10", "viewerDropCampaigns": []})]
     assert channel_campaigns(responses) == {10: []}
+
+
+def token_response(token):
+    return {"data": {"streamPlaybackAccessToken": token}}
+
+
+def test_playback_token_returns_the_value_and_the_signature():
+    assert playback_token(token_response({"value": "v", "signature": "s"})) == ("v", "s")
+
+
+@pytest.mark.parametrize("response", [
+    token_response({"value": None, "signature": "s"}),
+    token_response({"value": "v", "signature": None}),
+    token_response(None),
+    {"data": None},
+])
+def test_playback_token_returns_none_for_a_null_token_value_or_signature(response):
+    assert playback_token(response) is None

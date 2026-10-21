@@ -106,3 +106,6 @@ The commit states the new worst case per hour, as AGENTS.md asks for a change to
   summary no longer end the run ([gqldata.md](../../modules/gqldata.md#null-drops)). A null user or inventory in the `Inventory` or
   `Campaigns` response still does, after 1 or 2 requests and before the `CampaignDetails` and channel requests
   ([gqldata.md](../../modules/gqldata.md#a-null-inventory)).
+- 2026-10-22: A null time of a drop or campaign and a null ACL channel no longer end the run
+  ([gqldata.md](../../modules/gqldata.md#null-times-and-acl-channels)). A null `lastAwardedAt` in `Inventory`
+  still does.

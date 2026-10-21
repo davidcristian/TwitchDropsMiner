@@ -12,7 +12,7 @@ from typing import Any, SupportsInt, cast, TYPE_CHECKING
 import aiohttp
 from yarl import URL
 
-from gqldata import get_field
+from gqldata import get_field, playback_token
 from utils import Game, json_minify, isonow
 from exceptions import MinerException, RequestException
 from constants import CALL, GQL_QUERIES, ONLINE_DELAY, URLType, GQLQuery
@@ -43,6 +43,7 @@ class Stream:
         self.game: Game | None = Game(game) if game else None
         self.title: str = title
         self._stream_url: URLType | None = None
+        self._token_missing: bool = False
 
     @cached_property
     def _watch_payload(self) -> list[JsonType]:
@@ -119,13 +120,21 @@ class Stream:
     async def get_stream_url(self) -> URLType | None:
         if self._stream_url is not None:
             return self._stream_url
+        if self._token_missing:
+            # one query per Stream, not one per watch cycle: the online check replaces this Stream
+            self.channel.check_online()
+            return None
         # get the stream playback access token from GQL
         playback_token_response: JsonType = await self.channel._twitch.gql_request(
             GQL_QUERIES["PlaybackAccessToken"].with_variables({"login": self.channel._login})
         )
-        token_data: JsonType = playback_token_response["data"]["streamPlaybackAccessToken"]
-        token_value = token_data["value"]
-        token_signature = token_data["signature"]
+        token = playback_token(playback_token_response)
+        if token is None:
+            logger.warning(f"No playback token for {self.channel.name}, so its stream is checked again")
+            self._token_missing = True
+            self.channel.check_online()
+            return None
+        token_value, token_signature = token
         # using the token, query Twitch for a list of all available stream qualities
         available_qualities: str = ''
         try:

@@ -4,7 +4,7 @@
 **Area:** twitch, inventory
 **Origin:** Found on 2026-10-20 while the reads of the campaign details, the game directory and the available
 drops were changed to leave out a field that a GQL server error set to null
-**Verified:** 2026-10-21
+**Verified:** 2026-10-22
 
 After a `server error`, `Twitch.gql_request` sets the field that the error's `path` names to null and returns
 the response. When the path names no field, it logs the error and returns the response as Twitch sent it
@@ -40,3 +40,11 @@ were claimed, so ending the run may be the correct result there. No fix adds a r
   are claimed. Still open: the `PlaybackAccessToken` read, where a skip would send the query again every watch
   cycle; a null channel in `allow.channels`, which `Channel.from_acl` reads, and which would read as no ACL if
   every channel were left out; and a null value such as a drop's `startAt`, which `timestamp` reads.
+- 2026-10-22: A null token, value or signature in `PlaybackAccessToken` fails the watch cycle and starts an
+  online check, and that `Stream` sends no second query: at most 30 token and 30 `GetStreamInfo` queries an hour
+  while it stays null ([channel.md](../../modules/channel.md#a-null-playback-token)). An ACL channel that is
+  null or has a null ID or name is left out, and so is a campaign whose enabled ACL keeps no channel. A drop or
+  campaign with a null `startAt` or `endAt` is left out
+  ([gqldata.md](../../modules/gqldata.md#null-times-and-acl-channels)). A null `lastAwardedAt` ends the run as
+  `GQLException`. Still open: a null game `id` or `boxArtURL`, or a null drop `requiredMinutesWatched`, raises
+  `TypeError` in `DropsCampaign`, which ends the run. A check with stub data confirmed each of the three.

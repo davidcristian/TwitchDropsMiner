@@ -11,8 +11,8 @@ reload ([twitch.md](twitch.md#state-machine)). The only request the module sends
 
 `data` is one campaign, merged from the `Inventory`, `Campaigns` and `CampaignDetails` GQL responses.
 `claimed_benefits` maps a benefit ID to the time it was last awarded, from the inventory's `gameEventDrops`.
-`Twitch.fetch_inventory` leaves out a null drop or benefit before it builds the campaign
-([gqldata.md](gqldata.md#null-drops)).
+`Twitch.fetch_inventory` leaves out a null drop or benefit, a drop or campaign with a null time and a null ACL
+channel before it builds the campaign ([gqldata.md](gqldata.md#null-drops)).
 
 - Data: `id`, `name`, `game` (a `Game`), `linked` (the user's account is connected to the game), `link_url`,
   `image_url` (the game's box art without its size suffix), `starts_at`, `ends_at`, `timed_drops` (a
