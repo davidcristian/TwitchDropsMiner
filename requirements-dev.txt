@@ -4,9 +4,10 @@ pytest==9.1.1
 pytest-cov==7.1.0
 ruff==0.16.10
 rust-just==1.58.0
-# The lines of requirements.txt without PyGObject and pywin32, which no test needs. A change to one of these lines
-# there is made here too.
+# The lines of requirements.txt without PyGObject, which no test needs. A change to one of these lines there is
+# made here too.
 aiohttp>=3.9,<4.0
 Pillow
 pystray
+pywin32; sys_platform == "win32"
 truststore

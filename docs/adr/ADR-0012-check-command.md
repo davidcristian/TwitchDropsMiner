@@ -71,17 +71,31 @@ lint rules without its formatter or pyright.
    from PyPI, so one `pip install` sets up every tool on every OS), ruff, pytest, pytest-cov and pre-commit, each
    a release at least two weeks old when it was chosen.
 6. **`requirements-dev.txt` also installs the app's packages that the tests import**: the lines of
-   `requirements.txt` without PyGObject and pywin32, with the same version ranges, so that the tests get the
-   newest releases, as a build does. They get exact versions with the build dependencies
+   `requirements.txt` without PyGObject, with the same version ranges and platform markers, so that the tests get
+   the newest releases, as a build does. They get exact versions with the build dependencies
    ([task 048](../refinements/tasks/048-builds-install-the-newest-dependencies.md)).
    - PyGObject is left out because pip builds it from source on Linux, which needs the system packages in
      [building.md](../building.md#requirements), and no test needs it: `tests/conftest.py` sets
-     `PYSTRAY_BACKEND=dummy`, so pystray loads no tray backend. pywin32 installs only on Windows.
+     `PYSTRAY_BACKEND=dummy`, so pystray loads no tray backend.
+   - pywin32 installs only on Windows. `gui.py` imports `win32api`, `win32con` and `win32gui` there, so every
+     test that imports `gui.py` needs it on Windows.
    - The Validate job therefore installs no system package, and a virtual environment with
      `requirements-dev.txt` alone runs `just check` as the Validate job does
      ([building.md](../building.md#run-the-checks)). On Linux, the test recipe runs pytest under `xvfb-run`,
      which the runner's Ubuntu image has, for the tests that open the window
      ([ADR-0013](ADR-0013-test-standard.md)).
+7. **The Validate job runs `just check` four times**, from a `strategy.matrix` in `ci.yml`:
+   - Ubuntu with `PYTHON_VERSION`, 3.10, the oldest Python the app supports. There `syntaxcheck.py` finds
+     nested f-string quotes, and a test that imports or calls a name 3.10 lacks fails.
+   - Ubuntu with `BUILD_PYTHON_VERSION`, 3.14, the Python of the release builds
+     ([ADR-0015](ADR-0015-release-build-python.md)).
+   - Windows and macOS with `PYTHON_VERSION`. These run the `cmd.exe` recipes, the code for those two systems,
+     and the tests of the window on Tk without X11.
+
+   A failure in either Ubuntu run fails the workflow, and the build jobs wait for all four runs. Until each has
+   passed once, the Windows and macOS runs set `continue-on-error`, so a failure there does not fail the
+   workflow. [Task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md) lists what that run
+   must show.
 
 ## Consequences
 
@@ -95,8 +109,10 @@ lint rules without its formatter or pyright.
   docstrings over three lines and 8 banned words. A fix cherry-picked from upstream can conflict on those lines.
 - `syntaxcheck.py` does not find names that Python 3.10 lacks, such as `typing.Self`, which fail only when the
   module is imported. The Validate job finds such a name only where a test imports or calls it.
-- The Validate job installs `requirements-dev.txt` and runs `just check` on Python 3.10, and the four builds wait
-  for it.
+- The four builds wait for the slowest of the four Validate runs.
+- Each Validate run is a check named `Validate (<runner>, <variable>)`, such as
+  `Validate (ubuntu-latest, PYTHON_VERSION)`. A branch rule on GitHub that requires a check names these.
+- A change that fails only on Windows or macOS can be merged while those runs are not required.
 - Nothing checks that the app's packages in `requirements-dev.txt` match `requirements.txt`, so a change to one
   of those lines is made in both files.
 - Commits from upstream keep their own messages, and a commit made without the hooks is not checked.
@@ -125,12 +141,18 @@ lint rules without its formatter or pyright.
   build. It needs a download step per OS in CI and in [building.md](../building.md#run-the-checks) in place of
   one `pip install`. It replaces `rust-just` when that package stops following the `just` releases or changes
   owner.
+- **Every Python from 3.10 to 3.14 on every runner.** That is fifteen runs for each push. 3.10 is the oldest
+  Python the app supports and 3.14 the Python of the releases; 3.11 to 3.13 are neither.
+- **Windows and macOS required from their first run.** They had never run, and a test written for Linux that
+  fails there would stop every build until it was fixed or skipped.
 
 ## Related
 
 - [AGENTS.md](../../AGENTS.md#what-every-change-must-pass) and [building.md](../building.md#run-the-checks).
 - [ADR-0013](ADR-0013-test-standard.md): the tests that `just check` runs.
+- [ADR-0015](ADR-0015-release-build-python.md): the two Python versions in `ci.yml`.
 - [ADR-0008](ADR-0008-docs-layout.md): the docs layout that `docscheck.py` checks.
 - Tasks [004](../refinements/tasks/004-single-check-command.md) (closed by this record),
-  [005](../refinements/tasks/005-modules-over-the-line-cap.md) (the modules over the limit) and
+  [005](../refinements/tasks/005-modules-over-the-line-cap.md) (the modules over the limit),
+  [046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md) (the Windows and macOS runs) and
   [049](../refinements/tasks/049-check-tools-from-third-party-sources.md) (the sources of `just` and a hook).

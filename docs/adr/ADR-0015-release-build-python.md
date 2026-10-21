@@ -17,10 +17,11 @@ OpenSSL 1.1.1 has had no public fixes since September 2023, and Python 3.10 reac
 
 ## Decision
 
-1. **Two variables in `ci.yml`.** `PYTHON_VERSION`, `"3.10"`, is the Python of the Validate job: the oldest
-   version the app supports, so a test or the import of a module that needs a newer Python fails there.
-   `BUILD_PYTHON_VERSION`, `"3.14"`, is the Python of the Windows, macOS and Linux PyInstaller builds. The Linux
-   build follows the other two, so that the three releases run on one Python with one set of packages.
+1. **Two variables in `ci.yml`.** `PYTHON_VERSION`, `"3.10"`, is the oldest version the app supports. The
+   Validate job runs on it on every runner, so a test or the import of a module that needs a newer Python fails
+   there. `BUILD_PYTHON_VERSION`, `"3.14"`, is the Python of the Windows, macOS and Linux PyInstaller builds, and
+   the Validate job also runs on it on Ubuntu ([ADR-0012](ADR-0012-check-command.md)). The Linux build follows
+   the other two, so that the three releases run on one Python with one set of packages.
 2. **The build version is 3.14.** Its bugfix phase lasts until October 2027 (PEP 745), so python.org still
    publishes Windows and macOS builds of each release, with the OpenSSL updates they include. The bugfix phase
    of 3.13 ends in October 2026 (PEP 719), and 3.12 and 3.11 get source releases only. 3.15 is due in October
@@ -31,11 +32,13 @@ OpenSSL 1.1.1 has had no public fixes since September 2023, and Python 3.10 reac
 
 ## Consequences
 
-- The releases run on a Python that the Validate job does not test. On 2026-10-21 these ran on CPython 3.14.7
-  with `requirements.txt` and `requirements-dev.txt` installed: `just check` passed (1039 tests passed, 98%
-  branch coverage), the GUI preview showed every tab, and `main.py` started and retried its connection with the
-  network blocked. That Python was a uv build with Tk 9.0 and no Xft, so it drew some button symbols as other
-  characters; the Tk of the release builds was not run.
+- The Validate job runs on the build Python on Ubuntu only, so no check runs it on Windows or macOS, where two
+  of the releases bundle it.
+- On 2026-10-21 the checks, the GUI preview and `main.py` ran on a local CPython 3.14.7 with `requirements.txt`
+  and `requirements-dev.txt` installed: `just check` passed (1039 tests passed, 98% branch coverage), the GUI
+  preview showed every tab, and `main.py` started and retried its connection with the network blocked. That
+  Python was a uv build with Tk 9.0 and no Xft, so it drew some button symbols as other characters; the Tk of
+  the release builds was not run.
 - On that machine, PyGObject 3.50.2 compiled for 3.14, and Pillow, aiohttp, pystray and truststore installed.
   PyInstaller, pywin32 and the macOS packages were not installed there. Only a CI run shows that the three
   builds succeed, and only a start of each release shows that it runs.
@@ -47,8 +50,8 @@ OpenSSL 1.1.1 has had no public fixes since September 2023, and Python 3.10 reac
   OpenSSL version as text.
 - The AppImage does not change. Its recipe installs Python 3.10 and its libraries from the Ubuntu 22.04
   archives, which Ubuntu patches, and does not read the `PYTHON_VERSION` that the job passes to it.
-- [Task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md) lists what running the
-  checks on `BUILD_PYTHON_VERSION` in CI needs.
+- [Task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md) lists what the Windows and
+  macOS runs of the Validate job must show before they are required.
 
 ## Alternatives rejected
 
@@ -61,5 +64,5 @@ OpenSSL 1.1.1 has had no public fixes since September 2023, and Python 3.10 reac
 
 - [building.md](../building.md#release-builds): the release builds and their Python.
 - [ADR-0012](ADR-0012-check-command.md): the Validate job and `just check`.
-- [Task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md): the checks on more
-  platforms and Pythons.
+- [Task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md): the checks on Windows and
+  macOS.

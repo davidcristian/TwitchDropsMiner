@@ -7,8 +7,8 @@ is the reference when this page and a build disagree. For problems while running
 
 ## Requirements
 
-- Python 3.10 or newer, and `main.py` stops on an older version. CI runs the checks on Python 3.10 and builds
-  the PyInstaller releases with Python 3.14 (see [Release builds](#release-builds)).
+- Python 3.10 or newer, and `main.py` stops on an older version. CI runs the checks on Python 3.10 and 3.14
+  and builds the PyInstaller releases with Python 3.14 (see [Release builds](#release-builds)).
 - On Debian and Ubuntu, `python3 -m venv` needs the `python3-venv` package.
 - On Linux, `tkinter` and the tray icon libraries come from system packages. CI installs these on Ubuntu 22.04:
 
@@ -60,9 +60,8 @@ display, see [runbooks/gui-preview-headless.md](runbooks/gui-preview-headless.md
 
 `just check` runs every check that a change must pass, as listed in
 [AGENTS.md](../AGENTS.md#what-every-change-must-pass). Its tools are in `requirements-dev.txt`, which no build
-installs, with the app's packages that the tests import: the lines of `requirements.txt` without PyGObject and
-pywin32. Install them into `env/` once, then activate the environment so that `just` and the recipes use its
-Python:
+installs, with the app's packages that the tests import: the lines of `requirements.txt` without PyGObject.
+Install them into `env/` once, then activate the environment so that `just` and the recipes use its Python:
 
 ```bash
 env/bin/python -m pip install -r requirements-dev.txt
@@ -88,11 +87,13 @@ screen. Without `xvfb-run` they use `DISPLAY`, and with no display pytest skips 
 environment variable is set, they fail instead. Tk on Windows and macOS needs no X server
 ([ADR-0013](adr/ADR-0013-test-standard.md)).
 
-The Validate job in CI installs `requirements-dev.txt` on Python 3.10 and runs `just check`, and the build jobs
-start only when it passes. It runs on Ubuntu only. [Task 046](refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)
-lists what running it on Windows, macOS and Python 3.14 needs. It has no display and no PyGObject, so to run the
-checks as it does, use a new virtual environment on Python 3.10 with `requirements-dev.txt` alone, outside the
-repository folder, and unset `DISPLAY`:
+The Validate job in CI installs `requirements-dev.txt` and runs `just check` four times: on Ubuntu with Python
+3.10 and with Python 3.14, and on Windows and on macOS with Python 3.10. The build jobs wait for all four. A
+failure on Ubuntu fails the workflow, and the builds do not start. Until each has passed once, the Windows and
+macOS runs set `continue-on-error`, so a failure there does not fail the workflow
+([task 046](refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)). On Ubuntu the job has no display
+and no PyGObject, so to run the checks as it does, use a new virtual environment on Python 3.10 with
+`requirements-dev.txt` alone, outside the repository folder, and unset `DISPLAY`:
 
 ```bash
 python3.10 -m venv ~/tdm-validate
@@ -179,9 +180,10 @@ from a push or started by hand, CI replaces the `dev-build` pre-release on the
 but publishes nothing.
 
 Two variables in `ci.yml` set the Python versions. The Validate job uses `PYTHON_VERSION`, 3.10, the oldest
-version the app supports. The Windows, macOS and Linux PyInstaller builds use `BUILD_PYTHON_VERSION`, 3.14,
-because each executable bundles that Python and its OpenSSL, and python.org publishes Windows and macOS builds
-of a version only during its bugfix phase. The AppImage takes Python 3.10 from the Ubuntu 22.04 archives.
+version the app supports, and on Ubuntu also `BUILD_PYTHON_VERSION`. The Windows, macOS and Linux PyInstaller
+builds use `BUILD_PYTHON_VERSION`, 3.14, because each executable bundles that Python and its OpenSSL, and
+python.org publishes Windows and macOS builds of a version only during its bugfix phase. The AppImage takes
+Python 3.10 from the Ubuntu 22.04 archives.
 [ADR-0015](adr/ADR-0015-release-build-python.md) says why and when the build version changes.
 
 GitHub runs one run at a time in each concurrency group, and the workflow's `concurrency` key sets one group

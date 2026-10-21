@@ -79,7 +79,7 @@ installed none of these packages, so a fix in one of them was checked by a scrip
   `isolate_git` from `tests/gitrepo.py` itself first.
 - A branch that runs only on another OS, or only when a launcher is installed, counts as missed. The 20% margin
   leaves room for such branches without a test that fakes the OS.
-- The Validate job installs the app's packages except PyGObject and pywin32
+- The Validate job installs the app's packages except PyGObject, and pywin32 only on Windows
   ([ADR-0012](ADR-0012-check-command.md)), and `tests/conftest.py` sets `PYSTRAY_BACKEND=dummy`, so that
   importing `gui.py` loads no tray backend. A test can import every module except `registry.py`, which needs
   Windows, and `tests/test_imports.py` imports each module that imports the app's packages. Apart from
