@@ -2,7 +2,7 @@ import io
 
 import pytest
 
-from imagedata import decode_image
+from imagedata import decode_image, png_mode
 
 SIGNATURE = b"\x89PNG\r\n\x1a\n"
 END = b"IEND"
@@ -56,3 +56,18 @@ def test_decode_image_returns_none_for_empty_data():
 def test_decode_image_passes_up_an_error_that_is_not_an_oserror():
     with pytest.raises(DecompressionBombError):
         decode_image(SIGNATURE + b"pixels" + END, open_bomb)
+
+
+@pytest.mark.parametrize("mode", ["1", "L", "LA", "I;16", "I;16B", "P", "RGB", "RGBA"])
+def test_png_mode_keeps_a_mode_that_png_stores(mode):
+    assert png_mode(mode) == mode
+
+
+@pytest.mark.parametrize("mode", ["CMYK", "YCbCr", "LAB", "HSV", "F", "I", "I;16L", "RGBX"])
+def test_png_mode_converts_a_mode_without_transparency_that_png_cannot_store_to_rgb(mode):
+    assert png_mode(mode) == "RGB"
+
+
+@pytest.mark.parametrize("mode", ["PA", "RGBa"])
+def test_png_mode_converts_a_mode_with_transparency_that_png_cannot_store_to_rgba(mode):
+    assert png_mode(mode) == "RGBA"

@@ -1,9 +1,9 @@
 # A downloaded CMYK image ends the run
 
-**Status:** open
+**Status:** done 2026-10-21
 **Area:** cache
 **Origin:** Found on 2026-10-20 while `ImageCache.get` was changed to decode the whole download
-**Verified:** 2026-10-20
+**Verified:** 2026-10-21
 
 `ImageCache.get` in `cache.py` saves each downloaded image in `cache/` as a PNG file with `image.save`, which
 runs after the handling of a failed download. Pillow cannot write a CMYK image as PNG, and a CMYK JPEG is a
@@ -32,3 +32,7 @@ does ([imagedata.md](../../modules/imagedata.md)). No fix adds a request.
 
 - 2026-10-20: Opened. While `get()` was changed to decode the whole download, the steps after the decode were
   run with a CMYK JPEG, and the save raised.
+- 2026-10-21: Closed. `png_mode` in `imagedata.py` names the mode to save in, and `get()` converts the image
+  to it before the hash and the save: RGB for CMYK, RGBA for `PA`. A real `ImageCache` with a stub `request`,
+  as above, then cached a CMYK JPEG and a `PA` TIFF in two runs, and the files of the other modes kept their
+  bytes. Opened [050](050-image-hash-uses-removed-getdata.md).

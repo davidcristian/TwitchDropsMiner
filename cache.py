@@ -8,7 +8,7 @@ import logging
 from typing import Dict, TypedDict, NewType, TYPE_CHECKING
 
 from utils import json_load, json_save
-from imagedata import decode_image
+from imagedata import decode_image, png_mode
 from constants import URLType, CACHE_PATH, CACHE_DB
 
 from PIL import Image as Image_module
@@ -122,6 +122,7 @@ class ImageCache:
                 if image is None:
                     # use a blank white image as a fallback
                     image = Image_module.new("RGB", (10, 10), (255, 255, 255))
+                image = image.convert(png_mode(image.mode))
                 img_hash = self._hash(image)
                 self._images[img_hash] = image
                 image.save(CACHE_PATH / img_hash)

@@ -92,3 +92,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [047: The libXft archive and the AppImage runtime are not checked against a known hash](tasks/047-unchecked-build-downloads.md) | ci, appimage |
 | [048: The builds install the newest release of every dependency](tasks/048-builds-install-the-newest-dependencies.md) | build, ci, requirements |
 | [049: The `just` binary and a commit message hook are not checked against a hash](tasks/049-check-tools-from-third-party-sources.md) | repo checks, ci |
+| [050: The image hash calls `getdata`, which Pillow 14 removes](tasks/050-image-hash-uses-removed-getdata.md) | cache |
