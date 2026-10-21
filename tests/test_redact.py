@@ -1,4 +1,5 @@
 import copy
+import json
 from collections.abc import Mapping
 from typing import NamedTuple
 
@@ -97,6 +98,45 @@ def test_redact_hides_the_password_of_a_url():
 
 def test_redact_returns_a_url_without_a_password_as_it_is():
     url = URL("http://user@proxy.example:8080")
+    assert redact(url) is url
+
+
+def test_redact_hides_the_playback_token_in_an_usher_url():
+    playback_token = json.dumps({"channel": "abc", "user_id": 123, "user_ip": "203.0.113.5"})
+    url = URL(f"https://usher.ttvnw.net/api/channel/hls/abc.m3u8?sig=0123abcd&token={playback_token}")
+    result = redact(url)
+    assert str(result) == "https://usher.ttvnw.net/api/channel/hls/abc.m3u8?sig=0123abcd&token=%3Chidden%3E"
+    assert "203.0.113.5" not in repr(result)
+
+
+@pytest.mark.parametrize("key", DOCUMENTED_SECRET_KEYS)
+def test_redact_hides_the_query_value_of_each_secret_key(key):
+    result = redact(URL(f"https://a.example/path?{key}=s3cret&client_id=abc"))
+    assert list(result.query.items()) == [(key, HIDDEN), ("client_id", "abc")]
+
+
+@pytest.mark.parametrize("query", ["Token=s3cret", "%74oken=s3cret", "token=a&token=b", "token"])
+def test_redact_hides_a_secret_query_value_under_the_name_that_yarl_reads(query):
+    result = redact(URL(f"https://a.example/path?{query}", encoded=True))
+    assert set(result.query.values()) == {HIDDEN}
+
+
+@pytest.mark.parametrize("text", [
+    "https://user@a.example:8080/p%20q?a=1+2&token=s3cret&b=%7E&c&d=#frag",
+    "/relative?token=s3cret&a=1",
+])
+def test_redact_changes_only_the_secret_query_value_of_a_url(text):
+    url = URL(text)
+    assert str(redact(url)) == str(url).replace("token=s3cret", "token=%3Chidden%3E")
+
+
+def test_redact_hides_the_password_and_a_secret_query_value_of_one_url():
+    result = redact(URL("http://user:s3cret@proxy.example:8080/?token=s3cret"))
+    assert str(result) == "http://user:%3Chidden%3E@proxy.example:8080/?token=%3Chidden%3E"
+
+
+def test_redact_returns_a_url_without_a_secret_query_parameter_as_it_is():
+    url = URL("https://usher.ttvnw.net/api/channel/hls/abc.m3u8?sig=0123abcd&client_id=abc#token=x")
     assert redact(url) is url
 
 

@@ -1261,7 +1261,7 @@ class Twitch:
         method = method.upper()
         if self.settings.proxy and "proxy" not in kwargs:
             kwargs["proxy"] = self.settings.proxy
-        logger.debug(f"Request: ({method=}, {url=}, kwargs={redact(kwargs)!r})")
+        logger.debug(f"Request: ({method=}, url={redact(url)!r}, kwargs={redact(kwargs)!r})")
         session_timeout = timedelta(seconds=session.timeout.total or 0)
         backoff = ExponentialBackoff(maximum=3*60)
         for delay in backoff:
@@ -1280,7 +1280,7 @@ class Twitch:
                 )
                 assert response is not None
                 logger.debug(
-                    f"Response: {response.status}: {response.method} {response.url} "
+                    f"Response: {response.status}: {response.method} {redact(response.url)} "
                     f"headers={redact(response.headers)!r}"
                 )
                 if response.status < 500:
@@ -1303,7 +1303,7 @@ class Twitch:
                 if backoff.steps > 1:
                     # just so that quick retries that sometimes happen, aren't shown
                     self.print(
-                        _("error", "no_connection").format(seconds=round(delay), url=str(url))
+                        _("error", "no_connection").format(seconds=round(delay), url=str(redact(url)))
                     )
             finally:
                 if response is not None:

@@ -132,3 +132,7 @@ after  -vvvv --debug-ws --debug-gql:  0 secrets                                 
 - 2026-10-20: A proxy that rejects a request makes aiohttp raise `ClientHttpProxyError`, whose traceback
   showed the proxy password in the Output box and in `log.txt`, which this close did not cover.
   `Twitch.request` now passes the error's request info through `redact()` before it raises the error again.
+- 2026-10-21: The usher URL showed the playback token, which this task judged not to be a login secret, in
+  the `Request:` and `Response:` lines and in the retry message of the Output box. From Twitch's format, not
+  checked, that token holds the user ID and IP address. `redact()` now hides the value of each URL query
+  parameter with a secret key name.

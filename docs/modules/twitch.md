@@ -36,7 +36,8 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
   the Output box, except after a connection error on the first try. It raises `ExitRequest` when the
   window closes, and `RequestInvalid` when `invalidate_after` is less than one session timeout away. It logs
   its arguments, and the status, method, URL and headers of each response, at DEBUG through `redact`, so the
-  token, the device code, cookies and a proxy password show as `<hidden>` ([redact.md](redact.md)). It
+  token, the device code, cookies, a proxy password and the playback token in the usher URL show as
+  `<hidden>` ([redact.md](redact.md)). The URL in its retry message goes through `redact` too. It
   raises a `ClientHttpProxyError` from a proxy without a retry, after it passes the error's `request_info`
   through `redact`, so the traceback shows the proxy password as `<hidden>`.
 - `gql_request(ops)` sends one GQL operation, or a list of them, in one POST to `https://gql.twitch.tv/gql`, and

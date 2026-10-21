@@ -1,6 +1,6 @@
 # ADR-0011: Secrets are hidden at the log call
 
-**Status:** Accepted (2026-10-20)
+**Status:** Accepted (2026-10-21)
 
 ## Context
 
@@ -20,6 +20,12 @@ access as `cookies.jar`. [troubleshooting.md](../troubleshooting.md#reporting-a-
 log with a problem report, and check 6 in [AGENTS.md](../../AGENTS.md#what-every-change-must-pass) forbids
 secrets in logs. [Task 011](../refinements/tasks/011-login-token-in-debug-log.md) recorded the problem.
 
+A URL can show private data too. The usher URL that `Stream.get_stream_url` requests has the playback token of
+the `PlaybackAccessToken` operation as its `token` query value. `Twitch.request` writes that URL in the
+`Request:` and `Response:` lines, and shows it in the Output box at any `-v` count when a connection error
+repeats. The playback token gives no access to the account. From Twitch's format, not checked against a real
+response here, it is JSON text that holds the user ID and the IP address of the computer that requested it.
+
 An error can show a secret too. When a proxy rejects a request, aiohttp raises `ClientHttpProxyError`, and
 its text includes the proxy URL with the password. `Twitch.request` does not retry that error, so
 `Twitch._await_restart` prints its traceback in the Output box and logs it, which `--log` writes to
@@ -31,16 +37,21 @@ The log lines are f-strings, so a value is already text when a log handler recei
 
 1. **A log call that prints a request, a response or a websocket message passes the value through
    `redact()`** in `redact.py`. It returns a copy in which the value of each secret key is `<hidden>`, at any
-   depth of dicts, lists and tuples, and in which a URL's password is `<hidden>`. The value that is sent is
-   not changed.
+   depth of dicts, lists and tuples, and in which a URL's password and the value of each of its query
+   parameters with a secret key name are `<hidden>`. The value that is sent is not changed. The retry message
+   of `Twitch.request` in the Output box shows its URL through `redact()` too.
 2. **A secret is found by its key name**, compared lowercase. `SECRET_KEYS` holds `access_token`, `auth_token`,
    `authorization`, `cookie`, `device_code`, `password`, `proxy-authorization`, `refresh_token`,
    `set-cookie` and `token`. The code and aiohttp name these keys where they build the value, so the name
-   is known before the value becomes text.
+   is known before the value becomes text. A query parameter name is compared after it is decoded as yarl
+   decodes it, and the rest of the URL keeps its encoded text.
 3. **The `Response:` line logs the status, the method, the URL and the redacted headers**, in place of the
    text of aiohttp's `ClientResponse`, which prints every header.
 4. **The rest of each line stays.** The method, the URL, the other headers, the GQL operations and the
-   websocket topics are what a report about a failed request needs.
+   websocket topics are what a report about a failed request needs. In the usher URL, the channel login and
+   the `sig` query value stay. `sig` is not a secret key: it is the `signature` field of the same response, a
+   signature of the token, and is of no use without the token. The playback token itself is in the
+   `--debug-gql` output.
 5. **`Twitch.request` passes the request info of a `ClientHttpProxyError` through `redact()`** and raises
    the same error again. Its text then shows `<hidden>` for the proxy password. Its type and traceback do
    not change, so every `except` clause that catches it works as before. `redact()` returns an aiohttp
@@ -56,13 +67,16 @@ The log lines are f-strings, so a value is already text when a log handler recei
   frame, holds no keys and is logged as it is. The `message` field of a PubSub `MESSAGE` is JSON text, which
   `redact()` does not read.
 - A secret under a key name that is not in `SECRET_KEYS` is logged until its name is added.
+- `redact()` reads the query of a `yarl.URL`, not of a URL given as a `str`, which it returns as it is. The
+  usher URL is a `yarl.URL`, and code that requests a new URL with a secret query parameter passes it as one.
 - Of the proxy errors checked in aiohttp 3.14.3 (a rejected request, a closed port, a rejected websocket
   connection), only `ClientHttpProxyError` shows the password in its text. `Websocket` logs a connection
   error without its text.
 - The `repr` of an aiohttp connection error shows the proxy URL and password of its connection. A log call
   prints such an error's class and text, never its `repr`, as `ImageCache.get` does for a failed download.
-- `--debug-gql` still writes Twitch's GQL responses on `TwitchDrops.gql`. They hold account data but not the login
-  token, and [gql-operations.md](../runbooks/gql-operations.md) says not to share that output.
+- `--debug-gql` still writes Twitch's GQL responses on `TwitchDrops.gql`. They hold account data and the playback
+  token but not the login token, and [gql-operations.md](../runbooks/gql-operations.md) says not to share that
+  output.
 - `redact()` runs for every request at every log level, because Python builds an f-string before the logger
   checks the level. It copies the arguments, which costs little next to the request, and it adds no request to
   Twitch.
