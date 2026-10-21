@@ -95,3 +95,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [050: The image hash calls `getdata`, which Pillow 14 removes](tasks/050-image-hash-uses-removed-getdata.md) | cache |
 | [051: The redact tests use a stand-in for aiohttp's `RequestInfo`](tasks/051-redact-test-uses-a-stand-in-request-info.md) | redact, tests |
 | [052: On Tk 9, the back and forward mouse buttons scroll the Inventory tab](tasks/052-tk-9-back-button-scrolls-inventory.md) | mousewheel, gui |
+| [053: No test checks that `log.txt` is written in UTF-8](tasks/053-log-file-encoding-untested.md) | main, tests |
