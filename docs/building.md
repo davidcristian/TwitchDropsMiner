@@ -154,4 +154,8 @@ for a pull request, CI replaces the `dev-build` pre-release on the
 [Releases page](https://github.com/davidcristian/TwitchDropsMiner/releases) with the new builds. A pull request
 builds but publishes nothing.
 
+The workflow sets `permissions: contents: read`, so its token can read the repository and nothing more,
+whatever default the repository settings give the token. Only the release job, `update_releases_page`, sets
+`contents: write`, which it needs to replace the pre-release.
+
 Before you open a pull request, run the checks in [AGENTS.md](../AGENTS.md#what-every-change-must-pass).
