@@ -28,7 +28,9 @@ installed none of these packages, so a fix in one of them was checked by a scrip
      a session whose requests raise, and creates no Tk window, because the Validate job has no display.
      `tests/fakes.py` has a fake `Twitch`, which records each request and returns the responses a test gives it.
      A test of `Twitch` itself takes the `live_twitch` fixture of `tests/conftest.py`, which builds a real
-     `Twitch` with the window, settings and responses of a fake one. `run_with_fast_clock` in
+     `Twitch` with the window, settings and responses of a fake one. Its session opens each PubSub connection
+     with a function the test gives, such as one that returns a `FakePubSub`, which returns the messages the
+     test gives it and records the messages the app sends. `run_with_fast_clock` in
      `tests/livetwitch.py` runs a test on an event loop whose clock moves to the next timer when no task can run,
      so a test of code that waits for seconds takes milliseconds.
    - A test written only to reach a line is not allowed.
