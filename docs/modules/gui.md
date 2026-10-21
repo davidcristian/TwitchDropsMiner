@@ -147,12 +147,15 @@ lists the problems.
   lists of the Settings tab and the canvases of the Inventory and Settings tabs.
 - On Windows it sets the title bar color with `DwmSetWindowAttribute` (attribute 35, `DWMWA_CAPTION_COLOR`). On
   macOS it sets the app's `NSAppearance` to `DarkAqua` or `Aqua` through `AppKit`.
-- Last, it sets the window's minimum size to the size the window requests while the Settings tab's area is
-  `collapsed()`, because the fonts and paddings of the theme change that size. The Settings tab scrolls, so the
-  widest tab that cannot scroll, the Main tab, sets the minimum. In the preview on Linux the minimum is 867 by
-  704 pixels in light mode and 880 by 738 in dark mode. The Main tab can grow after that, for example with a
-  long channel name, and the minimum does not follow it
-  ([task 055](../refinements/tasks/055-minimum-window-size-misses-main-tab-growth.md)).
+- Last, it calls `MinimumSize.measure` ([scrollarea.md](scrollarea.md)), which sets the window's minimum size
+  to the size the window requests while the Settings tab's area is `collapsed()`, because the fonts and
+  paddings of the theme change that size. The Settings tab scrolls, so the widest tab that cannot scroll, the
+  Main tab, sets the minimum. In the preview on Linux the minimum is 865 by 704 pixels in light mode and 878 by
+  738 in dark mode before the mock data arrives.
+- The Main tab grows later, for example when a long channel name widens a column of the channel table. After
+  each pass over the Tk events, `_poll` calls `MinimumSize.follow`, which measures again when the Main,
+  Inventory or Help tab requests a new size. In the preview the minimum width becomes 928 pixels in light mode
+  and 941 in dark mode.
 
 After `apply_theme`, `GUIManager.__init__` calls `_fit_to_screen`. When the window requests more than
 `wm maxsize`, which Tk sets from the screen size (on X11, the screen less 15 by 30 pixels for the window

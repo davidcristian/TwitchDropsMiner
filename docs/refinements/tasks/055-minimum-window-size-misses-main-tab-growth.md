@@ -1,9 +1,9 @@
 # The minimum window size does not follow the Main tab when it grows
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** gui (`GUIManager`)
 **Origin:** Found on 2026-10-21: the preview window was shrunk to its minimum size after its mock data arrived
-**Verified:** 2026-10-21
+**Verified:** 2026-10-22
 
 `GUIManager.apply_theme` sets the minimum window size once, from the size the window requests without the
 Settings tab's content ([gui.md](../../modules/gui.md#the-theme-and-dark-mode)). It runs when the window is
@@ -29,3 +29,7 @@ in one update; whether that shows as a flicker needs a check on Windows. Twitch 
 
 - 2026-10-21: Opened. After the Settings tab started to scroll, the minimum window size came from the Main
   tab, and the preview's Main tab grew after the minimum was set.
+- 2026-10-22: Closed. `MinimumSize` in `scrollarea.py` measures the minimum with grid propagation off, so the
+  window does not resize during the measurement, and `GUIManager._poll` calls its `follow` after each pass over
+  the Tk events. In the preview under Xvfb, the minimum width became 928 pixels after the mock data arrived,
+  and a window of that width showed the whole channel table. Windows was not run.

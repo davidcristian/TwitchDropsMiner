@@ -36,7 +36,15 @@ windows, so `just check` runs them under `xvfb-run` on Linux.
   - Content smaller than the canvas is centered in it, and the scroll region is the larger of the canvas and
     the content on each axis.
   - `collapsed()` is a context manager. Inside the `with` block the canvas requests 1 by 1 pixels, so the
-    window's requested size leaves the content out. `GUIManager.apply_theme` reads the minimum window size
-    inside it ([gui.md](gui.md#the-theme-and-dark-mode)).
+    window's requested size leaves the content out. `MinimumSize` measures inside it.
+- `MinimumSize(window, content, watched, shrink)` sets the minimum size of the window `window`, which holds the
+  frame `content` through `grid`. `GUIManager` uses one ([gui.md](gui.md#the-theme-and-dark-mode)).
+  - `measure()` enters the context manager that each function in `shrink` returns, such as `collapsed`, and
+    sets the minimum to the size that `content` requests inside them. Grid propagation of `window` is off
+    meanwhile, so a window that follows its requested size keeps its size during the measurement.
+  - `follow()` calls `measure()` when one of the widgets in `watched` requests a size other than at the last
+    measurement. Tk sends no event for a new requested size, so the caller runs it often. A change of the
+    window's size alone changes no requested size, so a user who resizes the window does not start a
+    measurement.
 
 **Dependencies.** Repo modules: `mousewheel`. Standard library: `tkinter`.

@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import tkinter as tk
-from collections.abc import Iterator
-from contextlib import contextmanager
+from collections.abc import Callable, Iterator, Sequence
+from contextlib import AbstractContextManager, ExitStack, contextmanager
 from tkinter import ttk
 from typing import NamedTuple
 
@@ -129,3 +129,48 @@ class ScrollArea:
             self.canvas.xview_scroll(scroll.units, "units")
         else:
             self.canvas.yview_scroll(scroll.units, "units")
+
+
+class MinimumSize:
+    """Keep the minimum size of `window` at the size its `content` requests while each of `shrink` is in effect.
+
+    `content` fills `window` through `grid`. `watched` are the widgets whose requested size the minimum includes.
+    """
+
+    def __init__(
+        self,
+        window: tk.Tk,
+        content: tk.Misc,
+        watched: Sequence[tk.Misc],
+        shrink: Sequence[Callable[[], AbstractContextManager[object]]],
+    ) -> None:
+        self._window = window
+        self._content = content
+        self._watched = watched
+        self._shrink = shrink
+        self._sizes: list[Size] = []
+
+    def _watched_sizes(self) -> list[Size]:
+        return [Size(widget.winfo_reqwidth(), widget.winfo_reqheight()) for widget in self._watched]
+
+    def measure(self) -> None:
+        """Set the minimum size to the size that the content requests inside every context of `shrink`."""
+        self._window.update_idletasks()
+        self._sizes = self._watched_sizes()
+        # without propagation the window keeps its size, so it does not shrink and grow back during the measurement
+        self._window.grid_propagate(False)
+        try:
+            with ExitStack() as stack:
+                for shrink in self._shrink:
+                    stack.enter_context(shrink())
+                self._window.update_idletasks()
+                self._window.minsize(self._content.winfo_reqwidth(), self._content.winfo_reqheight())
+            # the content requests its full size again before the window follows it
+            self._window.update_idletasks()
+        finally:
+            self._window.grid_propagate(True)
+
+    def follow(self) -> None:
+        """Measure again when a watched widget requests a new size, for which Tk sends no event."""
+        if self._watched_sizes() != self._sizes:
+            self.measure()

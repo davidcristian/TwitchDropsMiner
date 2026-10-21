@@ -45,7 +45,7 @@ from gamelib import (
 )
 from exceptions import MinerException, ExitRequest
 from folderpicker import FolderPicker
-from scrollarea import ScrollArea, Size, fitted_size
+from scrollarea import MinimumSize, ScrollArea, Size, fitted_size
 from utils import resource_path, set_root_icon, webopen, start_task, task_wrapper, Game, _T
 from constants import (
     MAX_INT,
@@ -2517,6 +2517,10 @@ class GUIManager:
         help_frame = ttk.Frame(root_frame, padding=8)
         self.help = HelpTab(self, help_frame)
         self.tabs.add_tab(help_frame, name=_("gui", "tabs", "help"))
+        # the Settings tab scrolls, so the minimum window size leaves out its content
+        self._minimum = MinimumSize(
+            root, root_frame, (main_frame, inv_frame, help_frame), (self.settings._area.collapsed,)
+        )
         # register logging handler
         self._handler = _TKOutputHandler(self)
         self._handler.setFormatter(OUTPUT_FORMATTER)
@@ -2647,6 +2651,7 @@ class GUIManager:
                 # Drain pending Tk events non-blockingly
                 while do_one_event(DONT_WAIT):
                     pass
+                self._minimum.follow()
             except tk.TclError:
                 # Root window was destroyed
                 break
@@ -2936,11 +2941,8 @@ class GUIManager:
         else:
             # Reset to system default title bar color
             self._set_title_bar_color(0xFFFFFFFF)
-        # the theme sets the fonts and paddings, so the minimum window size follows it. The Settings tab scrolls, so
-        # its content is left out of the minimum.
-        with self.settings._area.collapsed():
-            self._root.update_idletasks()
-            self._root.minsize(width=self._root.winfo_reqwidth(), height=self._root.winfo_reqheight())
+        # the theme sets the fonts and paddings, so the minimum window size follows it
+        self._minimum.measure()
 
     def _fit_to_screen(self) -> None:
         """Shrink the window to the largest size Tk allows on the screen, when it requests more."""

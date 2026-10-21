@@ -202,6 +202,40 @@ def test_the_minimum_window_size_is_the_size_of_the_current_theme_without_the_se
     assert after_the_change[0] == after_the_change[1]
 
 
+def test_the_whole_main_tab_shows_at_the_minimum_window_size_after_a_long_channel_name(window):
+    fake = FakeTwitch()
+    gui = window(fake)
+    root, main = gui._root, gui.tabs._nb.nametowidget(gui.tabs._nb.tabs()[0])
+    root.update()
+    width = main.winfo_reqwidth()
+
+    async def scenario() -> None:
+        gui.start()
+        gui.channels.display(Channel(fake, id=1, login="c" * 30), add=True)
+        # the poll task lays out the window and checks the minimum size in one step
+        await until(lambda: main.winfo_reqwidth() > width)
+        gui.stop()
+
+    asyncio.run(scenario())
+    root.geometry("{}x{}".format(*root.minsize()))
+    root.update()
+
+    assert main.winfo_width() >= main.winfo_reqwidth()
+
+
+def test_setting_the_theme_again_does_not_resize_a_window_that_follows_its_requested_size(window):
+    gui = window(FakeTwitch())
+    root = gui._root
+    root.geometry("")
+    root.update()
+    resizes = []
+    root.bind("<Configure>", lambda event: event.widget is root and resizes.append((event.width, event.height)))
+    gui.apply_theme(False)
+    root.update()
+
+    assert resizes == []
+
+
 def test_the_window_opens_at_its_requested_size_cut_to_the_largest_size_tk_allows(window):
     root = window(FakeTwitch())._root
     root.update()

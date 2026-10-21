@@ -5,7 +5,7 @@ from tkinter import ttk
 
 import pytest
 
-from scrollarea import ScrollArea, Size, fitted_size, needed_bars
+from scrollarea import MinimumSize, ScrollArea, Size, fitted_size, needed_bars
 
 BARS = Size(15, 15)
 CONTENT = Size(400, 300)
@@ -124,3 +124,56 @@ def test_the_wheel_scrolls_the_area_but_not_over_a_list_inside_it(root):
         tops.append(area.canvas.yview()[0])
 
     assert tops[0] == 0 < tops[1]
+
+
+def minimum_window(root: tk.Tk) -> tuple[MinimumSize, ttk.Frame]:
+    """Return the minimum size of a window that holds a fitted area of the CONTENT size and a frame of 200 by 100."""
+    content = ttk.Frame(root)
+    content.grid(sticky="nsew")
+    pane = ttk.Frame(content)
+    pane.grid(column=0, row=0, sticky="nsew")
+    area = ScrollArea(pane, row=0, fit=True)
+    ttk.Frame(area.inner, width=CONTENT.width, height=CONTENT.height).grid()
+    watched = ttk.Frame(content, width=200, height=100)
+    watched.grid(column=1, row=0)
+    minimum = MinimumSize(root, content, [watched], [area.collapsed])
+    minimum.measure()
+    root.update()
+    return minimum, watched
+
+
+def test_the_minimum_size_is_the_requested_size_with_the_area_collapsed(root):
+    minimum_window(root)
+
+    assert root.minsize() == (1 + 200, 100)
+    assert (root.winfo_width(), root.winfo_height()) == (CONTENT.width + 200, CONTENT.height)
+
+
+def test_measuring_the_minimum_size_does_not_resize_a_window_that_follows_its_requested_size(root):
+    minimum, _watched = minimum_window(root)
+    resizes = []
+    # a binding on the window also receives the events of the widgets inside it
+    root.bind("<Configure>", lambda event: event.widget is root and resizes.append((event.width, event.height)))
+    minimum.measure()
+    root.update()
+
+    assert resizes == []
+
+
+def test_the_minimum_size_follows_a_watched_widget_that_requests_a_new_size(root):
+    minimum, watched = minimum_window(root)
+    watched.configure(width=300, height=50)
+    root.update_idletasks()
+    minimum.follow()
+
+    assert root.minsize() == (1 + 300, 50)
+
+
+def test_a_resized_window_is_not_measured_again(root):
+    minimum, _watched = minimum_window(root)
+    root.geometry("700x400")
+    root.update()
+    root.minsize(1, 1)
+    minimum.follow()
+
+    assert root.minsize() == (1, 1)
