@@ -58,7 +58,7 @@ jobs:
           python-version: ${{env[matrix.python]}}
 
       - name: Install the check tools and the app's packages
-        run: python -m pip install -r requirements-dev.txt
+        run: python -m pip install -c constraints.txt -r requirements-dev.txt
 
       # requirements-dev.txt installs `just` from rust-just, a build by another person, for developers. CI runs the
       # official release of the same version instead, checked against the hashes in that release's SHA256SUMS.
@@ -127,8 +127,8 @@ jobs:
 
       - name: Install project dependencies
         run: |
-          python3 -m pip install wheel
-          python3 -m pip install -r requirements.txt
+          python3 -m pip install -c constraints.txt pip wheel
+          python3 -m pip install -c constraints.txt --build-constraint constraints.txt -r requirements.txt
 
       # TODO: Consider using https://github.com/crazy-max/ghaction-upx
       # or some other way of keeping the download link up to date in the future
@@ -142,7 +142,7 @@ jobs:
 
       - name: Install PyInstaller
         run: |
-          python3 -m pip install pyinstaller
+          python3 -m pip install -c constraints.txt --build-constraint constraints.txt pyinstaller
 
       - name: Create portable executable
         run: |
@@ -190,12 +190,12 @@ jobs:
 
       - name: Install project dependencies
         run: |
-          python3 -m pip install wheel
-          python3 -m pip install -r requirements.txt
+          python3 -m pip install -c constraints.txt pip wheel
+          python3 -m pip install -c constraints.txt --build-constraint constraints.txt -r requirements.txt
 
       - name: Install PyInstaller
         run: |
-          python3 -m pip install pyinstaller
+          python3 -m pip install -c constraints.txt --build-constraint constraints.txt pyinstaller
 
       - name: Create portable executable
         run: |
@@ -256,12 +256,12 @@ jobs:
 
       - name: Install project dependencies
         run: |
-          python3 -m pip install wheel
-          python3 -m pip install -r requirements.txt
+          python3 -m pip install -c constraints.txt pip wheel
+          python3 -m pip install -c constraints.txt --build-constraint constraints.txt -r requirements.txt
 
       - name: Install PyInstaller
         run: |
-          python3 -m pip install pyinstaller
+          python3 -m pip install -c constraints.txt --build-constraint constraints.txt pyinstaller
 
       # NOTE: Remove this step if/once libxft gets updated to 2.3.5 or newer on Ubuntu 22.04, which currently has 2.3.4.
       - name: Build a recent version of libXft
@@ -333,11 +333,11 @@ jobs:
 
       - name: Install appimage-builder
         run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install wheel
-          python3 -m pip install setuptools setuptools_scm
+          python3 -m pip install -c constraints.txt --upgrade pip
+          python3 -m pip install -c constraints.txt wheel
+          python3 -m pip install -c constraints.txt setuptools setuptools_scm
           # TODO: Switch to a stable release if/when a version newer than 1.1.0 is released.
-          python3 -m pip install git+https://github.com/AppImageCrafters/appimage-builder.git@1a8794d3c89f288fbd82b9accd7c0b74611147d5
+          python3 -m pip install -c constraints.txt --build-constraint constraints.txt git+https://github.com/AppImageCrafters/appimage-builder.git@1a8794d3c89f288fbd82b9accd7c0b74611147d5
 
       - name: Create AppImage
         env:

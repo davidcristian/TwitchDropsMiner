@@ -136,6 +136,8 @@ The rest is checked by hand, and the report of a change shows the output of each
 4. No new dependency unless the standard library cannot do the job. Every build installs `requirements.txt`; the
    tools `just check` runs are in `requirements-dev.txt`, which no build installs. It also lists the lines of
    `requirements.txt` that the tests need, all but PyGObject, so a change to one is made in both.
+   `constraints.txt` sets the exact version of every package a build installs, dependencies included, so a new or
+   changed dependency changes it too ([runbook](docs/runbooks/dependency-versions.md)).
 5. No secrets in the repo or in logs. `cookies.jar` holds the login session; it, `settings.json`, `log.txt` and
    `dump.dat` are gitignored and are never committed or pasted. A log call that prints a request, a response or a
    websocket message passes it through `redact` in `redact.py` ([ADR-0011](docs/adr/ADR-0011-secrets-in-logs.md)).

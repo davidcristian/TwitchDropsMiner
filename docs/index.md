@@ -19,6 +19,8 @@ Start here. The rules for working in this repo are in [AGENTS.md](../AGENTS.md).
   cherry-pick.
 - [runbooks/gui-preview-headless.md](runbooks/gui-preview-headless.md): running and screenshotting `gui.py` on
   Linux without a display.
+- [runbooks/dependency-versions.md](runbooks/dependency-versions.md): updating the package versions in
+  `constraints.txt` and checking them for every build.
 - [refinements/](refinements/index.md): the deferred work, one file per task.
 
 ## Decisions
@@ -43,6 +45,7 @@ Each record states the decision that applies today and is edited in place when i
 | [ADR-0013: Tests assert behavior, with an 80% coverage floor](adr/ADR-0013-test-standard.md) | What a test must assert, fakes rather than mocks, suite tests also for the modules that need Twitch or a display, strict `xfail` tests for known defects, and 80% branch coverage of the modules that need neither. |
 | [ADR-0014: Code rules for new code](adr/ADR-0014-code-rules.md) | New logic receives its I/O as an argument, platform differences are one function per concern, and the typing and exception rules; inherited code follows them where a change rewrites it. |
 | [ADR-0015: The release builds use a newer Python than the checks](adr/ADR-0015-release-build-python.md) | The Validate job runs on Python 3.10, the oldest supported version, and on Ubuntu also on 3.14; the PyInstaller builds use 3.14, a version for which python.org still publishes Windows and macOS builds with OpenSSL updates. |
+| [ADR-0016: Exact versions of the packages the builds install](adr/ADR-0016-exact-dependency-versions.md) | `constraints.txt` sets the version of every package a build installs from PyPI, which each build passes to pip with `-c` and `--build-constraint` and the Validate job with `-c`; no hashes; updated by hand with releases at least two weeks old. |
 
 ## Modules
 

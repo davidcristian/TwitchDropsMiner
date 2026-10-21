@@ -1,6 +1,6 @@
 # ADR-0012: One check command
 
-**Status:** Accepted (2026-10-21)
+**Status:** Accepted (2026-10-22)
 
 ## Context
 
@@ -78,9 +78,9 @@ lint rules without its formatter or pyright.
    - Developers keep `rust-just`, because the pre-commit hook needs `just` on every machine and one
      `pip install` sets it up on every OS.
 6. **`requirements-dev.txt` also installs the app's packages that the tests import**: the lines of
-   `requirements.txt` without PyGObject, with the same version ranges and platform markers, so that the tests get
-   the newest releases, as a build does. They get exact versions with the build dependencies
-   ([task 048](../refinements/tasks/048-builds-install-the-newest-dependencies.md)).
+   `requirements.txt` without PyGObject, with the same version ranges and platform markers. The Validate job
+   installs it with `-c constraints.txt`, so that the tests get the versions that a build installs
+   ([ADR-0016](ADR-0016-exact-dependency-versions.md)).
    - PyGObject is left out because pip builds it from source on Linux, which needs the system packages in
      [building.md](../building.md#requirements), and no test needs it: `tests/conftest.py` sets
      `PYSTRAY_BACKEND=dummy`, so pystray loads no tray backend.
@@ -146,8 +146,8 @@ lint rules without its formatter or pyright.
   of one `pip install`. It replaces `rust-just` there when that package stops following the `just` releases or
   changes owner.
 - **`rust-just` with a hash in `requirements-dev.txt`.** pip's hash mode needs a hash for every package the
-  file installs, for each OS and Python; [task 048](../refinements/tasks/048-builds-install-the-newest-dependencies.md)
-  weighs that for the builds.
+  file installs, for each OS and Python; [ADR-0016](ADR-0016-exact-dependency-versions.md) says why the builds
+  use no hashes either.
 - **Every Python from 3.10 to 3.14 on every runner.** That is fifteen runs for each push. 3.10 is the oldest
   Python the app supports and 3.14 the Python of the releases; 3.11 to 3.13 are neither.
 - **Windows and macOS required from their first run.** They had never run, and a test written for Linux that

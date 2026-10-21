@@ -25,9 +25,11 @@ is the reference when this page and a build disagree. For problems while running
 Run `setup_env.bat` on Windows or `./setup_env.sh` on Linux and macOS. The script:
 
 1. creates the `env/` virtual environment if it does not exist, with `python` on Windows and `python3` elsewhere;
-2. upgrades pip, then installs `wheel` and everything in `requirements.txt` into `env/`.
+2. installs pip, `wheel` and everything in `requirements.txt` into `env/`, each at its version in
+   `constraints.txt` ([Exact versions](#exact-versions)).
 
-Run the script again after `requirements.txt` changes. It keeps the existing `env/` and installs the new packages.
+Run the script again after `requirements.txt` or `constraints.txt` changes. It keeps the existing `env/` and
+installs the new packages and versions.
 
 ## Run from source
 
@@ -61,16 +63,17 @@ display, see [runbooks/gui-preview-headless.md](runbooks/gui-preview-headless.md
 `just check` runs every check that a change must pass, as listed in
 [AGENTS.md](../AGENTS.md#what-every-change-must-pass). Its tools are in `requirements-dev.txt`, which no build
 installs, with the app's packages that the tests import: the lines of `requirements.txt` without PyGObject.
-Install them into `env/` once, then activate the environment so that `just` and the recipes use its Python:
+Install them into `env/` once, at the versions in `constraints.txt`, then activate the environment so that
+`just` and the recipes use its Python:
 
 ```bash
-env/bin/python -m pip install -r requirements-dev.txt
+env/bin/python -m pip install -c constraints.txt -r requirements-dev.txt
 source env/bin/activate
 just check
 ```
 
-On Windows, run `env\scripts\python -m pip install -r requirements-dev.txt`, then `env\scripts\activate` and
-`just check`. The recipes run `python3` on Linux and macOS and `python` on Windows.
+On Windows, run `env\scripts\python -m pip install -c constraints.txt -r requirements-dev.txt`, then
+`env\scripts\activate` and `just check`. The recipes run `python3` on Linux and macOS and `python` on Windows.
 
 `just check` stops at the first check that fails. `just --list` shows each check's own recipe, such as
 `just check-tests` for the test suite alone. To run `just check` before each commit and check each commit
@@ -87,17 +90,17 @@ screen. Without `xvfb-run` they use `DISPLAY`, and with no display pytest skips 
 environment variable is set, they fail instead. Tk on Windows and macOS needs no X server
 ([ADR-0013](adr/ADR-0013-test-standard.md)).
 
-The Validate job in CI installs `requirements-dev.txt` and runs `just check` four times: on Ubuntu with Python
-3.10 and with Python 3.14, and on Windows and on macOS with Python 3.10. The build jobs wait for all four. A
-failure on Ubuntu fails the workflow, and the builds do not start. Until each has passed once, the Windows and
-macOS runs set `continue-on-error`, so a failure there does not fail the workflow
+The Validate job in CI installs `requirements-dev.txt` with `-c constraints.txt` and runs `just check` four
+times: on Ubuntu with Python 3.10 and with Python 3.14, and on Windows and on macOS with Python 3.10. The build
+jobs wait for all four. A failure on Ubuntu fails the workflow, and the builds do not start. Until each has
+passed once, the Windows and macOS runs set `continue-on-error`, so a failure there does not fail the workflow
 ([task 046](refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)). On Ubuntu the job has no display
 and no PyGObject, so to run the checks as it does, use a new virtual environment on Python 3.10 with
 `requirements-dev.txt` alone, outside the repository folder, and unset `DISPLAY`:
 
 ```bash
 python3.10 -m venv ~/tdm-validate
-~/tdm-validate/bin/python -m pip install -r requirements-dev.txt
+~/tdm-validate/bin/python -m pip install -c constraints.txt -r requirements-dev.txt
 source ~/tdm-validate/bin/activate
 env -u DISPLAY -u WAYLAND_DISPLAY just check
 ```
@@ -113,7 +116,8 @@ In place of the `rust-just` package, a build of `just` by another person, the Va
 Run `build.bat` on Windows or `./build.sh` on Linux and macOS. The script:
 
 1. stops with `No virtual environment found!` when `env/` does not exist;
-2. installs PyInstaller into `env/` the first time. `build.bat` then also runs pywin32's post-install script;
+2. installs PyInstaller into `env/` the first time, at its version in `constraints.txt`. `build.bat` then also
+   runs pywin32's post-install script;
 3. runs `pyinstaller build.spec`.
 
 The executable ends up in `dist/`, and PyInstaller keeps its intermediate files in `build/`. PyInstaller creates
@@ -165,8 +169,9 @@ The `linux-appimage` job in `ci.yml` builds the AppImage on Ubuntu 22.04 with
   folder, `appimage-build/`. A recipe cannot name a runtime file or a hash. After the build, the `linux-appimage`
   job compares the AppImage with these files, so a version of appimage-builder that looks elsewhere fails the job;
 - copies the top-level `*.py` files, `gamelib/`, `lang/` and `icons/` into `usr/src` inside the image, starts
-  `usr/src/main.py`, and installs `requirements.txt`. The app counts as an AppImage only when `constants.py` is
-  inside the image ([constants.md](modules/constants.md#working-directory-and-paths));
+  `usr/src/main.py`, and installs `requirements.txt` at the versions in `constraints.txt`. The app counts as an
+  AppImage only when `constants.py` is inside the image
+  ([constants.md](modules/constants.md#working-directory-and-paths));
 - sets no update information and no signing key, so the AppImage has neither.
 
 The job installs appimage-builder from a fixed commit, sets the `ARCH`, `ARCH_APT` and `APP_VERSION` environment
@@ -191,6 +196,20 @@ folder that `--appimage-extract-and-run` extracts the image into with mode 0700,
 folder holds only the files of the image, since `cookies.jar` and `settings.json` stay next to the `.AppImage`
 file. To update a download, change its URL and hash together, with the hash checked against a signature or a
 published checksum, and move to a newer dated runtime release when type2-runtime publishes one.
+
+## Exact versions
+
+`constraints.txt` sets the exact version of every package that a build installs from PyPI, with the packages
+those need and, on Linux, the packages that pip installs to build PyGObject and pycairo from source. The build
+jobs, the AppImage recipe and the setup and build scripts pass `-c constraints.txt` to each `pip install`. Each
+one that installs `requirements.txt`, PyInstaller or appimage-builder also passes
+`--build-constraint constraints.txt`, for a build from source. That option needs pip 25.3, so the build jobs, the
+recipe and `setup_env` first install the pip version in the file. The Validate job installs `requirements-dev.txt`
+with `-c constraints.txt`, and `requirements.txt` keeps its ranges for an install without the file.
+[runbooks/dependency-versions.md](runbooks/dependency-versions.md) updates a version.
+[ADR-0016](adr/ADR-0016-exact-dependency-versions.md) says why the file sets no hashes, and
+[task 056](refinements/tasks/056-appimage-builder-dependencies-newest.md) that it does not set the dependencies of
+appimage-builder.
 
 ## Release builds
 

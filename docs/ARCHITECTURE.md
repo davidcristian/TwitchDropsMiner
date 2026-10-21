@@ -199,6 +199,7 @@ pack.bat               zips dist\*.exe, manual.txt and the license files into "T
 manual.txt             command line flags and exit codes; every release build includes it
 requirements.txt       aiohttp, Pillow, pystray, PyGObject (Linux), pywin32 (Windows), truststore
 requirements-dev.txt   the tools of just check, and the app's packages that the tests import; no build installs it
+constraints.txt        the exact version of every package that a build, setup_env or the Validate job installs
 justfile               the recipes of just check, one per check
 pyproject.toml         the ruff, pytest and coverage settings; the app is not a package
 .pre-commit-config.yaml  the git hooks: just check before a commit, two checks of the commit message

@@ -15,7 +15,7 @@ fi
 if [ ! -f "$dirpath/env/bin/pyinstaller" ]; then
     echo
     echo "Installing PyInstaller..."
-    "$dirpath/env/bin/pip" install pyinstaller
+    "$dirpath/env/bin/pip" install -c "$dirpath/constraints.txt" --build-constraint "$dirpath/constraints.txt" pyinstaller
     if [ $? -ne 0 ]; then
         echo
         echo "Failed to install PyInstaller."

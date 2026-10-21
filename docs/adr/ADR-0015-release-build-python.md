@@ -64,5 +64,7 @@ OpenSSL 1.1.1 has had no public fixes since September 2023, and Python 3.10 reac
 
 - [building.md](../building.md#release-builds): the release builds and their Python.
 - [ADR-0012](ADR-0012-check-command.md): the Validate job and `just check`.
+- [ADR-0016](ADR-0016-exact-dependency-versions.md): the package versions of the builds, resolved again when the
+  build version moves.
 - [Task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md): the checks on Windows and
   macOS.

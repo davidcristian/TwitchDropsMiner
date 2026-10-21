@@ -16,7 +16,7 @@ if not exist "%dirpath%\env" (
 REM Check if PyInstaller and pywin32 is installed in the virtual environment
 if not exist "%dirpath%\env\scripts\pyinstaller.exe" (
     echo Installing PyInstaller...
-    "%dirpath%\env\scripts\pip" install pyinstaller
+    "%dirpath%\env\scripts\pip" install -c "%dirpath%\constraints.txt" --build-constraint "%dirpath%\constraints.txt" pyinstaller
     if errorlevel 1 (
         echo:
         echo Failed to install PyInstaller.

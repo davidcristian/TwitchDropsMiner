@@ -1,10 +1,10 @@
 # The builds install the newest release of every dependency
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** build, ci, requirements
 **Origin:** Found on 2026-10-21 while the release builds moved to Python 3.14: a new environment got Pillow
 13.0.0 from `requirements.txt`, while the last release build had used Pillow 12.3.0
-**Verified:** 2026-10-21
+**Verified:** 2026-10-22
 
 `requirements.txt` sets a range for aiohttp (`>=3.9,<4.0`) and an upper limit for PyGObject (`<3.51`), and no
 version for Pillow, pystray, pywin32 or truststore. The build jobs in `.github/workflows/ci.yml`, `build.sh` and
@@ -54,3 +54,10 @@ None of this sends a Twitch request.
 - 2026-10-21: Opened. Found while the release builds moved to Python 3.14 and a new environment got a newer
   Pillow than the last release.
 - 2026-10-21: `requirements-dev.txt` lists the app's packages that the tests import, in place of `yarl` alone.
+- 2026-10-22: Closed. `constraints.txt` sets the exact version of every package the builds install. Every
+  `pip install` of a build and of the Validate job passes it with `-c`, and each build from source with
+  `--build-constraint`.
+  It keeps Pillow 12.3.0, aiohttp 3.14.5 and PyInstaller 6.22.3, sets no hashes, and is updated by hand
+  ([ADR-0016](../../adr/ADR-0016-exact-dependency-versions.md)). Opened
+  [task 056](056-appimage-builder-dependencies-newest.md) for the dependencies of appimage-builder, which the file
+  does not set, and [task 057](057-constraints-updates-by-hand.md) for the updates by hand.

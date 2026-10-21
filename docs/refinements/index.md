@@ -98,3 +98,6 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [053: No test checks that `log.txt` is written in UTF-8](tasks/053-log-file-encoding-untested.md) | main, tests |
 | [054: The window is taller than a screen of 720 pixels](tasks/054-window-taller-than-small-screens.md) | gui |
 | [055: The minimum window size does not follow the Main tab when it grows](tasks/055-minimum-window-size-misses-main-tab-growth.md) | gui |
+| [056: The AppImage job installs the newest release of appimage-builder's dependencies](tasks/056-appimage-builder-dependencies-newest.md) | ci, appimage |
+| [057: Nothing proposes a new version for `constraints.txt` or checks that it lists every indirect package](tasks/057-constraints-updates-by-hand.md) | build, ci |
+| [058: `build.sh --nopause` exits with status 1 after a successful build](tasks/058-build-script-nopause-exit-status.md) | build |

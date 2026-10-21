@@ -21,9 +21,9 @@ if not exist "%dirpath%\env" (
 REM Activate the virtual environment and install requirements
 echo:
 echo Installing requirements.txt...
-"%dirpath%\env\scripts\python" -m pip install -U pip
-"%dirpath%\env\scripts\pip" install wheel
-"%dirpath%\env\scripts\pip" install -r "%dirpath%\requirements.txt"
+"%dirpath%\env\scripts\python" -m pip install -c "%dirpath%\constraints.txt" -U pip
+"%dirpath%\env\scripts\pip" install -c "%dirpath%\constraints.txt" wheel
+"%dirpath%\env\scripts\pip" install -c "%dirpath%\constraints.txt" --build-constraint "%dirpath%\constraints.txt" -r "%dirpath%\requirements.txt"
 if %errorlevel% NEQ 0 (
     echo:
     echo Failed to install requirements.

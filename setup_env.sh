@@ -19,9 +19,9 @@ fi
 # Activate the virtual environment and install requirements
 echo
 echo "Installing requirements.txt..."
-"$dirpath/env/bin/python" -m pip install -U pip
-"$dirpath/env/bin/pip" install wheel
-"$dirpath/env/bin/pip" install -r "$dirpath/requirements.txt"
+"$dirpath/env/bin/python" -m pip install -c "$dirpath/constraints.txt" -U pip
+"$dirpath/env/bin/pip" install -c "$dirpath/constraints.txt" wheel
+"$dirpath/env/bin/pip" install -c "$dirpath/constraints.txt" --build-constraint "$dirpath/constraints.txt" -r "$dirpath/requirements.txt"
 if [ $? -ne 0 ]; then
     echo
     echo "Failed to install requirements."

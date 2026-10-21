@@ -22,7 +22,9 @@ has passed yet with:
 
 Set `required: true` on the Windows and macOS entries when a pull request run shows, for each:
 
-- that `pip install -r requirements-dev.txt` installs every package at its set version. On 2026-10-21,
+- that `pip install -c constraints.txt -r requirements-dev.txt` installs every package at its set version. On
+  2026-10-22, pip 26.2.1 resolved the app's packages in `constraints.txt` for Python 3.10 with a wheel of each for
+  `win_amd64` and `macosx_11_0_arm64`. On 2026-10-21,
   `pip download --only-binary=:all:` for Python 3.10 found a wheel of each package for `win_amd64` and for
   `macosx_14_0_arm64`, with `rust-just` 1.58.0, ruff 0.16.10, pywin32 and the pyobjc packages that pystray
   needs on macOS. The `rust-just` wheels install `just.exe` and `just` as scripts.
@@ -82,3 +84,6 @@ None of this sends a Twitch request.
 - 2026-10-21: The Validate job installs the official `just` release in place of `rust-just`
   ([task 049](049-check-tools-from-third-party-sources.md)), so its first Windows and macOS run also shows
   that step.
+- 2026-10-22: The Validate job installs `requirements-dev.txt` with `-c constraints.txt`
+  ([ADR-0016](../../adr/ADR-0016-exact-dependency-versions.md)), so the Windows and macOS runs install the
+  versions that the file sets.
