@@ -142,7 +142,8 @@ Write comments, docstrings, docs and commit messages in plain English that a new
 - **Docs** are short and written for a reader who has never seen this repo: what a thing is and does, then why,
   when the why is not obvious. Keep facts, numbers, commands, file paths and decisions, and name code by its
   function or class, never by a line number. Cut the story of how the code got here, repeated explanations (link
-  to the one place instead) and hedging. A markdown file is at most 250 lines: a longer one says two things.
+  to the one place instead) and hedging. A markdown file is at most 250 lines, and AGENTS.md at most 300: a longer
+  one says two things.
 - **Plain words.** Short sentences, one idea each, subject first, with the literal verb: "checks", "fails",
   "returns", "stores", "sends", "is set to". Code does not know, notice, want, refuse, believe, agree, argue,
   answer, promise or own anything, so say what it does: a server returns a response. Define a technical term

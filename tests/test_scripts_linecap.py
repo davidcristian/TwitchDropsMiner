@@ -13,7 +13,15 @@ def lines(count: int) -> str:
 
 @pytest.mark.parametrize(
     ("name", "limit"),
-    [("gui.py", 300), ("gamelib/scan.py", 300), ("docs/index.md", 250), ("build.spec", None), ("a.json", None)],
+    [
+        ("gui.py", 300),
+        ("gamelib/scan.py", 300),
+        ("docs/index.md", 250),
+        ("AGENTS.md", 300),
+        ("docs/AGENTS.md", 250),
+        ("build.spec", None),
+        ("a.json", None),
+    ],
 )
 def test_limit_for_returns_the_limit_of_python_and_markdown_files_only(name, limit):
     assert linecap.limit_for(name) == limit
@@ -29,6 +37,19 @@ def test_cap_problems_reports_a_file_one_line_over_its_limit(monkeypatch):
     assert linecap.cap_problems({"a.py": 301, "docs/b.md": 251}) == [
         Problem("a.py", 301, "301 lines; the limit is 300, so split it"),
         Problem("docs/b.md", 251, "251 lines; the limit is 250, so split it"),
+    ]
+
+
+def test_cap_problems_accepts_agents_md_at_300_lines(monkeypatch):
+    monkeypatch.setattr(linecap, "EXCEPTIONS", frozenset())
+    assert linecap.cap_problems({"AGENTS.md": 300}) == []
+
+
+def test_cap_problems_reports_agents_md_at_301_lines_and_another_markdown_file_at_251(monkeypatch):
+    monkeypatch.setattr(linecap, "EXCEPTIONS", frozenset())
+    assert linecap.cap_problems({"AGENTS.md": 301, "README.md": 251}) == [
+        Problem("AGENTS.md", 301, "301 lines; the limit is 300, so split it"),
+        Problem("README.md", 251, "251 lines; the limit is 250, so split it"),
     ]
 
 
@@ -54,6 +75,12 @@ def test_check_measures_python_and_markdown_files_and_reports_the_long_one(tmp_p
         "data.json": "{}\n" * 900,
     })
     assert linecap.check(root) == (3, [Problem("pkg/long.py", 301, "301 lines; the limit is 300, so split it")])
+
+
+def test_check_measures_agents_md_against_300_lines_and_other_markdown_against_250(tmp_path, monkeypatch):
+    monkeypatch.setattr(linecap, "EXCEPTIONS", frozenset())
+    root = make_repo(tmp_path, {"AGENTS.md": "line\n" * 300, "docs/AGENTS.md": "line\n" * 251})
+    assert linecap.check(root) == (2, [Problem("docs/AGENTS.md", 251, "251 lines; the limit is 250, so split it")])
 
 
 def test_check_counts_a_last_line_without_a_newline(tmp_path, monkeypatch):
