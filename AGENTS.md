@@ -1,8 +1,9 @@
 # TwitchDropsMiner engineering rules
 
-Every agent and every person working in this repo follows these rules. A change that breaks one of them is **not done**,
-even when it works. If a rule here conflicts with a request, follow the rule and say so. This file is the contract, and
-the detail lives in `docs/`: the [index](docs/index.md), the [map](docs/ARCHITECTURE.md), the decisions `docs/adr/`.
+Every agent and every person working in this repo follows these rules. A change that breaks one of them is **not
+done**, even when it works. If a rule here conflicts with a request, follow the rule and say so. This file is the
+contract, and the detail lives in `docs/`: the index [docs/index.md](docs/index.md), the map
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), the decisions `docs/adr/`.
 
 ## What this is
 
@@ -18,8 +19,7 @@ under the MIT License ([LICENSE.MIT](LICENSE.MIT)). [ADR-0001](docs/adr/ADR-0001
 ## The one hard rule
 
 **Twitch sees no more traffic than a diligent person would cause.** The app runs on the user's own account, and a
-burst of requests puts that account at risk. [ADR-0002](docs/adr/ADR-0002-twitch-traffic-budget.md) gives the
-request counts this rule rests on.
+burst of requests puts that account at risk.
 
 - Every GQL request goes through `Twitch.gql_request`, where a `RateLimiter` (`ratelimit.py`) allows 5 per second.
   Never send GQL another way.
@@ -30,6 +30,8 @@ request counts this rule rests on.
 - New periodic work re-enters `State.CHANNELS_CLEANUP`, which moves on to `State.CHANNELS_FETCH` and costs a few
   requests, rather than reloading.
 - A change that adds requests states how many per cycle in its commit body.
+
+[ADR-0002](docs/adr/ADR-0002-twitch-traffic-budget.md) gives the request counts this rule rests on.
 
 ## Module map
 
@@ -68,7 +70,8 @@ put it in a new module and call it from there.
 
 ## Code rules
 
-New code follows these ([ADR-0014](docs/adr/ADR-0014-code-rules.md)), and so does code that a change rewrites.
+New code follows these ([ADR-0014](docs/adr/ADR-0014-code-rules.md)), and inherited code does where a change
+rewrites it.
 
 - **Logic apart from I/O.** New logic that calls Twitch, the disk or the OS receives that call as an argument (a
   `Protocol` or a function), so a test passes a fake. The code that makes the real call holds no decisions.
@@ -81,6 +84,7 @@ New code follows these ([ADR-0014](docs/adr/ADR-0014-code-rules.md)), and so doe
 ## Recipes
 
 **A new setting** touches four places, and missing the third is silent:
+
 1. `SettingsFile`, `default_settings` and the attribute list on `Settings`, in `settings.py`.
 2. The widget in `SettingsPanel`, in `gui.py`.
 3. The `settings=SimpleNamespace(...)` mock under `if __name__ == "__main__":` at the end of `gui.py`. Without it
@@ -113,11 +117,13 @@ fields of `lang/*.json`), ruff (the rules in `pyproject.toml`), `linecap.py` (th
 indexes and the record formats), `rostercheck.py` (the module map, the module docs, the settings keys, the `gui.py`
 mock and this list), and pytest over `tests/`, which fails below 80% branch coverage of the modules `pyproject.toml`
 lists. No check finds 3.11+ names such as `typing.Self` and `tomllib`, which fail only on import: avoid them.
+
 The rest is checked by hand, and the report of a change shows the output of each:
 
-1. **Tests assert behavior** ([ADR-0013](docs/adr/ADR-0013-test-standard.md)). A bug fix adds a test that fails without
-   it. A module that needs neither Twitch nor a display tests each public function with its error and edge cases, with
-   fakes, not mocks, and no test only to reach a line. A known defect is a strict `xfail` test that names its task file.
+1. **Tests assert behavior** ([ADR-0013](docs/adr/ADR-0013-test-standard.md)). A bug fix adds a test that fails
+   without it. A module that needs neither Twitch nor a display tests each public function with its error and edge
+   cases, with fakes, not mocks, and no test only to reach a line. A known defect is a strict `xfail` test that
+   names its task file.
 2. A GUI change is run in `python gui.py` or `python main.py`. When the GUI cannot start, the GUI part is reported
    as unverified and the change is not done. [The headless runbook](docs/runbooks/gui-preview-headless.md) runs it
    on Linux without a display.
@@ -136,9 +142,10 @@ Write comments, docstrings, docs and commit messages in plain English that a new
   code cannot show, a Twitch behavior the code depends on, or a directive a tool reads (`# noqa`). Delete one that
   repeats the code, tells history ("was X, now Y"), cites an ADR for background, or says what a better name would
   say. A comment is one or two lines, three at most.
-- **Docstrings** are one line saying what the module, class or function does; delete one that only repeats the name.
-  Tests have none: the test name says what it checks. A second or third line only explains an argument or return
-  value that its name and type do not, and never more: design reasons go in an ADR or a module doc, history in git.
+- **Docstrings** are one line saying what the module, class or function does; delete one that only repeats the
+  name. Tests have none, because the test name says what it checks. A second or third line only explains an
+  argument or return value that its name and type do not, and never more: design reasons go in an ADR or a module
+  doc, history in git.
 - **Docs** are short and written for a reader who has never seen this repo: what a thing is and does, then why,
   when the why is not obvious. Keep facts, numbers, commands, file paths and decisions, and name code by its
   function or class, never by a line number. Cut the story of how the code got here, repeated explanations (link
@@ -210,8 +217,9 @@ upstream, keep their original style and are not reworded.
 
 ## Branches, pull requests and remotes
 
-- Work happens on a `feat/...`, `fix/...`, `docs/...` or `chore/...` branch and reaches `master` through one pull
-  request per logical concern on [davidcristian/TwitchDropsMiner](https://github.com/davidcristian/TwitchDropsMiner).
+- Work happens on a branch named `feat/...`, `fix/...`, `docs/...` or `chore/...` and reaches `master` through a
+  pull request on [davidcristian/TwitchDropsMiner](https://github.com/davidcristian/TwitchDropsMiner), one logical
+  concern per pull request.
 - Never force-push `master`. Rewriting a branch nobody else has pulled is fine.
 - DevilXD/TwitchDropsMiner (the `upstream` remote) is read only for this project: fetch from it, but never open an
   issue or a pull request there. Its fixes come in by cherry-pick or merge, never by rebasing `master`
