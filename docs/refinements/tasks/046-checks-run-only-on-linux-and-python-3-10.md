@@ -47,8 +47,8 @@ Set `required: true` on the Windows and macOS entries when a pull request run sh
   - The tests in `tests/test_instancelock.py` that start a second process. Windows locks are mandatory, and
     `lock_file` opens the file with truncation and writes to it before it locks it. Only a run shows that the
     second `lock_file` still returns `(None, None)` there.
-  - The tests of the window that set a window size or compare positions, in `tests/test_gui.py` and
-    `tests/test_scrollarea.py`, run for the first time outside Xvfb.
+  - The tests of the window that set a window size or compare positions, in `tests/test_gui.py`,
+    `tests/test_gui_window.py` and `tests/test_scrollarea.py`, run for the first time outside Xvfb.
 
   A test that fails needs a fix or a skip with its reason.
 - that the 80% branch coverage floor holds on each runner. A branch for another system counts as missed, so

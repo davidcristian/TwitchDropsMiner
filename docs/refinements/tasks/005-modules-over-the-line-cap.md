@@ -13,7 +13,7 @@ for the split now.
 
 | Module | Lines |
 | --- | --- |
-| `gui.py` | 3221 |
+| `gui.py` | 3236 |
 | `twitch.py` | 1629 |
 | `translate.py` | 597 |
 | `constants.py` | 519 |
@@ -38,7 +38,7 @@ Line counts are of the class or block today.
   - `SettingsPanel` (807), which is over the cap by itself. Its `__init__` is 378 lines and builds each frame:
     Games Being Mined, General, Advanced, Priority, Exclude, Detected Games and the Reload row. Each frame can
     become its own class.
-  - `GUIManager` (516), of which `apply_theme` is 213 lines and can move to a theme module.
+  - `GUIManager` (519), of which `apply_theme` is 213 lines and can move to a theme module.
   - The mock under `if __name__ == "__main__":` (260). Moving it to its own preview script changes the
     `python gui.py` command that AGENTS.md and `docs/building.md` give.
 - **`twitch.py`**

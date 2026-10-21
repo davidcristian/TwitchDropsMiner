@@ -12,6 +12,7 @@ from pathlib import Path
 from collections import abc
 from textwrap import dedent
 from math import log10, ceil
+from contextlib import contextmanager
 from tkinter.font import Font, nametofont
 from functools import partial, cached_property
 from datetime import datetime, timedelta, timezone
@@ -756,6 +757,8 @@ class CampaignProgress:
 
 class ConsoleOutput:
     MAX_LINES = 5000
+    LINES = 10
+    MIN_LINES = 4
 
     def __init__(self, manager: GUIManager, master: ttk.Widget):
         frame = ttk.LabelFrame(master, text=_("gui", "output"), padding=(4, 0, 4, 4))
@@ -769,7 +772,7 @@ class ConsoleOutput:
         self._text = tk.Text(
             frame,
             width=52,
-            height=10,
+            height=self.LINES,
             wrap="none",
             state="disabled",
             exportselection=False,
@@ -792,6 +795,15 @@ class ConsoleOutput:
         self._text.delete("1.0", f"end - {self.MAX_LINES + 1} lines")
         self._text.see("end")  # scroll to the newly added line
         self._text.config(state="disabled")
+
+    @contextmanager
+    def shortened(self) -> abc.Iterator[None]:
+        """Make the Output box request MIN_LINES lines in the block, for the minimum window size."""
+        self._text.config(height=self.MIN_LINES)
+        try:
+            yield
+        finally:
+            self._text.config(height=self.LINES)
 
     def configure_theme(self, *, bg: str, fg: str, sel_bg: str, sel_fg: str):
         # Apply colors to the Tk Text widget used for console output
@@ -2517,9 +2529,12 @@ class GUIManager:
         help_frame = ttk.Frame(root_frame, padding=8)
         self.help = HelpTab(self, help_frame)
         self.tabs.add_tab(help_frame, name=_("gui", "tabs", "help"))
-        # the Settings tab scrolls, so the minimum window size leaves out its content
+        # the Settings tab scrolls and the Output box can show fewer lines, so the minimum window size leaves them out
         self._minimum = MinimumSize(
-            root, root_frame, (main_frame, inv_frame, help_frame), (self.settings._area.collapsed,)
+            root,
+            root_frame,
+            (main_frame, inv_frame, help_frame),
+            (self.settings._area.collapsed, self.output.shortened),
         )
         # register logging handler
         self._handler = _TKOutputHandler(self)

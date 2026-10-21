@@ -33,6 +33,8 @@ from [translate.md](translate.md).
   `get_selection()` returns the object that `Twitch.channels` holds and not an older one with the same `id`.
 - **`ConsoleOutput.print`** deletes the oldest lines past `MAX_LINES` (5000). A line costs about 0.4 KB, so the
   box stays near 2 MB of memory in a run of any length. With `--log`, `log.txt` keeps every log line.
+- **`ConsoleOutput`** requests `LINES` (10) lines of height. Its row is the only row of the Main tab that
+  changes height with the window, and a window at its minimum height shows `MIN_LINES` (4) lines.
 - **`CampaignProgress`** counts down the current minute in its own `_timer_loop` task, one step per second.
   `minute_almost_done()` returns `True` when no countdown runs or `ALMOST_DONE_SECONDS` (10) or fewer are left;
   `Twitch._watch_loop` calls it to decide whether to send the `CurrentDrop` GQL query.
@@ -148,10 +150,13 @@ lists the problems.
 - On Windows it sets the title bar color with `DwmSetWindowAttribute` (attribute 35, `DWMWA_CAPTION_COLOR`). On
   macOS it sets the app's `NSAppearance` to `DarkAqua` or `Aqua` through `AppKit`.
 - Last, it calls `MinimumSize.measure` ([scrollarea.md](scrollarea.md)), which sets the window's minimum size
-  to the size the window requests while the Settings tab's area is `collapsed()`, because the fonts and
-  paddings of the theme change that size. The Settings tab scrolls, so the widest tab that cannot scroll, the
-  Main tab, sets the minimum. In the preview on Linux the minimum is 865 by 704 pixels in light mode and 878 by
-  738 in dark mode before the mock data arrives.
+  to the size the window requests while the Settings tab's area is `collapsed()` and the Output box is
+  `shortened()` to `MIN_LINES`, because the fonts and paddings of the theme change that size. The Settings tab
+  scrolls, so the widest tab that cannot scroll, the Main tab, sets the minimum. In the preview on Linux the
+  minimum is 865 by 602 pixels in light mode and 878 by 636 in dark mode before the mock data arrives.
+- `MIN_LINES` is 4, so the minimum height fits a screen 720 pixels high. On that screen Tk on X11 allows a
+  window 690 pixels high, and on Windows a taskbar and a title bar leave about 650, an estimate that was not
+  measured. With all 10 lines the minimum height in dark mode was 738 pixels; with 4 it is 636.
 - The Main tab grows later, for example when a long channel name widens a column of the channel table. After
   each pass over the Tk events, `_poll` calls `MinimumSize.follow`, which measures again when the Main,
   Inventory or Help tab requests a new size. In the preview the minimum width becomes 928 pixels in light mode
@@ -161,8 +166,8 @@ After `apply_theme`, `GUIManager.__init__` calls `_fit_to_screen`. When the wind
 `wm maxsize`, which Tk sets from the screen size (on X11, the screen less 15 by 30 pixels for the window
 frame), the window opens at `fitted_size` of the two and the Settings tab scrolls. Otherwise the window keeps
 following its requested size, so a large screen shows it as before. On a screen 1366 by 768 pixels the preview
-window is 1351 pixels wide. The Main tab sets the window's height, which is 738 pixels in dark mode, more than
-a screen 720 pixels high holds ([task 054](../refinements/tasks/054-window-taller-than-small-screens.md)).
+window is 1351 pixels wide. On a screen 1280 by 720 pixels it is 1265 by 690 in both themes, and the Output box
+has room for 9 lines in light mode and 7 in dark mode.
 
 ## The preview
 

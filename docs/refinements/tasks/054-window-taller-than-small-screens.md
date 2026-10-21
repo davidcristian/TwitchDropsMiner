@@ -1,9 +1,9 @@
 # The window is taller than a screen of 720 pixels
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** gui (the Main tab)
 **Origin:** Found on 2026-10-21: the preview was measured on screens of 1366 by 768 and 1280 by 720 pixels
-**Verified:** 2026-10-21
+**Verified:** 2026-10-22
 
 The Settings tab scrolls ([scrollarea.md](../../modules/scrollarea.md)), so the Main tab sets the height of the
 window: the Status, Websocket Status, Login Form, Campaign Progress and Channels sections, and the Output box
@@ -32,3 +32,9 @@ chooses and checks on Windows. Twitch requests: none.
 
 - 2026-10-21: Opened. After the Settings tab started to scroll, the preview fitted the width of a 1280 by 720
   screen but not the height in dark mode.
+- 2026-10-22: Closed. The Output box still requests 10 lines, and the minimum window size counts only
+  `MIN_LINES` (4) of them, so a window larger than `wm maxsize` opens at that size with a shorter Output box.
+  Under Xvfb with the network blocked, on a screen 1280 by 720, the window is 1265 by 690 in both themes and
+  the minimum is 928 by 602 in light mode and 941 by 636 in dark mode. There the Settings tab shows both scroll
+  bars in dark mode, and all 30 of its widgets scroll into view. On 1920 by 1080 the screenshots before and
+  after differ only in the clock times of the Output box. Windows was not run.
