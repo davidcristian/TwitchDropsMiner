@@ -13,6 +13,7 @@ from gitrepo import isolate_git
 
 # pystray picks its tray backend when gui.py imports it. The others need GTK or a display, which CI does not have.
 os.environ["PYSTRAY_BACKEND"] = "dummy"
+REPO = Path(__file__).resolve().parent.parent
 
 
 @pytest.fixture(autouse=True)
@@ -29,6 +30,41 @@ def live_twitch(monkeypatch, tmp_path):
     from livetwitch import build_twitch
 
     return partial(build_twitch, monkeypatch, tmp_path / "cookies.jar")
+
+
+@pytest.fixture(scope="session")
+def display():
+    """Skip the test when Tk can open no window, and fail it in CI, where the tests of the window must run."""
+    import tkinter as tk
+
+    try:
+        tk.Tk().destroy()
+    except tk.TclError as exc:
+        if os.environ.get("CI"):
+            pytest.fail(f"Tk cannot open a window: {exc}")
+        pytest.skip(f"Tk cannot open a window ({exc}). On Linux, `just check` runs the tests under xvfb-run")
+
+
+@pytest.fixture
+def window(display, monkeypatch, tmp_path):
+    """Return a function that builds the real window around a `FakeTwitch`, and close each window it built."""
+    import cache
+    import constants
+    from gui import GUIManager
+
+    # the window reads its icons from the app's folder and keeps the image cache in it
+    monkeypatch.setattr(constants, "WORKING_DIR", REPO)
+    monkeypatch.setattr(cache, "CACHE_PATH", tmp_path / "cache")
+    monkeypatch.setattr(cache, "CACHE_DB", tmp_path / "cache" / "mapping.json")
+    windows: list[GUIManager] = []
+
+    def build(fake):
+        windows.append(GUIManager(fake))
+        return windows[-1]
+
+    yield build
+    for manager in windows:
+        manager.close_window()
 
 
 @pytest.fixture

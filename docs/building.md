@@ -81,6 +81,13 @@ message, install the git hooks once, in the activated environment:
 pre-commit install
 ```
 
+The tests of the window open it with Tk, which needs a display. On Linux, `just check` runs pytest under
+`xvfb-run -a` when `xvfb-run` is installed (`sudo apt install xvfb` on Debian and Ubuntu). It starts Xvfb, an X
+server that draws into memory, so these tests run the same with or without a desktop, and no window shows on the
+screen. Without `xvfb-run` they use `DISPLAY`, and with no display pytest skips them. In CI, where the `CI`
+environment variable is set, they fail instead. Tk on Windows and macOS needs no X server
+([ADR-0013](adr/ADR-0013-test-standard.md)).
+
 The Validate job in CI installs `requirements-dev.txt` on Python 3.10 and runs `just check`, and the build jobs
 start only when it passes. It runs on Ubuntu only. [Task 046](refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)
 lists what running it on Windows, macOS and Python 3.14 needs. It has no display and no PyGObject, so to run the

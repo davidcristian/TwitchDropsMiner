@@ -7,6 +7,7 @@ import inspect
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from functools import partial
 from types import SimpleNamespace
 from typing import Any, Union
 
@@ -179,7 +180,7 @@ def gql_answers(**answers: JsonType | GQLAnswer) -> GQLAnswer:
 
 
 class FakeTwitch:
-    """The attributes of `Twitch` that `Channel`, `Stream` and the drop classes use, with every call recorded.
+    """The attributes of `Twitch` that channels, drops and the window use, with every call recorded.
 
     `gql` returns the response to one GQL operation, and `http` the response to one other request.
     """
@@ -187,7 +188,9 @@ class FakeTwitch:
     def __init__(self, gql: GQLAnswer = no_gql, http: HTTPAnswer = no_http) -> None:
         self._gql = gql
         self._http = http
-        self.settings = SimpleNamespace(**copy.deepcopy(default_settings), dump=False, save=ignore)
+        self.settings = SimpleNamespace(
+            **copy.deepcopy(default_settings), dump=False, tray=False, save=ignore, alter=ignore
+        )
         self.gui = FakeGUI()
         self._campaigns: dict[str, Any] = {}
         self.gql_sent: list[str] = []
@@ -228,6 +231,9 @@ class FakeTwitch:
 
     def change_state(self, state: State) -> None:
         self.states.append(state)
+
+    def state_change(self, state: State) -> Callable[[], None]:
+        return partial(self.change_state, state)
 
 
 def stream_user(channel_id: int, *, online: bool) -> JsonType:

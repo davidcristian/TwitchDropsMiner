@@ -4,6 +4,9 @@ set windows-shell := ["cmd.exe", "/c"]
 
 python := if os_family() == "windows" { "python" } else { "python3" }
 
+# On Linux, the tests run under xvfb-run when it is installed, so the tests of the window get a virtual display.
+xvfb := if os() == "linux" { `command -v xvfb-run >/dev/null && echo "xvfb-run -a" || true` } else { "" }
+
 default: check
 
 # Every check, in this order. The first one that fails stops the rest.
@@ -44,4 +47,4 @@ check-rostercheck:
 
 # The test suite, with at least 80% branch coverage of the modules pyproject.toml lists.
 check-tests:
-    {{python}} -m pytest --cov --cov-report=term-missing:skip-covered -p no:cacheprovider
+    {{xvfb}} {{python}} -m pytest --cov --cov-report=term-missing:skip-covered -p no:cacheprovider

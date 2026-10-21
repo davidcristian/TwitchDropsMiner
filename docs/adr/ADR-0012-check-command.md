@@ -77,8 +77,11 @@ lint rules without its formatter or pyright.
    - PyGObject is left out because pip builds it from source on Linux, which needs the system packages in
      [building.md](../building.md#requirements), and no test needs it: `tests/conftest.py` sets
      `PYSTRAY_BACKEND=dummy`, so pystray loads no tray backend. pywin32 installs only on Windows.
-   - The Validate job therefore needs no system package, and a virtual environment with `requirements-dev.txt`
-     alone runs `just check` as the Validate job does ([building.md](../building.md#run-the-checks)).
+   - The Validate job therefore installs no system package, and a virtual environment with
+     `requirements-dev.txt` alone runs `just check` as the Validate job does
+     ([building.md](../building.md#run-the-checks)). On Linux, the test recipe runs pytest under `xvfb-run`,
+     which the runner's Ubuntu image has, for the tests that open the window
+     ([ADR-0013](ADR-0013-test-standard.md)).
 
 ## Consequences
 

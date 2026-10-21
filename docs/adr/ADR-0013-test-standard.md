@@ -25,8 +25,10 @@ installed none of these packages, so a fix in one of them was checked by a scrip
      edge cases: empty input, a missing or malformed file, case and accent differences, and the like.
    - A module that needs Twitch or a display, such as `twitch.py` or `gui.py`, needs no test of each public
      function, but a bug fix in it adds a suite test as above. The test passes fakes, such as a fake `Twitch` or
-     a session whose requests raise, and creates no Tk window, because the Validate job has no display.
+     a session whose requests raise.
      `tests/fakes.py` has a fake `Twitch`, which records each request and returns the responses a test gives it.
+     A test of a fix in `gui.py` takes the `window` fixture of `tests/conftest.py`, which builds the real
+     `GUIManager` around a fake `Twitch`, on the display of decision 6.
      A test of `Twitch` itself takes the `live_twitch` fixture of `tests/conftest.py`, which builds a real
      `Twitch` with the window, settings and responses of a fake one. Its session opens each PubSub connection
      with a function the test gives, such as one that returns a `FakePubSub`, which returns the messages the
@@ -57,12 +59,18 @@ installed none of these packages, so a fix in one of them was checked by a scrip
      global or system config and no global ignore file. A user's ignore file would hide a test repo's files from
      `git ls-files`. The check scripts still follow the user's ignore files when `just check` runs them on the
      repo, as git does.
+6. **The tests of the window run on a virtual display on Linux.** Tk needs a display to open a window. On
+   Linux, `just check` runs pytest under `xvfb-run -a` when `xvfb-run` is installed. It starts Xvfb, an X
+   server that draws into memory, so these tests run the same on a desktop, over SSH, in the pre-commit hook
+   and in CI, and no window shows on the screen. Tk on Windows and macOS opens its windows without an X server.
+   When Tk can open no window, the `display` fixture of `tests/conftest.py` skips these tests and gives the
+   reason, except when the `CI` environment variable is set, as in GitHub Actions, where it fails them.
 
 ## Consequences
 
 - The modules that need Twitch or a display, such as `twitch.py` and `gui.py`, are outside the floor, so
   nothing reports a fix in them without a test; the reviewer checks it. What a test cannot reach, such as a real
-  login or the window, is checked as AGENTS.md says: in the GUI, or with stubbed inputs. The
+  login or how the window looks, is checked as AGENTS.md says: in the GUI, or with stubbed inputs. The
   [code rules](ADR-0014-code-rules.md) put new logic where a test can reach it.
 - The floor finds a listed module whose tests were forgotten. It does not find a missing edge case, which the
   rules in decision 2 cover.
@@ -76,6 +84,9 @@ installed none of these packages, so a fix in one of them was checked by a scrip
   Windows, and `tests/test_imports.py` imports each module that imports the app's packages. Apart from
   `start_task`, the logic of `utils.py` and `settings.py` has no tests yet
   ([task 031](../refinements/tasks/031-tests-for-utils-and-settings.md)).
+- A Linux machine with neither `xvfb-run` nor a display skips the tests of the window, so its result differs
+  from that of CI, and the skip reason names `xvfb-run`. The Validate job uses the `xvfb-run` of the runner's
+  Ubuntu image ([ADR-0012](ADR-0012-check-command.md)).
 
 ## Alternatives rejected
 
@@ -86,6 +97,11 @@ installed none of these packages, so a fix in one of them was checked by a scrip
   2026-10-21, so the floor would fail until most of `twitch.py` and `gui.py` had tests.
 - **`unittest` from the standard library.** pytest is a development tool that no build installs, and its
   fixtures (`tmp_path`, `monkeypatch`, `capsys`) are what the fakes above need.
+- **`xvfb-run` in the Validate step only.** A local run without a display, such as over SSH or in an agent's
+  shell, would then skip the tests of the window that CI runs.
+- **A session fixture that starts Xvfb.** Xvfb's `-displayfd` option, which picks a free display number, did
+  not start under WSLg, where `/tmp/.X11-unix` is read only. The fixture would need its own search for a free
+  display, which `xvfb-run -a` already does.
 
 ## Related
 
