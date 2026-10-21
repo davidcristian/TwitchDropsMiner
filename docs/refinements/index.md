@@ -90,3 +90,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [045: A run from source started from another AppImage keeps its files in that AppImage's folder](tasks/045-run-from-source-inside-another-appimage.md) | constants |
 | [046: CI runs `just check` only on Linux with Python 3.10](tasks/046-checks-run-only-on-linux-and-python-3-10.md) | ci, repo checks |
 | [047: The libXft archive and the AppImage runtime are not checked against a known hash](tasks/047-unchecked-build-downloads.md) | ci, appimage |
+| [048: The builds install the newest release of every dependency](tasks/048-builds-install-the-newest-dependencies.md) | build, ci, requirements |
