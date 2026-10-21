@@ -91,7 +91,7 @@ class ImageCache:
 
     def _hash(self, image: Image) -> ImageHash:
         pixel_data = list(
-            image.resize((10, 10), Image_module.Resampling.LANCZOS).convert('L').getdata()
+            image.resize((10, 10), Image_module.Resampling.LANCZOS).convert('L').tobytes()
         )
         avg_pixel = sum(pixel_data) / len(pixel_data)
         bits = ''.join('1' if px >= avg_pixel else '0' for px in pixel_data)

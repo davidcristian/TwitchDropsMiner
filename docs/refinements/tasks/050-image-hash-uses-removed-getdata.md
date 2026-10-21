@@ -1,10 +1,10 @@
 # The image hash calls `getdata`, which Pillow 14 removes
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** cache
 **Origin:** Found on 2026-10-21: Pillow 12.3.0 printed a deprecation warning for `getdata` in a check of the
 image conversions before the PNG save
-**Verified:** 2026-10-21
+**Verified:** 2026-10-22
 
 `ImageCache._hash` in `cache.py` reads the 100 grey pixels of the reduced image with `getdata()`. Pillow 12.3.0
 warns about that call:
@@ -27,3 +27,7 @@ No fix adds a request. It was left out of the change that found it, which fixed 
 ## History
 
 - 2026-10-21: Opened. A check of how Pillow converts mode `I` to RGB called `getdata()` and printed the warning.
+- 2026-10-22: Done. `_hash` reads the grey pixels with `tobytes()`, which gave the values of `getdata()` for 400
+  random images in eight modes, so the file names stay the same. `tests/test_cache.py` checks three names and
+  fails on a Pillow deprecation warning. A changed hash would not have downloaded a cached image again: the
+  mapping stores each URL's file name, and `get()` opens that file without hashing it.
