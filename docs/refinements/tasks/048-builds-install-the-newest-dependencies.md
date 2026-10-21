@@ -19,7 +19,7 @@ the newest release on PyPI that day:
 
 `yarl` in `requirements-dev.txt` has no version either. An exact version there conflicts with the newest
 aiohttp once that one requires a newer yarl: aiohttp 3.14.5 requires yarl 1.25.1 or newer, and `env/` had
-yarl 1.24.5 with aiohttp 3.14.3.
+yarl 1.24.5 with aiohttp 3.14.3 ([ADR-0012](../../adr/ADR-0012-check-command.md)).
 
 ## What a fix involves
 

@@ -1,6 +1,6 @@
 # ADR-0012: One check command
 
-**Status:** Accepted (2026-10-20)
+**Status:** Accepted (2026-10-21)
 
 ## Context
 
@@ -69,7 +69,11 @@ lint rules without its formatter or pyright.
      the scissors line, and the hook skips them.
 5. **The tool versions are set exactly in `requirements-dev.txt`,** which no build installs: `rust-just` (the `just` binary
    from PyPI, so one `pip install` sets up every tool on every OS), ruff, pytest, pytest-cov and pre-commit, each
-   a release at least two weeks old when it was chosen.
+   a release at least two weeks old when it was chosen. `yarl`, which the tests need because `redact.py` and
+   `constants.py` import it, is not a tool and has no version. A build gets the newest release with aiohttp, and
+   in `env/`, where both files are installed, an exact version conflicts with the newest aiohttp once that one
+   requires a newer yarl. It gets an exact version with the build dependencies
+   ([task 048](../refinements/tasks/048-builds-install-the-newest-dependencies.md)).
 
 ## Consequences
 
