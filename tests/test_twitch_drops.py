@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
+import pytest
 from yarl import URL
 
 from channel import Channel
@@ -143,6 +144,23 @@ def test_a_reload_leaves_out_a_campaign_whose_end_time_a_server_error_set_to_nul
     twitch = reload_with(live_twitch, with_server_error(response, "endAt"))
 
     assert twitch.inventory == []
+
+
+@pytest.mark.parametrize("field", ["id", "boxArtURL"])
+def test_a_reload_leaves_out_a_campaign_whose_game_field_a_server_error_set_to_null(live_twitch, field):
+    response = inventory([campaign_data([drop_data("d1")])])
+
+    twitch = reload_with(live_twitch, with_server_error(response, "game", field))
+
+    assert twitch.inventory == []
+
+
+def test_a_reload_leaves_out_a_drop_whose_required_minutes_a_server_error_set_to_null(live_twitch):
+    response = inventory([campaign_data([drop_data("d1"), drop_data("d2")])])
+
+    twitch = reload_with(live_twitch, with_server_error(response, "timeBasedDrops", 0, "requiredMinutesWatched"))
+
+    assert [list(campaign.timed_drops) for campaign in twitch.inventory] == [["d2"]]
 
 
 def test_a_reload_leaves_out_an_acl_channel_that_a_server_error_set_to_null(live_twitch):

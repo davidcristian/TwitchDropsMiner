@@ -109,3 +109,6 @@ The commit states the new worst case per hour, as AGENTS.md asks for a change to
 - 2026-10-22: A null time of a drop or campaign and a null ACL channel no longer end the run
   ([gqldata.md](../../modules/gqldata.md#null-times-and-acl-channels)). A null `lastAwardedAt` in `Inventory`
   still does.
+- 2026-10-22: A null game ID, name or box art and null required minutes of a drop no longer end the run
+  ([gqldata.md](../../modules/gqldata.md#null-game-fields)). A null field in stream data still does
+  ([task 059](059-null-fields-in-stream-data.md)).

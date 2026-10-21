@@ -101,3 +101,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [056: The AppImage job installs the newest release of appimage-builder's dependencies](tasks/056-appimage-builder-dependencies-newest.md) | ci, appimage |
 | [057: Nothing proposes a new version for `constraints.txt` or checks that it lists every indirect package](tasks/057-constraints-updates-by-hand.md) | build, ci |
 | [058: `build.sh --nopause` exits with status 1 after a successful build](tasks/058-build-script-nopause-exit-status.md) | build |
+| [059: A null field in stream data still raises](tasks/059-null-fields-in-stream-data.md) | channel, twitch |

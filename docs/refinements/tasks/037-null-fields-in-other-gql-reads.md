@@ -1,6 +1,6 @@
 # Some GQL reads still raise on a null field
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** twitch, inventory
 **Origin:** Found on 2026-10-20 while the reads of the campaign details, the game directory and the available
 drops were changed to leave out a field that a GQL server error set to null
@@ -48,3 +48,9 @@ were claimed, so ending the run may be the correct result there. No fix adds a r
   ([gqldata.md](../../modules/gqldata.md#null-times-and-acl-channels)). A null `lastAwardedAt` ends the run as
   `GQLException`. Still open: a null game `id` or `boxArtURL`, or a null drop `requiredMinutesWatched`, raises
   `TypeError` in `DropsCampaign`, which ends the run. A check with stub data confirmed each of the three.
+- 2026-10-22: Done. A campaign whose game has a null or missing ID, name or box art is left out, and a null game
+  `slug` is read as missing, so `Game` forms it from the name. A drop with null or missing required minutes is
+  left out, with the drops that need it ([gqldata.md](../../modules/gqldata.md#null-game-fields)).
+  `tests/test_twitch_drops.py` reloads with each of the three set to null by a server error. A null field in
+  stream data, such as the game ID of a stream, still raises, which [task 059](059-null-fields-in-stream-data.md)
+  records.

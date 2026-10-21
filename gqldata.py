@@ -16,6 +16,8 @@ logger = logging.getLogger("TwitchDrops")
 CAMPAIGN_FIELDS = ("game", "self", "allow", "timeBasedDrops")
 # DropsCampaign and BaseDrop read these times, and a merge fills a null one from another response when it can
 TIME_FIELDS = ("startAt", "endAt")
+# Game and DropsCampaign read these fields of a campaign's game, and Game reads displayName before name
+GAME_FIELDS = ("id", "boxArtURL")
 CLAIMED_STATUSES = ("ELIGIBLE_FOR_ALL", "DROP_INSTANCE_ALREADY_CLAIMED")
 
 
@@ -112,6 +114,9 @@ def _readable_drops(campaign_id: str, drops: list[JsonType | None]) -> list[Json
         if _has_null_time(drop):
             logger.warning(f"Skipped drop {drop['id']} of campaign {campaign_id}, which has a null start or end time")
             continue
+        if drop.get("requiredMinutesWatched") is None:
+            logger.warning(f"Skipped drop {drop['id']} of campaign {campaign_id}, which has null required minutes")
+            continue
         if any(pre is None for pre in drop.get("preconditionDrops") or []):
             logger.warning(f"Skipped drop {drop['id']} of campaign {campaign_id}, which has a null precondition")
             continue
@@ -154,8 +159,17 @@ def _readable_acl(campaign_id: str, allow: JsonType) -> JsonType | None:
     return {**allow, "channels": readable}
 
 
+def _readable_game(campaign_id: str, game: JsonType) -> JsonType | None:
+    """Return the game without a null slug, or None when its ID, name or box art is null or missing."""
+    if any(game.get(field) is None for field in GAME_FIELDS) or (game.get("displayName") or game.get("name")) is None:
+        logger.warning(f"Skipped campaign {campaign_id}, whose game has a null ID, name or box art")
+        return None
+    # Game forms a missing slug from the name, and GameDirectory looks up the game's streams by that slug
+    return {key: value for key, value in game.items() if key != "slug" or value is not None}
+
+
 def complete_campaigns(campaigns: dict[str, JsonType]) -> dict[str, JsonType]:
-    """Return the campaigns that DropsCampaign can read, each with its readable drops and ACL channels."""
+    """Return the campaigns that DropsCampaign can read, each with its readable game, drops and ACL channels."""
     complete: dict[str, JsonType] = {}
     for campaign_id, campaign in campaigns.items():
         if any(campaign.get(field) is None for field in CAMPAIGN_FIELDS):
@@ -164,10 +178,13 @@ def complete_campaigns(campaigns: dict[str, JsonType]) -> dict[str, JsonType]:
         if _has_null_time(campaign):
             logger.warning(f"Skipped campaign {campaign_id}, which has a null start or end time")
             continue
+        game = _readable_game(campaign_id, campaign["game"])
+        if game is None:
+            continue
         allow = _readable_acl(campaign_id, campaign["allow"])
         if allow is not None:
             drops = _readable_drops(campaign_id, campaign["timeBasedDrops"])
-            complete[campaign_id] = {**campaign, "allow": allow, "timeBasedDrops": drops}
+            complete[campaign_id] = {**campaign, "game": game, "allow": allow, "timeBasedDrops": drops}
     return complete
 
 

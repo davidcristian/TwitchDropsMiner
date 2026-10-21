@@ -7,8 +7,9 @@ inside `Twitch._run` ends the run, and the restart after it begins with a full r
 ([task 019](../refinements/tasks/019-restart-runs-a-full-reload.md)). An inventory that cannot be read at all
 still raises ([A null inventory](#a-null-inventory)). Which fields Twitch names in a server error has
 not been observed, so the functions accept a null object or list item at any level. A null value inside an
-object is checked only for the times, the award times and the ACL channel fields named below
-([task 037](../refinements/tasks/037-null-fields-in-other-gql-reads.md)). The module sends no request and needs
+object is checked only for the times, the award times, the game fields, the required minutes and the ACL
+channel fields named below. A null value in the stream data of a channel still raises
+([task 059](../refinements/tasks/059-null-fields-in-stream-data.md)). The module sends no request and needs
 neither Twitch nor a display.
 
 ## Public contract
@@ -33,9 +34,10 @@ neither Twitch nor a display.
   and leaves out a response whose `data`, `user` or `dropCampaign` is null.
 - `complete_campaigns(campaigns)` returns the campaigns in which none of `CAMPAIGN_FIELDS` (`game`, `self`,
   `allow` and `timeBasedDrops`) is null or missing. `DropsCampaign` reads all four. It also leaves out a
-  campaign with a null time or ACL ([Null times and ACL channels](#null-times-and-acl-channels)). In each
-  campaign it returns, `timeBasedDrops` holds only the drops that `TimedDrop` can read ([Null drops](#null-drops)),
-  and `allow.channels` only the channels that `Channel.from_acl` can read.
+  campaign with a null time or ACL ([Null times and ACL channels](#null-times-and-acl-channels)), or with a null
+  game field ([Null game fields](#null-game-fields)). In each campaign it returns, `timeBasedDrops` holds only
+  the drops that `TimedDrop` can read ([Null drops](#null-drops)), and `allow.channels` only the channels that
+  `Channel.from_acl` can read.
 - `directory_streams(response)` returns the stream nodes of a `GameDirectory` response whose `broadcaster` is
   not null, and an empty list when the game, its streams or their edges are null.
 - `channel_campaigns(responses)` maps each channel ID, as an int, to the `viewerDropCampaigns` of an
@@ -80,6 +82,8 @@ only its summary, and `complete_campaigns` leaves it out unless the summary has 
 - A null drop is left out.
 - A drop whose `startAt` or `endAt` is null or missing is left out, because `BaseDrop` cannot tell when it
   can progress.
+- A drop whose `requiredMinutesWatched` is null or missing is left out, because `TimedDrop` cannot tell how
+  many minutes it needs.
 - A drop with a null item in `preconditionDrops` is left out, because its precondition is unknown.
 - A drop whose precondition drop was left out is left out too, and so on along the chain. `TimedDrop` looks up
   each precondition in its campaign, and a missing one raises `KeyError`.
@@ -104,6 +108,15 @@ that names the campaign:
 - When every channel of an enabled ACL is left out, the campaign is left out too. An empty list reads as no
   ACL, which would let every channel of the game pass the ACL check, as a null `allow` would
   ([inventory.md](inventory.md#public-contract)). A disabled ACL is not read, so its campaign is kept.
+
+## Null game fields
+
+`Game` reads a game's `id`, and its name from `displayName`, or from `name` when `displayName` is null.
+`DropsCampaign` reads the game's `boxArtURL` as the campaign image. A campaign whose game has a null or missing
+`id`, name or `boxArtURL` after `merge_data` is left out, with a warning that names the campaign. `GAMES_UPDATE`
+compares games by ID to build the wanted games and matches the priority and exclude lists against the name, and
+the Settings tab sorts the game names. A null `slug` is read as missing, so `Game` forms the slug from the name,
+as for a game without one. `get_live_streams` sends that slug in `GameDirectory`.
 
 ## Invariants
 

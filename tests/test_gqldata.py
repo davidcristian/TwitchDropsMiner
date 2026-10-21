@@ -25,17 +25,14 @@ def summary(campaign_id):
         "name": campaign_id,
         "startAt": START,
         "endAt": END,
-        "game": {"id": "1"},
+        "game": {"id": "1", "name": "G", "boxArtURL": "https://example.invalid/1-285x380.jpg"},
         "self": {"isAccountConnected": True},
     }
 
 
 def details(campaign_id):
-    return {
-        **summary(campaign_id),
-        "allow": {"channels": None, "isEnabled": True},
-        "timeBasedDrops": [{"id": f"{campaign_id}-drop", "startAt": START, "endAt": END}],
-    }
+    drop = {"id": f"{campaign_id}-drop", "startAt": START, "endAt": END, "requiredMinutesWatched": 60}
+    return {**summary(campaign_id), "allow": {"channels": None, "isEnabled": True}, "timeBasedDrops": [drop]}
 
 
 def details_response(campaign):

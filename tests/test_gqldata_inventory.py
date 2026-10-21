@@ -7,6 +7,7 @@ from exceptions import GQLException
 from gqldata import TIME_FIELDS, current_drop, user_inventory, claim_succeeded, campaign_summaries, complete_campaigns
 
 START, END = "2020-01-01T00:00:00Z", "2099-01-01T00:00:00Z"
+GAME = {"id": "1", "name": "G", "boxArtURL": "https://example.invalid/1-285x380.jpg"}
 
 
 def campaign(campaign_id, status="ACTIVE", **fields):
@@ -15,7 +16,7 @@ def campaign(campaign_id, status="ACTIVE", **fields):
         "status": status,
         "startAt": START,
         "endAt": END,
-        "game": {"id": "1"},
+        "game": GAME,
         "self": {"isAccountConnected": True},
         "allow": {"channels": None, "isEnabled": True},
         "timeBasedDrops": [],
@@ -30,6 +31,7 @@ def drop(drop_id, *preconditions):
         "endAt": END,
         "benefitEdges": [{"benefit": {"id": f"{drop_id}-benefit"}}],
         "preconditionDrops": [{"id": pre} for pre in preconditions] or None,
+        "requiredMinutesWatched": 60,
         "self": {"dropInstanceID": None, "isClaimed": False},
     }
 
@@ -100,6 +102,43 @@ def test_complete_campaigns_leaves_out_a_drop_with_a_null_or_missing_time_and_ev
         "Skipped drop d3 of campaign A, which has a null start or end time",
         "Skipped drop d4 of campaign A, whose precondition was skipped",
     ]
+
+
+def test_complete_campaigns_leaves_out_a_drop_with_null_or_missing_minutes_and_every_drop_after_it(caplog):
+    drops = [drop("d1"), {**drop("d2"), "requiredMinutesWatched": None}, without(drop("d3"), "requiredMinutesWatched")]
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        result = complete_campaigns(campaign_with(*drops, drop("d4", "d2")))
+    assert drops_of(result) == [drop("d1")]
+    assert [record.getMessage() for record in caplog.records] == [
+        "Skipped drop d2 of campaign A, which has null required minutes",
+        "Skipped drop d3 of campaign A, which has null required minutes",
+        "Skipped drop d4 of campaign A, whose precondition was skipped",
+    ]
+
+
+@pytest.mark.parametrize("game", [
+    {**GAME, "id": None},
+    without(GAME, "id"),
+    {**GAME, "boxArtURL": None},
+    {**GAME, "name": None},
+    {**GAME, "displayName": None, "name": None},
+])
+def test_complete_campaigns_leaves_out_a_campaign_whose_game_has_a_null_id_name_or_box_art(game, caplog):
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        result = complete_campaigns({"A": campaign("A"), "N": campaign("N", game=game)})
+    assert result == {"A": campaign("A")}
+    assert [record.getMessage() for record in caplog.records] == [
+        "Skipped campaign N, whose game has a null ID, name or box art",
+    ]
+
+
+def test_complete_campaigns_keeps_a_game_whose_display_name_stands_for_a_null_name():
+    game = {**GAME, "displayName": "G", "name": None}
+    assert complete_campaigns({"A": campaign("A", game=game)}) == {"A": campaign("A", game=game)}
+
+
+def test_complete_campaigns_reads_a_null_game_slug_as_missing():
+    assert complete_campaigns({"A": campaign("A", game={**GAME, "slug": None})}) == {"A": campaign("A")}
 
 
 @pytest.mark.parametrize("field", TIME_FIELDS)
