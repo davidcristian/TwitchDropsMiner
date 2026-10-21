@@ -192,8 +192,8 @@ def test_the_wheel_buttons_of_x11_scroll_the_inventory_tab_under_the_pointer(win
 
 
 @pytest.mark.skipif(tk.TkVersion < 9, reason="Tk 8.6 on X11 sends a wheel turn as a press of button 4 or 5")
-@pytest.mark.xfail(strict=True, reason="docs/refinements/tasks/052-tk-9-back-button-scrolls-inventory.md")
-def test_the_back_button_does_not_scroll_the_inventory_tab(window):
+def test_the_back_and_forward_buttons_do_not_scroll_the_inventory_tab(window):
     gui = window(FakeTwitch())
 
-    assert inventory_tops(gui, ["<Enter>", "<Button-4>"]) == [0.0, 0.0]
+    # Tk 9 on X11 reports the back and forward buttons as 4 and 5
+    assert inventory_tops(gui, ["<Enter>", "<Button-4>", "<Button-5>"]) == [0.0, 0.0, 0.0]

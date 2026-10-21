@@ -8,13 +8,18 @@ NUM_LOCK = 0x10
 NO_BUTTON = "??"
 
 
-def test_wheel_events_on_x11_include_the_wheel_buttons():
-    assert set(wheel_events("x11")) == {"<MouseWheel>", "<Button-4>", "<Button-5>"}
+def test_wheel_events_of_tk_8_on_x11_include_the_wheel_buttons():
+    assert set(wheel_events("x11", 8.6)) == {"<MouseWheel>", "<Button-4>", "<Button-5>"}
 
 
+def test_wheel_events_of_tk_9_on_x11_are_mousewheel_only():
+    assert wheel_events("x11", 9.0) == ("<MouseWheel>",)
+
+
+@pytest.mark.parametrize("tk_version", [8.6, 9.0])
 @pytest.mark.parametrize("windowing_system", ["win32", "aqua"])
-def test_wheel_events_on_windows_and_macos_are_mousewheel_only(windowing_system: str):
-    assert wheel_events(windowing_system) == ("<MouseWheel>",)
+def test_wheel_events_on_windows_and_macos_are_mousewheel_only(windowing_system: str, tk_version: float):
+    assert wheel_events(windowing_system, tk_version) == ("<MouseWheel>",)
 
 
 @pytest.mark.parametrize(

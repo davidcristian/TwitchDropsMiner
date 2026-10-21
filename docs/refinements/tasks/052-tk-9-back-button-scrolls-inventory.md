@@ -1,9 +1,9 @@
 # On Tk 9, the back and forward mouse buttons scroll the Inventory tab
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** mousewheel, gui
 **Origin:** The test of the X11 wheel buttons in `tests/test_gui.py`, run on a Python with Tk 9.0
-**Verified:** 2026-10-21
+**Verified:** 2026-10-22
 
 `wheel_events` in `mousewheel.py` returns `<Button-4>` and `<Button-5>` for X11, because Tk 8.6 on X11 sends a
 wheel turn as a press of button 4 or 5, and `ScrollArea` in `scrollarea.py` binds them while the pointer is over
@@ -30,3 +30,8 @@ Twitch requests: none.
 
 - 2026-10-21: Opened. A test of the wheel buttons scrolled the tab down for a `<Button-4>` event on Tk 9.0.
 - 2026-10-21: The wheel binding moved to `ScrollArea`, which the Settings tab also uses.
+- 2026-10-22: Closed. `wheel_events` takes `TkVersion` and returns `<MouseWheel>` alone for Tk 9, and the test,
+  now `test_the_back_and_forward_buttons_do_not_scroll_the_inventory_tab`, passes without its mark. Under Xvfb,
+  presses of X buttons 8 and 9 sent through XTest moved the Inventory tab down one unit each on Tk 9.0.3 before
+  the change and left it in place after it, on Tk 9.0.3 and 9.0.4. The wheel buttons 4 and 5 scrolled it on
+  Tk 8.6.14, 9.0.3 and 9.0.4. A real mouse was not used.

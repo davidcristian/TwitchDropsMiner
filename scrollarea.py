@@ -58,7 +58,7 @@ class ScrollArea:
         self.canvas.bind("<Configure>", self.update_region)
         self.inner = ttk.Frame(self.canvas)
         self._item = self.canvas.create_window(0, 0, anchor="nw", window=self.inner)
-        self._wheel_events = wheel_events(self.canvas.tk.call("tk", "windowingsystem"))
+        self._wheel_events = wheel_events(self.canvas.tk.call("tk", "windowingsystem"), tk.TkVersion)
         self.canvas.bind("<Enter>", self._bind_wheel)
         self.canvas.bind("<Leave>", self._unbind_wheel)
         if fit:

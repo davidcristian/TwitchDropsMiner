@@ -168,7 +168,7 @@ Nothing sends `ClaimCommunityPoints`, `ChannelPointsContext`, `SlugRedirect`, `N
 | Dark mode | the `clam` ttk theme and the title bar color through DWM | the `clam` ttk theme | `NSAppearance` through AppKit |
 | Lock file | `msvcrt.locking` | `fcntl.lockf` | `fcntl.lockf` |
 | Launcher indexes for game detection ([gamelib.md](modules/gamelib.md#launcher-indexes)) | the Epic launcher folder in `%PROGRAMDATA%`, Heroic's in `%APPDATA%` | Heroic's folder in `$XDG_CONFIG_HOME` and in its Flatpak folder | the Epic launcher and Heroic folders in `~/Library/Application Support` |
-| Mouse wheel in the Inventory and Settings tabs | `<MouseWheel>` | `<Button-4>` and `<Button-5>` on X11, through `mousewheel.py` | `<MouseWheel>` |
+| Mouse wheel in the Inventory and Settings tabs | `<MouseWheel>` | `<MouseWheel>`, and with Tk 8.6 on X11 also `<Button-4>` and `<Button-5>`, through `mousewheel.py` | `<MouseWheel>` |
 | App files | the folder of the executable | the folder of the `.AppImage` file or the executable | `Contents/MacOS` inside the `.app` |
 | Other | | `main.py` sets `XMODIFIERS=@im=none` when it is unset; `webopen` restores `LD_LIBRARY_PATH` in a packaged build before it opens a browser | the notebook tab and checkbutton style changes are skipped |
 
