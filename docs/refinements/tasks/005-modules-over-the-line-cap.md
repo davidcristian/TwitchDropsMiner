@@ -13,7 +13,7 @@ for the split now.
 
 | Module | Lines |
 | --- | --- |
-| `gui.py` | 3235 |
+| `gui.py` | 3244 |
 | `twitch.py` | 1629 |
 | `translate.py` | 597 |
 | `constants.py` | 519 |
@@ -35,7 +35,7 @@ Line counts are of the class or block today.
   - The Main tab panels: `StatusBar`, `WebsocketStatus`, `LoginForm`, `CampaignProgress` (163),
     `ConsoleOutput` and `ChannelList` (239).
   - `TrayIcon` (126), `InventoryOverview` (320) and `HelpTab` (103), one module each.
-  - `SettingsPanel` (801), which is over the cap by itself. Its `__init__` is 378 lines and builds each frame:
+  - `SettingsPanel` (809), which is over the cap by itself. Its `__init__` is 380 lines and builds each frame:
     Games Being Mined, General, Advanced, Priority, Exclude, Detected Games and the Reload row. Each frame can
     become its own class.
   - `GUIManager` (501), of which `apply_theme` is 213 lines and can move to a theme module.
@@ -85,3 +85,5 @@ Splits cost no Twitch requests.
 - 2026-10-21: Measured the modules and the classes again after changes to `gui.py`, `twitch.py`, `utils.py`,
   `websocket.py`, `channel.py`, `inventory.py`, `translate.py` and `gamelib/`. The module docs now link here for
   the line counts instead of giving their own.
+- 2026-10-21: Measured `gui.py` again after the game folder dialog moved to a child process. The logic went to
+  the new module `folderpicker.py`.

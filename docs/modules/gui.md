@@ -45,8 +45,10 @@ from [translate.md](translate.md).
   "Priority", "Exclude" and "Detected Games". It writes each change to `Settings` at once
   ([settings.md](settings.md)). "Reload" sets `State.INVENTORY_FETCH` through `Twitch.state_change`, a full
   reload ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)). "Rescan" and the folder buttons start
-  `Twitch.detect_games` ([ADR-0004](../adr/ADR-0004-installed-game-detection.md)). Adding a list entry with `*`
-  or `?` prints the games it matches ([ADR-0005](../adr/ADR-0005-list-patterns.md)). The "Autostart" checkbox
+  `Twitch.detect_games` ([ADR-0004](../adr/ADR-0004-installed-game-detection.md)). The ➕ folder button opens
+  the folder dialog in a child process through `FolderPicker` ([folderpicker.md](folderpicker.md)), and stays
+  disabled while the dialog is open. Adding a list entry with `*` or `?` prints the games it matches
+  ([ADR-0005](../adr/ADR-0005-list-patterns.md)). The "Autostart" checkbox
   writes the Windows `Run` registry value, a Linux `.desktop` file in the autostart folder or a macOS
   `LaunchAgents` plist, named after `AUTOSTART_NAME` (`TwitchDropsMiner`). `_query_autostart` finds the entry by
   these names, so a rename leaves the old entry in place ([ADR-0007](../adr/ADR-0007-kept-identifiers.md)). On
@@ -69,11 +71,11 @@ The asyncio event loop and Tk run on one thread, so Tk callbacks and coroutines 
   at once on an empty queue, which stops Tk from blocking inside an X11 or Wayland call during a large redraw.
 - `Twitch._run` calls `start()` at the beginning of each run. `stop()` cancels the poll task and the progress
   timer; [main.py](main.md) calls it after the window is closed.
-- A Tk callback that needs async work starts a task: `HelpTab.invalidate_token` and
-  `SettingsPanel.rescan_games` call `start_task(task_wrapper(...)())`, which keeps a reference to the task until
-  it ends ([utils.md](utils.md#tasks)). A button that changes the state uses `Twitch.state_change(state)`, which
-  returns a `partial` of `Twitch.change_state`. `change_state` keeps only the last state set, so `_run` can
-  replace a press that comes during a fetch
+- A Tk callback that needs async work starts a task: `HelpTab.invalidate_token`,
+  `SettingsPanel.rescan_games` and `SettingsPanel.game_dir_add` call `start_task(task_wrapper(...)())`, which
+  keeps a reference to the task until it ends ([utils.md](utils.md#tasks)). A button that changes the state
+  uses `Twitch.state_change(state)`, which returns a `partial` of `Twitch.change_state`. `change_state` keeps
+  only the last state set, so `_run` can replace a press that comes during a fetch
   ([task 012](../refinements/tasks/012-button-requests-lost-during-a-fetch.md)).
 - `close()` sets `_close_requested` and calls `Twitch.close()`, which sets `State.EXIT`. The window's close
   button, the tray menu's "Quit" and, on Linux, SIGINT and SIGTERM call it. On Windows, `wnd_proc` replaces the
@@ -175,10 +177,8 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
   ends the scan, and the record does not reach the Output box
   ([task 021](../refinements/tasks/021-scan-thread-logs-into-tk.md)).
 - A Tk callback returns quickly and starts a task for slow work. The window and the miner share one thread, so a
-  slow callback stops both. One callback breaks this rule: `SettingsPanel.game_dir_add` calls
-  `filedialog.askdirectory`, which returns only when the folder dialog closes. While it is open no task runs, so
-  the miner sends no watch request or PubSub ping and the countdown stops. Tk has no folder dialog that returns
-  at once ([task 042](../refinements/tasks/042-folder-dialog-stops-the-miner.md)).
+  slow callback stops both. A Tk dialog that waits for the user, such as `filedialog.askdirectory`, does not
+  return until it closes, so the folder dialog runs in a child process ([folderpicker.md](folderpicker.md)).
 - Widget text comes from `_()`, except for the hard-coded strings that
   [task 014](../refinements/tasks/014-hard-coded-strings.md) lists, such as the "Language" label. Widgets read
   it when they are built, so a language change needs a restart. `SettingsPanel` reads its choice names in
@@ -186,10 +186,10 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
 - `apply_theme` runs before the window is shown, because it defines the fonts and named styles the widgets use.
   A new plain Tk widget needs its own `configure_theme` call in `apply_theme`.
 - The preview mock provides every setting the GUI reads and every `Twitch` attribute that building the window
-  needs. It has no `detect_games`, `get_auth` or `_client_type`, so "Rescan" and the folder buttons raise
-  `AttributeError` in the preview.
+  needs. It has no `detect_games`, `get_auth` or `_client_type`, so "Rescan", the ❌ folder button and a folder
+  chosen with ➕ raise `AttributeError` in the preview.
 
-**Dependencies.** Repo modules: `translate`, `cache`, `gamelib`, `exceptions`, `mousewheel`, `utils`, `constants`, and
-`registry` on Windows; `twitch`, `channel`, `settings` and `inventory` for type checking only. Third-party: `pystray`,
-Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on Windows, `AppKit` on macOS, and `aiohttp` in the
-preview.
+**Dependencies.** Repo modules: `translate`, `cache`, `gamelib`, `exceptions`, `folderpicker`, `mousewheel`,
+`utils`, `constants`, and `registry` on Windows; `twitch`, `channel`, `settings` and `inventory` for type
+checking only. Third-party: `pystray`, Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on Windows,
+`AppKit` on macOS, and `aiohttp` in the preview.

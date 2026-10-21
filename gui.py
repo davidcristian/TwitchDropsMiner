@@ -15,7 +15,7 @@ from math import log10, ceil
 from tkinter.font import Font, nametofont
 from functools import partial, cached_property
 from datetime import datetime, timedelta, timezone
-from tkinter import Tk, ttk, filedialog, StringVar, DoubleVar, IntVar
+from tkinter import Tk, ttk, StringVar, DoubleVar, IntVar
 from typing import Any, Union, Tuple, TypedDict, NoReturn, Generic, TYPE_CHECKING
 
 import pystray
@@ -44,6 +44,7 @@ from gamelib import (
     compile_patterns,
 )
 from exceptions import MinerException, ExitRequest
+from folderpicker import FolderPicker
 from mousewheel import wheel_events, wheel_scroll
 from utils import resource_path, set_root_icon, webopen, start_task, task_wrapper, Game, _T
 from constants import (
@@ -1599,6 +1600,7 @@ class SettingsPanel:
     def __init__(self, manager: GUIManager, master: ttk.Widget):
         self._manager = manager
         self._settings: Settings = manager._twitch.settings
+        self._folder_picker = FolderPicker()
         priority_mode = self._settings.priority_mode
         if priority_mode not in self.PRIORITY_MODES:
             priority_mode = PriorityMode.PRIORITY_ONLY
@@ -1946,9 +1948,10 @@ class SettingsPanel:
         )
         self._game_dirs_list.grid(column=0, row=3, rowspan=2, sticky="nsew")
         detect_frame.rowconfigure(3, weight=1)
-        ttk.Button(
+        self._game_dir_add_button = ttk.Button(
             detect_frame, text="➕", command=self.game_dir_add, width=3, style="Large.TButton"
-        ).grid(column=1, row=3, sticky="nsew")
+        )
+        self._game_dir_add_button.grid(column=1, row=3, sticky="nsew")
         ttk.Button(
             detect_frame,
             text="❌",
@@ -2176,11 +2179,17 @@ class SettingsPanel:
         start_task(task_wrapper(self._manager._twitch.detect_games)())
 
     def game_dir_add(self) -> None:
-        directory: str = filedialog.askdirectory(
-            parent=self._manager._root,
-            title=_("gui", "settings", "detect", "add_dir"),
-            mustexist=True,
-        )
+        # the button stays disabled while the dialog is open, so only one dialog opens
+        self._game_dir_add_button.state(["disabled"])
+        start_task(task_wrapper(self._add_chosen_dir)())
+
+    async def _add_chosen_dir(self) -> None:
+        try:
+            directory: str = await self._manager.coro_unless_closed(
+                self._folder_picker.choose(_("gui", "settings", "detect", "add_dir"))
+            )
+        finally:
+            self._game_dir_add_button.state(["!disabled"])
         if not directory:
             # dialog cancelled
             return

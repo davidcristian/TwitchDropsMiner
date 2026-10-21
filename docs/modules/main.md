@@ -7,7 +7,9 @@ type checking only.
 
 ## Startup order
 
-1. `freeze_support()` from `multiprocessing`, which a PyInstaller build needs to start.
+1. `freeze_support()` from `multiprocessing`. In a PyInstaller build, the child process of the folder dialog
+   runs the app's executable again, and this call runs the child's work and exits
+   ([folderpicker.md](folderpicker.md#the-child-process)).
 2. The version check, which raises `RuntimeError("Python 3.10 or higher is required")` on an older Python. The
    `__main__` block imports only `sys` before it, because `truststore` and `utils.py`, which imports
    `typing.ParamSpec`, need 3.10.
@@ -118,6 +120,8 @@ box.
   [Startup order](#startup-order), step 3.
 - `freeze_support()` stays the first call in the `__main__` block, where the `multiprocessing` documentation
   requires it for a frozen executable.
+- Everything except the two imports stays under `if __name__ == "__main__":`. In a run from source, the child
+  process of the folder dialog imports `main.py` as `__mp_main__` and must not run the app.
 - `client.save(force=True)` stays after `wait_until_closed()`, for the reason in
   [The run and the exit](#the-run-and-the-exit), step 7.
 - A new flag gets an attribute on `ParsedArgs`, a line in `manual.txt` and a row in the flag table of

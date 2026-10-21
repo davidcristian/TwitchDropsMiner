@@ -46,9 +46,10 @@ installed none of these packages, so a fix in one of them was checked by a scrip
    code makes rather than what it returns.
 4. **The suite fails below 80% branch coverage** of the modules listed under `[tool.coverage.run]` in
    `pyproject.toml`: the modules that need neither Twitch nor a display, today `redact`, `reconnect`, `gamelib`,
-   `gqldata`, `imagedata`, `savefiles`, `settingsdata`, `ratelimit`, `instancelock`, `mousewheel`, `constants`
-   and the `scripts/` folder. The floor applies to their total. A new such module is added to the list. The
-   modules that need Twitch or a display are not listed.
+   `gqldata`, `imagedata`, `savefiles`, `settingsdata`, `ratelimit`, `instancelock`, `mousewheel`,
+   `folderpicker` (its tests replace the dialog with fakes), `constants` and the `scripts/` folder. The floor
+   applies to their total. A new such module is added to the list. The modules that need Twitch or a display
+   are not listed.
 5. **Tests do not read the machine they run on.** A test that looks for launchers, the registry or a home folder
    points that lookup at a temporary folder, so the suite gives the same result on every machine and in CI.
    An autouse fixture in `tests/conftest.py` calls `isolate_git` from `tests/gitrepo.py` for each test:

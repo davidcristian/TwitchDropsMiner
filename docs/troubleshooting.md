@@ -129,7 +129,6 @@ An excluded game is never mined, even when a Priority entry or the installed gam
 ## Installed games are not detected
 
 Add a Steam or Epic games folder on the Settings tab. The app scans it at once; `Rescan` scans the folders again.
-The app stops mining while the folder dialog is open and continues when it closes.
 
 - **Steam:** add the Steam folder, its `steamapps` folder or `steamapps/common`. One folder is enough, because
   the app reads `libraryfolders.vdf` and scans the Steam libraries on other drives as well.

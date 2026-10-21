@@ -1,9 +1,9 @@
 # The game folder dialog stops the miner while it is open
 
-**Status:** open
+**Status:** done 2026-10-21
 **Area:** gui (`SettingsPanel`)
 **Origin:** Found on 2026-10-20: a timer task stopped for as long as the game folder dialog was open
-**Verified:** 2026-10-20
+**Verified:** 2026-10-21
 
 The ➕ button under "Game folders" on the Settings tab calls `SettingsPanel.game_dir_add` in `gui.py`, which calls
 `filedialog.askdirectory`. That call returns only when the user closes the dialog. It runs in a Tk callback inside
@@ -47,3 +47,9 @@ tells users that mining stops while the dialog is open.
 
 - 2026-10-20: Opened. A task that ran every 0.5 seconds stopped for as long as the game folder dialog was open.
   The limit was written into gui.md and troubleshooting.md.
+- 2026-10-21: Closed. `folderpicker.py` shows the dialog in a child process started with the spawn method, and
+  `game_dir_add` awaits the answer in a task, with the ➕ button disabled until it comes. Under Xvfb with the
+  network blocked, in `python gui.py` and `python main.py`, the 0.5 second task kept a largest gap of 0.53
+  seconds while the dialog was open, a chosen folder was added and Cancel added none. A PyInstaller one-file
+  build on Linux switched tabs while the dialog was open and saved the chosen folder. Windows, macOS and the
+  AppImage were not run.

@@ -6,8 +6,10 @@ the decisions in [adr/](adr/README.md), and one page per module in [modules/](mo
 
 ## Components
 
-The app is one Python process. `main.py` loads `Settings`, takes the lock on `lock.file` and runs `main()`
-with `asyncio.run`, which creates `Twitch` and awaits `Twitch.run`. All code runs on that one event loop:
+The app is one Python process, except for the game folder dialog, which runs in a child process while it is
+open ([folderpicker.md](modules/folderpicker.md)). `main.py` loads `Settings`, takes the lock on `lock.file`
+and runs `main()` with `asyncio.run`, which creates `Twitch` and awaits `Twitch.run`. All code runs on that one
+event loop:
 
 - **Tk runs without `mainloop`.** The `GUIManager._poll` task calls `Tk.dooneevent` with `DONT_WAIT` until no
   Tk event is left, then sleeps 0.05 seconds. GUI callbacks therefore run on the event loop and need no locks.
