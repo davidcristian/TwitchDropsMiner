@@ -1,9 +1,9 @@
 # A `WebsocketTopic` equals its text but has a different hash
 
-**Status:** open
+**Status:** done 2026-10-21
 **Area:** constants, websocket
 **Origin:** Found on 2026-10-20 while writing the tests of `constants.py`
-**Verified:** 2026-10-20
+**Verified:** 2026-10-21
 
 `WebsocketTopic.__eq__` in `constants.py` returns true for a string with the same text, such as
 `"broadcast-settings-update.7"`. `WebsocketTopic.__hash__` hashes the class name together with the text, so the
@@ -22,3 +22,6 @@ Return `hash(self._id)` from `__hash__`, or remove the string branch of `__eq__`
 ## History
 
 - 2026-10-20: Opened. A test of `WebsocketTopic` looked up a topic by its text in a set.
+- 2026-10-21: Closed. `__hash__` returns the hash of the text, and the test named above is a plain test that
+  passes. A run of the `websocket.py` pool with a stand-in `Twitch` held and sent the same topics before and
+  after the change.

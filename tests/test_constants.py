@@ -180,7 +180,6 @@ def test_a_websocket_topic_equals_its_text_and_no_other_type():
     assert topic != 7
 
 
-@pytest.mark.xfail(strict=True, reason="docs/refinements/tasks/041-topic-hash-differs-from-its-text.md")
 def test_a_websocket_topic_is_found_in_a_set_by_its_text():
     assert "broadcast-settings-update.7" in {WebsocketTopic("Channel", "StreamUpdate", 7, received_by([]))}
 

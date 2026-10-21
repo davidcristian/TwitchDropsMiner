@@ -491,7 +491,7 @@ class WebsocketTopic:
         return NotImplemented
 
     def __hash__(self) -> int:
-        return hash((self.__class__.__name__, self._id))
+        return hash(self._id)
 
 
 WEBSOCKET_TOPICS: dict[str, dict[str, str]] = {

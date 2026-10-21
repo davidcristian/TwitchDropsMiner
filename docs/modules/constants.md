@@ -149,10 +149,9 @@ with every request, and `twitch.py` adds its client ID to the login and GQL requ
 `WEBSOCKET_TOPICS` maps a category (`"User"` or `"Channel"`) and a name to the Twitch topic.
 `WebsocketTopic(category, topic_name, target_id, process)` is one subscription: `str()` gives
 `<topic>.<target_id>`, such as `video-playback-by-id.123`, and calling it passes `(target_id, message)` to
-`process`. It compares equal to another topic or a string with the same text, but its hash differs from the
-string's, so a set lookup by the text misses it
-([task 041](../refinements/tasks/041-topic-hash-differs-from-its-text.md)). `WebsocketTopic.as_str` builds that
-text without an object. [websocket.md](websocket.md) describes the pool.
+`process`. It compares equal to another topic or a string with the same text and has the same hash as that
+text, so a set or dict lookup by the text finds it. `WebsocketTopic.as_str` builds that text without an object.
+[websocket.md](websocket.md) describes the pool.
 
 ### Logging and strings
 
