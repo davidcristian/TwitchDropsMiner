@@ -1,41 +1,44 @@
-# The libXft archive and the AppImage runtime are not checked against a known hash
+# The hash checks of the Linux build downloads have not run in CI
 
 **Status:** open
 **Area:** ci, appimage
 **Origin:** Found on 2026-10-21 while the apt key URL in `appimage/AppImageBuilder.yml` moved to HTTPS: the
-recipe prints the SHA-256 of the libXft archive and compares it with nothing
+recipe printed the SHA-256 of the libXft archive and compared it with nothing
 **Verified:** 2026-10-21
 
-Three downloads end up in the Linux releases, and none is compared with a known hash:
+The Linux builds check three downloads against a SHA-256 written in the repo
+([building.md](../../building.md#build-the-appimage)):
 
 - **libXft 2.3.9.** The `linux-pyinstaller` job in `.github/workflows/ci.yml` and the `script` of
-  `appimage/AppImageBuilder.yml` download `libXft-2.3.9.tar.xz` from `xorg.freedesktop.org` with `curl -fL`, run
-  `sha256sum libXft.tar.xz`, and build what they downloaded. The hash only goes into the log, so a changed
-  archive is built into both Linux releases.
-- **The AppImage runtime and AppRun.** The recipe sets no runtime file and no hash, so appimage-builder
-  downloads them itself. The last AppImage build log before 2026-10-21 names the `continuous` type 2 runtime
-  and AppRun v2.0.0; check this again in the next log. The runtime is the first code that runs when a user
-  starts the AppImage, and a `continuous` release can change between two builds.
+  `appimage/AppImageBuilder.yml` check the archive with `sha256sum -c` before they build it.
+- **The AppImage runtime and AppRun.** The recipe downloads the runtime of the type2-runtime release `20251108`
+  and AppRun v2.0.0 with its hooks library, checks them against `appimage/runtime-<arch>.sha256`, and puts them
+  in appimage-builder's build folder. After the build, a step of the `linux-appimage` job compares the start of
+  the AppImage, its `AppRun` and its `libapprun_hooks.so` with those files.
 
-No hash was added here, because each one needs the network to read from a source other than the download
-itself.
+None of these steps has run in CI. How appimage-builder takes the files was read in its source at the commit the
+job installs, not run: `AppImagePrimer` downloads the runtime only when `prime/runtime-<arch>` is missing from
+its build folder, and `AppRunBinariesResolver` downloads an AppRun file only when `AppRun/<version>/` lacks it.
+Until this change the AppImage had the `continuous` runtime, which is newer than `20251108`.
 
 ## What a fix involves
 
-1. **libXft.** Take the SHA-256 of `libXft-2.3.9.tar.xz` from the X.org release announcement on the
-   xorg-announce mailing list, or check the archive's `.sig` file against the signer's key. Compare it with the
-   hash in the last CI log. Replace each `sha256sum libXft.tar.xz` line with
-   `echo "<hash>  libXft.tar.xz" | sha256sum -c`, in `ci.yml` and in the recipe, so that a different archive
-   fails the build.
-2. **The runtime.** Read the appimage-builder source at the commit the job installs and find whether the recipe
-   can name a runtime file or a fixed runtime release. If it can, download a fixed release of the type 2 runtime
-   for `x86_64` and `aarch64` in a job step, compare each with a hash written in `ci.yml`, and pass it to the
-   recipe. If it cannot, record that in this file and in [building.md](../../building.md#build-the-appimage).
-   Do the same for AppRun, and check whether the recipe's `AppDir.runtime` section can set its version.
-3. Run the workflow on a pull request and start each AppImage once.
+A pull request run, and a start of each AppImage it builds, show:
+
+1. that the `sha256sum -c` lines pass in both `linux-pyinstaller` jobs and both `linux-appimage` jobs;
+2. that the appimage-builder log has no `Downloading:` line for the runtime or for AppRun, and that the step that
+   compares the AppImage with the checked files passes for `x86_64` and `aarch64`;
+3. that the `x86_64` and `aarch64` AppImages start and show the window, as they did with the `continuous`
+   runtime.
 
 None of this sends a Twitch request.
 
 ## History
 
 - 2026-10-21: Opened. Found while the apt key URL of the AppImage recipe moved from HTTP to HTTPS.
+- 2026-10-21: The builds check libXft, the runtime and AppRun against a SHA-256, compared with the libXft and
+  runtime signatures and with Homebrew's libXft formula ([building.md](../../building.md#build-the-appimage)).
+  The recipe downloaded and checked all three for both architectures, and a hand-made AppImage with the `x86_64`
+  runtime started through FUSE and through `APPIMAGE_EXTRACT_AND_RUN`. The title was "The libXft archive and the
+  AppImage runtime are not checked against a known hash". The task stays open until a CI run and a start of
+  each AppImage show the steps above.

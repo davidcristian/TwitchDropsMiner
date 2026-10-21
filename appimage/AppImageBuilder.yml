@@ -9,9 +9,17 @@ script:
   - mkdir -p "$BUILD_DIR" "$TARGET_APPDIR"
   - cd "$BUILD_DIR"
 
+  # appimage-builder downloads the AppImage runtime and AppRun, with no hash, only when its build folder lacks
+  # them. Put fixed releases there first, checked against the hashes in runtime-$ARCH.sha256.
+  - mkdir -p prime AppRun/v2.0.0
+  - curl -fL "https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-$ARCH" -o "prime/runtime-$ARCH"
+  - curl -fL "https://github.com/AppImageCrafters/AppRun/releases/download/v2.0.0/AppRun-Release-$ARCH" -o "AppRun/v2.0.0/AppRun-Release-$ARCH"
+  - curl -fL "https://github.com/AppImageCrafters/AppRun/releases/download/v2.0.0/libapprun_hooks-Release-$ARCH.so" -o "AppRun/v2.0.0/libapprun_hooks-Release-$ARCH.so"
+  - sha256sum -c "$SOURCE_DIR/runtime-$ARCH.sha256"
+
   # Build a recent version of libXft first. This fixes an issue where the app won't start with libXft 2.3.3 if an emoji font is installed on the system.
   - curl -fL https://xorg.freedesktop.org/releases/individual/lib/libXft-2.3.9.tar.xz -o libXft.tar.xz
-  - sha256sum libXft.tar.xz
+  - echo "60a25b78945ed6932635b3bb1899a517d31df7456e69867ffba27f89ff3976f5  libXft.tar.xz" | sha256sum -c -
   - tar xvf libXft.tar.xz
   - cd libXft-*
   - ./configure --prefix="$TARGET_APPDIR/usr" --disable-static
@@ -147,6 +155,8 @@ AppDir:
       - usr/share/themes
 
   runtime:
+    # The AppRun release, which the script above downloads into AppRun/v2.0.0.
+    version: v2.0.0
     env:
       PATH: '${APPDIR}/usr/bin:${PATH}'
       PYTHONHOME: '${APPDIR}/usr'

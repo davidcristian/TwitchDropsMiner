@@ -129,8 +129,9 @@ These settings at the top of `build.spec` change the build:
 
 On Linux, `build.spec` bundles `libayatana-appindicator3.so.1` and the `AyatanaAppIndicator3-0.1` typelib from
 the first of `/usr/lib/<arch>-linux-gnu`, `/usr/lib64` and `/usr/lib` that has the library, so install the tray
-packages above before you build. CI also builds libXft 2.3.9 from source and runs PyInstaller under `xvfb-run`;
-the `linux-pyinstaller` job in `ci.yml` shows both steps.
+packages above before you build. CI also builds libXft 2.3.9 from source, after it checks the archive against
+the SHA-256 in [Build the AppImage](#build-the-appimage), and runs PyInstaller under `xvfb-run`; the
+`linux-pyinstaller` job in `ci.yml` shows both steps.
 
 On macOS, `build.spec` also creates a `.app` bundle in `dist/`. CI runs `pyinstaller build.spec --noconfirm`
 there instead of `build.sh`.
@@ -151,8 +152,12 @@ The `linux-appimage` job in `ci.yml` builds the AppImage on Ubuntu 22.04 with
 - takes its system packages, including `python3-tk` and `gir1.2-ayatanaappindicator3-0.1`, from the Ubuntu 22.04
   archives, and fetches the key that signs them from `keyserver.ubuntu.com` over HTTPS;
 - builds libXft 2.3.9, because the app does not start with libXft 2.3.3 when an emoji font is installed. It
-  prints the SHA-256 of the downloaded archive but compares it with nothing
-  ([task 047](refinements/tasks/047-unchecked-build-downloads.md));
+  checks the archive with `sha256sum -c` against the SHA-256 written in the recipe and in `ci.yml`;
+- downloads the AppImage runtime of the `20251108` release of `AppImage/type2-runtime` and AppRun `v2.0.0` of
+  `AppImageCrafters/AppRun`, and checks each against `appimage/runtime-<arch>.sha256`. It puts them where
+  appimage-builder looks before it downloads its own, unchecked, copy: `prime/` and `AppRun/v2.0.0/` in its build
+  folder, `appimage-build/`. A recipe cannot name a runtime file or a hash. After the build, the `linux-appimage`
+  job compares the AppImage with these files, so a version of appimage-builder that looks elsewhere fails the job;
 - copies the top-level `*.py` files, `gamelib/`, `lang/` and `icons/` into `usr/src` inside the image, starts
   `usr/src/main.py`, and installs `requirements.txt`. The app counts as an AppImage only when `constants.py` is
   inside the image ([constants.md](modules/constants.md#working-directory-and-paths));
@@ -167,6 +172,19 @@ appimage-builder --recipe appimage/AppImageBuilder.yml
 
 A new package folder must be added to the recipe's `cp` and `compileall` lines, as the recipe in
 [AGENTS.md](../AGENTS.md#recipes) explains.
+
+On 2026-10-21 each hash except AppRun's was compared with a source other than the download. The libXft archive
+has a good signature by the key of Thomas E. Dickey that his GitHub account lists, and Homebrew's `libxft`
+formula has the same SHA-256. Each runtime has a good signature by the key in the type2-runtime repository, and
+GitHub reports the same digest. AppRun publishes no hash or signature, so its hashes are those of the files
+downloaded that day, which GitHub reports unchanged since 2022.
+
+`20251108` is the newest dated release of the runtime. appimage-builder by itself takes the `continuous`
+release, which changes with each commit to type2-runtime. The `continuous` builds since 2026-09-28 create the
+folder that `--appimage-extract-and-run` extracts the image into with mode 0700, and `20251108` with 0755. That
+folder holds only the files of the image, since `cookies.jar` and `settings.json` stay next to the `.AppImage`
+file. To update a download, change its URL and hash together, with the hash checked against a signature or a
+published checksum, and move to a newer dated runtime release when type2-runtime publishes one.
 
 ## Release builds
 

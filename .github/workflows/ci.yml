@@ -234,7 +234,7 @@ jobs:
           mkdir -p /tmp/libXft
           cd /tmp/libXft
           curl -fL https://xorg.freedesktop.org/releases/individual/lib/libXft-2.3.9.tar.xz -o libXft.tar.xz
-          sha256sum libXft.tar.xz
+          echo "60a25b78945ed6932635b3bb1899a517d31df7456e69867ffba27f89ff3976f5  libXft.tar.xz" | sha256sum -c -
           tar xvf libXft.tar.xz
           cd libXft-*
           ./configure --prefix=/tmp/libXft --sysconfdir=/etc --disable-static
@@ -312,6 +312,15 @@ jobs:
           PYTHON_VERSION: ${{env.PYTHON_VERSION}}
         run: |
           appimage-builder --recipe appimage/AppImageBuilder.yml
+
+      # The recipe puts the checked runtime and AppRun where appimage-builder looks for them. This step fails when
+      # the AppImage contains other files, such as after an update of appimage-builder moves those paths.
+      - name: Check that the AppImage contains the checked runtime and AppRun
+        run: |
+          runtime=appimage-build/prime/runtime-${{matrix.arch}}
+          cmp -n "$(stat -c %s "${runtime}")" "${runtime}" Twitch.Drops.Miner-${{matrix.arch}}.AppImage
+          cmp appimage-build/AppRun/v2.0.0/AppRun-Release-${{matrix.arch}} AppDir/AppRun
+          cmp appimage-build/AppRun/v2.0.0/libapprun_hooks-Release-${{matrix.arch}}.so AppDir/lib/${{matrix.arch}}/libapprun_hooks.so
 
       - name: Create release folder
         run: |
