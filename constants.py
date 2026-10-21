@@ -19,8 +19,18 @@ if TYPE_CHECKING:
     from typing_extensions import TypeAlias
 
 
+def _runs_from_appimage() -> bool:
+    """Return True when this module is inside the mounted AppImage that `APPIMAGE` names."""
+    appimage = os.environ.get("APPIMAGE")
+    appdir = os.environ.get("APPDIR")
+    if not appimage or not appdir or not os.path.exists(appimage):
+        return False
+    # A program started from another AppImage inherits both variables, so the module's own path decides.
+    return Path(__file__).resolve().is_relative_to(Path(appdir).resolve())
+
+
 # True if we're running from a built EXE (or a Linux AppImage), False inside a dev build
-IS_APPIMAGE = "APPIMAGE" in os.environ and os.path.exists(os.environ["APPIMAGE"])
+IS_APPIMAGE = _runs_from_appimage()
 IS_PACKAGED = hasattr(sys, "_MEIPASS") or IS_APPIMAGE
 # logging special levels
 CALL: int = logging.INFO - 1

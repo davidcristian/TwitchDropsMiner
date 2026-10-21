@@ -135,7 +135,9 @@ The `linux-appimage` job in `ci.yml` builds the AppImage on Ubuntu 22.04 with
 - builds libXft 2.3.9, because the app does not start with libXft 2.3.3 when an emoji font is installed. It
   prints the SHA-256 of the downloaded archive but compares it with nothing
   ([task 047](refinements/tasks/047-unchecked-build-downloads.md));
-- copies the top-level `*.py` files, `gamelib/`, `lang/` and `icons/`, and installs `requirements.txt`;
+- copies the top-level `*.py` files, `gamelib/`, `lang/` and `icons/` into `usr/src` inside the image, starts
+  `usr/src/main.py`, and installs `requirements.txt`. The app counts as an AppImage only when `constants.py` is
+  inside the image ([constants.md](modules/constants.md#working-directory-and-paths));
 - sets no update information and no signing key, so the AppImage has neither.
 
 The job installs appimage-builder from a fixed commit, sets the `ARCH`, `ARCH_APT` and `APP_VERSION` environment

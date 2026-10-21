@@ -1,6 +1,6 @@
 # A run from source started from another AppImage keeps its files in that AppImage's folder
 
-**Status:** open
+**Status:** done 2026-10-21
 **Area:** constants
 **Origin:** Found on 2026-10-21: a run from source with `APPIMAGE` in its environment counted as packaged
 **Verified:** 2026-10-21
@@ -39,3 +39,6 @@ request.
 
 - 2026-10-21: Opened. A copy of `constants` loaded with `APPIMAGE` naming another AppImage put `COOKIES_PATH`
   in that AppImage's folder, and the `APPDIR` check above was not made without a real AppImage to run it in.
+- 2026-10-21: Closed. `IS_APPIMAGE` also requires `APPDIR` to be set and `constants.py`, not `sys.argv[0]`, to be
+  inside it. A folder with the recipe's layout still counts as an AppImage, and the test above passes. No real
+  AppImage was built or run.

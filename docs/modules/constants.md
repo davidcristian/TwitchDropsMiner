@@ -6,7 +6,8 @@ topic names and the logging levels. It computes the paths once, at import, from 
 reads the app version from [`version.py`](#versionpy). The module is over the 300 line cap in AGENTS.md
 ([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md) gives its line count).
 `tests/test_constants.py` tests it with plain values, and loads a second copy of it with a test `sys.argv[0]`,
-`APPIMAGE` and `sys.platform` to check the paths.
+`APPIMAGE`, `APPDIR` and `sys.platform` to check the paths. For the AppImage cases it loads that copy from a test
+folder laid out as the AppImage recipe lays out the image.
 
 ## Public contract
 
@@ -24,10 +25,12 @@ on how the app runs:
 | AppImage | the `.AppImage` file, read from the `APPIMAGE` environment variable | the folder of the `.AppImage` file |
 
 `constants.py` has no branch for macOS: PyInstaller sets `sys.argv[0]` to the executable in `Contents/MacOS`.
-`IS_APPIMAGE` is true when `APPIMAGE` names an existing path. `IS_PACKAGED` is true for a PyInstaller build
-(`sys._MEIPASS` exists) or an AppImage. A run from source started from another AppImage inherits its `APPIMAGE`
-and counts as an AppImage, so it keeps its files next to that `.AppImage` file
-([task 045](../refinements/tasks/045-run-from-source-inside-another-appimage.md)).
+`IS_APPIMAGE` is true when `APPIMAGE` names an existing path, `APPDIR` is set, and `constants.py` is inside
+`APPDIR`, with symlinks resolved on both paths. The AppImage runtime sets `APPIMAGE` to the `.AppImage` file and
+`APPDIR` to the folder it mounts the image at, and every program the app starts inherits both. A run from source
+started from another AppImage has both variables, but its `constants.py` is outside that `APPDIR`, so it keeps its
+files in the repo folder. `APPIMAGE` without `APPDIR` also counts as a run from source, because every AppImage
+runtime sets both. `IS_PACKAGED` is true for a PyInstaller build (`sys._MEIPASS` exists) or an AppImage.
 
 Bundled read only files (`lang/`, `icons/`) are found by `_resource_path`, which `utils` exports as
 `resource_path`. It returns a path under:
@@ -169,9 +172,12 @@ on macOS and Linux) and does not commit the change. The AppImage job passes the 
 
 ## Invariants
 
-- Importing the module has side effects: it computes the paths from `sys.argv[0]` and `APPIMAGE`, registers the
-  `CALL` level and picks the user agents. Most modules and `build.spec` import it, so it imports no repo
-  module except `version`, which keeps it free of import cycles.
+- Importing the module has side effects: it computes the paths from `sys.argv[0]`, `APPIMAGE`, `APPDIR` and its
+  own file path, registers the `CALL` level and picks the user agents. Most modules and `build.spec` import it,
+  so it imports no repo module except `version`, which keeps it free of import cycles.
+- `appimage/AppImageBuilder.yml` copies `constants.py` into the image, under `usr/src`. A recipe that put it
+  outside the image would make the AppImage count as a run from source, which writes its files into the read
+  only image and fails at startup.
 - The CI test job installs only `requirements-dev.txt` and imports this module, so it imports no package outside
   that file and the standard library.
 - `PriorityMode` is stored in `settings.json` by its value under the type name `PriorityMode`
