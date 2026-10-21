@@ -7,7 +7,8 @@ is the reference when this page and a build disagree. For problems while running
 
 ## Requirements
 
-- Python 3.10 or newer. CI builds with Python 3.10, and `main.py` stops on an older version.
+- Python 3.10 or newer, and `main.py` stops on an older version. CI runs the checks on Python 3.10 and builds
+  the PyInstaller releases with Python 3.14 (see [Release builds](#release-builds)).
 - On Debian and Ubuntu, `python3 -m venv` needs the `python3-venv` package.
 - On Linux, `tkinter` and the tray icon libraries come from system packages. CI installs these on Ubuntu 22.04:
 
@@ -81,7 +82,7 @@ pre-commit install
 
 The Validate job in CI installs `requirements-dev.txt` on Python 3.10 and runs `just check`, and the build jobs
 start only when it passes. It runs on Ubuntu only. [Task 046](refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)
-lists what running it on Windows, macOS and Python 3.13 needs.
+lists what running it on Windows, macOS and Python 3.14 needs.
 
 ## Build the executable with PyInstaller
 
@@ -155,6 +156,12 @@ from a push or started by hand, CI replaces the `dev-build` pre-release on the
 [Releases page](https://github.com/davidcristian/TwitchDropsMiner/releases) with the new builds and sets the
 `dev-build` tag to the commit it built. A run for a pull request, or started by hand on another branch, builds
 but publishes nothing.
+
+Two variables in `ci.yml` set the Python versions. The Validate job uses `PYTHON_VERSION`, 3.10, the oldest
+version the app supports. The Windows, macOS and Linux PyInstaller builds use `BUILD_PYTHON_VERSION`, 3.14,
+because each executable bundles that Python and its OpenSSL, and python.org publishes Windows and macOS builds
+of a version only during its bugfix phase. The AppImage takes Python 3.10 from the Ubuntu 22.04 archives.
+[ADR-0015](adr/ADR-0015-release-build-python.md) says why and when the build version changes.
 
 GitHub runs one run at a time in each concurrency group, and the workflow's `concurrency` key sets one group
 per branch or pull request. A new run on a branch or pull request cancels the one in progress. A new run on

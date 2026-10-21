@@ -42,6 +42,7 @@ Each record states the decision that applies today and is edited in place when i
 | [ADR-0012: One check command](adr/ADR-0012-check-command.md) | `just check` runs every check, from the pre-commit hook and in CI: the standard-library scans in `scripts/`, ruff's lint rules without its formatter, and the tests; two hooks check commit messages. |
 | [ADR-0013: Tests assert behavior, with an 80% coverage floor](adr/ADR-0013-test-standard.md) | What a test must assert, fakes rather than mocks, strict `xfail` tests for known defects, and 80% branch coverage of the modules that need neither Twitch nor a display. |
 | [ADR-0014: Code rules for new code](adr/ADR-0014-code-rules.md) | New logic receives its I/O as an argument, platform differences are one function per concern, and the typing and exception rules; inherited code follows them where a change rewrites it. |
+| [ADR-0015: The release builds use a newer Python than the checks](adr/ADR-0015-release-build-python.md) | The Validate job runs on Python 3.10, the oldest supported version, and the PyInstaller builds on 3.14, a version for which python.org still publishes Windows and macOS builds with OpenSSL updates. |
 
 ## Modules
 

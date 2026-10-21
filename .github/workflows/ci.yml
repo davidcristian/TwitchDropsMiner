@@ -17,7 +17,10 @@ concurrency:
   cancel-in-progress: ${{github.ref != 'refs/heads/master'}}
 
 env:
+  # The checks run on the oldest Python the app supports. Each PyInstaller build bundles its Python and
+  # OpenSSL, so it uses a version for which python.org still publishes Windows and macOS builds.
   PYTHON_VERSION: "3.10"
+  BUILD_PYTHON_VERSION: "3.14"
   USE_UPX: false
 
 jobs:
@@ -65,7 +68,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
-          python-version: ${{env.PYTHON_VERSION}}
+          python-version: ${{env.BUILD_PYTHON_VERSION}}
 
       - name: Install project dependencies
         run: |
@@ -128,7 +131,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
-          python-version: ${{env.PYTHON_VERSION}}
+          python-version: ${{env.BUILD_PYTHON_VERSION}}
 
       - name: Install project dependencies
         run: |
@@ -189,7 +192,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
-          python-version: ${{env.PYTHON_VERSION}}
+          python-version: ${{env.BUILD_PYTHON_VERSION}}
 
       - name: Install system dependencies
         run: |
