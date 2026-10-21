@@ -46,7 +46,8 @@ nor allow setting it such".
    - once an hour, from `_maintenance_task`. Every reload ends by starting a new `_maintenance_task`, so the
      hour counts from the last reload of any cause.
    - after a drop is claimed. `process_drops` reloads when the drop's campaign cannot progress further on the
-     watched channel, and `process_notifications` reloads on Twitch's drop reward notification.
+     watched channel, once per drop: it ignores a `drop-claim` event for a drop that is already claimed.
+     `process_notifications` reloads on Twitch's drop reward notification.
    - on Twitch's emote reward notification (`quests_viewer_reward_campaign_earned_emote`), from
      `process_notifications`.
    - from the `Reload` button in the Settings tab.

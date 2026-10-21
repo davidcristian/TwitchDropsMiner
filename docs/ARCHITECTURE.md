@@ -122,7 +122,8 @@ instead and is not restarted ([task 013](refinements/tasks/013-crashed-task-ends
 8. **Claiming.** A `drop-claim` event contains the drop instance ID, and `TimedDrop.claim` sends `ClaimDrop`.
    Then `process_drops` sends `CurrentDrop` until Twitch reports another drop, at most 8 times, and ends the
    watch loop's wait ([task 028](refinements/tasks/028-watch-restart-dropped.md)) when the campaign continues
-   on the channel. Otherwise it moves to `INVENTORY_FETCH`, as the reward notification also does.
+   on the channel. Otherwise it moves to `INVENTORY_FETCH`, as the reward notification also does. An event for
+   a drop that is already claimed does nothing.
 
 ## Twitch traffic
 

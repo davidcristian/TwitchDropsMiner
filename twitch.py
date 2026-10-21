@@ -1193,6 +1193,9 @@ class Twitch:
                     f"Drop claim ID: {message['data']['drop_instance_id']}"
                 )
                 return
+            if drop.is_claimed:
+                # GAMES_UPDATE or an earlier event claimed it and already restarted watching or reloaded
+                return
             drop.update_claim(message["data"]["drop_instance_id"])
             campaign = drop.campaign
             await drop.claim()
