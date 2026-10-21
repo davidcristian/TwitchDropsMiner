@@ -38,13 +38,18 @@ from [translate.md](translate.md).
   `Twitch._watch_loop` calls it to decide whether to send the `CurrentDrop` GQL query.
 - **`InventoryOverview.add_campaign`** is a coroutine, because it awaits `ImageCache.get` for the campaign and
   reward images ([cache.md](cache.md)). The filters are "Not linked", "Upcoming", "Expired", "Excluded" and
-  "Finished". `refresh()` applies them again, and it runs each time the Inventory tab is opened. The campaigns are on
-  a `tk.Canvas`. When the pointer enters it, `bind_all` binds the events that `wheel_events` returns, and leaving it
-  removes them. `wheel_scroll` gives the direction, and Shift scrolls sideways ([mousewheel.md](mousewheel.md)).
+  "Finished". `refresh()` applies them again, and it runs each time the Inventory tab is opened. The campaigns are in
+  a `ScrollArea` with both scroll bars always shown. The mouse wheel scrolls it, and Shift scrolls sideways
+  ([scrollarea.md](scrollarea.md)).
 - **`SettingsPanel`** has the sections "Games Being Mined" (filled by `set_wanted_games`), "General", "Advanced",
-  "Priority", "Exclude" and "Detected Games". It writes each change to `Settings` at once
-  ([settings.md](settings.md)). "Reload" sets `State.INVENTORY_FETCH` through `Twitch.state_change`, a full
-  reload ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)). "Rescan" and the folder buttons start
+  "Priority", "Exclude" and "Detected Games", side by side in a `ScrollArea` with `fit`. In a window as large
+  as the sections, the tab shows them centered and no scroll bar. In a smaller window, such as on a screen 1366
+  pixels wide, a scroll bar shows for each axis that needs one. The layouts with Detected Games below the other
+  sections are narrower but taller than a screen 768 pixels high
+  ([task 044](../refinements/tasks/044-window-wider-than-small-screens.md)), so the tab scrolls instead. It
+  writes each change to `Settings` at once ([settings.md](settings.md)). "Reload" sets
+  `State.INVENTORY_FETCH` through `Twitch.state_change`, a full reload
+  ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)). "Rescan" and the folder buttons start
   `Twitch.detect_games` ([ADR-0004](../adr/ADR-0004-installed-game-detection.md)). The ➕ folder button opens
   the folder dialog in a child process through `FolderPicker` ([folderpicker.md](folderpicker.md)), and stays
   disabled while the dialog is open. Adding a list entry with `*` or `?` prints the games it matches
@@ -139,13 +144,22 @@ lists the problems.
 - It sets the colors of the ttk styles, defines the fonts and the named styles `Large.TButton`, `Arrow.TButton`,
   `Link.TLabel` and `MS.TLabel`, and writes Tk option database entries for the combobox drop-down lists.
 - Plain Tk widgets ignore ttk styles, so it calls `configure_theme` on the Output box, the four `PaddedListbox`
-  lists of the Settings tab and the inventory canvas.
+  lists of the Settings tab and the canvases of the Inventory and Settings tabs.
 - On Windows it sets the title bar color with `DwmSetWindowAttribute` (attribute 35, `DWMWA_CAPTION_COLOR`). On
   macOS it sets the app's `NSAppearance` to `DarkAqua` or `Aqua` through `AppKit`.
-- Last, it sets the window's minimum size to the size the window requests, because the fonts and paddings of
-  the theme change that size. In the preview on Linux the minimum is 1539 by 704 pixels in light mode and 1564
-  by 738 in dark mode, wider than a screen of 1366 pixels
-  ([task 044](../refinements/tasks/044-window-wider-than-small-screens.md)).
+- Last, it sets the window's minimum size to the size the window requests while the Settings tab's area is
+  `collapsed()`, because the fonts and paddings of the theme change that size. The Settings tab scrolls, so the
+  widest tab that cannot scroll, the Main tab, sets the minimum. In the preview on Linux the minimum is 867 by
+  704 pixels in light mode and 880 by 738 in dark mode. The Main tab can grow after that, for example with a
+  long channel name, and the minimum does not follow it
+  ([task 055](../refinements/tasks/055-minimum-window-size-misses-main-tab-growth.md)).
+
+After `apply_theme`, `GUIManager.__init__` calls `_fit_to_screen`. When the window requests more than
+`wm maxsize`, which Tk sets from the screen size (on X11, the screen less 15 by 30 pixels for the window
+frame), the window opens at `fitted_size` of the two and the Settings tab scrolls. Otherwise the window keeps
+following its requested size, so a large screen shows it as before. On a screen 1366 by 768 pixels the preview
+window is 1351 pixels wide. The Main tab sets the window's height, which is 738 pixels in dark mode, more than
+a screen 720 pixels high holds ([task 054](../refinements/tasks/054-window-taller-than-small-screens.md)).
 
 ## The preview
 
@@ -189,7 +203,7 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
   needs. It has no `detect_games`, `get_auth` or `_client_type`, so "Rescan", the ❌ folder button and a folder
   chosen with ➕ raise `AttributeError` in the preview.
 
-**Dependencies.** Repo modules: `translate`, `cache`, `gamelib`, `exceptions`, `folderpicker`, `mousewheel`,
+**Dependencies.** Repo modules: `translate`, `cache`, `gamelib`, `exceptions`, `folderpicker`, `scrollarea`,
 `utils`, `constants`, and `registry` on Windows; `twitch`, `channel`, `settings` and `inventory` for type
 checking only. Third-party: `pystray`, Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on Windows,
 `AppKit` on macOS, and `aiohttp` in the preview.

@@ -45,7 +45,7 @@ from gamelib import (
 )
 from exceptions import MinerException, ExitRequest
 from folderpicker import FolderPicker
-from mousewheel import wheel_events, wheel_scroll
+from scrollarea import ScrollArea, Size, fitted_size
 from utils import resource_path, set_root_icon, webopen, start_task, task_wrapper, Game, _T
 from constants import (
     MAX_INT,
@@ -1274,27 +1274,10 @@ class InventoryOverview:
             filter_frame, text=_("gui", "inventory", "filter", "refresh"), command=self.refresh
         ).grid(column=(icolumn := icolumn + 1), row=0)
         # Inventory view
-        self._canvas = tk.Canvas(master, scrollregion=(0, 0, 0, 0))
-        self._canvas.grid(column=0, row=1, sticky="nsew")
-        master.rowconfigure(1, weight=1)
-        master.columnconfigure(0, weight=1)
-        xscroll = ttk.Scrollbar(master, orient="horizontal", command=self._canvas.xview)
-        xscroll.grid(column=0, row=2, sticky="ew")
-        yscroll = ttk.Scrollbar(master, orient="vertical", command=self._canvas.yview)
-        yscroll.grid(column=1, row=1, sticky="ns")
-        self._canvas.configure(xscrollcommand=xscroll.set, yscrollcommand=yscroll.set)
-        self._canvas.bind("<Configure>", self._canvas_update)
-        self._main_frame = ttk.Frame(self._canvas)
-        self._wheel_events = wheel_events(self._canvas.tk.call("tk", "windowingsystem"))
-        self._canvas.bind("<Enter>", self._bind_wheel)
-        self._canvas.bind("<Leave>", self._unbind_wheel)
-        self._canvas.create_window(0, 0, anchor="nw", window=self._main_frame)
+        self._area = ScrollArea(master, row=1)
+        self._main_frame = self._area.inner
         self._campaigns: dict[DropsCampaign, CampaignDisplay] = {}
         self._drops: dict[str, ttk.Label] = {}
-
-    def configure_theme(self, *, bg: str):
-        # Canvas background needs manual control
-        self._canvas.configure(bg=bg)
 
     def _update_visibility(self, campaign: DropsCampaign):
         # True if the campaign is supposed to show, False makes it hidden.
@@ -1350,26 +1333,7 @@ class InventoryOverview:
             status_label.config(text=status_text, foreground=status_color)
             # visibility
             self._update_visibility(campaign)
-        self._canvas_update()
-
-    def _canvas_update(self, event: tk.Event[tk.Canvas] | None = None):
-        self._canvas.update_idletasks()
-        self._canvas.configure(scrollregion=self._canvas.bbox("all"))
-
-    def _bind_wheel(self, event: tk.Event[tk.Canvas]) -> None:
-        for sequence in self._wheel_events:
-            self._canvas.bind_all(sequence, self._on_mousewheel)
-
-    def _unbind_wheel(self, event: tk.Event[tk.Canvas]) -> None:
-        for sequence in self._wheel_events:
-            self._canvas.unbind_all(sequence)
-
-    def _on_mousewheel(self, event: tk.Event[tk.Misc]) -> None:
-        scroll = wheel_scroll(event.delta, event.num, event.state)
-        if scroll.axis == "x":
-            self._canvas.xview_scroll(scroll.units, "units")
-        else:
-            self._canvas.yview_scroll(scroll.units, "units")
+        self._area.update_region()
 
     async def add_campaign(self, campaign: DropsCampaign) -> None:
         campaign_frame = ttk.Frame(self._main_frame, relief="ridge", borderwidth=1, padding=4)
@@ -1473,7 +1437,7 @@ class InventoryOverview:
             label.grid(column=0, row=1)
         if self._manager.tabs.current_tab() == 1:
             self._update_visibility(campaign)
-            self._canvas_update()
+            self._area.update_region()
 
     def clear(self) -> None:
         for child in self._main_frame.winfo_children():
@@ -1631,11 +1595,9 @@ class SettingsPanel:
             ),
         }
         self._game_names: set[str] = set()
-        master.rowconfigure(0, weight=1)
-        master.columnconfigure(0, weight=1)
-        # use a frame to center the content within the tab
-        center_frame = ttk.Frame(master)
-        center_frame.grid(column=0, row=0)
+        # the content scrolls in a window smaller than it, so it does not set the minimum window size
+        self._area = ScrollArea(master, row=0, fit=True)
+        center_frame = self._area.inner
 
         # Mining summary section
         # NOTE: spans the full width above the other sections, filling what would
@@ -2592,6 +2554,7 @@ class GUIManager:
         except Exception:
             self._orig_theme_name = ''
         self.apply_theme(self._twitch.settings.dark_mode)
+        self._fit_to_screen()
         # stay hidden in tray if needed, otherwise show the window when everything's ready
         if self._twitch.settings.tray and sys.platform != "darwin":
             # NOTE: this starts the tray icon thread
@@ -2934,8 +2897,9 @@ class GUIManager:
         self.settings._game_dirs_list.configure_theme(
             bg=surface, fg=fg, sel_bg=sel_bg, sel_fg=sel_fg
         )
-        # Inventory canvas
-        self.inv.configure_theme(bg=bg)
+        # Inventory and Settings canvases
+        self.inv._area.configure_theme(bg=bg)
+        self.settings._area.configure_theme(bg=bg)
 
         # Tk option database for selection/popup list readability (affects Tk-backed widgets)
         # Global selection colors and listbox defaults (covers Combobox dropdown)
@@ -2972,9 +2936,20 @@ class GUIManager:
         else:
             # Reset to system default title bar color
             self._set_title_bar_color(0xFFFFFFFF)
-        # the theme sets the fonts and paddings, so the minimum window size follows it
-        self._root.update_idletasks()
-        self._root.minsize(width=self._root.winfo_reqwidth(), height=self._root.winfo_reqheight())
+        # the theme sets the fonts and paddings, so the minimum window size follows it. The Settings tab scrolls, so
+        # its content is left out of the minimum.
+        with self.settings._area.collapsed():
+            self._root.update_idletasks()
+            self._root.minsize(width=self._root.winfo_reqwidth(), height=self._root.winfo_reqheight())
+
+    def _fit_to_screen(self) -> None:
+        """Shrink the window to the largest size Tk allows on the screen, when it requests more."""
+        root = self._root
+        root.update_idletasks()
+        wanted = Size(root.winfo_reqwidth(), root.winfo_reqheight())
+        size = fitted_size(wanted, Size(*root.minsize()), Size(*root.maxsize()))
+        if size != wanted:
+            root.geometry(f"{size.width}x{size.height}")
 
 
 ###################

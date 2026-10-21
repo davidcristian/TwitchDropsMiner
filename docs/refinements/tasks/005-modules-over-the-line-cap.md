@@ -13,7 +13,7 @@ for the split now.
 
 | Module | Lines |
 | --- | --- |
-| `gui.py` | 3244 |
+| `gui.py` | 3219 |
 | `twitch.py` | 1629 |
 | `translate.py` | 597 |
 | `constants.py` | 519 |
@@ -34,11 +34,11 @@ Line counts are of the class or block today.
     `LinkLabel`, `SelectMenu` and `SelectCombobox`, about 330 lines together.
   - The Main tab panels: `StatusBar`, `WebsocketStatus`, `LoginForm`, `CampaignProgress` (163),
     `ConsoleOutput` and `ChannelList` (239).
-  - `TrayIcon` (126), `InventoryOverview` (320) and `HelpTab` (103), one module each.
-  - `SettingsPanel` (809), which is over the cap by itself. Its `__init__` is 380 lines and builds each frame:
+  - `TrayIcon` (126), `InventoryOverview` (284) and `HelpTab` (103), one module each.
+  - `SettingsPanel` (807), which is over the cap by itself. Its `__init__` is 378 lines and builds each frame:
     Games Being Mined, General, Advanced, Priority, Exclude, Detected Games and the Reload row. Each frame can
     become its own class.
-  - `GUIManager` (501), of which `apply_theme` is 213 lines and can move to a theme module.
+  - `GUIManager` (514), of which `apply_theme` is 216 lines and can move to a theme module.
   - The mock under `if __name__ == "__main__":` (260). Moving it to its own preview script changes the
     `python gui.py` command that AGENTS.md and `docs/building.md` give.
 - **`twitch.py`**
@@ -87,3 +87,5 @@ Splits cost no Twitch requests.
   the line counts instead of giving their own.
 - 2026-10-21: Measured `gui.py` again after the game folder dialog moved to a child process. The logic went to
   the new module `folderpicker.py`.
+- 2026-10-21: Measured `gui.py` again after the Settings tab started to scroll. The scrolling canvas of the
+  Inventory tab moved to the new module `scrollarea.py`, which both tabs use.

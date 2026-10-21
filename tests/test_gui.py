@@ -40,11 +40,11 @@ def inventory_tops(gui: GUIManager, sequences: list[str]) -> list[float]:
     ttk.Frame(inventory._main_frame, height=5000).grid()
     gui.tabs._nb.select(1)
     gui._root.update()
-    inventory._canvas_update()
+    inventory._area.update_region()
     tops = []
     for sequence in sequences:
-        inventory._canvas.event_generate(sequence)
-        tops.append(inventory._canvas.yview()[0])
+        inventory._area.canvas.event_generate(sequence)
+        tops.append(inventory._area.canvas.yview()[0])
     return tops
 
 
@@ -180,22 +180,57 @@ def test_the_tray_title_keeps_the_line_break_after_a_shortened_game_name(window)
 
 
 @pytest.mark.parametrize("dark", [False, True])
-def test_the_minimum_window_size_is_the_size_of_the_current_theme(window, dark):
+def test_the_minimum_window_size_is_the_size_of_the_current_theme_without_the_settings_tab(window, dark):
     fake = FakeTwitch()
     fake.settings.dark_mode = dark
     gui = window(fake)
-    root = gui._root
+    root, notebook = gui._root, gui.tabs._nb
 
-    def minimum_and_requested() -> tuple[tuple[int, int], tuple[int, int]]:
+    def minimum_and_requested_without_settings() -> tuple[tuple[int, int], tuple[int, int]]:
+        pane, text = notebook.tabs()[2], notebook.tab(2, "text")
+        notebook.forget(2)
         root.update_idletasks()
-        return root.minsize(), (root.winfo_reqwidth(), root.winfo_reqheight())
+        requested = (root.winfo_reqwidth(), root.winfo_reqheight())
+        notebook.insert(2, pane, text=text, sticky="nsew")
+        return root.minsize(), requested
 
-    at_start = minimum_and_requested()
+    at_start = minimum_and_requested_without_settings()
     gui.apply_theme(not dark)
-    after_the_change = minimum_and_requested()
+    after_the_change = minimum_and_requested_without_settings()
 
     assert at_start[0] == at_start[1]
     assert after_the_change[0] == after_the_change[1]
+
+
+def test_the_window_opens_at_its_requested_size_cut_to_the_largest_size_tk_allows(window):
+    root = window(FakeTwitch())._root
+    root.update()
+    largest = root.maxsize()
+
+    assert (root.winfo_width(), root.winfo_height()) == (
+        min(root.winfo_reqwidth(), largest[0]),
+        min(root.winfo_reqheight(), largest[1]),
+    )
+
+
+def test_the_settings_tab_in_a_small_window_scrolls_to_the_end_of_its_content(window):
+    gui = window(FakeTwitch())
+    root, area = gui._root, gui.settings._area
+    root.minsize(1, 1)
+    root.geometry("700x400")
+    gui.tabs._nb.select(2)
+    root.update()
+    canvas, content = area.canvas, (area.inner.winfo_reqwidth(), area.inner.winfo_reqheight())
+    canvas.xview_moveto(1)
+    canvas.yview_moveto(1)
+    root.update()
+    button = gui.settings._game_dir_add_button
+    corner = (button.winfo_rootx() + button.winfo_width(), button.winfo_rooty() + button.winfo_height())
+
+    assert canvas.cget("scrollregion") == f"0 0 {content[0]} {content[1]}"
+    assert (canvas.canvasx(canvas.winfo_width()), canvas.canvasy(canvas.winfo_height())) == content
+    assert canvas.winfo_rootx() < corner[0] <= canvas.winfo_rootx() + canvas.winfo_width()
+    assert canvas.winfo_rooty() < corner[1] <= canvas.winfo_rooty() + canvas.winfo_height()
 
 
 @pytest.mark.skipif(tk.TkVersion >= 9, reason="Tk 9 sends a wheel turn on X11 as <MouseWheel>")

@@ -1,7 +1,7 @@
 # `mousewheel.py`
 
-**Purpose.** The Inventory tab scrolls a plain `tk.Canvas`, which has no wheel bindings of its own, so
-`InventoryOverview` in `gui.py` binds the wheel itself ([gui.md](gui.md#the-window)). Each windowing system
+**Purpose.** The Inventory and Settings tabs scroll a plain `tk.Canvas`, which has no wheel bindings of its
+own, so `ScrollArea` binds the wheel itself ([scrollarea.md](scrollarea.md)). Each windowing system
 reports a wheel turn as a different event, and this module holds that difference. It imports no other module of
 the app and no tkinter, so `tests/test_mousewheel.py` runs it with plain values.
 

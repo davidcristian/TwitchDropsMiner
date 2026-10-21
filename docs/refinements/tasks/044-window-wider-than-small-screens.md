@@ -1,6 +1,6 @@
 # The window is wider than a screen of 1366 pixels
 
-**Status:** open
+**Status:** done 2026-10-21
 **Area:** gui (`SettingsPanel`)
 **Origin:** Found on 2026-10-21: the minimum window size was measured after the theme was applied
 **Verified:** 2026-10-21
@@ -37,3 +37,11 @@ a Twitch request.
 
 - 2026-10-21: Opened. The minimum window size moved to the end of `apply_theme`, and two other layouts for
   Detected Games were measured and not taken.
+- 2026-10-21: Closed. The Settings tab keeps its layout and scrolls in a `ScrollArea` from the new module
+  `scrollarea.py`, which the Inventory tab also uses. The minimum size leaves the Settings tab out, and a window
+  larger than `wm maxsize` opens at that size. Under Xvfb with the network blocked, on a screen 1366 by 768, the
+  minimum is 867 by 704 in light mode and 880 by 738 in dark mode, the window is 1351 by 704 and 1351 by 738,
+  and all 30 widgets of the Settings tab scroll into view. On 1920 by 1080 the window and the Settings tab are
+  the same as before, with no scroll bar. Windows and macOS were not run. The height on a screen 720 pixels
+  high went to [054](054-window-taller-than-small-screens.md), and the minimum after the Main tab grows to
+  [055](055-minimum-window-size-misses-main-tab-growth.md).
