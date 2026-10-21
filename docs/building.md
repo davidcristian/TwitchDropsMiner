@@ -29,7 +29,7 @@ Run `setup_env.bat` on Windows or `./setup_env.sh` on Linux and macOS. The scrip
    `constraints.txt` ([Exact versions](#exact-versions)).
 
 Run the script again after `requirements.txt` or `constraints.txt` changes. It keeps the existing `env/` and
-installs the new packages and versions.
+installs the new packages and versions. `setup_env.sh` exits with 0 after a successful setup.
 
 ## Run from source
 
@@ -122,7 +122,7 @@ Run `build.bat` on Windows or `./build.sh` on Linux and macOS. The script:
 
 The executable ends up in `dist/`, and PyInstaller keeps its intermediate files in `build/`. PyInstaller creates
 both in the current folder, so run the script from the repository folder. Pass `--nopause` to either script to
-skip the `Press any key` prompts, for example when another script calls it.
+skip the `Press any key` prompts when another script calls it. `build.sh` exits with 0 after a successful build.
 
 `build.spec` finds `icons/` and `lang/` in its own folder, which PyInstaller passes to it as `SPECPATH`. It
 bundles every `lang/*.json` file except `English.json`, and the build fails with `FileNotFoundError` when

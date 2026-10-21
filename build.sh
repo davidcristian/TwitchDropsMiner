@@ -41,3 +41,4 @@ echo
 echo "Build completed successfully."
 echo
 [ "$1" != "--nopause" ] && read -p "Press any key to continue..."
+exit 0

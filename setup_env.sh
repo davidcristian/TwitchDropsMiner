@@ -34,3 +34,4 @@ echo
 echo "Environment setup completed successfully."
 echo
 read -p "Press any key to continue..."
+exit 0

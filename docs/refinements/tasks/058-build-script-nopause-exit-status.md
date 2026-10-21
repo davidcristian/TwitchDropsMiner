@@ -1,6 +1,6 @@
 # `build.sh --nopause` exits with status 1 after a successful build
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** build
 **Origin:** Found on 2026-10-21 while a local build checked `constraints.txt`: `./build.sh --nopause` printed
 `Build completed successfully.` and exited with status 1
@@ -23,3 +23,7 @@ a build with and without `--nopause`. None of this sends a Twitch request.
 ## History
 
 - 2026-10-22: Opened. Found while a local build with `build.sh` checked the versions in `constraints.txt`.
+- 2026-10-22: Done. The last line of `build.sh` set the status: the test of `$1` with `--nopause`, or the `read`
+  of the prompt when no input came. `build.sh` and `setup_env.sh`, whose last `read` failed the same way, now end
+  with `exit 0`. `tests/test_build_scripts.py` runs a copy of each with stub tools in `env/bin` and no input.
+  `build.bat` is unchanged and still unchecked on Windows.
