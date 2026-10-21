@@ -3,10 +3,8 @@ from __future__ import annotations
 import asyncio
 import math
 
-from fakes import FakeTwitch, campaign_data, drop_data
+from fakes import CLAIMED, FakeTwitch, campaign_data, drop_data
 from inventory import DropsCampaign, TimedDrop
-
-CLAIMED = {"data": {"claimDropRewards": {"status": "ELIGIBLE_FOR_ALL"}}}
 
 
 def totals(campaign: DropsCampaign) -> tuple[int, int, float, float]:

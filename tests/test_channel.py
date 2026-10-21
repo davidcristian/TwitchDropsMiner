@@ -8,11 +8,7 @@ from yarl import URL
 
 import channel as channel_module
 from channel import Channel
-from fakes import FakeResponse, FakeTwitch, HeldAnswer, settle, stream_user
-
-PLAYLIST = "https://video-weaver.example.invalid/v1/playlist/1.m3u8"
-USHER_LIST = f"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\n{PLAYLIST}\n"
-TOKEN = {"data": {"streamPlaybackAccessToken": {"value": "value", "signature": "signature"}}}
+from fakes import TOKEN, USHER_LIST, FakeResponse, FakeTwitch, HeldAnswer, settle, stream_user
 
 
 @pytest.fixture

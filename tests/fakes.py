@@ -23,6 +23,10 @@ GAME = {"id": "1", "name": "Game", "boxArtURL": "https://example.invalid/1-285x3
 START = "2020-01-01T00:00:00Z"
 END = "2099-01-01T00:00:00Z"
 NO_CAMPAIGNS = {"data": {"currentUser": {"dropCampaigns": []}}}
+CLAIMED = {"data": {"claimDropRewards": {"status": "ELIGIBLE_FOR_ALL"}}}
+TOKEN = {"data": {"streamPlaybackAccessToken": {"value": "value", "signature": "signature"}}}
+PLAYLIST = "https://video-weaver.example.invalid/v1/playlist/1.m3u8"
+USHER_LIST = f"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\n{PLAYLIST}\n"
 
 
 class FakeResponse:
@@ -272,12 +276,12 @@ def drop_data(drop_id: str, *, minutes: int = 120, watched: int = 0, claim_id: s
     }
 
 
-def campaign_data(drops: list[JsonType]) -> JsonType:
+def campaign_data(drops: list[JsonType], *, game: JsonType = GAME) -> JsonType:
     """Return an active campaign of a `DropCampaignDetails` response, with no ACL and a linked account."""
     return {
         "id": "c1",
         "name": "Campaign",
-        "game": GAME,
+        "game": game,
         "self": {"isAccountConnected": True},
         "accountLinkURL": "https://example.invalid/link",
         "startAt": START,
