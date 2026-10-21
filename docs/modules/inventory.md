@@ -141,8 +141,7 @@ minutes the campaign also displays its `first_drop`.
 - `TimedDrop.update_minutes` goes through the campaign, so every drop of a campaign changes by the same amount,
   within the limits under [Progress](#progress).
 - The only request is `ClaimDrop` through `Twitch.gql_request`. The rules can be called without Twitch, with a
-  stand-in `twitch` object that has `settings`, `gui` and `change_state`
-  ([task 003](../refinements/tasks/003-test-suite.md)).
+  fake `twitch` object that has `settings`, `gui` and `change_state`, as `tests/test_inventory.py` does.
 - The module is over the 300 line cap ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
 
 **Dependencies.** `channel` (`Channel`), `utils` (`Game`, `timestamp`), `exceptions` (`GQLException`),
