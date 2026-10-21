@@ -27,16 +27,19 @@ if __name__ == "__main__":
     import truststore
     truststore.inject_into_ssl()
 
-    from translate import _
+    from translate import _, save_template
     from twitch import Twitch
     from settings import Settings
     from version import __version__
     from instancelock import lock_file
     from utils import resource_path, set_root_icon
-    from constants import LOGGING_LEVELS, SELF_PATH, FILE_FORMATTER, LOG_PATH, LOCK_PATH
+    from constants import IS_PACKAGED, LOGGING_LEVELS, SELF_PATH, FILE_FORMATTER, LOG_PATH, LOCK_PATH
 
     if TYPE_CHECKING:
         from _typeshed import SupportsWrite
+
+    if not IS_PACKAGED:
+        save_template()
 
     warnings.simplefilter("default", ResourceWarning)
 

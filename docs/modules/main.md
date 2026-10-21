@@ -14,8 +14,8 @@ type checking only.
 3. `truststore.inject_into_ssl()`, so that TLS connections check certificates against the operating system's
    certificate store. It runs before `twitch` imports `aiohttp`, because `aiohttp/connector.py` creates its
    default SSL context when it is imported.
-4. The imports. Importing `translate` rewrites `lang/English.json` in a run from source
-   ([translate.md](translate.md)).
+4. The imports, then, in a run from source, `save_template()`, which rewrites `lang/English.json`
+   ([translate.md](translate.md#why-langenglishjson-is-rewritten-on-every-run-from-source)).
 5. `warnings.simplefilter("default", ResourceWarning)`, which shows the `ResourceWarning` for an unclosed
    resource, hidden by default, once per code location.
 6. On Linux, when `XMODIFIERS` is not set, it is set to `@im=none`. This turns off the X input method, which the

@@ -1,9 +1,9 @@
 # No test can import `translate` or a module that imports it
 
-**Status:** open
+**Status:** done 2026-10-21
 **Area:** translate, tests
 **Origin:** Found on 2026-10-20 when a test of `WebsocketPool.start` could not import `websocket.py`
-**Verified:** 2026-10-20
+**Verified:** 2026-10-21
 
 In a run from source, `Translator.__init__` writes `English.json` to `LANG_PATH` when `translate` is imported
 ([translate.md](../../modules/translate.md#why-langenglishjson-is-rewritten-on-every-run-from-source)).
@@ -29,3 +29,6 @@ No fix adds a request.
 
 - 2026-10-20: Opened. `WebsocketPool.start` was changed to return without waiting for a connection, and a test
   file that imported `websocket.py` failed with the error above.
+- 2026-10-21: Closed. `main.py` calls the new `save_template` at start, and importing `translate` writes no
+  file. `tests/test_imports.py` imports `translate`, `cache`, `gui`, `inventory`, `twitch` and `websocket`.
+  The test of `WebsocketPool.start` described above is not in the suite yet.

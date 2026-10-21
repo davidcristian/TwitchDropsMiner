@@ -1,0 +1,33 @@
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+from translate import default_translation, save_template
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def test_importing_translate_writes_no_file(tmp_path):
+    # constants.py puts the lang folder in the folder of sys.argv[0], which is the script here
+    (tmp_path / "lang").mkdir()
+    script = tmp_path / "start.py"
+    script.write_text("import translate\n", encoding="utf-8")
+
+    result = subprocess.run(
+        [sys.executable, str(script)],
+        capture_output=True, text=True, cwd=tmp_path, env={**os.environ, "PYTHONPATH": str(ROOT)},
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert sorted(path.relative_to(tmp_path).as_posix() for path in tmp_path.rglob("*")) == ["lang", "start.py"]
+
+
+def test_save_template_writes_the_english_strings(tmp_path):
+    save_template(tmp_path)
+
+    assert [path.name for path in tmp_path.iterdir()] == ["English.json"]
+    assert json.loads((tmp_path / "English.json").read_text(encoding="utf-8")) == default_translation

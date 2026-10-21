@@ -5,9 +5,11 @@ from typing import Any, TypedDict, TYPE_CHECKING
 
 from exceptions import MinerException
 from utils import json_load, json_save
-from constants import IS_PACKAGED, LANG_PATH, DEFAULT_LANG
+from constants import LANG_PATH, DEFAULT_LANG
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from typing_extensions import NotRequired
 
 
@@ -543,10 +545,6 @@ class Translator:
         self._langs: list[str] = []
         # start with (and always copy) the default translation
         self._translation: Translation = default_translation.copy()
-        # if we're in dev, update the template English.json file
-        if not IS_PACKAGED:
-            default_langpath = LANG_PATH.joinpath(f"{DEFAULT_LANG}.json")
-            json_save(default_langpath, default_translation)
         self._translation["language_name"] = DEFAULT_LANG
         # load available translation names
         for filepath in LANG_PATH.glob("*.json"):
@@ -594,6 +592,11 @@ class Translator:
                 f"{self.current} translation is missing the '{' -> '.join(path)}' translation key"
             )
         return v
+
+
+def save_template(folder: Path = LANG_PATH) -> None:
+    """Write the English strings to `English.json` in folder, as a template for a translator."""
+    json_save(folder.joinpath(f"{DEFAULT_LANG}.json"), default_translation)
 
 
 _ = Translator()

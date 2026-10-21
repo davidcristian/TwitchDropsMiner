@@ -65,8 +65,7 @@ Status box.
 When `clear_topics` is set, `WebsocketPool.stop` empties `websockets` after the connections have stopped. The
 next `add_topics` then creates only the connections it needs, and starts each one at once because the pool is
 running, as on the first run after launch. The fix removes requests and adds none. A test needs no Twitch
-connection: it replaces `start_nowait` as the second script did. No test can import `websocket.py` yet
-([task 040](040-tests-cannot-import-translate.md)).
+connection: it imports `websocket.py` and replaces `start_nowait` as the second script did.
 
 How it came about: `clear_topics` and its call in `shutdown()` came from the original project on 2022-09-17
 ("Add clear_topics to websocket stop" and "Hard-reload on integrity expiring during request"). Restart after a
@@ -78,3 +77,4 @@ fatal error added the third path through `shutdown()` on 2026-08-25.
   connections confirmed it, and reading `Twitch._run` showed when `remove_topics` stops the empty connections.
 - 2026-10-20: `WebsocketPool.start()` now calls `start_nowait()` on each connection and does not wait for it,
   and `Websocket.start` was removed. The empty connections still start, so the task stays open.
+- 2026-10-21: Importing `websocket.py` in a test no longer fails, so the fix can have a suite test.

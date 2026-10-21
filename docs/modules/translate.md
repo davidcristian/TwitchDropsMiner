@@ -42,6 +42,8 @@ with named fields, such as `"Watching: {channel}"`.
 - `_.current` is the name of the loaded language.
 - `_.set_language(language)` loads a language. It raises `ValueError` for a name not in `_.languages`. `main()`
   calls it once at start with the `language` setting, before the window is built ([main.md](main.md)).
+- `save_template(folder=LANG_PATH)` writes `default_translation` to `English.json` in `folder` with `json_save`.
+  An `OSError` from the write passes to the caller.
 
 ## How the language files are found and loaded
 
@@ -70,12 +72,16 @@ request and each push to `master`, parses each `lang/*.json` file to find such a
 
 ## Why `lang/English.json` is rewritten on every run from source
 
-In a run from source (`IS_PACKAGED` is false), `Translator.__init__` writes `default_translation` to
-`lang/English.json` each time `translate` is imported. The code comment calls the file a template: it always
-contains the current keys and English strings, for a translator to copy. The file is only generated output, so
-`.gitignore` lists it and `default_translation` stays the one place where English is edited. An edit to
-`lang/English.json` is overwritten on the next run. A packaged build does not write it, and `build.spec` leaves
-it out of the PyInstaller build.
+In a run from source (`IS_PACKAGED` is false), `main.py` calls `save_template()` at start, which writes
+`default_translation` to `lang/English.json`. The file is a template: it always contains the current keys and
+English strings, for a translator to copy. The file is only generated output, so `.gitignore` lists it and
+`default_translation` stays the one place where English is edited. An edit to `lang/English.json` is
+overwritten on the next run. A packaged build does not write it, and `build.spec` leaves it out of the
+PyInstaller build.
+
+Importing `translate` writes no file, so that a test can import it and the modules that import it: under
+pytest, `LANG_PATH` is in the folder of pytest itself, which has no `lang` folder. The GUI preview,
+`python gui.py`, does not write the file either.
 
 ## Invariants
 
@@ -96,4 +102,4 @@ it out of the PyInstaller build.
   ([task 008](../refinements/tasks/008-translations-for-new-strings.md)).
 
 **Dependencies.** Repo modules: `exceptions` (`MinerException`), `utils` (`json_load`, `json_save`) and
-`constants` (`IS_PACKAGED`, `LANG_PATH`, `DEFAULT_LANG`). No third-party package.
+`constants` (`LANG_PATH`, `DEFAULT_LANG`). No third-party package.

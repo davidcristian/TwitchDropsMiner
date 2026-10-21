@@ -119,4 +119,4 @@ the run with exit status 124. Open the PNG files in an image viewer, or with the
 - The screenshots show the changed widget as intended. The Inventory tab shows no campaign in the preview, also
   without any change, so an empty Inventory tab is not a failure.
 - The report for check 3 lists the commands and their output. The runs change no file that git tracks; they
-  rewrite the ignored `lang/English.json` and save two downloaded images into the ignored `cache/` folder.
+  save two downloaded images into the ignored `cache/` folder.
