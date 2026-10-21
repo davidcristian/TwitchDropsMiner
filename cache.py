@@ -5,8 +5,11 @@ from datetime import datetime, timedelta, timezone
 
 import json
 import logging
+from functools import partial
 from typing import Dict, TypedDict, NewType, TYPE_CHECKING
 
+from translate import _
+from savefiles import save_each
 from utils import json_load, json_save
 from imagedata import decode_image, png_mode
 from constants import URLType, CACHE_PATH, CACHE_DB
@@ -125,7 +128,14 @@ class ImageCache:
                 image = image.convert(png_mode(image.mode))
                 img_hash = self._hash(image)
                 self._images[img_hash] = image
-                image.save(CACHE_PATH / img_hash)
+                # the URL is mapped even when the save fails: this run keeps the image in memory,
+                # and the next run cannot load the file and downloads the image again
+                save_each(
+                    [partial(image.save, CACHE_PATH / img_hash)],
+                    lambda error: logger.error(
+                        _("error", "file_not_saved").format(file=f"{CACHE_PATH.name}/{img_hash}", error=error)
+                    ),
+                )
                 self._hashes[url] = {
                     "hash": img_hash,
                     "expires": self._new_expires()

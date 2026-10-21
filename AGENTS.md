@@ -54,7 +54,7 @@ burst of requests puts that account at risk.
 | `reconnect.py` | `ReconnectDelay`, the wait of a PubSub websocket before each reconnect |
 | `gqldata.py` | Reads GQL responses and leaves out the fields that a server error set to null |
 | `imagedata.py` | `decode_image`, which decodes a whole image download for `cache.py` or returns None for broken data, and `png_mode`, the mode to save it in |
-| `savefiles.py` | `save_each`, which runs the saves after an inventory fetch and reports a failed one instead of raising, and `UnsavedChanges`, which writes a file only when it has a change not saved yet |
+| `savefiles.py` | `save_each`, which runs saves during a run and reports a failed one instead of raising, `replace_file`, which writes a file through a second file so a failed write keeps the old one, and `UnsavedChanges`, which writes a file only when it has a change not saved yet |
 | `settingsdata.py` | `drop_non_text_items`, which removes the items that are not strings from the list and set settings at load |
 | `ratelimit.py` | `RateLimiter`, which limits how many GQL requests start in any second and how many are open at once |
 | `instancelock.py` | `lock_file`, the lock on `lock.file` that lets one copy of the app run per folder |

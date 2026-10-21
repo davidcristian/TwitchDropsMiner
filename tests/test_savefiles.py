@@ -1,8 +1,10 @@
 import errno
+from functools import partial
+from pathlib import Path
 
 import pytest
 
-from savefiles import UnsavedChanges, save_each
+from savefiles import UnsavedChanges, replace_file, save_each
 
 
 class FakeFile:
@@ -56,6 +58,94 @@ def test_save_each_passes_up_an_error_that_is_not_an_oserror_and_stops():
         save_each([file.save for file in files], reported.append)
     assert reported == []
     assert written == []
+
+
+class FakeSaver:
+    def __init__(self, contents: bytes, error: Exception | None = None) -> None:
+        self.contents = contents
+        self.error = error
+        self.paths: list[Path] = []
+
+    def save(self, path: Path) -> None:
+        self.paths.append(path)
+        if self.error is None:
+            path.write_bytes(self.contents)
+            return
+        path.write_bytes(self.contents[: len(self.contents) // 2])
+        raise self.error
+
+
+def test_replace_file_writes_a_second_file_in_the_same_folder_then_replaces_the_old_one(tmp_path):
+    path = tmp_path / "cookies.jar"
+    path.write_bytes(b"old login")
+    saver = FakeSaver(b"new login")
+    replace_file(path, saver.save)
+    assert saver.paths == [tmp_path / "cookies.jar.new"]
+    assert path.read_bytes() == b"new login"
+    assert sorted(tmp_path.iterdir()) == [path]
+
+
+def test_replace_file_creates_the_file_when_none_exists(tmp_path):
+    path = tmp_path / "cookies.jar"
+    replace_file(path, FakeSaver(b"first login").save)
+    assert path.read_bytes() == b"first login"
+    assert sorted(tmp_path.iterdir()) == [path]
+
+
+def test_replace_file_keeps_the_old_file_when_the_write_stops_halfway(tmp_path):
+    path = tmp_path / "cookies.jar"
+    path.write_bytes(b"old login")
+    full = OSError(errno.ENOSPC, "No space left on device")
+    with pytest.raises(OSError) as raised:
+        replace_file(path, FakeSaver(b"new login with more cookies", full).save)
+    assert raised.value is full
+    assert path.read_bytes() == b"old login"
+    assert sorted(tmp_path.iterdir()) == [path]
+
+
+def test_replace_file_leaves_no_file_when_the_first_write_fails(tmp_path):
+    path = tmp_path / "cookies.jar"
+    with pytest.raises(OSError):
+        replace_file(path, FakeSaver(b"first login", OSError(errno.ENOSPC, "No space left on device")).save)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_replace_file_deletes_the_second_file_when_the_rename_fails(tmp_path):
+    path = tmp_path / "cookies.jar"
+    path.mkdir()
+    (path / "inside").write_bytes(b"kept")
+    with pytest.raises(OSError):
+        replace_file(path, FakeSaver(b"new login").save)
+    assert (path / "inside").read_bytes() == b"kept"
+    assert sorted(tmp_path.iterdir()) == [path]
+
+
+def test_replace_file_passes_up_an_error_that_is_not_an_oserror_and_keeps_the_old_file(tmp_path):
+    path = tmp_path / "cookies.jar"
+    path.write_bytes(b"old login")
+    with pytest.raises(TypeError):
+        replace_file(path, FakeSaver(b"new login", TypeError("cannot write this value")).save)
+    assert path.read_bytes() == b"old login"
+    assert sorted(tmp_path.iterdir()) == [path]
+
+
+def test_replace_file_writes_over_a_second_file_left_by_a_killed_save(tmp_path):
+    path = tmp_path / "cookies.jar"
+    path.write_bytes(b"old login")
+    (tmp_path / "cookies.jar.new").write_bytes(b"cut")
+    replace_file(path, FakeSaver(b"new login").save)
+    assert path.read_bytes() == b"new login"
+    assert sorted(tmp_path.iterdir()) == [path]
+
+
+def test_save_each_with_replace_file_reports_a_full_disk_and_keeps_the_old_file(tmp_path):
+    path = tmp_path / "cookies.jar"
+    path.write_bytes(b"old login")
+    full = OSError(errno.ENOSPC, "No space left on device")
+    reported: list[OSError] = []
+    save_each([partial(replace_file, path, FakeSaver(b"new login", full).save)], reported.append)
+    assert reported == [full]
+    assert path.read_bytes() == b"old login"
 
 
 class WriteCounter:

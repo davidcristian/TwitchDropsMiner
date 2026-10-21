@@ -15,7 +15,8 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
   On `ExitRequest` it returns. Any other exception goes to the [restart](#restart-after-a-fatal-error).
 - `await shutdown()` stops watching, the tasks, the online checks of the channels and the websockets, saves
   `cookies.jar`, closes the HTTP session and clears the run's data and the channel list in the window. It takes
-  at least half a second, so aiohttp can close the session.
+  at least half a second, so aiohttp can close the session. A failed save of `cookies.jar` is logged, and the
+  shutdown goes on ([savefiles.md](savefiles.md#saves-during-the-run-outside-the-inventory-fetch)).
 - `close()` sets `State.EXIT`, and `GUIManager.close` calls it. `prevent_close()` clears the GUI's close
   request, so the window stays open to show an error. `print(message)` writes to the Output box, and
   `save(force=False)` saves the GUI state and the settings; `main()` calls it at exit.
@@ -102,7 +103,10 @@ OAuth device code flow: it POSTs to `https://id.twitch.tv/oauth2/device`, shows 
 entered the code. An expired code raises `RequestInvalid`, and the flow starts again. A GET of
 `https://id.twitch.tv/oauth2/validate` returns `user_id`. After a 401 it clears the domain's cookies, and after
 a token for another client ID it deletes `cookies.jar`. In both cases it logs in again. Each of the two checks
-runs at most twice, then raises `RuntimeError`. At the end it saves the cookie jar.
+runs at most twice, then raises `RuntimeError`. At the end it saves the cookie jar with `save_cookies`, which
+writes a second file and renames it over `cookies.jar`. A save that raises `OSError`, such as on a full disk, is
+logged, the old `cookies.jar` stays whole and the login goes on
+([savefiles.md](savefiles.md#saves-during-the-run-outside-the-inventory-fetch)).
 
 When `cookies.jar` fails to load, `get_session` logs a warning with the error's class and text, empties the
 jar and goes on, so the login runs again. aiohttp reads a file that is not JSON as a pickle, so the error can

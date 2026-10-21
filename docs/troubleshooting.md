@@ -22,6 +22,11 @@ or `cache/mapping.json`, for example because the disk is full or another program
 keeps running and writes the files again at the next reload and when it closes. Free some disk space or close the
 other program, because a setting changed since the last save is lost when the app ends before a save succeeds.
 
+**"Could not save cookies.jar"** or **"Could not save cache/..."** in the Output box means the same for the login
+session or an image. The app keeps running. The old `cookies.jar` stays as it was, and the app saves the login
+again when it closes or restarts. You log in again at the next start only when no save succeeded and the old
+file holds no valid login. An image that could not be saved is downloaded again at the next start.
+
 ## Command line flags
 
 Add the flags after the program name, in a terminal or in a shortcut. For example:

@@ -19,7 +19,7 @@ from yarl import URL
 import gamelib
 from translate import _
 from redact import redact
-from savefiles import save_each
+from savefiles import save_each, replace_file
 from ratelimit import RateLimiter
 from gui import GUIManager
 from channel import Channel
@@ -78,6 +78,14 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("TwitchDrops")
 gql_logger = logging.getLogger("TwitchDrops.gql")
+
+
+def save_cookies(jar: aiohttp.CookieJar) -> None:
+    """Save the cookie jar to cookies.jar, or log the OSError of a failed save and keep the old file."""
+    save_each(
+        [partial(replace_file, COOKIES_PATH, jar.save)],
+        lambda error: logger.error(_("error", "file_not_saved").format(file=COOKIES_PATH.name, error=error)),
+    )
 
 
 class _AuthState:
@@ -275,7 +283,7 @@ class _AuthState:
             login_form.update(_("gui", "login", "logged_in"), self.user_id)
             # update our cookie and save it
             jar.update_cookies(cookie, client_info.CLIENT_URL)
-            jar.save(COOKIES_PATH)
+            save_cookies(jar)
         self._twitch.gui.help._invalidate_button.config(state="normal")
         self._logged_in.set()
 
@@ -373,7 +381,7 @@ class Twitch:
             for cookie_key, cookie in list(cookie_jar._cookies.items()):
                 if not cookie:
                     del cookie_jar._cookies[cookie_key]
-            cookie_jar.save(COOKIES_PATH)
+            save_cookies(cookie_jar)
             await self._session.close()
             self._session = None
         self._drops.clear()

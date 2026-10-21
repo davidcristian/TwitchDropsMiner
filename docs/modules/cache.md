@@ -58,6 +58,11 @@ entry names is deleted. A file that no entry names stays, unless `mapping.json` 
 | The body is an image cut off after its header | `decode_image` decodes the whole body and returns None ([imagedata.md](imagedata.md)), and `get()` uses the white image as for a body that is not an image |
 | The image has a mode that PNG cannot store, such as CMYK in a JPEG | `get()` converts it to RGB, or RGBA when it has transparency, before it hashes and saves it ([imagedata.md](imagedata.md)) |
 | The resize raises `OSError` | `get()` returns a white image of the size asked for |
+| Saving the image file raises `OSError`, such as on a full disk | `get()` logs `error.file_not_saved` with the file name through `save_each` ([savefiles.md](savefiles.md)), maps the URL and returns the image. Pillow can leave an empty or cut file |
+
+An image whose file was not saved stays in memory, so later `get()` calls in the run send no request. The
+mapping still names the file, so the next run cannot load it and downloads the image once. Leaving the URL out
+of the mapping would download the image again at every reload while the disk stays full.
 
 A white image saved for a failed download stays in place while the URL is still requested: each `get()` finds
 the mapped file and renews its date. The image is downloaded again only after the URL goes 7 days without a
@@ -72,5 +77,6 @@ request and its entry expires ([task 017](../refinements/tasks/017-failed-image-
   requests to the image host, not GQL, so the GQL `RateLimiter` does not count them.
 - Every `get()` marks the cache as changed, so the next `save()` writes the mapping.
 
-**Dependencies.** `utils` (`json_load`, `json_save`), `imagedata` (`decode_image`, `png_mode`), `constants`
-(`URLType`, `CACHE_PATH`, `CACHE_DB`) and Pillow. `gui.GUIManager` is imported for type checking only.
+**Dependencies.** `utils` (`json_load`, `json_save`), `imagedata` (`decode_image`, `png_mode`), `savefiles`
+(`save_each`), `translate` (`_`), `constants` (`URLType`, `CACHE_PATH`, `CACHE_DB`) and Pillow.
+`gui.GUIManager` is imported for type checking only.

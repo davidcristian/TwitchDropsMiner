@@ -1,7 +1,9 @@
 """Run the saves of the app's files during a run, where a failed save must not end the run."""
 from __future__ import annotations
 
+import os
 from collections import abc
+from pathlib import Path
 
 
 def save_each(saves: abc.Iterable[abc.Callable[[], None]], report: abc.Callable[[OSError], None]) -> None:
@@ -11,6 +13,16 @@ def save_each(saves: abc.Iterable[abc.Callable[[], None]], report: abc.Callable[
             save()
         except OSError as exc:
             report(exc)
+
+
+def replace_file(path: Path, write: abc.Callable[[Path], None]) -> None:
+    """Call write with a second path in the same folder, then replace path with the file written there."""
+    new_path = path.with_name(f"{path.name}.new")
+    try:
+        write(new_path)
+        os.replace(new_path, path)
+    finally:
+        new_path.unlink(missing_ok=True)
 
 
 class UnsavedChanges:

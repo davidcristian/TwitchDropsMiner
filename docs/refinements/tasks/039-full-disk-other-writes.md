@@ -1,10 +1,10 @@
 # On a full disk, the cookie and image writes still end the run
 
-**Status:** open
+**Status:** done 2026-10-21
 **Area:** twitch, cache
 **Origin:** Found on 2026-10-20 while a failed save after an inventory fetch was changed to be logged
 ([savefiles.md](../../modules/savefiles.md))
-**Verified:** 2026-10-20
+**Verified:** 2026-10-21
 
 `save_each` keeps the run going when the save of `settings.json` or `cache/mapping.json` raises `OSError`. Three
 other writes during a run have no such handling, and on a full disk each raises `OSError`:
@@ -38,3 +38,11 @@ login. A test needs the decision in a module that imports neither aiohttp nor Pi
 
 - 2026-10-20: Opened. While the save after an inventory fetch was changed to log an `OSError`, the app's other
   writes were run on a full disk.
+- 2026-10-21: Closed. `replace_file` in `savefiles.py` writes `cookies.jar.new` and renames it over
+  `cookies.jar`, and `save_cookies` in `twitch.py` runs it through `save_each` at the login and in `shutdown`.
+  `ImageCache.get` saves each image through `save_each` and maps the URL even when the save fails, so the run
+  uses the image in memory and the next run downloads it once. A failed save logs `error.file_not_saved`. With
+  stubs on an 8 KiB tmpfs, the login and `run()` raised `OSError` before and left a cut `cookies.jar` that did
+  not load, and `get()` raised. After, each logged the error, went on and kept the old `cookies.jar`.
+  A cookie save that fit in the space of the old file succeeded before and is now logged as failed, because
+  `cookies.jar.new` needs new space.
