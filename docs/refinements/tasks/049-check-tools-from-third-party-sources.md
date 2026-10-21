@@ -1,6 +1,6 @@
 # The `just` binary and a commit message hook are not checked against a hash
 
-**Status:** open
+**Status:** done 2026-10-21
 **Area:** repo checks, ci
 **Origin:** Found on 2026-10-21 while the dependency versions were listed: the metadata of `rust-just`
 1.58.0 in `env/` names `github.com/gnpaone/rust-just` as its repository
@@ -35,3 +35,9 @@ None of this sends a Twitch request.
 
 - 2026-10-21: Opened. Found while the dependency versions were listed and the source of `rust-just` was read
   from its metadata.
+- 2026-10-21: Closed. `.pre-commit-config.yaml` names the hook by the commit of `v4.4.0`, which
+  `git ls-remote` returned and the hook cache installed before this change held. The Validate job runs the
+  official `just` release of the `rust-just` version, checked against the hashes of its `SHA256SUMS` file,
+  and developers keep `rust-just` ([ADR-0012](../../adr/ADR-0012-check-command.md)). The step ran locally
+  with the Linux runner's variables, and `just check` passed with the `just` it installed. Its first run on
+  Windows and macOS is listed in [task 046](046-checks-run-only-on-linux-and-python-3-10.md).

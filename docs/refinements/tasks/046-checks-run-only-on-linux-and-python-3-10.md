@@ -29,6 +29,9 @@ Set `required: true` on the Windows and macOS entries when a pull request run sh
 - that the Python 3.10 of `actions/setup-python` has `tkinter` and a Tk that opens a window. Without `tkinter`,
   pytest fails to collect `tests/test_gui.py`; with a Tk that opens no window, the `display` fixture fails,
   because the `CI` variable is set.
+- that the step that installs the official `just` release passes in Git Bash on Windows and on macOS, with
+  its `sha256sum` or `shasum` check and its unpacking with Python, and that the next step, which runs in
+  PowerShell on Windows, finds `just.exe` in the folder that step adds to `GITHUB_PATH`.
 - whether checkout on Windows converts line endings to CRLF (`core.autocrlf`). On 2026-10-21, a checkout made
   with `core.autocrlf=true` on Linux passed every scan and the suite. The suite also passed with every text
   write ending its lines with CRLF, as Python does on Windows, except the two tests of a shell script hook,
@@ -76,3 +79,6 @@ None of this sends a Twitch request.
   display (1194 passed, 25 skipped), and `scripts/sources.py` read the same comments, docstrings and line
   numbers from every repo file as on 3.10.20 and 3.12.3. The task stays open until Windows and macOS are
   required.
+- 2026-10-21: The Validate job installs the official `just` release in place of `rust-just`
+  ([task 049](049-check-tools-from-third-party-sources.md)), so its first Windows and macOS run also shows
+  that step.

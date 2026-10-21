@@ -57,6 +57,8 @@ lint rules without its formatter or pyright.
 4. **Two commit-msg hooks check each commit message**: conventional-pre-commit for the type and format, and
    `scripts/commitlint.py` for the subject length and case, the body's width and word count, the banned words,
    the dashes, and numbered references and commit hashes. They run on the machine that commits, not in CI.
+   `.pre-commit-config.yaml` names conventional-pre-commit by the commit of its `v4.4.0` tag, with the tag in a
+   `# frozen:` comment, so a tag moved to other code does not change what runs.
    - A paste is read for the banned words and the references, as AGENTS.md says, and not for the width, the
      word count or the dashes.
    - A last paragraph of trailers is not counted as body words when each key is one that git, GitHub or
@@ -70,6 +72,11 @@ lint rules without its formatter or pyright.
 5. **The tool versions are set exactly in `requirements-dev.txt`,** which no build installs: `rust-just` (the `just` binary
    from PyPI, so one `pip install` sets up every tool on every OS), ruff, pytest, pytest-cov and pre-commit, each
    a release at least two weeks old when it was chosen.
+   - `rust-just` is a build of `just` by another person, from `github.com/gnpaone/rust-just`. The Validate job
+     removes it and runs the official release of the same version from `github.com/casey/just`, checked against
+     the SHA-256 that the release's `SHA256SUMS` file lists for each runner, written in `ci.yml`.
+   - Developers keep `rust-just`, because the pre-commit hook needs `just` on every machine and one
+     `pip install` sets it up on every OS.
 6. **`requirements-dev.txt` also installs the app's packages that the tests import**: the lines of
    `requirements.txt` without PyGObject, with the same version ranges and platform markers, so that the tests get
    the newest releases, as a build does. They get exact versions with the build dependencies
@@ -116,14 +123,12 @@ lint rules without its formatter or pyright.
 - Nothing checks that the app's packages in `requirements-dev.txt` match `requirements.txt`, so a change to one
   of those lines is made in both files.
 - Commits from upstream keep their own messages, and a commit made without the hooks is not checked.
-- Two tools come from a source that can change what runs under a fixed name, and nothing checks them against
-  a hash ([task 049](../refinements/tasks/049-check-tools-from-third-party-sources.md)):
-  - `rust-just` on PyPI is a build of `just` by another person: its metadata names `github.com/casey/just` as
-    the home page and `github.com/gnpaone/rust-just` as the repository. Its binary runs on every commit, with
-    the rights of the person who commits, and in the Validate job, whose token is read only and which passes
-    nothing to the builds. The exact version fixes the release, not the file a new upload could replace.
-  - `.pre-commit-config.yaml` names `conventional-pre-commit` by its tag, `v4.4.0`. A tag can be moved to other
-    code, which a machine that installs the hooks afterwards then runs on every commit message.
+- On a developer's machine, `just` comes from `rust-just` on PyPI, whose metadata names `github.com/casey/just`
+  as the home page and `github.com/gnpaone/rust-just` as the repository. pip checks no hash, so a file replaced
+  on PyPI under the same version is installed by the next `pip install`, and its binary runs on every commit
+  with the rights of the person who commits. CI does not run it.
+- The Validate job reads the `just` version from the `rust-just` line of `requirements-dev.txt`, so a new
+  version there fails the job until `ci.yml` has the hashes of that `just` release.
 - The hook does not see `--cleanup`, `commit.cleanup` or `core.commentChar`. With a cleanup mode other than
   git's default, it can skip a `#` line that git keeps, or read one that git removes.
 
@@ -136,11 +141,13 @@ lint rules without its formatter or pyright.
   code. The typing rules in AGENTS.md apply to new code, checked by reading.
 - **Checking commit messages in CI.** Commits taken from upstream keep their original style, so CI would fail on
   them.
-- **The official `just` binary with a checked hash, for now.** A release binary from `casey/just` on GitHub,
-  with its SHA-256 for each OS written in the repo and checked before it runs, removes the other person's
-  build. It needs a download step per OS in CI and in [building.md](../building.md#run-the-checks) in place of
-  one `pip install`. It replaces `rust-just` when that package stops following the `just` releases or changes
-  owner.
+- **The official `just` binary for developers too.** It removes the other person's build from every machine,
+  but needs a download and a hash check for each OS in [building.md](../building.md#run-the-checks) in place
+  of one `pip install`. It replaces `rust-just` there when that package stops following the `just` releases or
+  changes owner.
+- **`rust-just` with a hash in `requirements-dev.txt`.** pip's hash mode needs a hash for every package the
+  file installs, for each OS and Python; [task 048](../refinements/tasks/048-builds-install-the-newest-dependencies.md)
+  weighs that for the builds.
 - **Every Python from 3.10 to 3.14 on every runner.** That is fifteen runs for each push. 3.10 is the oldest
   Python the app supports and 3.14 the Python of the releases; 3.11 to 3.13 are neither.
 - **Windows and macOS required from their first run.** They had never run, and a test written for Linux that
@@ -155,4 +162,5 @@ lint rules without its formatter or pyright.
 - Tasks [004](../refinements/tasks/004-single-check-command.md) (closed by this record),
   [005](../refinements/tasks/005-modules-over-the-line-cap.md) (the modules over the limit),
   [046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md) (the Windows and macOS runs) and
-  [049](../refinements/tasks/049-check-tools-from-third-party-sources.md) (the sources of `just` and a hook).
+  [049](../refinements/tasks/049-check-tools-from-third-party-sources.md) (the sources of `just` and a hook,
+  closed by the official `just` in CI and the hook's commit).

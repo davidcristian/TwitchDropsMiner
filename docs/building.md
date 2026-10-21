@@ -102,6 +102,12 @@ source ~/tdm-validate/bin/activate
 env -u DISPLAY -u WAYLAND_DISPLAY just check
 ```
 
+In place of the `rust-just` package, a build of `just` by another person, the Validate job runs the official
+`just` release of the same version from `github.com/casey/just`, checked against a SHA-256 in `ci.yml`
+([ADR-0012](adr/ADR-0012-check-command.md)). To change the `just` version, change the `rust-just` line in
+`requirements-dev.txt` and the three hashes in `ci.yml` together, with the hashes from the release's
+`SHA256SUMS` file.
+
 ## Build the executable with PyInstaller
 
 Run `build.bat` on Windows or `./build.sh` on Linux and macOS. The script:

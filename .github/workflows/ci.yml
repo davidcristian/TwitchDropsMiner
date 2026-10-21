@@ -60,6 +60,41 @@ jobs:
       - name: Install the check tools and the app's packages
         run: python -m pip install -r requirements-dev.txt
 
+      # requirements-dev.txt installs `just` from rust-just, a build by another person, for developers. CI runs the
+      # official release of the same version instead, checked against the hashes in that release's SHA256SUMS.
+      - name: Install the official just release
+        shell: bash
+        run: |
+          python -m pip uninstall --yes rust-just
+          version="$(sed -n 's/^rust-just==//p' requirements-dev.txt | tr -d '\r')"
+          check=(sha256sum -c -)
+          case "${RUNNER_OS}-${RUNNER_ARCH}" in
+            Linux-X64)
+              asset="just-${version}-x86_64-unknown-linux-musl.tar.gz"
+              sha256=4a5cc2f53e6f0f8c59092a6cc38291eb729d46a7dd95d3ae582008881b84931d
+              ;;
+            macOS-ARM64)
+              asset="just-${version}-aarch64-apple-darwin.tar.gz"
+              sha256=50ae3e996c974a0bf32ea7d10f495070df33f1b43e0616b2769e3d4821ed8f48
+              check=(shasum -a 256 -c -)
+              ;;
+            Windows-X64)
+              asset="just-${version}-x86_64-pc-windows-msvc.zip"
+              sha256=759f16fb7aa17c5c8b9594b6d4a8c1a6630dfd042cf2b3ff84841454d3d188dc
+              ;;
+            *)
+              echo "No just release is set for ${RUNNER_OS}-${RUNNER_ARCH}" >&2
+              exit 1
+              ;;
+          esac
+          mkdir "${RUNNER_TEMP}/just"
+          cd "${RUNNER_TEMP}/just"
+          curl -fsSL "https://github.com/casey/just/releases/download/${version}/${asset}" -o "${asset}"
+          echo "${sha256}  ${asset}" | "${check[@]}"
+          python -c 'import shutil, sys; shutil.unpack_archive(sys.argv[1])' "${asset}"
+          ./just --version
+          echo "${RUNNER_TEMP}/just" >> "${GITHUB_PATH}"
+
       - name: Run the checks
         run: just check
 
