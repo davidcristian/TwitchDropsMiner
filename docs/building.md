@@ -149,10 +149,18 @@ A new package folder must be added to the recipe's `cp` and `compileall` lines, 
 CI runs on every push to `master`, on every pull request and when it is started by hand. It builds for
 Windows, macOS, Linux with PyInstaller and Linux as an AppImage, both Linux builds for `x86_64` and `aarch64`,
 and appends the short commit hash to the version in `version.py`. Each build's zip file contains a
-`Twitch Drops Miner` folder with the build, `manual.txt`, `LICENSE` and `LICENSE.MIT`. After a run that is not
-for a pull request, CI replaces the `dev-build` pre-release on the
-[Releases page](https://github.com/davidcristian/TwitchDropsMiner/releases) with the new builds. A pull request
-builds but publishes nothing.
+`Twitch Drops Miner` folder with the build, `manual.txt`, `LICENSE` and `LICENSE.MIT`. After a run on `master`,
+from a push or started by hand, CI replaces the `dev-build` pre-release on the
+[Releases page](https://github.com/davidcristian/TwitchDropsMiner/releases) with the new builds and sets the
+`dev-build` tag to the commit it built. A run for a pull request, or started by hand on another branch, builds
+but publishes nothing.
+
+GitHub runs one run at a time in each concurrency group, and the workflow's `concurrency` key sets one group
+per branch or pull request. A new run on a branch or pull request cancels the one in progress. A new run on
+`master` waits for it instead, because a cancelled release job can stop after it deletes the pre-release and
+before it creates the new one. GitHub keeps only the newest waiting run of a group, so the pre-release ends up
+with the builds of the newest commit. The release job also has its own `dev-build` group, which never cancels,
+so two release jobs never replace the pre-release at the same time.
 
 The workflow sets `permissions: contents: read`, so its token can read the repository and nothing more,
 whatever default the repository settings give the token. Only the release job, `update_releases_page`, sets

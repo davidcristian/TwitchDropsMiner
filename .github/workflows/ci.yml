@@ -10,6 +10,12 @@ on:
 permissions:
   contents: read
 
+# A run on master is not cancelled once it starts: its release job could stop after it deletes the pre-release
+# and before it creates the new one. A newer run on master waits instead.
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: ${{github.ref != 'refs/heads/master'}}
+
 env:
   PYTHON_VERSION: "3.10"
   USE_UPX: false
@@ -300,7 +306,10 @@ jobs:
 
   update_releases_page:
     name: Upload builds to Releases
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    concurrency:
+      group: dev-build
+      cancel-in-progress: false
     needs:
       - windows
       - linux-pyinstaller
@@ -338,6 +347,7 @@ jobs:
           allowUpdates: true
           artifactErrorsFailBuild: true
           artifacts: artifacts/*/*
+          commit: ${{github.sha}}
           body: |
             **This is an automatically generated in-development pre-release version of the application, that includes the latest master branch changes.**
             **⚠️ This build is not stable and may end up terminating with a fatal error. ⚠️**
