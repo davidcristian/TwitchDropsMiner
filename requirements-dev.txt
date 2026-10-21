@@ -1,9 +1,12 @@
-# The tools `just check` runs. Builds install requirements.txt only.
+# The tools `just check` runs, and the app's packages that the tests import. Builds install requirements.txt only.
 pre-commit==4.6.2
 pytest==9.1.1
 pytest-cov==7.1.0
 ruff==0.16.10
 rust-just==1.58.0
-# redact.py and constants.py import yarl, which requirements.txt installs with aiohttp. It has no version,
-# as a build gets the newest release with aiohttp.
-yarl
+# The lines of requirements.txt without PyGObject and pywin32, which no test needs. A change to one of these lines
+# there is made here too.
+aiohttp>=3.9,<4.0
+Pillow
+pystray
+truststore

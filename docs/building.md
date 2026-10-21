@@ -60,7 +60,8 @@ display, see [runbooks/gui-preview-headless.md](runbooks/gui-preview-headless.md
 
 `just check` runs every check that a change must pass, as listed in
 [AGENTS.md](../AGENTS.md#what-every-change-must-pass). Its tools are in `requirements-dev.txt`, which no build
-installs. Install them into `env/` once, then activate the environment so that `just` and the recipes use its
+installs, with the app's packages that the tests import: the lines of `requirements.txt` without PyGObject and
+pywin32. Install them into `env/` once, then activate the environment so that `just` and the recipes use its
 Python:
 
 ```bash
@@ -82,7 +83,16 @@ pre-commit install
 
 The Validate job in CI installs `requirements-dev.txt` on Python 3.10 and runs `just check`, and the build jobs
 start only when it passes. It runs on Ubuntu only. [Task 046](refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)
-lists what running it on Windows, macOS and Python 3.14 needs.
+lists what running it on Windows, macOS and Python 3.14 needs. It has no display and no PyGObject, so to run the
+checks as it does, use a new virtual environment on Python 3.10 with `requirements-dev.txt` alone, outside the
+repository folder, and unset `DISPLAY`:
+
+```bash
+python3.10 -m venv ~/tdm-validate
+~/tdm-validate/bin/python -m pip install -r requirements-dev.txt
+source ~/tdm-validate/bin/activate
+env -u DISPLAY -u WAYLAND_DISPLAY just check
+```
 
 ## Build the executable with PyInstaller
 

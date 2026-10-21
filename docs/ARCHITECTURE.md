@@ -196,7 +196,7 @@ run_dev.bat            starts main.py from env/ on Windows, with or without a co
 pack.bat               zips dist\*.exe, manual.txt and the license files into "Twitch Drops Miner.zip" with 7z.exe
 manual.txt             command line flags and exit codes; every release build includes it
 requirements.txt       aiohttp, Pillow, pystray, PyGObject (Linux), pywin32 (Windows), truststore
-requirements-dev.txt   the tools of just check: just, ruff, pytest, pytest-cov, pre-commit; no build installs it
+requirements-dev.txt   the tools of just check, and the app's packages that the tests import; no build installs it
 justfile               the recipes of just check, one per check
 pyproject.toml         the ruff, pytest and coverage settings; the app is not a package
 .pre-commit-config.yaml  the git hooks: just check before a commit, two checks of the commit message

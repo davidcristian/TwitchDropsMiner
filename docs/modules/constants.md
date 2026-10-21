@@ -178,8 +178,6 @@ on macOS and Linux) and does not commit the change. The AppImage job passes the 
 - `appimage/AppImageBuilder.yml` copies `constants.py` into the image, under `usr/src`. A recipe that put it
   outside the image would make the AppImage count as a run from source, which writes its files into the read
   only image and fails at startup.
-- The CI test job installs only `requirements-dev.txt` and imports this module, so it imports no package outside
-  that file and the standard library.
 - `PriorityMode` is stored in `settings.json` by its value under the type name `PriorityMode`
   ([utils.md](utils.md)). After a rename of the class, the setting falls back to its default on the next load.
   After a stored value is removed from the enum, loading the settings raises `ValueError` and the app does not

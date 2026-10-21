@@ -25,7 +25,7 @@ DOCUMENTED_SECRET_KEYS = (
 PROXY_BASIC_AUTH = "Basic dXNlcjpzM2NyZXQ="  # user:s3cret in base64
 
 
-# The name and fields of aiohttp's RequestInfo, because the CI test job does not install aiohttp.
+# The name and fields of aiohttp's RequestInfo, by which redact.py finds it
 class RequestInfo(NamedTuple):
     url: URL
     method: str

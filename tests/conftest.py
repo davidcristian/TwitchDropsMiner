@@ -10,6 +10,9 @@ import pytest
 
 from gitrepo import isolate_git
 
+# pystray picks its tray backend when gui.py imports it. The others need GTK or a display, which CI does not have.
+os.environ["PYSTRAY_BACKEND"] = "dummy"
+
 
 @pytest.fixture(autouse=True)
 def isolated_git(monkeypatch, tmp_path_factory):

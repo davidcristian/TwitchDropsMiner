@@ -4,7 +4,7 @@
 **Area:** utils, settings, tests
 **Origin:** [ADR-0013](../../adr/ADR-0013-test-standard.md), and the candidates of
 [task 003](003-test-suite.md)
-**Verified:** 2026-10-20
+**Verified:** 2026-10-21
 
 The test suite covers `redact`, `reconnect`, `gamelib`, `gqldata`, `imagedata`, `savefiles`, `ratelimit`,
 `instancelock` and `scripts/`. Two candidates of task 003 are left: the helpers in `utils.py` and the loading of
@@ -20,15 +20,13 @@ The test suite covers `redact`, `reconnect`, `gamelib`, `gqldata`, `imagedata`, 
 ## Cost
 
 `utils.py` imports `tkinter`, `PIL.ImageTk` and `yarl` when it loads, and `settings.py` imports `utils`. The
-Validate job in CI installs only `requirements-dev.txt`, which has none of them except `yarl`. Two ways to test
-them:
+Validate job in CI installs Pillow and `yarl` with `requirements-dev.txt`, and its Python has `tkinter`, so a
+test can import both modules as they are.
 
-- **Install `requirements.txt` in the Validate job.** On Ubuntu that needs the system packages that
-  [building.md](../../building.md#requirements) lists, because pip builds PyGObject from source, and a Python
-  with `tkinter`. The tests then need no change to the code.
-- **Split `utils.py` first** ([task 005](005-modules-over-the-line-cap.md)). The JSON helpers,
-  `ExponentialBackoff` and the task helpers need neither `tkinter` nor Pillow, so as modules of their own they
-  can be tested with the standard library and `yarl` alone, and added to the coverage list in `pyproject.toml`.
+Neither module is in the coverage list in `pyproject.toml`, which holds the modules that need neither Twitch
+nor a display. Splitting `utils.py` ([task 005](005-modules-over-the-line-cap.md)) would put the JSON helpers,
+`ExponentialBackoff` and the task helpers, which need neither `tkinter` nor Pillow, in modules that the list can
+include.
 
 Twitch requests: none.
 
@@ -43,3 +41,5 @@ Twitch requests: none.
 - 2026-10-21: The check that removes the items that are not strings from the list and set settings after the
   load is in the new module `settingsdata.py`, which `tests/test_settingsdata.py` tests. `json_load`,
   `json_save` and `merge_json` still have no tests.
+- 2026-10-21: The Validate job installs the app's packages except PyGObject and pywin32, and
+  `tests/test_imports.py` imports `utils` and `settings`. Their logic still has no tests.

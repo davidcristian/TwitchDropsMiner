@@ -116,7 +116,8 @@ fields of `lang/*.json`), ruff (the rules in `pyproject.toml`), `linecap.py` (th
 `prosecheck.py` (the Prose rules a script can read), `docscheck.py` (the links between docs, line numbers, the two
 indexes and the record formats), `rostercheck.py` (the module map, the module docs, the settings keys, the `gui.py`
 mock and this list), and pytest over `tests/`, which fails below 80% branch coverage of the modules `pyproject.toml`
-lists. No check finds 3.11+ names such as `typing.Self` and `tomllib`, which fail only on import: avoid them.
+lists. A 3.11+ name such as `typing.Self` or `tomllib` fails only when its line runs, so only the Validate job on
+Python 3.10 finds it, and only where a test imports or calls it: avoid them.
 
 The rest is checked by hand, and the report of a change shows the output of each:
 
@@ -129,7 +130,8 @@ The rest is checked by hand, and the report of a change shows the output of each
    on Linux without a display.
 3. Logic that needs Twitch is called with stubbed inputs, and the inputs and results are shown.
 4. No new dependency unless the standard library cannot do the job. Every build installs `requirements.txt`; the
-   tools `just check` runs are in `requirements-dev.txt`, which no build installs.
+   tools `just check` runs are in `requirements-dev.txt`, which no build installs. It also lists the lines of
+   `requirements.txt` that the tests need, all but PyGObject and pywin32, so a change to one is made in both.
 5. No secrets in the repo or in logs. `cookies.jar` holds the login session; it, `settings.json`, `log.txt` and
    `dump.dat` are gitignored and are never committed or pasted. A log call that prints a request, a response or a
    websocket message passes it through `redact` in `redact.py` ([ADR-0011](docs/adr/ADR-0011-secrets-in-logs.md)).

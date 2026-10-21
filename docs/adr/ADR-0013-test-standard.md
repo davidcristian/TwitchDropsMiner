@@ -52,8 +52,9 @@ caller depends on, and chose rules about what tests assert plus a floor of 80% b
   `isolate_git` from `tests/gitrepo.py` itself first.
 - A branch that runs only on another OS, or only when a launcher is installed, counts as missed. The 20% margin
   leaves room for such branches without a test that fakes the OS.
-- `utils.py` and `settings.py` import `tkinter` and Pillow when they load, so their tests need
-  `requirements.txt` installed. They are not in the suite yet
+- The Validate job installs the app's packages except PyGObject and pywin32
+  ([ADR-0012](ADR-0012-check-command.md)), so a test can import `utils.py` and `settings.py`, which import
+  `tkinter` and Pillow. Their logic has no tests yet
   ([task 031](../refinements/tasks/031-tests-for-utils-and-settings.md)).
 
 ## Alternatives rejected

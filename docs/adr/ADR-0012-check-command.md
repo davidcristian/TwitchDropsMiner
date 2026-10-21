@@ -30,7 +30,7 @@ lint rules without its formatter or pyright.
      later. Run on Python 3.12, it does not find nested f-string quotes, which the Validate job on 3.10 finds.
    - `langcheck.py`: every `lang/*.json` file is a JSON object, and no string in it has a `str.format` field
      that the English string at the same keys lacks. It reads `default_translation` from `translate.py` with
-     `ast`: `translate.py` imports `utils.py`, which imports Pillow, and the Validate job does not install it.
+     `ast`, so that it needs only the standard library, as the other scans do.
    - `linecap.py`: at most 300 lines per Python file and in AGENTS.md, and 250 per other markdown file. The eight
      inherited modules over 300 are named in `EXCEPTIONS`, and an entry fails once its module is under the limit,
      so the list only shrinks as [task 005](../refinements/tasks/005-modules-over-the-line-cap.md) splits them.
@@ -69,11 +69,16 @@ lint rules without its formatter or pyright.
      the scissors line, and the hook skips them.
 5. **The tool versions are set exactly in `requirements-dev.txt`,** which no build installs: `rust-just` (the `just` binary
    from PyPI, so one `pip install` sets up every tool on every OS), ruff, pytest, pytest-cov and pre-commit, each
-   a release at least two weeks old when it was chosen. `yarl`, which the tests need because `redact.py` and
-   `constants.py` import it, is not a tool and has no version. A build gets the newest release with aiohttp, and
-   in `env/`, where both files are installed, an exact version conflicts with the newest aiohttp once that one
-   requires a newer yarl. It gets an exact version with the build dependencies
+   a release at least two weeks old when it was chosen.
+6. **`requirements-dev.txt` also installs the app's packages that the tests import**: the lines of
+   `requirements.txt` without PyGObject and pywin32, with the same version ranges, so that the tests get the
+   newest releases, as a build does. They get exact versions with the build dependencies
    ([task 048](../refinements/tasks/048-builds-install-the-newest-dependencies.md)).
+   - PyGObject is left out because pip builds it from source on Linux, which needs the system packages in
+     [building.md](../building.md#requirements), and no test needs it: `tests/conftest.py` sets
+     `PYSTRAY_BACKEND=dummy`, so pystray loads no tray backend. pywin32 installs only on Windows.
+   - The Validate job therefore needs no system package, and a virtual environment with `requirements-dev.txt`
+     alone runs `just check` as the Validate job does ([building.md](../building.md#run-the-checks)).
 
 ## Consequences
 
@@ -86,9 +91,11 @@ lint rules without its formatter or pyright.
 - Fixing the scans' first run took edits to inherited comments and docstrings: 17 comment blocks and 17
   docstrings over three lines and 8 banned words. A fix cherry-picked from upstream can conflict on those lines.
 - `syntaxcheck.py` does not find names that Python 3.10 lacks, such as `typing.Self`, which fail only when the
-  module is imported. The tests import only the modules `pyproject.toml` lists.
+  module is imported. The Validate job finds such a name only where a test imports or calls it.
 - The Validate job installs `requirements-dev.txt` and runs `just check` on Python 3.10, and the four builds wait
   for it.
+- Nothing checks that the app's packages in `requirements-dev.txt` match `requirements.txt`, so a change to one
+  of those lines is made in both files.
 - Commits from upstream keep their own messages, and a commit made without the hooks is not checked.
 - Two tools come from a source that can change what runs under a fixed name, and nothing checks them against
   a hash ([task 049](../refinements/tasks/049-check-tools-from-third-party-sources.md)):

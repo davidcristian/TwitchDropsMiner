@@ -17,9 +17,8 @@ the newest release on PyPI that day:
 - no release can be built again as it was, and nothing records the versions once the CI logs expire. The log of
   the last release build before 2026-10-21 lists Pillow 12.3.0, aiohttp 3.14.5 and PyInstaller 6.22.3.
 
-`yarl` in `requirements-dev.txt` has no version either. An exact version there conflicts with the newest
-aiohttp once that one requires a newer yarl: aiohttp 3.14.5 requires yarl 1.25.1 or newer, and `env/` had
-yarl 1.24.5 with aiohttp 3.14.3 ([ADR-0012](../../adr/ADR-0012-check-command.md)).
+`requirements-dev.txt` repeats the lines of `requirements.txt` that the tests need, with the same versions, so
+the Validate job also tests with the newest releases ([ADR-0012](../../adr/ADR-0012-check-command.md)).
 
 ## What a fix involves
 
@@ -28,8 +27,8 @@ them. The choices, to record in an ADR:
 
 1. **A constraints file**, such as `constraints.txt`, with an exact version of every package that a build or
    the Validate job installs, the indirect ones included. The CI jobs, `setup_env`, `build.sh`, `build.bat` and
-   the AppImage recipe pass `-c constraints.txt` to each `pip install`. `requirements.txt` keeps its ranges for
-   a run from source, and `yarl` takes its version from the same file. A tool such as `pip-compile` or
+   the AppImage recipe pass `-c constraints.txt` to each `pip install`. `requirements.txt` and the app's
+   packages in `requirements-dev.txt` keep their ranges for a run from source. A tool such as `pip-compile` or
    `uv pip compile` writes the file, and that tool goes in `requirements-dev.txt`, not in a build. The file
    covers every build platform (Windows, macOS, Linux `x86_64` and `aarch64`) and both Pythons: 3.14 for the
    PyInstaller builds and Ubuntu's 3.10 for the AppImage.
@@ -54,3 +53,4 @@ None of this sends a Twitch request.
 
 - 2026-10-21: Opened. Found while the release builds moved to Python 3.14 and a new environment got a newer
   Pillow than the last release.
+- 2026-10-21: `requirements-dev.txt` lists the app's packages that the tests import, in place of `yarl` alone.
