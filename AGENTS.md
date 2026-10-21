@@ -124,11 +124,13 @@ The rest is checked by hand, and the report of a change shows the output of each
 1. **Tests assert behavior** ([ADR-0013](docs/adr/ADR-0013-test-standard.md)). A bug fix adds a test that fails
    without it. A module that needs neither Twitch nor a display tests each public function with its error and edge
    cases, with fakes, not mocks, and no test only to reach a line. A known defect is a strict `xfail` test that
-   names its task file.
+   names its task file. The suite imports the modules that need Twitch or a display too, so a fix in `twitch.py`
+   or `gui.py` gets a suite test with a fake `Twitch` or session and no Tk window.
 2. A GUI change is run in `python gui.py` or `python main.py`. When the GUI cannot start, the GUI part is reported
    as unverified and the change is not done. [The headless runbook](docs/runbooks/gui-preview-headless.md) runs it
    on Linux without a display.
-3. Logic that needs Twitch is called with stubbed inputs, and the inputs and results are shown.
+3. Logic that needs Twitch, where a suite test cannot reach it, is called with stubbed inputs, and the inputs and
+   results are shown.
 4. No new dependency unless the standard library cannot do the job. Every build installs `requirements.txt`; the
    tools `just check` runs are in `requirements-dev.txt`, which no build installs. It also lists the lines of
    `requirements.txt` that the tests need, all but PyGObject and pywin32, so a change to one is made in both.
