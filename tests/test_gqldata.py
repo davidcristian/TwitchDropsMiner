@@ -160,7 +160,7 @@ def directory_response(game):
 
 
 def test_directory_streams_returns_the_streams_with_a_broadcaster():
-    live = {"id": "1", "broadcaster": {"id": "9"}}
+    live = {"id": "1", "broadcaster": {"id": "9", "login": "c9"}, "game": None}
     edges = [{"node": live}, {"node": {"id": "2", "broadcaster": None}}, {"node": None}]
     assert directory_streams(directory_response({"streams": {"edges": edges}})) == [live]
 

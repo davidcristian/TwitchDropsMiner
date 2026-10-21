@@ -12,7 +12,7 @@ from typing import Any, SupportsInt, cast, TYPE_CHECKING
 import aiohttp
 from yarl import URL
 
-from gqldata import get_field, playback_token
+from gqldata import get_field, playback_token, channel_stream
 from utils import Game, json_minify, isonow
 from exceptions import MinerException, RequestException
 from constants import CALL, GQL_QUERIES, ONLINE_DELAY, URLType, GQLQuery
@@ -105,7 +105,7 @@ class Stream:
         self = cls(
             channel,
             id=channel_data["id"],
-            game=channel_data["game"],  # has to be there since we searched with it
+            game=channel_data["game"],
             viewers=channel_data["viewersCount"],
             title=channel_data["title"],
         )
@@ -359,7 +359,7 @@ class Channel:
             response: JsonType = await self._twitch.gql_request(self.stream_gql)
         except MinerException as exc:
             raise MinerException(f"Channel: {self._login}") from exc
-        channel_data: JsonType | None = response["data"]["user"]
+        channel_data = channel_stream(response, self.id)
         if not channel_data:
             return None
         # fill in display name

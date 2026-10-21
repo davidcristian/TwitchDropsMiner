@@ -38,6 +38,7 @@ from gqldata import (
     merge_data,
     current_drop,
     user_inventory,
+    channel_streams,
     campaign_details,
     channel_campaigns,
     clear_error_field,
@@ -1594,11 +1595,7 @@ class Twitch:
         ]
         try:
             for coro in asyncio.as_completed(stream_gql_tasks):
-                response_list: list[JsonType] = await coro
-                for response_json in response_list:
-                    channel_data: JsonType | None = get_field(response_json, "data", "user")
-                    if channel_data is not None:
-                        acl_streams_map[int(channel_data["id"])] = channel_data
+                acl_streams_map.update(channel_streams(await coro))
         except Exception:
             # asyncio.as_completed doesn't cancel tasks on errors
             for task in stream_gql_tasks:

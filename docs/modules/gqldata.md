@@ -7,10 +7,9 @@ inside `Twitch._run` ends the run, and the restart after it begins with a full r
 ([task 019](../refinements/tasks/019-restart-runs-a-full-reload.md)). An inventory that cannot be read at all
 still raises ([A null inventory](#a-null-inventory)). Which fields Twitch names in a server error has
 not been observed, so the functions accept a null object or list item at any level. A null value inside an
-object is checked only for the times, the award times, the game fields, the required minutes and the ACL
-channel fields named below. A null value in the stream data of a channel still raises
-([task 059](../refinements/tasks/059-null-fields-in-stream-data.md)). The module sends no request and needs
-neither Twitch nor a display.
+object is checked only for the times, the award times, the game fields, the required minutes, the ACL
+channel fields and the stream fields named below. The module sends no request and needs neither Twitch nor a
+display.
 
 ## Public contract
 
@@ -38,8 +37,15 @@ neither Twitch nor a display.
   game field ([Null game fields](#null-game-fields)). In each campaign it returns, `timeBasedDrops` holds only
   the drops that `TimedDrop` can read ([Null drops](#null-drops)), and `allow.channels` only the channels that
   `Channel.from_acl` can read.
-- `directory_streams(response)` returns the stream nodes of a `GameDirectory` response whose `broadcaster` is
-  not null, and an empty list when the game, its streams or their edges are null.
+- `directory_streams(response)` returns the stream nodes of a `GameDirectory` response that
+  `Channel.from_directory` can read, and an empty list when the game, its streams or their edges are null. It
+  leaves out a null node or one whose `broadcaster` is null, and reads the other stream fields as
+  [Null stream fields](#null-stream-fields) says.
+- `channel_streams(responses)` maps each channel ID, as an int, to the `user` of a `GetStreamInfo` response. It
+  leaves out a response whose `data` or `user` is null, and reads the other fields as
+  [Null stream fields](#null-stream-fields) says.
+- `channel_stream(response, channel_id)` returns the `user` of one channel's `GetStreamInfo` response, read in
+  the same way, or None when `data` or `user` is null. `channel_id` names the channel in a warning.
 - `channel_campaigns(responses)` maps each channel ID, as an int, to the `viewerDropCampaigns` of an
   `AvailableDrops` response, with an empty list for null, and leaves out a response whose `channel` is null.
 - `playback_token(response)` returns the `value` and `signature` of a `PlaybackAccessToken` response, or None
@@ -118,15 +124,45 @@ compares games by ID to build the wanted games and matches the priority and excl
 the Settings tab sorts the game names. A null `slug` is read as missing, so `Game` forms the slug from the name,
 as for a game without one. `get_live_streams` sends that slug in `GameDirectory`.
 
+## Null stream fields
+
+`Channel` and `Stream` read a channel's stream from `GetStreamInfo`, through `channel_streams` in the bulk check
+and `channel_stream` in an online check, and from `GameDirectory`, through `directory_streams`
+([channel.md](channel.md#online-checks)). Each case below logs a warning:
+
+- A stream whose `id` is null is read as no stream, because `Stream` needs the broadcast ID. In `GetStreamInfo`
+  the channel counts as offline, as for a null `stream`. In `GameDirectory` the stream is left out.
+- A `GameDirectory` stream whose broadcaster has a null `id` or `login` is left out. `Channel` needs both, and
+  each request about a channel names it by its login.
+- A `GetStreamInfo` user whose `id` is null is left out of `channel_streams`, because the bulk check finds each
+  channel by its ID. The channel keeps its current stream, as for a null user ([channel.md](channel.md#bulk-check)).
+  An online check does not read that ID.
+- A game whose `id` is null, or whose `displayName` and `name` are both null, gives a stream without a game, as
+  a stream with no category has. Null `broadcastSettings` give a stream without a game and with a null `title`,
+  which nothing reads.
+
+A game with a null field is read as no game rather than as offline because the app already handles a stream
+without a game, and such a stream adds no request. The channel then has no game to match the wanted games, and
+its `viewcount` events only update its viewers. It stays so until an online check reads the channel again, or
+until `CHANNELS_CLEANUP` removes the channel and `CHANNELS_FETCH` adds it again.
+
+A live channel read as offline still sends `viewcount` events, and `Twitch.process_stream_state` calls
+`check_online()` for each one ([channel.md](channel.md#after-a-stream-up-event)). A check starts only when none
+is pending, and waits `ONLINE_DELAY` (120 seconds) before its one `GetStreamInfo` query. So while the stream ID
+stays null, the channel costs at most 30 `GetStreamInfo` queries an hour, the rate of any online check, and no
+`AvailableDrops` query. The bulk check sends no `AvailableDrops` query for it either.
+
 ## Invariants
 
-- Only `clear_error_field` changes its argument. `merge_data`, `user_inventory` and `complete_campaigns` build
-  new dicts but share the other values, such as lists, with their arguments.
+- Only `clear_error_field` changes its argument. `merge_data`, `user_inventory`, `complete_campaigns` and the
+  stream readers build new dicts but share the other values, such as lists, with their arguments.
 - No function sends a request, and no caller sends one again for a null item: a campaign or drop left out
   waits for the next reload, and a game with a null directory for the next `CHANNELS_FETCH`. A null
   `CurrentDrop` user means no drop data for that request, and a null `ClaimDrop` result is a failed claim
   ([inventory.md](inventory.md#claiming)). A null playback token is requested again only for the `Stream`
-  that the online check stores ([channel.md](channel.md#a-null-playback-token)).
+  that the online check stores ([channel.md](channel.md#a-null-playback-token)). A channel read as offline
+  sends no request of its own until a websocket event starts an online check
+  ([Null stream fields](#null-stream-fields)).
 
 **Dependencies.** `exceptions` (`GQLException`, `MinerException`). `constants` (`JsonType`) is imported for type
 checking only.

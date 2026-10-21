@@ -91,8 +91,8 @@ The code comment on the limiter says not to change these values ([ADR-0002](../a
 The reads of `fetch_inventory`, `fetch_campaigns`, `get_live_streams`, `bulk_check_online`, `_watch_loop` and
 `process_drops` go through [gqldata.md](gqldata.md), which leaves out an item that a server error set to null, so such
 an error does not end the run. A null user or inventory in the `Inventory` or `Campaigns` response still ends it
-([gqldata.md](gqldata.md#a-null-inventory)). Some null values in stream data, such as a stream's ID, still raise
-([task 059](../refinements/tasks/059-null-fields-in-stream-data.md)).
+([gqldata.md](gqldata.md#a-null-inventory)). A null field in stream data is read as an offline channel or a
+stream without a game ([gqldata.md](gqldata.md#null-stream-fields)).
 
 ## Login
 

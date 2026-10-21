@@ -112,6 +112,22 @@ def test_a_stream_down_during_the_requests_of_the_channel_fetch_reaches_the_chan
     assert fake.gql_sent == ["Inventory", "Campaigns", "GameDirectory", "PlaybackAccessToken", "GameDirectory"]
 
 
+def test_a_directory_stream_whose_broadcaster_id_a_server_error_set_to_null_leaves_the_run_going(live_twitch):
+    edge = ["game", "streams", "edges", 0, "node", "broadcaster", "id"]
+    response = {**directory((1, 1000), (2, 10)), "errors": [{"message": "server error", "path": edge}]}
+
+    async def scenario():
+        twitch = live_twitch(run_fake(response))
+        run = await start_run(twitch)
+        return twitch, run.done()
+
+    twitch, ended = asyncio.run(scenario())
+
+    assert ended is False
+    assert list(twitch.channels) == [2]
+    assert twitch.watching_channel.get_with_default(None) is twitch.channels[2]
+
+
 def test_the_channel_fetch_cancels_the_online_check_of_a_channel_over_the_limit(live_twitch, monkeypatch):
     monkeypatch.setattr(twitch_module, "MAX_CHANNELS", 1)
 
