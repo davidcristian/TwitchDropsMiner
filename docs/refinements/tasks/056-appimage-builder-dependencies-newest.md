@@ -30,3 +30,8 @@ the commit needs the network for GitHub. None of this sends a Twitch request.
 
 - 2026-10-22: Opened. Found while `constraints.txt` was written, when the dependencies of appimage-builder at the
   commit that the job installs could not be read from PyPI.
+- 2026-10-22: `constraints.txt` sets the 12 packages that release 1.1.0 requires and those they depend on, 22 in
+  all, of which 19 are new lines. Each new line is the newest release that was two weeks old, the same for
+  `x86_64` and `aarch64` ([runbooks/dependency-versions.md](../../runbooks/dependency-versions.md)), and
+  `tests/test_constraints.py` checks that the 12 have lines. Still open: reading `setup.py` at the commit, which
+  needs GitHub, and the log of a run of the AppImage job.

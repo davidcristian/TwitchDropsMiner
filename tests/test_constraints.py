@@ -13,6 +13,11 @@ INSTALLERS = (
     "build.sh",
     "build.bat",
 )
+# The requirements of appimage-builder 1.1.0 on PyPI. The AppImage job installs it from a later git commit.
+APPIMAGE_BUILDER_REQUIRES = (
+    "PyYAML", "docker", "requests", "schema", "packaging", "questionary", "emrichen", "ruamel.yaml", "roam",
+    "urllib3", "lief", "python-gnupg",
+)
 INSTALL = re.compile(r"""\bpip"?\s+install\s(.*)""")
 TOKEN = re.compile(r'"[^"]*"|\S+')
 EXACT = re.compile(r"([A-Za-z0-9][A-Za-z0-9._-]*)==([0-9][0-9A-Za-z.!+]*)(\s*;\s*\S.*)?")
@@ -78,3 +83,7 @@ def test_every_package_that_a_build_names_has_a_line_in_constraints_txt():
 
     assert {"pip", "pyinstaller", "pygobject"} <= named | required
     assert sorted((named | required) - listed_packages()) == []
+
+
+def test_every_package_that_appimage_builder_requires_has_a_line_in_constraints_txt():
+    assert sorted({key(name) for name in APPIMAGE_BUILDER_REQUIRES} - listed_packages()) == []

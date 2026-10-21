@@ -21,7 +21,8 @@ pip chooses the wheels for the OS and Python that `--platform` and `--python-ver
 the markers of a requirement, such as `sys_platform == "win32"`, for the Python that runs it. `target_pip.py`
 sets those values for the target before pip starts, so that its report lists the packages the target installs.
 `compare.py` prints each package of the reports whose version is not the one in `constraints.txt`, and each
-line of the file that no report uses. Set `TDM` to a folder outside the repository:
+line of the file that no report uses. It skips appimage-builder, which the AppImage job installs from a git
+commit and the file does not list. Set `TDM` to a folder outside the repository:
 
 ```bash
 export TDM=/tmp/tdm-resolve
@@ -76,7 +77,7 @@ for report in sorted(Path(sys.argv[1]).glob("report-*.json")):
     for item in json.loads(report.read_text())["install"]:
         name, version = item["metadata"]["name"], item["metadata"]["version"]
         found.add(key(name))
-        if version not in listed.get(key(name), ()):
+        if key(name) != "appimage-builder" and version not in listed.get(key(name), ()):
             print(f"{report.stem}: {name}=={version}, constraints.txt: {sorted(listed.get(key(name), ()))}")
 for name in sorted(set(listed) - found):
     print(f"no report installs {name}")
@@ -88,9 +89,14 @@ EOF
 The PyInstaller builds run Python 3.14 on four platforms, and the AppImage and the Validate job run Python
 3.10, so `resolve` runs the eight pairs. PyGObject has no wheel for Linux, so `resolve` leaves it out, and it
 asks for the packages of a build from source on Linux only, where the builds compile PyGObject and pycairo.
-Define it in the same shell:
+The AppImage job installs appimage-builder from a git commit, which pip cannot resolve for another platform, so
+for Python 3.10 on Linux `resolve` asks for its release 1.1.0 on PyPI instead. One package it needs,
+jsonpath-rw, has no wheel on PyPI, so pip first builds one at the version in the file. Run this and define
+`resolve` in the same shell:
 
 ```bash
+"$TDM/venv/bin/python" -m pip wheel --no-deps --wheel-dir "$TDM/wheels" -c constraints.txt \
+  --build-constraint constraints.txt jsonpath-rw
 resolve() {
   rm -f "$TDM"/report-*.json
   grep -v PyGObject requirements.txt > "$TDM/requirements.txt"
@@ -98,6 +104,7 @@ resolve() {
     for tag in win_amd64 macosx_11_0_arm64 manylinux_2_35_x86_64 manylinux_2_35_aarch64; do
       linux=""
       case $tag in manylinux*) linux="meson-python ninja patchelf" ;; esac
+      case $tag-$python in manylinux*-3.10) linux="$linux appimage-builder==1.1.0 --find-links $TDM/wheels" ;; esac
       "$TDM/venv/bin/python" "$TDM/target_pip.py" "$tag" "$python" "$TDM/report-$tag-$python.json" \
         -r "$TDM/requirements.txt" pip wheel pyinstaller setuptools setuptools_scm $linux "$@" \
         || echo "no resolution for $tag with Python $python"
@@ -138,5 +145,6 @@ Commit `constraints.txt` with the change that needed it, or alone for an update,
 `build: update aiohttp to 3.14.6`. The pull request runs the Validate job and every build with the new versions
 ([building.md](../building.md#release-builds)).
 
-The file does not set the dependencies of appimage-builder, which the AppImage job installs from a git commit
+The lines for the packages that appimage-builder needs follow the requirements of its release 1.1.0, which
+can differ from those at the commit that the AppImage job installs
 ([task 056](../refinements/tasks/056-appimage-builder-dependencies-newest.md)).

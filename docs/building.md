@@ -207,9 +207,8 @@ one that installs `requirements.txt`, PyInstaller or appimage-builder also passe
 recipe and `setup_env` first install the pip version in the file. The Validate job installs `requirements-dev.txt`
 with `-c constraints.txt`, and `requirements.txt` keeps its ranges for an install without the file.
 [runbooks/dependency-versions.md](runbooks/dependency-versions.md) updates a version.
-[ADR-0016](adr/ADR-0016-exact-dependency-versions.md) says why the file sets no hashes, and
-[task 056](refinements/tasks/056-appimage-builder-dependencies-newest.md) that it does not set the dependencies of
-appimage-builder.
+[ADR-0016](adr/ADR-0016-exact-dependency-versions.md) says why the file sets no hashes, and why its lines for
+appimage-builder follow its release 1.1.0 rather than the commit that the AppImage job installs.
 
 ## Release builds
 
