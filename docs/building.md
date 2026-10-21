@@ -80,7 +80,8 @@ pre-commit install
 ```
 
 The Validate job in CI installs `requirements-dev.txt` on Python 3.10 and runs `just check`, and the build jobs
-start only when it passes.
+start only when it passes. It runs on Ubuntu only. [Task 046](refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)
+lists what running it on Windows, macOS and Python 3.13 needs.
 
 ## Build the executable with PyInstaller
 
