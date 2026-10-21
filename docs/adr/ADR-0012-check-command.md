@@ -90,6 +90,14 @@ lint rules without its formatter or pyright.
 - The Validate job installs `requirements-dev.txt` and runs `just check` on Python 3.10, and the four builds wait
   for it.
 - Commits from upstream keep their own messages, and a commit made without the hooks is not checked.
+- Two tools come from a source that can change what runs under a fixed name, and nothing checks them against
+  a hash ([task 049](../refinements/tasks/049-check-tools-from-third-party-sources.md)):
+  - `rust-just` on PyPI is a build of `just` by another person: its metadata names `github.com/casey/just` as
+    the home page and `github.com/gnpaone/rust-just` as the repository. Its binary runs on every commit, with
+    the rights of the person who commits, and in the Validate job, whose token is read only and which passes
+    nothing to the builds. The exact version fixes the release, not the file a new upload could replace.
+  - `.pre-commit-config.yaml` names `conventional-pre-commit` by its tag, `v4.4.0`. A tag can be moved to other
+    code, which a machine that installs the hooks afterwards then runs on every commit message.
 - The hook does not see `--cleanup`, `commit.cleanup` or `core.commentChar`. With a cleanup mode other than
   git's default, it can skip a `#` line that git keeps, or read one that git removes.
 
@@ -102,11 +110,17 @@ lint rules without its formatter or pyright.
   code. The typing rules in AGENTS.md apply to new code, checked by reading.
 - **Checking commit messages in CI.** Commits taken from upstream keep their original style, so CI would fail on
   them.
+- **The official `just` binary with a checked hash, for now.** A release binary from `casey/just` on GitHub,
+  with its SHA-256 for each OS written in the repo and checked before it runs, removes the other person's
+  build. It needs a download step per OS in CI and in [building.md](../building.md#run-the-checks) in place of
+  one `pip install`. It replaces `rust-just` when that package stops following the `just` releases or changes
+  owner.
 
 ## Related
 
 - [AGENTS.md](../../AGENTS.md#what-every-change-must-pass) and [building.md](../building.md#run-the-checks).
 - [ADR-0013](ADR-0013-test-standard.md): the tests that `just check` runs.
 - [ADR-0008](ADR-0008-docs-layout.md): the docs layout that `docscheck.py` checks.
-- Tasks [004](../refinements/tasks/004-single-check-command.md) (closed by this record) and
-  [005](../refinements/tasks/005-modules-over-the-line-cap.md) (the modules over the limit).
+- Tasks [004](../refinements/tasks/004-single-check-command.md) (closed by this record),
+  [005](../refinements/tasks/005-modules-over-the-line-cap.md) (the modules over the limit) and
+  [049](../refinements/tasks/049-check-tools-from-third-party-sources.md) (the sources of `just` and a hook).
