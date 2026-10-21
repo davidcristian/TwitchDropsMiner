@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from typing import NamedTuple
 
 import pytest
+from aiohttp import ClientHttpProxyError, RequestInfo
 from multidict import CIMultiDict, CIMultiDictProxy
 from yarl import URL
 
@@ -23,14 +24,6 @@ DOCUMENTED_SECRET_KEYS = (
     "token",
 )
 PROXY_BASIC_AUTH = "Basic dXNlcjpzM2NyZXQ="  # user:s3cret in base64
-
-
-# The name and fields of aiohttp's RequestInfo, by which redact.py finds it
-class RequestInfo(NamedTuple):
-    url: URL
-    method: str
-    headers: Mapping[str, str]
-    real_url: URL
 
 
 def proxy_connect_info():
@@ -147,6 +140,13 @@ def test_redact_hides_the_proxy_password_in_a_request_info():
     assert result.method == "CONNECT"
     assert result.headers == {"Host": "gql.twitch.tv", "Proxy-Authorization": HIDDEN}
     assert str(result.real_url) == "http://user:%3Chidden%3E@proxy.example:8080"
+
+
+def test_a_proxy_error_with_a_redacted_request_info_hides_the_proxy_password_in_its_text():
+    error = ClientHttpProxyError(proxy_connect_info(), (), status=407, message="Proxy Authentication Required")
+    error.request_info = redact(error.request_info)
+    assert "s3cret" not in str(error)
+    assert "user:%3Chidden%3E@proxy.example:8080" in str(error)
 
 
 def test_redact_reads_a_tuple_with_the_same_fields_and_another_name_as_a_tuple():

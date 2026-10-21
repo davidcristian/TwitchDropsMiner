@@ -1,6 +1,6 @@
 # The redact tests use a stand-in for aiohttp's `RequestInfo`
 
-**Status:** open
+**Status:** done 2026-10-21
 **Area:** redact, tests
 **Origin:** Found on 2026-10-21 when the Validate job started to install aiohttp for the tests
 **Verified:** 2026-10-21
@@ -22,3 +22,6 @@ aiohttp there is accepted. No fix adds a request.
 ## History
 
 - 2026-10-21: Opened. The Validate job started to install aiohttp, which removed the reason for the stand-in.
+- 2026-10-21: Closed. `tests/test_redact.py` builds aiohttp's `RequestInfo` in place of the stand-in, and
+  checks the text of a `ClientHttpProxyError` whose request info `redact` returned. `redact` still finds the
+  class by its name and fields, so `redact.py` imports no aiohttp.

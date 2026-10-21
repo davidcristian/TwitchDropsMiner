@@ -40,5 +40,5 @@ message in the Output box through it too, because the usher URL has the playback
   subclasses without their own `__repr__`.
 
 **Dependencies.** `yarl`. No module of this repo. It finds aiohttp's `RequestInfo` by its type name and fields
-rather than importing aiohttp, and its tests pass a stand-in with that name
-([task 051](../refinements/tasks/051-redact-test-uses-a-stand-in-request-info.md)).
+rather than importing aiohttp. Its tests pass aiohttp's own `RequestInfo` and `ClientHttpProxyError`, so they
+fail when an aiohttp release renames the class or one of its fields.
