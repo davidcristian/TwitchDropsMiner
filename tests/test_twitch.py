@@ -3,20 +3,28 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 
+import aiohttp
 import pytest
+from multidict import CIMultiDict, CIMultiDictProxy
+from yarl import URL
 
 from channel import Channel
 from constants import JsonType
-from fakes import GAME, FakeTwitch, campaign_data, drop_data, stream_user
+from fakes import GAME, USHER_LIST, FakeResponse, FakeTwitch, campaign_data, drop_data, stream_user
 from inventory import DropsCampaign
+from livetwitch import run_with_fast_clock
+from redact import HIDDEN
 from twitch import Twitch
 
 SECRET = "s3cret-token"
 GOOD_JAR = json.dumps({"twitch.tv|": {"auth-token": {
     "key": "auth-token", "value": SECRET, "coded_value": SECRET, "path": "/", "domain": "twitch.tv",
 }}})
+PROXY = URL("http://user:s3cret@proxy.example:8080")
+PLAYBACK_TOKEN = json.dumps({"channel": "c1", "user_id": 123, "user_ip": "203.0.113.5"})
 
 
 def test_the_bulk_check_clears_the_stream_of_an_offline_channel_and_keeps_that_of_a_missing_one():
@@ -97,3 +105,51 @@ def test_a_folder_removed_during_a_scan_has_no_detected_games(live_twitch, tmp_p
     asyncio.run(scenario())
 
     assert fake.settings.detected_games == []
+
+
+def test_a_proxy_error_raised_by_a_request_hides_the_proxy_password(live_twitch):
+    def proxy_refuses(method: str, url: URL) -> FakeResponse:
+        headers = CIMultiDictProxy(CIMultiDict({"Proxy-Authorization": "Basic dXNlcjpzM2NyZXQ="}))
+        request_info = aiohttp.RequestInfo(url, "CONNECT", headers, PROXY)
+        raise aiohttp.ClientHttpProxyError(request_info, (), status=407, message="Proxy Authentication Required")
+
+    fake = FakeTwitch(http=proxy_refuses)
+    fake.settings.proxy = PROXY
+
+    async def scenario():
+        async with live_twitch(fake).request("GET", "https://www.twitch.tv"):
+            pass
+
+    with pytest.raises(aiohttp.ClientHttpProxyError) as raised:
+        asyncio.run(scenario())
+
+    assert "s3cret" not in "".join(traceback.format_exception(raised.type, raised.value, raised.tb))
+    assert raised.value.request_info.headers["Proxy-Authorization"] == HIDDEN
+
+
+def test_the_retry_message_and_the_request_log_hide_the_playback_token_of_an_usher_url(live_twitch, caplog):
+    errors = [aiohttp.ClientConnectionError("connection reset")] * 2
+
+    def fail_twice(method: str, url: URL) -> FakeResponse:
+        if errors:
+            raise errors.pop()
+        return FakeResponse(200, USHER_LIST)
+
+    fake = FakeTwitch(http=fail_twice)
+    usher = URL("https://usher.ttvnw.net/api/channel/hls/c1.m3u8").with_query(sig="signature", token=PLAYBACK_TOKEN)
+
+    async def scenario():
+        async with live_twitch(fake).request("GET", usher) as response:
+            return await response.text()
+
+    caplog.set_level(logging.DEBUG, logger="TwitchDrops")
+    assert run_with_fast_clock(scenario()) == USHER_LIST
+
+    # the first retry shows no message
+    assert fake.printed == [
+        "Cannot connect to Twitch, retrying in 2 seconds... "
+        "(https://usher.ttvnw.net/api/channel/hls/c1.m3u8?sig=signature&token=%3Chidden%3E)"
+    ]
+    assert "Request: (method='GET'" in caplog.text
+    assert "203.0.113.5" not in caplog.text
+    assert fake.http_sent == ["GET usher.ttvnw.net"] * 3
