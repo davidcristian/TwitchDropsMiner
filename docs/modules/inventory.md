@@ -11,6 +11,8 @@ reload ([twitch.md](twitch.md#state-machine)). The only request the module sends
 
 `data` is one campaign, merged from the `Inventory`, `Campaigns` and `CampaignDetails` GQL responses.
 `claimed_benefits` maps a benefit ID to the time it was last awarded, from the inventory's `gameEventDrops`.
+`Twitch.fetch_inventory` leaves out a null drop or benefit before it builds the campaign
+([gqldata.md](gqldata.md#null-drops)).
 
 - Data: `id`, `name`, `game` (a `Game`), `linked` (the user's account is connected to the game), `link_url`,
   `image_url` (the game's box art without its size suffix), `starts_at`, `ends_at`, `timed_drops` (a
@@ -123,12 +125,12 @@ minutes the campaign also displays its `first_drop`.
   failure. Otherwise it sends one `ClaimDrop` GQL mutation with the `dropInstanceID`.
   A `claimDropRewards.status` of `ELIGIBLE_FOR_ALL` or `DROP_INSTANCE_ALREADY_CLAIMED` is a success: the drop is
   marked claimed, its minutes are set to `required_minutes`, a line goes to the Output box and the tray shows a
-  notification when tray notifications are on. A `GQLException` or any other response is a failure, which is
-  logged as an error.
+  notification when tray notifications are on. A `GQLException` or any other response, a null `data` included,
+  is a failure, which is logged as an error. `gqldata.claim_succeeded` reads the response.
 - `Twitch` claims a drop on a `drop-claim` event, and in `State.GAMES_UPDATE` for every claimable drop of the
   campaigns that are not upcoming. So a drop with a claim ID that no event claimed is claimed at the next reload.
 - Without `self` data, a drop counts as claimed when at least one of its benefits is in `claimed_benefits` and
-  every such award time is between the drop's `starts_at` and `ends_at`.
+  every such award time is between the drop's `starts_at` and `ends_at`. A null `self` counts as none.
 - `generate_claim()` builds a claim ID as `<user ID>#<campaign ID>#<drop ID>`. Nothing calls it
   ([task 022](../refinements/tasks/022-unused-code.md)).
 
@@ -144,4 +146,5 @@ minutes the campaign also displays its `first_drop`.
 - The module is over the 300 line cap ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
 
 **Dependencies.** `channel` (`Channel`), `utils` (`Game`, `timestamp`), `exceptions` (`GQLException`),
-`constants` (`GQL_QUERIES`, `MAX_EXTRA_MINUTES`, `URLType`, `State`) and `translate`. No third party package.
+`gqldata` (`claim_succeeded`), `constants` (`GQL_QUERIES`, `MAX_EXTRA_MINUTES`, `URLType`, `State`) and
+`translate`. No third party package.

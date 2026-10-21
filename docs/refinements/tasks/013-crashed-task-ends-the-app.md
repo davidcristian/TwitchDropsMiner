@@ -95,3 +95,5 @@ nothing, because the app stops.
 - 2026-10-18: Opened. While the invariants of twitch.md were written, `task_wrapper` was found to set
   `State.EXIT`. A run of the real `Twitch.run` with a watch loop that raises confirmed that `_await_restart` is
   not called.
+- 2026-10-21: A null `currentUser` in the `CurrentDrop` response no longer ends `_watch_loop`. It counts as no
+  drop data, and the loop adds an estimated minute ([twitch.md](../../modules/twitch.md#watch-loop)).

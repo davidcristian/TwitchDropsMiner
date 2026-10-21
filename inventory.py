@@ -13,6 +13,7 @@ from translate import _
 from channel import Channel
 from utils import timestamp, Game
 from exceptions import GQLException
+from gqldata import claim_succeeded
 from constants import GQL_QUERIES, MAX_EXTRA_MINUTES, URLType, State
 
 if TYPE_CHECKING:
@@ -195,18 +196,7 @@ class BaseDrop:
             # regardless of the error, we have to assume
             # the claiming operation has potentially failed
             return False
-        data = response["data"]
-        if "errors" in data and data["errors"]:
-            return False
-        elif "claimDropRewards" in data:
-            if not data["claimDropRewards"]:
-                return False
-            elif (
-                data["claimDropRewards"]["status"]
-                in ("ELIGIBLE_FOR_ALL", "DROP_INSTANCE_ALREADY_CLAIMED")
-            ):
-                return True
-        return False
+        return claim_succeeded(response)
 
 
 class TimedDrop(BaseDrop):

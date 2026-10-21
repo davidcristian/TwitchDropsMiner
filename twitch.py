@@ -36,10 +36,13 @@ from exceptions import (
 from gqldata import (
     get_field,
     merge_data,
+    current_drop,
+    user_inventory,
     campaign_details,
     channel_campaigns,
     clear_error_field,
     directory_streams,
+    campaign_summaries,
     complete_campaigns,
 )
 from utils import (
@@ -940,9 +943,7 @@ class Twitch:
                             {"channelID": str(channel.id)}
                         )
                     )
-                    drop_data: JsonType | None = (
-                        context["data"]["currentUser"]["dropCurrentSession"]
-                    )
+                    drop_data: JsonType | None = current_drop(context)
                 except GQLException:
                     drop_data = None
                 if drop_data is not None:
@@ -1219,9 +1220,7 @@ class Twitch:
                             {"channelID": str(watching_channel.id)}
                         )
                     )
-                    drop_data: JsonType | None = (
-                        context["data"]["currentUser"]["dropCurrentSession"]
-                    )
+                    drop_data: JsonType | None = current_drop(context)
                     if drop_data is None or drop_data["dropID"] != drop.id:
                         break
                     await asyncio.sleep(2)
@@ -1429,8 +1428,8 @@ class Twitch:
         status_update(_("gui", "status", "fetching_inventory"))
         # fetch in-progress campaigns (inventory)
         response = await self.gql_request(GQL_QUERIES["Inventory"])
-        inventory: JsonType = response["data"]["currentUser"]["inventory"]
-        ongoing_campaigns: list[JsonType] = inventory["dropCampaignsInProgress"] or []
+        inventory: JsonType = user_inventory(response)
+        ongoing_campaigns: list[JsonType] = inventory["dropCampaignsInProgress"]
         # this contains claimed benefit edge IDs, not drop IDs
         claimed_benefits: dict[str, datetime] = {
             b["id"]: timestamp(b["lastAwardedAt"]) for b in inventory["gameEventDrops"]
@@ -1438,13 +1437,7 @@ class Twitch:
         inventory_data: dict[str, JsonType] = {c["id"]: c for c in ongoing_campaigns}
         # fetch general available campaigns data (campaigns)
         response = await self.gql_request(GQL_QUERIES["Campaigns"])
-        available_list: list[JsonType] = response["data"]["currentUser"]["dropCampaigns"] or []
-        applicable_statuses = ("ACTIVE", "UPCOMING")
-        available_campaigns: dict[str, JsonType] = {
-            c["id"]: c
-            for c in available_list
-            if c["status"] in applicable_statuses  # that are currently not expired
-        }
+        available_campaigns: dict[str, JsonType] = campaign_summaries(response)
         # fetch detailed data for each campaign, in chunks
         status_update(_("gui", "status", "fetching_campaigns"))
         fetch_campaigns_tasks: list[asyncio.Task[Any]] = [

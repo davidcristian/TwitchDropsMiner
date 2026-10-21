@@ -88,10 +88,11 @@ The code comment on the limiter says not to change these values ([ADR-0002](../a
 | `service timeout`, `request cancelled`, `service unavailable`, `context deadline exceeded` | retries with `ExponentialBackoff(maximum=60)`, with no limit on the count |
 | any other message, or an `error` key | raises `GQLException` |
 
-`fetch_campaigns`, `get_live_streams` and `bulk_check_online` read the responses through
-[gqldata.md](gqldata.md), which leaves out an item that a server error set to null, so such an error does not
-end the run. Other reads still raise on a null field
-([task 037](../refinements/tasks/037-null-fields-in-other-gql-reads.md)).
+The reads of `fetch_inventory`, `fetch_campaigns`, `get_live_streams`, `bulk_check_online`, `_watch_loop` and
+`process_drops` go through [gqldata.md](gqldata.md), which leaves out an item that a server error set to null, so such
+an error does not end the run. A null user or inventory in the `Inventory` or `Campaigns` response still ends it
+([gqldata.md](gqldata.md#a-null-inventory)). The `PlaybackAccessToken` read, a null channel in an ACL and a null value
+such as a time still raise ([task 037](../refinements/tasks/037-null-fields-in-other-gql-reads.md)).
 
 ## Login
 
@@ -126,8 +127,9 @@ goes on and the window can close while PubSub cannot be reached
 ([websocket.md](websocket.md#starting-without-a-connection)). It then handles one state per pass and waits for the
 next `change_state`. [ARCHITECTURE.md](../ARCHITECTURE.md#the-state-machine) has the table of the states, what
 each one does, the state that follows it and the events that change it. `fetch_inventory` builds a
-`DropsCampaign` for each campaign whose `game`, `allow` and `timeBasedDrops` fields are not null
-([gqldata.md](gqldata.md#null-campaign-details)), and `GAMES_UPDATE` computes the [wanted games](#wanted-games).
+`DropsCampaign` for each campaign whose `game`, `self`, `allow` and `timeBasedDrops` fields are not null
+([gqldata.md](gqldata.md#null-campaign-details)), keeping only the drops that `TimedDrop` can read
+([gqldata.md](gqldata.md#null-drops)), and `GAMES_UPDATE` computes the [wanted games](#wanted-games).
 `INVENTORY_FETCH` saves the image cache and the settings through `save_each`, which logs a save that raises
 `OSError`, so a full disk does not end the run ([savefiles.md](savefiles.md)).
 
@@ -142,7 +144,8 @@ Every `WATCH_INTERVAL` (20 seconds) `_watch_loop` takes the watched channel, wai
 watching it when it is offline, and calls `Channel.send_watch` ([channel.md](channel.md#watching)). About 15
 seconds later, when `gui.progress.minute_almost_done()` is True (the countdown for the minute has stopped or has
 at most 10 seconds left), it sends a `CurrentDrop` GQL query for the drop's minutes, one per cycle at most.
-When that fails, `DropsCampaign.bump_minutes` adds an estimated minute ([inventory.md](inventory.md#progress)).
+When that fails or names no drop, which a null `currentUser` also does, `DropsCampaign.bump_minutes` adds an
+estimated minute ([inventory.md](inventory.md#progress)).
 
 ## Maintenance task
 
@@ -206,10 +209,12 @@ scanned again. A scan error is printed once while it persists ([gamelib.md](game
 `_run` and `CHANNELS_FETCH` pass these methods to `WebsocketTopic` ([websocket.md](websocket.md#topics)):
 
 - `process_drops`: `drop-progress` updates the drop's minutes. `drop-claim` stores the claim ID, claims the drop
-  and sends `CurrentDrop` up to 8 times, 2 seconds apart, until Twitch reports another drop. Then it restarts
-  watching, or enters `State.INVENTORY_FETCH` when the campaign has nothing left on the channel. A `drop-claim`
-  event for a drop that is already claimed does nothing: the claim in `State.GAMES_UPDATE` or the first event
-  already restarted watching or reloaded.
+  and sends `CurrentDrop` up to 8 times, 2 seconds apart, until Twitch reports another drop or none. A null
+  `currentUser` counts as none. Then it restarts watching, or enters `State.INVENTORY_FETCH` when the campaign
+  has nothing left on the channel. A failed claim, such as one with a null `ClaimDrop` result
+  ([inventory.md](inventory.md#claiming)), goes through the same steps. A `drop-claim` event for a drop that is
+  already claimed does nothing: the claim in `State.GAMES_UPDATE` or the first event already restarted watching
+  or reloaded.
 - `process_notifications`: a drop or emote reward notification enters `State.INVENTORY_FETCH` and deletes the
   notification with `NotificationsDelete`. `process_stream_state` and `process_stream_update` pass stream
   events to `Channel` ([channel.md](channel.md#online-checks)).

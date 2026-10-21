@@ -102,3 +102,7 @@ The commit states the new worst case per hour, as AGENTS.md asks for a change to
   available drops no longer ends the run, so it causes no restart ([gqldata.md](../../modules/gqldata.md)).
   The task stays open for the errors that still end the run, such as an outdated hash and the reads in
   [task 037](037-null-fields-in-other-gql-reads.md).
+- 2026-10-21: A null field in a drop, a null campaign `self`, a null campaign in progress and a null campaign
+  summary no longer end the run ([gqldata.md](../../modules/gqldata.md#null-drops)). A null user or inventory in the `Inventory` or
+  `Campaigns` response still does, after 1 or 2 requests and before the `CampaignDetails` and channel requests
+  ([gqldata.md](../../modules/gqldata.md#a-null-inventory)).

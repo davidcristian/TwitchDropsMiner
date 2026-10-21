@@ -136,6 +136,10 @@ def test_complete_campaigns_leaves_out_a_campaign_with_a_null_or_missing_field(f
     assert complete_campaigns({"A": details("A"), "N": null, "M": missing}) == {"A": details("A")}
 
 
+def test_complete_campaigns_leaves_out_a_campaign_whose_self_is_null():
+    assert complete_campaigns({"A": details("A"), "N": {**details("N"), "self": None}}) == {"A": details("A")}
+
+
 def test_null_details_keep_a_campaign_in_progress_and_leave_out_one_with_only_a_summary():
     inventory = {"P": details("P")}
     chunk = merge_data(
