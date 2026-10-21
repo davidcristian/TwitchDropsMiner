@@ -43,3 +43,5 @@ Twitch requests: none.
   `json_save` and `merge_json` still have no tests.
 - 2026-10-21: The Validate job installs the app's packages except PyGObject and pywin32, and
   `tests/test_imports.py` imports `utils` and `settings`. Their logic still has no tests.
+- 2026-10-21: `tests/test_utils.py` tests `start_task`, which a fix added to `utils.py`. The candidates above
+  still have no tests.

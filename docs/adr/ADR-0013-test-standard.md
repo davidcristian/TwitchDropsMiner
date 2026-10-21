@@ -73,8 +73,8 @@ installed none of these packages, so a fix in one of them was checked by a scrip
 - The Validate job installs the app's packages except PyGObject and pywin32
   ([ADR-0012](ADR-0012-check-command.md)), and `tests/conftest.py` sets `PYSTRAY_BACKEND=dummy`, so that
   importing `gui.py` loads no tray backend. A test can import every module except `registry.py`, which needs
-  Windows, and `tests/test_imports.py` imports each module that imports the app's packages. The logic of
-  `utils.py` and `settings.py` has no tests yet
+  Windows, and `tests/test_imports.py` imports each module that imports the app's packages. Apart from
+  `start_task`, the logic of `utils.py` and `settings.py` has no tests yet
   ([task 031](../refinements/tasks/031-tests-for-utils-and-settings.md)).
 
 ## Alternatives rejected
