@@ -166,4 +166,11 @@ The workflow sets `permissions: contents: read`, so its token can read the repos
 whatever default the repository settings give the token. Only the release job, `update_releases_page`, sets
 `contents: write`, which it needs to replace the pre-release.
 
+Each `uses:` line in `ci.yml` names an action by the full commit SHA of a release, with the release tag in a
+comment, so that a tag moved to other code does not change what a job runs.
+[`.github/dependabot.yml`](../.github/dependabot.yml) has Dependabot check the actions once a week and open a
+pull request that updates a SHA and its comment. Its commit subjects start with `ci:`, but its commit bodies list
+links and commit hashes, which the [commit rules](../AGENTS.md#commits) do not allow, so rewrite the message
+when you merge such a pull request.
+
 Before you open a pull request, run the checks in [AGENTS.md](../AGENTS.md#what-every-change-must-pass).
