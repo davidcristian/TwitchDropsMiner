@@ -1,6 +1,6 @@
 # ADR-0002: The Twitch traffic budget
 
-**Status:** Accepted (2026-10-20)
+**Status:** Accepted (2026-10-22)
 
 ## Context
 
@@ -41,8 +41,9 @@ nor allow setting it such".
 3. **A full reload runs only on these events, and no timer runs it more often:**
    - at startup, because `_run` begins in `State.INVENTORY_FETCH`. `Twitch.run` starts `_run` again after the
      `Invalidate` button on the Help tab, whose `State.RESTART` raises `ReloadRequest`, and after a fatal error
-     ([ADR-0006](ADR-0006-restart-after-fatal-error.md)). Each new run reloads, so a fatal error that repeats
-     causes one reload per restart ([019](../refinements/tasks/019-restart-runs-a-full-reload.md)).
+     ([ADR-0006](ADR-0006-restart-after-fatal-error.md)). Each new run reloads. The wait before a restart
+     doubles after each run that ended within an hour, up to 60 minutes, so a fatal error that ends every run
+     reloads up to 6 times in its first hour and then at most once an hour.
    - once an hour, from `_maintenance_task`. Every reload ends by starting a new `_maintenance_task`, so the
      hour counts from the last reload of any cause.
    - after a drop is claimed. `process_drops` reloads when the drop's campaign cannot progress further on the

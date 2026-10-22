@@ -3,10 +3,10 @@
 **Status:** open
 **Area:** lang
 **Origin:** found on 2026-10-18 while the docs were written
-**Verified:** 2026-10-21
+**Verified:** 2026-10-22
 
-`default_translation` in `translate.py` has 154 strings. Each of the 20 files in `lang/` other than
-`English.json` lacks between 37 and 53 of them. `English.json` is left out because it is gitignored and every
+`default_translation` in `translate.py` has 155 strings. Each of the 20 files in `lang/` other than
+`English.json` lacks between 38 and 54 of them. `English.json` is left out because it is gitignored and every
 run from source writes it again from `default_translation`. The counts come from comparing the nested key
 paths of `default_translation`, read from `translate.py` with the `ast` module, with the key paths of each
 file.
@@ -16,14 +16,14 @@ A missing key shows in English. `Translator.set_language` loads a language with
 `default_translation`. It also deletes every key that `default_translation` lacks, so a string at the wrong
 path shows in English as well ([023](023-language-file-keys-dropped.md)).
 
-## The 37 keys every language lacks
+## The 38 keys every language lacks
 
 These are the strings of this project's own features:
 
 - Installed game detection, `gui.settings.detect`: 11 keys.
 - The Games Being Mined table, `gui.settings.wanted`: 7 keys.
 - Restart after a fatal error, `gui.settings.general.restart_delay`, `gui.settings.restart_delays`,
-  `gui.status.restarting`, `status.fatal_error` and `status.restarting`: 6 keys.
+  `gui.status.restarting`, `status.fatal_error`, `status.restarting` and `status.restart_longer`: 7 keys.
 - The About box, `gui.help.about`: 4 keys.
 - The new stream check, `gui.settings.general.refresh_interval` and `gui.settings.refresh_intervals`: 3 keys.
 - Priority and Exclude patterns, `gui.settings.pattern_matches` and `gui.settings.pattern_empty`: 2 keys.
@@ -46,13 +46,13 @@ These are the strings of this project's own features:
 
 ## Missing keys per language
 
-- 53: Čeština.
-- 50: Nederlandse.
-- 49: Deutsch.
-- 48: Dansk, Indonesian, Italiano, Português, Română, العربية and 日本語.
-- 44: Français and Українська.
-- 39: Magyar, Norsk, Polski, Türkçe and Русский.
-- 37: Español, 简体中文 and 繁體中文.
+- 54: Čeština.
+- 51: Nederlandse.
+- 50: Deutsch.
+- 49: Dansk, Indonesian, Italiano, Português, Română, العربية and 日本語.
+- 45: Français and Українська.
+- 40: Magyar, Norsk, Polski, Türkçe and Русский.
+- 38: Español, 简体中文 and 繁體中文.
 
 ## What closes it
 
@@ -74,3 +74,5 @@ Cost: no Twitch requests.
   of them.
 - 2026-10-21: Counts checked again after `error.file_not_saved` was added: 154 strings, and Čeština lacks 53
   of them. The count includes `error.cannot_start` and `error.folder_not_writable`, which were added before.
+- 2026-10-22: Counts checked again after `status.restart_longer` was added: 155 strings, and Čeština lacks 54
+  of them.

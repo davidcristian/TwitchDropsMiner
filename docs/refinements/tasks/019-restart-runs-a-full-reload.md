@@ -1,9 +1,9 @@
 # Each restart after a fatal error runs a full reload
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** twitch (restart), Twitch traffic
 **Origin:** Found on 2026-10-18 while the docs were written, [ADR-0006](../../adr/ADR-0006-restart-after-fatal-error.md)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 After a fatal error, `Twitch._await_restart` in `twitch.py` calls `shutdown()`, which clears the inventory,
 the channels and the login state, and waits `restart_delay` minutes plus a random 0 to 60 seconds
@@ -121,3 +121,12 @@ The commit states the new worst case per hour, as AGENTS.md asks for a change to
   campaign was sorted or shown, no longer ends the run, and every other null field of campaign data has a
   reading ([gqldata.md](../../modules/gqldata.md#other-null-fields)). A null user or inventory in the
   `Inventory` or `Campaigns` response still does.
+- 2026-10-22: Done. The causes were checked again. An outdated hash and a null user or inventory in the
+  `Inventory` or `Campaigns` response still end the run, and since a failed critical task restarts the run, so
+  does an error in the watch loop, such as an outdated `PlaybackAccessToken` hash, after the reload and the
+  channel switch. A reload requested during another merges into it, which changes no count here. The wait now
+  doubles after each run shorter than an hour, up to 60 minutes, and goes back to the setting after a longer
+  run ([restartdelay.md](../../modules/restartdelay.md)). An error that ends every run reloads 6 times in the
+  first hour at the 1 minute choice and 3 at the default, then at most once an hour
+  ([ADR-0006](../../adr/ADR-0006-restart-after-fatal-error.md)). The first `CHANNEL_SWITCH` was not used to set
+  the wait back, because the watch loop error comes after it.

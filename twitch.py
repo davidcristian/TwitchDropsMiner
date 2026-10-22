@@ -21,6 +21,7 @@ from translate import _
 from redact import redact
 from savefiles import save_each, replace_file
 from ratelimit import RateLimiter
+from restartdelay import RestartDelay
 from gui import GUIManager
 from channel import Channel
 from websocket import WebsocketPool
@@ -324,6 +325,7 @@ class Twitch:
         self._scanning_games: bool = False
         # the error of a failed critical task, which _run raises as its own
         self._task_error: Exception | None = None
+        self._restart_delay = RestartDelay(lambda: asyncio.get_running_loop().time())
         # NOTE: GQL is pretty volatile and breaks everything if one runs into their rate limit.
         # Do not modify the default, safe values.
         self._qgl_limiter = RateLimiter(capacity=5, window=1)
@@ -557,6 +559,7 @@ class Twitch:
                 # replace the existing file with an empty one
                 pass
         while True:
+            self._restart_delay.started()
             try:
                 await self._run()
                 break
@@ -582,9 +585,10 @@ class Twitch:
         Prints a message for a fatal error, shuts down and waits for the restart delay.
         Returns False when the restart is turned off, so the error ends the app.
         """
-        minutes: int = self.settings.restart_delay
-        if minutes <= 0:
+        setting: int = self.settings.restart_delay
+        if setting <= 0:
             return False
+        minutes: int = self._restart_delay.next_minutes(setting)
         logger.error("Fatal error encountered", exc_info=error)
         self.print(_("status", "fatal_error"))
         self.print(
@@ -601,6 +605,8 @@ class Twitch:
         )
         self.gui.tray.change_icon("error")
         self.gui.status.update(_("gui", "status", "restarting").format(time=restart_time))
+        if minutes > setting:
+            self.print(_("status", "restart_longer").format(minutes=minutes))
         self.print(_("status", "restarting").format(time=restart_time))
         logger.log(CALL, f"Restarting at: {restart_time}")
         # closing the window cuts the wait short, so the user never has to sit through it

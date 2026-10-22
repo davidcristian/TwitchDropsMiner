@@ -37,7 +37,7 @@ Each record states the decision that applies today and is edited in place when i
 | [ADR-0003: The stream refresh](adr/ADR-0003-stream-refresh.md) | A check for new streams every `refresh_interval` minutes that re-enters the channel cleanup and fetch instead of reloading, and what it costs. |
 | [ADR-0004: Installed game detection](adr/ADR-0004-installed-game-detection.md) | Installed Steam and Epic games are added to what is mined, below the Priority list, found through the launchers' own indexes, matched with high confidence only, with the standard library. |
 | [ADR-0005: Priority and Exclude list patterns](adr/ADR-0005-list-patterns.md) | Entries match names ignoring case, accents and punctuation, take `*` and `?`, rank by the first matching entry, and the Games Being Mined table names the entry that ranked each mined game. |
-| [ADR-0006: Restart after a fatal error](adr/ADR-0006-restart-after-fatal-error.md) | A fatal error restarts the run after the `restart_delay` setting plus a jitter, instead of stopping the app. |
+| [ADR-0006: Restart after a fatal error](adr/ADR-0006-restart-after-fatal-error.md) | A fatal error restarts the run after the `restart_delay` setting plus a jitter, instead of stopping the app. The wait doubles while the error comes back within an hour, up to 60 minutes. |
 | [ADR-0007: Identifiers kept from the original project](adr/ADR-0007-kept-identifiers.md) | The AppImage id and the autostart names keep their original values, so the app still finds an autostart entry that an older build wrote, and a desktop entry made for an older AppImage still names the current id. |
 | [ADR-0008: The docs layout](adr/ADR-0008-docs-layout.md) | Which Cortex docs practices this repo follows: AGENTS.md as the contract, this index, the map, ADRs edited in place, a doc per module, runbooks, one file per backlog task, the 300-line cap; and the four it leaves out. |
 | [ADR-0009: Watching by playlist HEAD requests](adr/ADR-0009-watch-method.md) | Every 20 seconds the app reads the stream's playlist and sends one `HEAD` request per segment, outside the GQL limiter; the Spade and GQL methods stay with no caller. |
@@ -72,6 +72,7 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [exceptions.md](modules/exceptions.md) | Each exception class, what raises it and what catches it |
 | [redact.md](modules/redact.md) | `redact`: the secret key names it hides before a log call prints a value |
 | [reconnect.md](modules/reconnect.md) | `ReconnectDelay`: the wait of a websocket before each reconnect |
+| [restartdelay.md](modules/restartdelay.md) | `RestartDelay`: the wait before each restart after a fatal error, doubled while each run ends within an hour |
 | [gqldata.md](modules/gqldata.md) | `get_field`, `merge_data` and the readers that leave out a field a server error set to null |
 | [streamdata.md](modules/streamdata.md) | The readers of stream, channel and playback token data, which read a null field as no stream, no game or no campaign |
 | [imagedata.md](modules/imagedata.md) | `decode_image`: the full decode of an image download, which returns None for broken data; `png_mode`: the mode to save it in as PNG |

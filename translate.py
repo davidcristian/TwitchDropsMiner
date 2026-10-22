@@ -17,6 +17,7 @@ class StatusMessages(TypedDict):
     terminated: str
     fatal_error: str
     restarting: str
+    restart_longer: str
     watching: str
     goes_online: str
     goes_offline: str
@@ -289,6 +290,10 @@ default_translation: Translation = {
         "terminated": "\nApplication Terminated.\nClose the window to exit the application.",
         "fatal_error": "Fatal error encountered:\n",
         "restarting": "Restarting automatically at {time}...",
+        "restart_longer": (
+            "The error came less than an hour after the last restart, "
+            "so the wait is longer than the setting: {minutes} minutes."
+        ),
         "watching": "Watching: {channel}",
         "goes_online": "{channel} goes ONLINE, switching...",
         "goes_offline": "{channel} goes OFFLINE, switching...",

@@ -194,11 +194,14 @@ When `_run` raises any exception other than `ReloadRequest` and `ExitRequest`, `
 `_run` also raises the error of a failed critical task, which `task_failed` stores ([Invariants](#invariants)).
 With `settings.restart_delay` at 0 `_await_restart` returns False, and `run` raises the error to `main.py`,
 which shows it and stops. Otherwise it prints the traceback, calls `shutdown()`, shows the restart time in the
-status line and the Output box, and waits `restart_delay` minutes plus a random 0 to 60 seconds
-(`RESTART_JITTER`). `run` then starts `_run` again, which begins with a full reload
-([task 019](../refinements/tasks/019-restart-runs-a-full-reload.md)). Closing the window ends the wait and the
-app. Every error waits the same delay. The setting is "Restart after a crash after" on the Settings tab: "Never
-(stay stopped)", stored as 0, or 1, 5, 10, 15, 30 or 60 minutes, default 10
+status line and the Output box, and waits the minutes that `_restart_delay.next_minutes` returns plus a random 0
+to 60 seconds (`RESTART_JITTER`). `run` calls `_restart_delay.started()` before each `_run`. The wait is
+`restart_delay` after the first error and after a run of an hour or more, and otherwise the last wait doubled,
+at most 60 minutes ([restartdelay.md](restartdelay.md)). A wait longer than the setting adds the line
+`status.restart_longer` to the Output box. `run` then starts `_run` again, which begins with a full reload, so
+an error that ends every run reloads at most once an hour after its first hour. Closing the window ends the
+wait and the app. The setting is "Restart after a crash after" on the Settings tab: "Never (stay stopped)",
+stored as 0, or 1, 5, 10, 15, 30 or 60 minutes, default 10
 ([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)).
 
 ## Wanted games
@@ -247,10 +250,10 @@ scanned again. A scan error is printed once while it persists ([gamelib.md](game
 - Every GQL request goes through `gql_request` and `_qgl_limiter`, whose values stay at `capacity=5, window=1`,
   because a burst of requests puts the account at risk ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)).
 - `State.INVENTORY_FETCH` runs at startup, once an hour, after a drop claim whose campaign cannot continue on
-  the watched channel, after a reward notification, after a restart and from the `Reload` button. No new timer
-  may run it more often: a reload sends a `GetStreamInfo` operation, 20 to a request, for every ACL channel of
-  the wanted campaigns, and these can be thousands. New periodic work enters `State.CHANNELS_CLEANUP` instead,
-  which moves on to `State.CHANNELS_FETCH`.
+  the watched channel, after a reward notification, after a restart, whose wait doubles while each run ends
+  within an hour, and from the `Reload` button. No new timer may run it more often: a reload sends a
+  `GetStreamInfo` operation, 20 to a request, for every ACL channel of the wanted campaigns, and these can be
+  thousands. New periodic work enters `State.CHANNELS_CLEANUP` instead, which moves on to `State.CHANNELS_FETCH`.
 - `_run`, the handlers, the tasks and the tkinter GUI share one asyncio event loop (`GUIManager._poll` runs the Tk
   events). A blocking call freezes the window, so `detect_games` scans the folders with `asyncio.to_thread`. At
   `-vvvv`, a `DEBUG` record that `gamelib` logs there goes to `_TKOutputHandler` in `gui.py`, whose Tk call from
@@ -272,4 +275,5 @@ scanned again. A scan error is printed once while it persists ([gamelib.md](game
   event that arrives during the requests, and a `stream-down` for the watched channel still makes the app switch.
 
 **Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `gqldata`, `streamdata`, `translate`,
-`redact`, `savefiles`, `ratelimit`, `exceptions`, `utils` and `constants`. Third party: aiohttp and yarl.
+`redact`, `savefiles`, `ratelimit`, `restartdelay`, `exceptions`, `utils` and `constants`. Third party: aiohttp
+and yarl.

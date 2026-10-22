@@ -27,6 +27,7 @@ main.py
    ├─ _AuthState        device ID, access token, user ID and the login flow
    ├─ ClientSession     the one aiohttp session; its cookie jar is saved to cookies.jar
    ├─ _qgl_limiter      the RateLimiter that every GQL request passes through
+   ├─ _restart_delay    the RestartDelay that sets the wait before each restart after a fatal error
    ├─ GUIManager        gui.py: the Tk root, the four tabs, TrayIcon, ChannelList, SettingsPanel
    │  └─ ImageCache     cache.py: game and reward images in cache/
    ├─ WebsocketPool     websocket.py: up to 8 Websocket connections to Twitch PubSub
@@ -85,9 +86,10 @@ A change to the Priority list, Exclude list or Priority mode sets no state; the 
 **Fatal errors.** An exception that leaves `_run` reaches `Twitch.run`. When "Restart after a crash after" is
 Never (`restart_delay` 0), `run` raises it again, and `main.py` prints it and keeps the window open. Otherwise
 `_await_restart` calls `shutdown` and waits ([ADR-0006](adr/ADR-0006-restart-after-fatal-error.md)), and `run`
-starts `_run` again, which begins with a full reload
-([task 019](refinements/tasks/019-restart-runs-a-full-reload.md)). The error of a failed critical task takes the
-same path: `RESTART` raises it from `_run`.
+starts `_run` again, which begins with a full reload. The wait is `restart_delay` after the first error, and it
+doubles after each run that ends within an hour, up to 60 minutes ([restartdelay.md](modules/restartdelay.md)).
+So an error that ends every run reloads at most once an hour after its first hour. The error of a failed
+critical task takes the same path: `RESTART` raises it from `_run`.
 
 ## Data flow
 

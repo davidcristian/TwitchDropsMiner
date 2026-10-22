@@ -40,9 +40,10 @@ Most callers do not handle it, so the run ends as a fatal error. The Output box 
 and a traceback that ends in `exceptions.GQLException`, or in `exceptions.MinerException: Game: <slug>` for
 `GameDirectory`. Then it shows `Restarting automatically at <time>...`, or `Application Terminated.` when
 "Restart after a crash after" is set to "Never (stay stopped)". A restart fails the same way until the hash is
-fixed, and each restart begins with a full reload
-([task 019](../refinements/tasks/019-restart-runs-a-full-reload.md)). A call with an outdated hash sends 2
-requests, and the rate limiter counts both.
+fixed. Each restart begins with a full reload, and the wait before it doubles each time, up to 60 minutes, with
+a line in the Output box that gives the longer wait
+([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)). A call with an outdated hash sends 2 requests, and
+the rate limiter counts both.
 
 A failure in the watch loop, such as an outdated `PlaybackAccessToken` hash, first shows
 `ERROR: Exception in _watch_loop task` and its traceback. The lines above and the restart follow.

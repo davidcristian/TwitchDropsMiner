@@ -25,8 +25,9 @@ burst of requests puts that account at risk.
   Never send GQL another way.
 - A full reload (`State.INVENTORY_FETCH`) can send thousands of GQL operations, batched 20 to a request, when a
   campaign lists many channels. It runs at startup and on every new run (the Invalidate button, a restart after a
-  fatal error), once an hour from `_maintenance_task`, after a drop is claimed or its reward notification
-  arrives, and from the Reload button. Do not add a timer that runs it more often.
+  fatal error, whose wait doubles while the error comes back within an hour), once an hour from
+  `_maintenance_task`, after a drop is claimed or its reward notification arrives, and from the Reload button.
+  Do not add a timer that runs it more often.
 - New periodic work re-enters `State.CHANNELS_CLEANUP`, which moves on to `State.CHANNELS_FETCH` and costs a few
   requests, rather than reloading.
 - A change that adds requests states how many per cycle in its commit body.
@@ -52,6 +53,7 @@ burst of requests puts that account at risk.
 | `exceptions.py` | `MinerException` and its subclasses, including `ExitRequest` and `ReloadRequest` |
 | `redact.py` | `redact`, which hides the login token and other secrets in a value before a log call prints it |
 | `reconnect.py` | `ReconnectDelay`, the wait of a PubSub websocket before each reconnect |
+| `restartdelay.py` | `RestartDelay`, the wait before each restart after a fatal error, which doubles while each run ends within an hour |
 | `gqldata.py` | Reads GQL responses and leaves out the fields that a server error set to null |
 | `streamdata.py` | Reads the stream data of GQL responses in the same way, through `gqldata.get_field` |
 | `imagedata.py` | `decode_image`, which decodes a whole image download for `cache.py` or returns None for broken data, and `png_mode`, the mode to save it in |
