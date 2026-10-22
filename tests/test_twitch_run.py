@@ -20,9 +20,15 @@ from fakes import (
     settle,
     stream_user,
 )
+from inventory import TimedDrop
 from livetwitch import log_in, run_with_fast_clock
+from ratelimit import RateLimiter
 from translate import _
 from twitch import Twitch
+
+PROGRESS_EVENT = {
+    "type": "drop-progress", "data": {"drop_id": "d1", "current_progress_min": 5, "required_progress_min": 120}
+}
 
 
 def run_fake(*directories: JsonType | GQLAnswer) -> FakeTwitch:
@@ -70,6 +76,31 @@ async def refresh(twitch: Twitch) -> None:
     """Fetch the channels again, as the maintenance task does every few minutes, and wait until the run waits."""
     twitch.change_state(State.CHANNELS_CLEANUP)
     await until(lambda: waits(twitch))
+
+
+class FakeProgress:
+    """The progress panel of the window, as the drop it shows and whether its minute countdown runs."""
+
+    def __init__(self) -> None:
+        self.drop: TimedDrop | None = None
+        self.counting = False
+
+    def display(self, drop: TimedDrop | None, *, countdown: bool = True, subone: bool = False) -> None:
+        self.drop, self.counting = drop, countdown
+
+    def stop_timer(self) -> None:
+        self.counting = False
+
+    def minute_almost_done(self) -> bool:
+        return not self.counting
+
+
+def progress_fake() -> tuple[FakeTwitch, FakeProgress]:
+    """Return the FakeTwitch of run_fake, which lists C1 twice, with a FakeProgress in its window."""
+    fake = run_fake(directory((1, 1000)), directory((1, 1000)))
+    progress = FakeProgress()
+    fake.gui.progress, fake.gui.display_drop = progress, progress.display
+    return fake, progress
 
 
 def test_the_run_fetches_the_inventory_while_every_pubsub_connection_fails(live_twitch):
@@ -215,3 +246,44 @@ def test_shutdown_cancels_the_online_checks_and_empties_the_channel_list(live_tw
     assert (channel.online, channel.offline) == (False, True)
     assert fake.gui.channels.rows == {}
     assert fake.gql_sent == ["GetStreamInfo"]
+
+
+def test_a_stream_refresh_that_keeps_the_watched_channel_leaves_the_drop_countdown_running(live_twitch):
+    fake, progress = progress_fake()
+
+    async def scenario():
+        twitch = live_twitch(fake)
+        await start_run(twitch)
+        # the drop's first progress update starts its countdown
+        await twitch.process_drops(1, PROGRESS_EVENT)
+        await refresh(twitch)
+        return twitch._drops["d1"]
+
+    drop = asyncio.run(scenario())
+
+    assert progress.drop is drop
+    assert progress.counting is True
+
+
+def test_a_reload_that_keeps_the_watched_channel_shows_the_drop_of_the_new_inventory(live_twitch):
+    fake, progress = progress_fake()
+
+    async def scenario():
+        twitch = live_twitch(fake)
+        # the limiter's default clock is the system's, which the skipped waits of this event loop do not move
+        twitch._qgl_limiter = RateLimiter(capacity=5, window=1, clock=asyncio.get_running_loop().time)
+        await start_run(twitch)
+        await twitch.process_drops(1, PROGRESS_EVENT)
+        old = twitch._drops["d1"]
+        twitch.change_state(State.INVENTORY_FETCH)
+        # the reload sends the run's sixth GQL request, which waits a second for the limiter
+        await asyncio.sleep(2)
+        await until(lambda: waits(twitch))
+        return twitch, old
+
+    twitch, old = run_with_fast_clock(scenario())
+
+    assert twitch.watching_channel.get_with_default(None) is twitch.channels[1]
+    assert progress.drop is twitch._drops["d1"]
+    assert progress.drop is not old
+    assert progress.counting is False

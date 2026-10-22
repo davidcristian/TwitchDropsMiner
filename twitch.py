@@ -604,6 +604,7 @@ class Twitch:
             ),
         ])
         full_cleanup: bool = False
+        watch_restarted: bool = False
         channels: Final[OrderedDict[int, Channel]] = self.channels
         self.change_state(State.INVENTORY_FETCH)
         while True:
@@ -697,6 +698,7 @@ class Twitch:
                 self.gui.settings.set_wanted_games(self.wanted_games)
                 full_cleanup = True
                 self.restart_watching()
+                watch_restarted = True
                 self.change_state(State.CHANNELS_CLEANUP)
             elif self._state is State.CHANNELS_CLEANUP:
                 self.gui.status.update(_("gui", "status", "cleanup"))
@@ -843,16 +845,19 @@ class Twitch:
                         # we've removed a channel we were watching
                         self.stop_watching()
                     del new_watching
-                # pre-display the active drop with a substracted minute
-                for channel in channels.values():
-                    # check if there's any channels we can watch first
-                    if self.can_watch(channel):
-                        if (
-                            (active_campaign := self.get_active_campaign(channel)) is not None
-                            and (active_drop := active_campaign.first_drop) is not None
-                        ):
-                            active_drop.display(countdown=False, subone=True)
-                        break
+                # Show the active drop one minute lower when a watch starts or GAMES_UPDATE restarted it.
+                # This stops the countdown, so a refresh that keeps the watched channel skips it.
+                if watch_restarted or not self.watching_channel.has_value():
+                    for channel in channels.values():
+                        # check if there's any channels we can watch first
+                        if self.can_watch(channel):
+                            if (
+                                (active_campaign := self.get_active_campaign(channel)) is not None
+                                and (active_drop := active_campaign.first_drop) is not None
+                            ):
+                                active_drop.display(countdown=False, subone=True)
+                            break
+                watch_restarted = False
                 self.change_state(State.CHANNEL_SWITCH)
                 del (
                     no_acl,

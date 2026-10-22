@@ -1,9 +1,9 @@
 # Each stream refresh stops the drop countdown
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** twitch (state machine), gui (progress panel)
 **Origin:** Found on 2026-10-18 while the docs were written, [ADR-0003](../../adr/ADR-0003-stream-refresh.md#decision)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 At the end of `State.CHANNELS_FETCH`, `Twitch._run` in `twitch.py` takes the first channel that `can_watch`
 accepts and calls `active_drop.display(countdown=False, subone=True)` for the first drop of its active
@@ -97,3 +97,9 @@ The fix sends no new request and removes up to one `CurrentDrop` per refresh.
 - 2026-10-18: Opened. A review of ADR-0003 named the stopped countdown and its `CurrentDrop` query, which
   ADR-0003 records without a task. A run of the real `_run`, `_watch_loop` and `CampaignProgress` with stubs
   showed the stop and counted the queries.
+- 2026-10-22: Closed. `CHANNELS_FETCH` runs the pre-display only while no channel is watched after the relink,
+  or when `GAMES_UPDATE` came before it, which a local flag in `_run` records. A time trigger takes the refresh
+  path too, so a drop it starts or ends shows at the next progress update. Two tests in
+  `tests/test_twitch_run.py` run the real `_run` with a fake progress panel: a refresh leaves the countdown
+  running, and a reload still shows the drop of the new inventory. The fix sends no new request and removes up
+  to one `CurrentDrop` per refresh.

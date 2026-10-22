@@ -171,9 +171,11 @@ enters `State.INVENTORY_FETCH` and ends: this is the hourly reload. Until then i
 At each of these it enters `State.CHANNELS_CLEANUP`, which goes on to `State.CHANNELS_FETCH`. That costs one
 `GameDirectory` query per wanted game with a campaign that has no ACL, plus `GetStreamInfo` batches for the
 untracked ACL channels (and `AvailableDrops` batches with the extra drops check on), and no inventory reload
-([ADR-0003](../adr/ADR-0003-stream-refresh.md)). With no wanted game, `CHANNELS_CLEANUP` moves to `IDLE`
-instead and sends no request. It prints the no campaign message once, and again only after a game was wanted
-or the run ended (`_no_campaign_printed`), so a refresh adds no line to the Output box.
+([ADR-0003](../adr/ADR-0003-stream-refresh.md)). A refresh that keeps the watched channel leaves the drop
+and its countdown in the progress panel as they are, so the panel shows a drop that a time trigger started or
+ended at the next progress update. With no wanted game, `CHANNELS_CLEANUP` moves to `IDLE` instead and sends
+no request. It prints the no campaign message once, and again only after a game was wanted or the run ended
+(`_no_campaign_printed`), so a refresh adds no line to the Output box.
 
 ## Restart after a fatal error
 

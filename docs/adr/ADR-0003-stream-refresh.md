@@ -1,6 +1,6 @@
 # ADR-0003: The stream refresh
 
-**Status:** Accepted (2026-08-03)
+**Status:** Accepted (2026-10-22)
 
 ## Context
 
@@ -45,14 +45,16 @@ A shorter full reload is not an option, because a reload is the most expensive w
    `State.CHANNELS_CLEANUP`. A time trigger is taken from the queue only when it is the earliest one, so a
    refresh never skips one.
 
-5. **A refresh that finds nothing new keeps the channel list, its selection and the status lines.**
+5. **A refresh that finds nothing new keeps the channel list, its selection, the status lines and the drop
+   countdown.**
    `State.CHANNELS_FETCH` rebuilds the channel list in the GUI only when the set of channels changed, and then
    restores the selection. The "No available channels to watch" message prints once until a channel is
    watched again (`_no_channel_printed`), and "No active campaigns to mine drops for." once until a game is
    wanted again (`_no_campaign_printed`). `State.CHANNEL_SWITCH` does not call `watch` again for the channel
    that is already watched. Without these, every refresh would redraw the table, drop the selection and print
-   the same status lines again. One change remains. While a drop is mined, `State.CHANNELS_FETCH` shows it
-   again with `subone=True`, which stops the countdown at a whole minute until the next progress update.
+   the same status lines again. `State.CHANNELS_FETCH` shows the active drop one minute lower with its
+   countdown stopped (`subone=True`) only when no channel is watched or `State.GAMES_UPDATE` restarted the
+   watch, so a refresh that keeps the watched channel leaves the countdown running.
 
 6. **The change is the smallest one that fixes the common case.** Two other causes of late discovery are known
    and stay open as refinement tasks (see Related).
@@ -70,12 +72,12 @@ The GQL requests of one refresh:
   When the wanted campaigns list more ACL channels than that, the ones left off the list are checked again on
   every refresh. That costs one `GetStreamInfo` request per 20 of them, plus one `AvailableDrops` request per
   20 online ones when `available_drops_check` is on.
-- While a drop is mined, the countdown that the channel fetch stops makes `_watch_loop` send one `CurrentDrop`
-  request at its next check (`minute_almost_done`), unless a PubSub progress update restarts it first.
+- A refresh that keeps the watched channel leaves the drop countdown running, so the `CurrentDrop` check of
+  `_watch_loop` (`minute_almost_done`) sends nothing more because of it.
 
-So in the common case a refresh sends one request per wanted game without an ACL, 0 to 3 requests, plus at
-most one `CurrentDrop` while a drop is mined. At the default interval, at most 11 refreshes run between two
-hourly reloads, because each one comes at least 5 minutes after the previous wait began.
+So in the common case a refresh sends one request per wanted game without an ACL, 0 to 3 requests. At the
+default interval, at most 11 refreshes run between two hourly reloads, because each one comes at least 5
+minutes after the previous wait began.
 
 - The check of ACL channels left off the list also finds one that went live since the last refresh. If it
   streams a wanted game, the channel fetch sorts it ahead of every offline channel.
