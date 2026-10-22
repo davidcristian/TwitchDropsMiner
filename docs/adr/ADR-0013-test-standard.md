@@ -69,6 +69,13 @@ installed none of these packages, so a fix in one of them was checked by a scrip
    and in CI, and no window shows on the screen. Tk on Windows and macOS opens its windows without an X server.
    When Tk can open no window, the `display` fixture of `tests/conftest.py` skips these tests and gives the
    reason, except when the `CI` environment variable is set, as in GitHub Actions, where it fails them.
+   - On Windows, `tests/conftest.py` has Tcl create its standard channels before any test, while the process
+     has no standard handles, so Tcl keeps none. Tcl keeps the handles it finds first for every later Tk in
+     the thread, and it finds an open file by its handle. pytest's capture closes those handles between the
+     phases of a test, and Windows gives a closed handle's number to the next file opened. When that file was
+     `init.tcl`, Tcl found its write-only standard channel under that number and opened no channel, and the Tk
+     being created failed with `Can't find a usable init.tcl`. The app is not affected, because no code of it
+     closes or replaces a standard handle.
 
 ## Consequences
 

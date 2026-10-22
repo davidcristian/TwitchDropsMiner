@@ -16,6 +16,35 @@ os.environ["PYSTRAY_BACKEND"] = "dummy"
 REPO = Path(__file__).resolve().parent.parent
 
 
+def start_tcl_without_standard_channels() -> None:
+    """Make Tcl in this thread look up its standard channels while the process has no standard handles."""
+    import ctypes
+    import tkinter
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32")
+    kernel32.GetStdHandle.argtypes = (wintypes.DWORD,)
+    kernel32.GetStdHandle.restype = wintypes.HANDLE
+    kernel32.SetStdHandle.argtypes = (wintypes.DWORD, wintypes.HANDLE)
+    # STD_INPUT_HANDLE, STD_OUTPUT_HANDLE and STD_ERROR_HANDLE
+    names = (-10, -11, -12)
+    handles = [kernel32.GetStdHandle(name) for name in names]
+    for name in names:
+        kernel32.SetStdHandle(name, None)
+    try:
+        # listing the channels makes Tcl create its standard channels, which it does once per thread
+        tkinter.Tcl().call("file", "channels")
+    finally:
+        for name, handle in zip(names, handles):
+            kernel32.SetStdHandle(name, handle)
+
+
+# Tcl keeps the standard handles it finds first, and on Windows finds an open file by its handle. pytest's capture
+# closes those handles between test phases, so a later Tk can get one for init.tcl and fail to read it.
+if sys.platform == "win32":
+    start_tcl_without_standard_channels()
+
+
 @pytest.fixture(autouse=True)
 def isolated_git(monkeypatch, tmp_path_factory):
     # A git hook runs the suite with GIT_DIR and GIT_INDEX_FILE set to the repo being committed, which would

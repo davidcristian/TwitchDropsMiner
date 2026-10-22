@@ -1,16 +1,16 @@
-# The Windows and macOS checks in CI have never run and are not required
+# The Windows and macOS checks in CI have not passed and are not required
 
 **Status:** open
 **Area:** ci, repo checks
 **Origin:** Found on 2026-10-21: the Validate job in `.github/workflows/ci.yml` has one runner and one Python
-**Verified:** 2026-10-21
+**Verified:** 2026-10-22
 
 The Validate job in `.github/workflows/ci.yml` runs `just check` four times
 ([ADR-0012](../../adr/ADR-0012-check-command.md)): on `ubuntu-latest` with `PYTHON_VERSION` (3.10) and with
 `BUILD_PYTHON_VERSION` (3.14), which must pass, and on `windows-latest` and `macos-latest` with `PYTHON_VERSION`,
 whose matrix entries set `required: false`, so that the job sets `continue-on-error` for them. The Windows and
-macOS runs were added without a run, because neither system was available where they were written. So no check
-has passed yet with:
+macOS runs were added without a run, because neither system was available where they were written, and their
+first run failed in the suite. So no run of `just check` has passed yet with:
 
 - the `cmd.exe` shell that the `justfile` sets with `windows-shell`, and its `python` in place of `python3`;
 - the tests and scans on Windows paths and the macOS file system;
@@ -92,3 +92,12 @@ None of this sends a Twitch request.
   3.10.22 and 3.14.9, `just check` reported 1650 passed and 10 skipped, with 98.08% and 98.15% branch
   coverage. Eight of the skips need a user other than root, which act uses. The Windows and macOS entries still
   have no run.
+- 2026-10-22: The Windows and macOS entries ran for the first time, after a push to `master`, on Python
+  3.10.11. Both installed every package at its set version and the `just` release, and every scan passed. The
+  build jobs, the release upload and the Ubuntu entries passed too. The suite failed: on macOS 2 tests failed,
+  1725 passed and 14 skipped, and on Windows 6 failed, 1705 passed and 30 skipped, with 98.08% and 97.44%
+  branch coverage. On Windows a Tk failed to start with `Can't find a usable init.tcl`, because pytest's
+  capture closed the standard handles that Tcl keeps. The tests now start Tcl without them
+  ([ADR-0013](../../adr/ADR-0013-test-standard.md)). Under Wine 8.0.2 with the same Python, the failure
+  happened before that change and not after it. The title was "The Windows and macOS checks in CI have never
+  run and are not required". The task stays open until a Windows and a macOS run pass.
