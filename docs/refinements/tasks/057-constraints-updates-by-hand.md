@@ -35,3 +35,5 @@ None of this sends a Twitch request.
 - 2026-10-22: Each build job runs `scripts/installcheck.py` after its installs, which fails on a package that
   `constraints.txt` lacks or sets to another version. The AppImage job checks the user's site folder and the
   AppDir, so the Debian packages of Ubuntu's Python stay out.
+- 2026-10-22: Step 1 of the runbook saves the files of the kept lines into a folder that `--find-links` names,
+  so that a kept line newer than two weeks, such as aiohttp 3.14.5, resolves with `--uploaded-prior-to P14D`.

@@ -23,7 +23,8 @@ the markers of a requirement, such as `sys_platform == "win32"`, for the Python 
 sets those values for the target before pip starts, so that its report lists the packages the target installs.
 `compare.py` prints each package of the reports whose version is not the one in `constraints.txt`, and each
 line of the file that no report uses. It skips appimage-builder, which the AppImage job installs from a git
-commit and the file does not list. Set `TDM` to a folder outside the repository:
+commit and the file does not list. `kept_urls.py` prints the address on PyPI of each file that the reports
+install for a line of `$TDM/keep.txt`. Set `TDM` to a folder outside the repository:
 
 ```bash
 export TDM=/tmp/tdm-resolve
@@ -83,6 +84,27 @@ for report in sorted(Path(sys.argv[1]).glob("report-*.json")):
 for name in sorted(set(listed) - found):
     print(f"no report installs {name}")
 EOF
+cat > "$TDM/kept_urls.py" <<'EOF'
+"""Print the address on PyPI of each file that the reports in a folder install for a line of its keep.txt."""
+import json
+import re
+import sys
+from pathlib import Path
+
+
+def key(name):
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+folder = Path(sys.argv[1])
+kept = {key(re.split(r"[=;\s]", line)[0]) for line in (folder / "keep.txt").read_text().splitlines() if line.strip()}
+urls = set()
+for report in folder.glob("report-*.json"):
+    for item in json.loads(report.read_text())["install"]:
+        if key(item["metadata"]["name"]) in kept and item["download_info"]["url"].startswith("https:"):
+            urls.add(item["download_info"]["url"])
+print("\n".join(sorted(urls)))
+EOF
 ```
 
 ## Resolve for every build
@@ -117,11 +139,18 @@ resolve() {
 ```
 
 1. List the newest versions that are two weeks old. Write into `$TDM/keep.txt` the lines of `constraints.txt`
-   that must not change, or leave it empty:
+   that must not change, or leave it empty. `--uploaded-prior-to` leaves out each newer file on PyPI, but not a
+   file in a folder that `--find-links` names. So the commands first save into `$TDM/kept` the files that
+   `resolve -c constraints.txt` chooses for the kept lines. A kept line newer than two weeks, such as aiohttp
+   3.14.5 in the first file, then resolves from those files, and every other package needs a release that is
+   two weeks old:
 
    ```bash
    touch "$TDM/keep.txt"
-   resolve --uploaded-prior-to P14D -c "$TDM/keep.txt"
+   resolve -c constraints.txt
+   rm -rf "$TDM/kept" && mkdir "$TDM/kept"
+   python3.14 "$TDM/kept_urls.py" "$TDM" | (cd "$TDM/kept" && xargs -r -n 1 curl -fsSLO)
+   resolve --uploaded-prior-to P14D -c "$TDM/keep.txt" --find-links "$TDM/kept"
    python3.14 "$TDM/compare.py" "$TDM"
    ```
 
