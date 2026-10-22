@@ -19,6 +19,7 @@ Xlib.error.DisplayNameError: Bad display name ""
 On Linux `gui.py` tries pystray's AppIndicator, GTK and X11 backends in turn
 ([traybackend.md](../modules/traybackend.md)). Without the Gtk 3 introspection data, the first two print a
 warning with `ValueError: Namespace Gtk not available`, and the X11 backend fails because no X display is set.
+Without a DBus session bus, one warning names the bus instead, and only the X11 backend is tried.
 With `PYSTRAY_BACKEND=dummy` set, tkinter fails next for the same reason:
 
 ```text

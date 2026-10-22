@@ -1,6 +1,6 @@
 # A SIGTERM leaves the app running while its AppIndicator tray icon is shown without a session bus
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** gui, main
 **Origin:** Found on 2026-10-22 while the x86_64 build of the `linux-pyinstaller` job was started with `--tray`
 in an Ubuntu 22.04 container with the GTK libraries it needs and no DBus session bus
@@ -35,3 +35,14 @@ tray icon's main loop before the event loop closes. None of this sends a Twitch 
 
 - 2026-10-22: Opened. Found while the tray backend fallback that closed
   [task 061](061-linux-build-needs-wayland-libraries.md) was checked in the Linux builds.
+- 2026-10-22: Closed. A `py-spy dump` of the x86_64 PyInstaller build, 8 seconds after the SIGTERM, showed the
+  main thread in `threading._shutdown` and one other thread in `setup_handler` of pystray's `_base.py`, which
+  waits on a queue. `main()` had ended and had written `settings.json` and `cookies.jar`. pystray's icon thread
+  opens the session bus in `notify_dbus.Notifier` before it marks the icon ready, and with `-vvvv` the log
+  showed `GLib.Error` from `Gio.bus_get_sync`, so no icon appeared and the setup thread never ended. With a
+  `dbus-daemon --session` in the container, the same build ended 2 seconds after the SIGTERM with status 0.
+  `traybackend.py` now checks the bus first and without one uses the X11 backend alone, with a warning. Built
+  under act with that change and the one that closed [task 062](062-appimage-without-fuse-ignores-sigterm.md),
+  the x86_64 PyInstaller build and AppImage started with `--tray` and no bus ended 2 seconds after the SIGTERM
+  and wrote both files. The X11 icon appeared in `stalonetray`; it does not respond to
+  a click ([task 063](063-x11-tray-icon-ignores-clicks.md)).

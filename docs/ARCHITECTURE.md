@@ -163,7 +163,7 @@ Nothing sends `ClaimCommunityPoints`, `ChannelPointsContext`, `SlugRedirect`, `N
 | Area | Windows | Linux | macOS |
 | --- | --- | --- | --- |
 | Autostart | value `TwitchDropsMiner` in `HKCU/Software/Microsoft/Windows/CurrentVersion/Run`, through `registry.py` | `TwitchDropsMiner.desktop` in `~/.config/autostart`, or in `$XDG_CONFIG_HOME/autostart` when that folder exists | `~/Library/LaunchAgents/com.devilxd.twitchdropsminer.plist` with `RunAtLoad`; [ADR-0007](adr/ADR-0007-kept-identifiers.md) explains the name |
-| Tray | pystray | pystray, whose AppIndicator, GTK and X11 backends `traybackend.py` tries in turn; `build.spec` bundles `libayatana-appindicator3.so.1` | none: `Minimize to Tray`, `--tray` and the two tray settings are hidden or ignored |
+| Tray | pystray | pystray, whose AppIndicator, GTK and X11 backends `traybackend.py` tries in turn, X11 alone without a DBus session bus; `build.spec` bundles `libayatana-appindicator3.so.1` | none: `Minimize to Tray`, `--tray` and the two tray settings are hidden or ignored |
 | Closing | a WndProc hook (pywin32) handles `WM_CLOSE` and `WM_QUERYENDSESSION`, so a Windows shutdown closes the app | `WM_DELETE_WINDOW`; SIGINT and SIGTERM call `GUIManager.close` | `WM_DELETE_WINDOW` |
 | Dark mode | the `clam` ttk theme and the title bar color through DWM | the `clam` ttk theme | `NSAppearance` through AppKit |
 | Lock file | `msvcrt.locking` | `fcntl.lockf` | `fcntl.lockf` |

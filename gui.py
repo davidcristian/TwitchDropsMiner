@@ -45,7 +45,7 @@ from gamelib import (
 )
 from exceptions import MinerException, ExitRequest
 from folderpicker import FolderPicker
-from traybackend import import_pystray, load_pystray
+from traybackend import import_pystray, load_pystray, session_bus_error
 from scrollarea import MinimumSize, ScrollArea, Size, fitted_size
 from utils import resource_path, set_root_icon, webopen, start_task, task_wrapper, Game, _T
 from constants import (
@@ -73,7 +73,7 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("TwitchDrops")
-pystray = import_pystray(load_pystray, os.environ, sys.platform)
+pystray = import_pystray(load_pystray, os.environ, sys.platform, session_bus_error)
 TK_PADDING =Union[int, Tuple[int, int], Tuple[int, int, int], Tuple[int, int, int, int]]
 DIGITS = ceil(log10(WS_TOPICS_LIMIT))
 

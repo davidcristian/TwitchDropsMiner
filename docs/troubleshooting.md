@@ -161,13 +161,15 @@ library it needs. A run from source needs the system packages listed in
 - **The window disappears and no icon appears** after `Minimize to Tray`, or at start with `--tray` or "Autostart
   into tray". The app is still running. End it from a terminal or a system monitor, then turn off "Autostart into
   tray" until the tray icon works.
-- **The tray icon has no menu.** When the AppIndicator and GTK backends of pystray fail to load, the app uses
-  its X11 backend and prints a warning that starts with `Tray icon:` to standard error. The release builds do so
-  on an X11 system without `libwayland-client0`, `libwayland-cursor0` and `libwayland-egl1`, and the AppImage
-  also without `libxcb-render0` (Debian and Ubuntu names). The X11 icon has no menu, shows no notifications and
+- **The tray icon has no menu.** When the AppIndicator and GTK backends of pystray fail to load, or the app
+  cannot connect to a DBus session bus, which these two backends need, the app uses its X11 backend and prints a
+  warning that starts with `Tray icon:` to standard error. The release builds do so on an X11 system without
+  `libwayland-client0`, `libwayland-cursor0` and `libwayland-egl1`, and the AppImage also without
+  `libxcb-render0` (Debian and Ubuntu names). A desktop session starts a session bus, but a bare X server, a
+  container or an SSH session may have none. The X11 icon has no menu, shows no notifications and
   does not respond to a click ([task 063](refinements/tasks/063-x11-tray-icon-ignores-clicks.md)), so after
   `Minimize to Tray` the window stays hidden as described above. Install these libraries, or `libgtk-3-0`,
-  which depends on them, to get the AppIndicator icon.
+  which depends on them, and start the app in a session with a bus to get the AppIndicator icon.
 - **Another tray backend.** pystray chooses its backend from the `PYSTRAY_BACKEND` environment variable when it
   is set, for example to `gtk` or `xorg`.
 

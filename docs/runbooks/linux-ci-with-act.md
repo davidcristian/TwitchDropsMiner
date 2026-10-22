@@ -197,8 +197,8 @@ These differences from GitHub's runners remain:
 
 The artifact zip file holds the release zip file, which holds the `Twitch Drops Miner` folder. This image is an
 Ubuntu 22.04 with the libraries that PyInstaller and appimage-builder leave to the system's graphics stack
-([task 061](../refinements/tasks/061-linux-build-needs-wayland-libraries.md)), fonts, an X server in memory and
-Pillow for a screenshot:
+([task 061](../refinements/tasks/061-linux-build-needs-wayland-libraries.md)), fonts, an X server in memory,
+DBus for a session bus and Pillow for a screenshot:
 
 ```bash
 mkdir -p "$ACT/run"
@@ -207,7 +207,7 @@ FROM ubuntu:22.04
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       xvfb xauth unzip python3-pil fontconfig-config fonts-dejavu-core fonts-noto-color-emoji \
-      libxcb1 libxcb-render0 libwayland-client0 libwayland-cursor0 libwayland-egl1 \
+      libxcb1 libxcb-render0 libwayland-client0 libwayland-cursor0 libwayland-egl1 dbus \
  && rm -rf /var/lib/apt/lists/* \
  && useradd -m -u 1000 user
 EOF
@@ -220,6 +220,7 @@ start_build() {
   unzip -q -d "$ACT/start-$1" "$ACT/start-$1/$name.zip"
   docker run --rm --init --network none --platform "linux/$2" -u 1000:1000 -e HOME=/home/user \
     -v "$ACT/start-$1:/home/user" -w /home/user "tdm-run:$2" xvfb-run -a -s "-screen 0 1600x1000x24" sh -c '
+      export DBUS_SESSION_BUS_ADDRESS="$(dbus-daemon --session --fork --print-address)"
       timeout 60 "./Twitch Drops Miner/Twitch Drops Miner" "$@" > app.log 2>&1 &
       sleep 20
       python3 -c "from PIL import ImageGrab; ImageGrab.grab(xdisplay=\"$DISPLAY\").save(\"shot.png\")"
@@ -231,7 +232,10 @@ start_build aarch64 arm64
 
 Pass a flag after the platform to start the build with it, such as `start_build x86_64 amd64 --version`.
 `--init` makes Docker's init process the first process of the container. Without it, `xvfb-run` is that
-process and waits forever for the signal that Xvfb sends when it is ready.
+process and waits forever for the signal that Xvfb sends when it is ready. `dbus-daemon` starts the session bus
+that a desktop has. Without it, the app uses pystray's X11 backend and prints a line that starts with
+`Tray icon:` ([traybackend.md](../modules/traybackend.md)). With it, GTK prints a `dbind-WARNING` because the
+container has no accessibility bus, which does not affect the app.
 
 ## Start an AppImage
 
@@ -248,6 +252,7 @@ start_appimage() {
   docker run --rm --init --network none --platform "linux/$2" -u 1000:1000 -e HOME=/home/user \
     -e APPIMAGE_EXTRACT_AND_RUN=1 -v "$dir:/home/user" -w /home/user "tdm-run:$2" \
     xvfb-run -a -s "-screen 0 1600x1000x24" sh -c '
+      export DBUS_SESSION_BUS_ADDRESS="$(dbus-daemon --session --fork --print-address)"
       timeout 60 "./Twitch Drops Miner/Twitch.Drops.Miner-$0.AppImage" "$@" > app.log 2>&1 &
       sleep 20
       python3 -c "from PIL import ImageGrab; ImageGrab.grab(xdisplay=\"$DISPLAY\").save(\"shot.png\")"
