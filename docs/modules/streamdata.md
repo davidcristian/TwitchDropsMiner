@@ -28,7 +28,8 @@ request and needs neither Twitch nor a display.
   `channel_id` names the channel in a warning.
 - `playback_token(response)` returns the `value` and `signature` of a `PlaybackAccessToken` response, or None
   when `data`, `streamPlaybackAccessToken` or either of the two is null. `Stream.get_stream_url` then starts an
-  online check ([channel.md](channel.md#a-null-playback-token)).
+  online check ([channel.md](channel.md#a-null-playback-token)). The response's other fields are not read.
+  `tests/test_twitch_null_watch.py` sets each value of a complete response to null in turn.
 
 ## Null stream fields
 

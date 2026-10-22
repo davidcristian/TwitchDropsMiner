@@ -145,8 +145,8 @@ Every `WATCH_INTERVAL` (20 seconds) `_watch_loop` takes the watched channel, wai
 watching it when it is offline, and calls `Channel.send_watch` ([channel.md](channel.md#watching)). About 15
 seconds later, when `gui.progress.minute_almost_done()` is True (the countdown for the minute has stopped or has
 at most 10 seconds left), it sends a `CurrentDrop` GQL query for the drop's minutes, one per cycle at most.
-When that fails or names no drop, which a null `currentUser` also does, `DropsCampaign.bump_minutes` adds an
-estimated minute ([inventory.md](inventory.md#progress)).
+When that fails or names no drop, which a null `currentUser`, `dropID` or `currentMinutesWatched` also does,
+`DropsCampaign.bump_minutes` adds an estimated minute ([inventory.md](inventory.md#progress)).
 
 ## Maintenance task
 

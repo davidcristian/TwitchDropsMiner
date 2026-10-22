@@ -41,10 +41,13 @@ same way, with `get_field`. The module sends no request and needs neither Twitch
   the drops that `TimedDrop` can read ([Null drops](#null-drops)), and `allow.channels` only the channels that
   `Channel.from_acl` can read. It reads the other null fields as [Other null fields](#other-null-fields) says.
 - `current_drop(response)` returns the `dropCurrentSession` of a `CurrentDrop` response, or None when it,
-  `currentUser` or `data` is null.
+  `currentUser` or `data` is null. It keeps a null field of the session. `Twitch._watch_loop` reads a session
+  whose `dropID` or `currentMinutesWatched` is null as none, and adds an estimated minute
+  ([twitch.md](twitch.md#watch-loop)). `Twitch.process_drops` reads only `dropID`, and a null one ends its wait
+  for the next drop after a claim, as a null session does.
 - `claim_succeeded(response)` returns True when the `claimDropRewards.status` of a `ClaimDrop` response is in
   `CLAIMED_STATUSES` (`ELIGIBLE_FOR_ALL` and `DROP_INSTANCE_ALREADY_CLAIMED`) and its data has no `errors`.
-  It returns False for any other response, a null `data` or `claimDropRewards` included.
+  It returns False for any other response, a null `data`, `claimDropRewards` or `status` included.
 
 ## A null inventory
 
@@ -166,7 +169,8 @@ before its precondition is claimed. Neither ends the run.
 - No function sends a request, and no caller sends one again for a null item: a campaign or drop left out
   waits for the next reload, and a summary left out sends no `CampaignDetails` operation. A null `CurrentDrop`
   user means no drop data for that request, and a null `ClaimDrop` result is a failed claim
-  ([inventory.md](inventory.md#claiming)).
+  ([inventory.md](inventory.md#claiming)). `tests/test_twitch_null_watch.py` sets each value of a complete
+  `CurrentDrop` and `ClaimDrop` response to null in turn and checks these outcomes.
 
 **Dependencies.** `exceptions` (`GQLException`, `MinerException`). `constants` (`JsonType`) is imported for type
 checking only.

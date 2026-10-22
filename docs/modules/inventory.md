@@ -97,7 +97,8 @@ Three sources change a drop's minutes:
 1. A websocket `drop-progress` event (`Twitch.process_drops`) calls `update_minutes(current_progress_min)` on its
    drop, when that drop can progress on the watched channel.
 2. When no event arrives in time, `Twitch._watch_loop` sends a `CurrentDrop` GQL query and calls
-   `update_minutes(currentMinutesWatched)` on the drop it names, under the same condition.
+   `update_minutes(currentMinutesWatched)` on the drop it names, under the same condition. A null
+   `currentMinutesWatched` counts as a failed query.
 3. When that query fails, `_watch_loop` calls `bump_minutes(channel)` on the campaign `Twitch.get_active_campaign`
    returns. It adds 1 to `extra_current_minutes` of each drop that can progress on the channel.
 

@@ -945,7 +945,7 @@ class Twitch:
                     drop_data: JsonType | None = current_drop(context)
                 except GQLException:
                     drop_data = None
-                if drop_data is not None:
+                if drop_data is not None and drop_data["currentMinutesWatched"] is not None:
                     gql_drop: TimedDrop | None = self._drops.get(drop_data["dropID"])
                     if gql_drop is not None and gql_drop.can_earn(channel):
                         gql_drop.update_minutes(drop_data["currentMinutesWatched"])
