@@ -1,9 +1,9 @@
 # The no campaign message repeats on every stream refresh
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** twitch (state machine)
 **Origin:** Found on 2026-10-18 while the docs were written, [twitch.md](../../modules/twitch.md#maintenance-task)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 When no game is wanted, the `State.CHANNELS_CLEANUP` branch of `Twitch._run` in `twitch.py` removes every
 channel, prints `_("status", "no_campaign")` and enters `State.IDLE`. The text is "No active campaigns to mine
@@ -66,3 +66,9 @@ also skip the refresh in that case; it costs no request either way.
 
 - 2026-10-18: Opened. While the maintenance task in twitch.md was written, the no campaign print was found to
   have no flag. A run of the real `_run` with stubs counted the messages.
+- 2026-10-22: Closed. `CHANNELS_CLEANUP` prints the message only while `Twitch._no_campaign_printed` is False
+  and then sets it. It sets the flag back to False when a game is wanted, which is equivalent to doing so in
+  `GAMES_UPDATE`: only that state changes `wanted_games`, and it always moves to `CHANNELS_CLEANUP`.
+  `shutdown` resets it too. The refresh still runs with no wanted game, as before. Two tests in
+  `tests/test_twitch_run.py` run the real `_run` through refreshes, a wanted game, none again and a second
+  run, and count the lines. The fix sends no request.

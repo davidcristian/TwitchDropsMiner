@@ -20,7 +20,7 @@ from fakes import (
     settle,
     stream_user,
 )
-from livetwitch import run_with_fast_clock
+from livetwitch import log_in, run_with_fast_clock
 from translate import _
 from twitch import Twitch
 
@@ -85,6 +85,50 @@ def test_the_run_fetches_the_inventory_while_every_pubsub_connection_fails(live_
     assert fake.http_sent == ["WS pubsub-edge.twitch.tv"]
     assert fake.gql_sent == ["Inventory", "Campaigns"]
     assert fake.printed == [_("status", "no_campaign")]
+
+
+def test_the_no_campaign_message_is_printed_once_each_time_no_game_is_wanted(live_twitch):
+    fake = run_fake(directory((1, 1000)), directory((1, 1000)))
+    fake.settings.priority = []
+
+    async def scenario():
+        twitch = live_twitch(fake)
+        run = asyncio.create_task(twitch._run())
+        await until(lambda: "Campaigns" in fake.gql_sent and waits(twitch))
+        await refresh(twitch)
+        for priority in ([GAME["name"]], []):
+            fake.settings.priority = priority
+            twitch.change_state(State.GAMES_UPDATE)
+            await until(lambda: waits(twitch))
+            await refresh(twitch)
+        return run.done()
+
+    assert asyncio.run(scenario()) is False
+    assert fake.printed == [
+        _("status", "no_campaign"),
+        _("status", "watching").format(channel="C1"),
+        _("status", "no_campaign"),
+    ]
+    assert fake.gql_sent == ["Inventory", "Campaigns", "GameDirectory", "PlaybackAccessToken", "GameDirectory"]
+
+
+def test_a_run_after_a_shutdown_prints_the_no_campaign_message_again(live_twitch):
+    fake = FakeTwitch(gql=gql_answers(Inventory=inventory([]), Campaigns=NO_CAMPAIGNS))
+
+    async def scenario():
+        twitch = live_twitch(fake)
+        for runs in (1, 2):
+            run = asyncio.create_task(twitch._run())
+            await until(lambda: fake.gql_sent.count("Campaigns") == runs and waits(twitch))
+            run.cancel()
+            await twitch.shutdown()
+            # the next run logs in again
+            log_in(twitch, fake)
+
+    run_with_fast_clock(scenario())
+
+    assert fake.printed == [_("status", "no_campaign")] * 2
+    assert fake.gql_sent == ["Inventory", "Campaigns"] * 2
 
 
 def test_a_stream_down_during_the_requests_of_the_channel_fetch_reaches_the_channel(live_twitch):

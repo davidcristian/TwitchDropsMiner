@@ -165,8 +165,8 @@ At each of these it enters `State.CHANNELS_CLEANUP`, which goes on to `State.CHA
 `GameDirectory` query per wanted game with a campaign that has no ACL, plus `GetStreamInfo` batches for the
 untracked ACL channels (and `AvailableDrops` batches with the extra drops check on), and no inventory reload
 ([ADR-0003](../adr/ADR-0003-stream-refresh.md)). With no wanted game, `CHANNELS_CLEANUP` moves to `IDLE`
-instead and prints the no campaign message each time
-([task 020](../refinements/tasks/020-no-campaign-message-repeats.md)).
+instead and sends no request. It prints the no campaign message once, and again only after a game was wanted
+or the run ended (`_no_campaign_printed`), so a refresh adds no line to the Output box.
 
 ## Restart after a fatal error
 
@@ -239,9 +239,9 @@ scanned again. A scan error is printed once while it persists ([gamelib.md](game
   sets `State.EXIT`, so the run ends without the automatic restart
   ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)).
 - `shutdown` cancels the online check of each tracked channel, clears the channels, the GUI channel list,
-  inventory, drops, `_campaigns`, login state, wanted games and triggers, and resets `_no_channel_printed` and
-  `_scan_errors_printed`, so the next `_run` starts as a fresh one would. A new field filled during a run must
-  be cleared there.
+  inventory, drops, `_campaigns`, login state, wanted games and triggers, and resets `_no_campaign_printed`,
+  `_no_channel_printed` and `_scan_errors_printed`, so the next `_run` starts as a fresh one would. A new field
+  filled during a run must be cleared there.
 - `fetch_inventory` clears `_campaigns` and `_drops` before it fills them. A campaign that the latest reload
   left out then has no entry and makes no stream drops enabled ([channel.md](channel.md#drops-enabled)).
 - `channels` stays within `MAX_CHANNELS` ([websocket.md](websocket.md#the-199-channel-limit)).

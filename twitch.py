@@ -301,8 +301,9 @@ class Twitch:
         self._drops: dict[str, TimedDrop] = {}
         self._campaigns: dict[str, DropsCampaign] = {}
         self._mnt_triggers: deque[datetime] = deque()
-        # NOTE: with periodic refreshes enabled, we end up in CHANNEL_SWITCH every few minutes,
-        # so remember if we already told the user there's nothing to watch, to avoid spamming it
+        # A stream refresh enters CHANNELS_CLEANUP and CHANNEL_SWITCH every few minutes, so these flags keep
+        # the messages that nothing can be mined or watched from being printed again on each refresh
+        self._no_campaign_printed: bool = False
         self._no_channel_printed: bool = False
         # NOTE: the game folder scan re-runs on every reload, so remember which problems
         # we've already reported - a folder on an unplugged drive would print hourly otherwise
@@ -397,6 +398,7 @@ class Twitch:
         self.wanted_games.clear()
         self._mnt_triggers.clear()
         # the next run starts fresh, so let the suppressed messages through again
+        self._no_campaign_printed = False
         self._no_channel_printed = False
         self._scan_errors_printed.clear()
         # wait at least half a second + whatever it takes to complete the closing
@@ -731,10 +733,13 @@ class Twitch:
                         channel.remove()
                     del to_remove_channels, to_remove_topics
                 if self.wanted_games:
+                    self._no_campaign_printed = False
                     self.change_state(State.CHANNELS_FETCH)
                 else:
                     # with no games available, we switch to IDLE after cleanup
-                    self.print(_("status", "no_campaign"))
+                    if not self._no_campaign_printed:
+                        self.print(_("status", "no_campaign"))
+                        self._no_campaign_printed = True
                     self.change_state(State.IDLE)
             elif self._state is State.CHANNELS_FETCH:
                 self.gui.status.update(_("gui", "status", "gathering"))

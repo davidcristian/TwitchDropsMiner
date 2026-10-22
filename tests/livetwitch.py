@@ -106,10 +106,15 @@ def build_twitch(
     # Twitch.__init__ creates the window, which needs a display
     monkeypatch.setattr(twitch_module, "GUIManager", lambda client: fake.gui)
     client = Twitch(fake.settings)
+    log_in(client, fake, pubsub)
+    return client
+
+
+def log_in(client: Twitch, fake: FakeTwitch, pubsub: Callable[[], FakePubSub] = refuse_pubsub) -> None:
+    """Give client a `FakeSession` and the login of user 1, which `Twitch.shutdown` clears."""
     client._session = FakeSession(fake, pubsub)
     auth = client._auth_state
     auth.user_id, auth.device_id, auth.session_id, auth.access_token = 1, "device", "session", "token"
-    return client
 
 
 class _SkippingSelector(selectors.DefaultSelector):
