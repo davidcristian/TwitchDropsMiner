@@ -1,6 +1,6 @@
 # A lower progress value takes minutes from the claimed drops of the campaign
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** inventory (drop progress)
 **Origin:** Found on 2026-10-22 while the other drops of a campaign were kept at 0 minutes or more,
 [inventory.md](../../modules/inventory.md#progress)
@@ -32,3 +32,7 @@ that can progress. The other drops that cannot progress keep the change
 
 - 2026-10-22: Opened. A script built the campaign above with the test fakes in `tests/fakes.py` and called
   `update_minutes` with a lower value, after the fix that keeps the other drops at 0 minutes or more.
+- 2026-10-22: Closed. `TimedDrop._update_real_minutes` returns at once for a claimed drop, which keeps
+  `required_minutes`, as building the drop and `claim()` set it. A test in `tests/test_inventory.py` builds d1
+  claimed at 60 minutes and d2 at 10, updates d2 to 8 and checks that d1 stays at 60
+  ([inventory.md](../../modules/inventory.md#progress)).

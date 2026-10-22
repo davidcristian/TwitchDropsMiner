@@ -33,6 +33,16 @@ def test_a_lower_progress_value_stops_the_other_drops_of_the_campaign_at_zero_mi
     assert [drop.current_minutes for drop in campaign.drops] == [8, 0]
 
 
+def test_a_lower_progress_value_leaves_a_claimed_drop_of_the_campaign_at_its_full_minutes():
+    claimed = drop_data("d1", minutes=60, watched=60)
+    claimed["self"]["isClaimed"] = True
+    campaign = DropsCampaign(FakeTwitch(), campaign_data([claimed, drop_data("d2", minutes=60, watched=10)]), {})
+
+    campaign.timed_drops["d2"].update_minutes(8)
+
+    assert [drop.current_minutes for drop in campaign.drops] == [60, 8]
+
+
 def test_an_update_for_one_drop_lets_a_drop_at_the_extra_minutes_limit_progress_again():
     drops = [drop_data("d1", minutes=60, watched=10), drop_data("d2", minutes=60, watched=10)]
     campaign = DropsCampaign(FakeTwitch(), campaign_data(drops), {})
