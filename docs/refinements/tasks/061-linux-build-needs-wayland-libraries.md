@@ -1,6 +1,6 @@
 # The Linux builds stop at start without the Wayland client libraries
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** build, appimage, gui
 **Origin:** Found on 2026-10-22 while the build of the `linux-pyinstaller` job was started in an Ubuntu 22.04
 container that had only an X server, fonts and `unzip` installed
@@ -63,3 +63,13 @@ sends a Twitch request.
 - 2026-10-22: Each AppImage of the `linux-appimage` job, run under act, stops the same way without the three
   Wayland libraries or `libxcb-render0`, which appimage-builder leaves out. The title was "The Linux PyInstaller
   build stops at start without the Wayland client libraries".
+- 2026-10-22: Closed. `gui.py` imports pystray through `import_pystray` in `traybackend.py`, which tries the
+  AppIndicator, GTK and X11 backends in turn and moves on after an `ImportError`, `ValueError` or
+  `AssertionError`, with a warning that names the backend and the error. Under act, the x86_64 and aarch64
+  builds of both jobs then opened their window in the container above without the four libraries, and the
+  x86_64 AppImage did with only `libxcb-render0` missing. Their tray icon used the X11 backend, which has no
+  menu, shows no notifications and does not respond to a click
+  ([task 063](063-x11-tray-icon-ignores-clicks.md)). With the libraries, no build printed a warning, and with
+  `--tray` both x86_64 builds loaded `libayatana-appindicator3.so.1`. The README and
+  [troubleshooting.md](../../troubleshooting.md#the-tray-icon-on-linux) name the libraries. The check found
+  [task 064](064-sigterm-ignored-with-appindicator-tray.md).

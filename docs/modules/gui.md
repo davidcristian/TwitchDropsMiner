@@ -117,7 +117,8 @@ The GUI calls back into `Twitch` through `settings`, `change_state`, `state_chan
 
 ## The tray icon
 
-`TrayIcon` wraps a `pystray.Icon` named `twitch_miner`.
+`TrayIcon` wraps a `pystray.Icon` named `twitch_miner`. `gui.py` imports pystray through `import_pystray`, which
+chooses the tray backend ([traybackend.md](traybackend.md)).
 
 - The icon is created on the first `minimize()`, not at start. `pystray.Icon.run` blocks, so it runs in a thread
   of the default executor (`loop.run_in_executor`). The menu items "Show" (the default action) and "Quit" call
@@ -211,7 +212,7 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
   needs. It has no `detect_games`, `get_auth` or `_client_type`, so "Rescan", the ❌ folder button and a folder
   chosen with ➕ raise `AttributeError` in the preview.
 
-**Dependencies.** Repo modules: `translate`, `cache`, `gamelib`, `exceptions`, `folderpicker`, `scrollarea`,
-`utils`, `constants`, and `registry` on Windows; `twitch`, `channel`, `settings` and `inventory` for type
-checking only. Third-party: `pystray`, Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on Windows,
-`AppKit` on macOS, and `aiohttp` in the preview.
+**Dependencies.** Repo modules: `translate`, `cache`, `gamelib`, `exceptions`, `folderpicker`, `traybackend`,
+`scrollarea`, `utils`, `constants`, and `registry` on Windows; `twitch`, `channel`, `settings` and `inventory`
+for type checking only. Third-party: `pystray`, Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on
+Windows, `AppKit` on macOS, and `aiohttp` in the preview.

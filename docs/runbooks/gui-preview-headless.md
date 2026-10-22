@@ -13,12 +13,13 @@ the window. Run every command from the repository folder, with the `env/` virtua
 The first error comes from pystray, the tray icon library that `gui.py` imports:
 
 ```text
-ValueError: Namespace Gtk not available
+Xlib.error.DisplayNameError: Bad display name ""
 ```
 
-On Linux pystray tries its AppIndicator backend first, which needs the Gtk 3 introspection data. Without it the
-backend raises `ValueError`, and pystray moves on to its next backend only after an `ImportError`, so the import
-fails. With `PYSTRAY_BACKEND=dummy` set, tkinter fails next, because no X display is set:
+On Linux `gui.py` tries pystray's AppIndicator, GTK and X11 backends in turn
+([traybackend.md](../modules/traybackend.md)). Without the Gtk 3 introspection data, the first two print a
+warning with `ValueError: Namespace Gtk not available`, and the X11 backend fails because no X display is set.
+With `PYSTRAY_BACKEND=dummy` set, tkinter fails next for the same reason:
 
 ```text
 _tkinter.TclError: no display name and no $DISPLAY environment variable

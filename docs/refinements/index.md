@@ -105,3 +105,5 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [060: A null item in `AvailableDrops` data still raises](tasks/060-null-fields-in-available-drops.md) | channel, twitch |
 | [061: The Linux builds stop at start without the Wayland client libraries](tasks/061-linux-build-needs-wayland-libraries.md) | build, appimage, gui |
 | [062: A SIGTERM to an AppImage that runs without FUSE leaves the app running](tasks/062-appimage-without-fuse-ignores-sigterm.md) | appimage |
+| [063: The X11 tray icon does not respond to a click](tasks/063-x11-tray-icon-ignores-clicks.md) | gui, traybackend |
+| [064: A SIGTERM leaves the app running while its AppIndicator tray icon is shown without a session bus](tasks/064-sigterm-ignored-with-appindicator-tray.md) | gui, main |

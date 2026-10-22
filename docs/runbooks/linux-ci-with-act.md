@@ -267,7 +267,9 @@ start_appimage aarch64 arm64
 
 ## Check the result
 
-- Each start prints `exit=124`: `timeout` ended an app that ran for a minute. `app.log` has no traceback.
+- Each start prints `exit=124`: `timeout` ended an app that ran for a minute. `app.log` has no traceback and
+  no line that starts with `Tray icon:`, so pystray's AppIndicator backend loaded
+  ([traybackend.md](../modules/traybackend.md)).
 - `shot.png` in `$ACT/start-<arch>` and `$ACT/start-appimage-<arch>` shows the window on the Main tab. With no
   network, the Output box lists `Cannot connect to Twitch, retrying in N seconds... (https://www.twitch.tv)`.
 - With `--version`, the screenshot shows a dialog with the version and the short commit hash, such as
