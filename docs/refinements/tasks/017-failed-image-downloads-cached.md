@@ -1,9 +1,9 @@
 # A failed image download stays blank while the image is in use
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** cache
 **Origin:** Found on 2026-10-18 while the docs were written, [cache.md](../../modules/cache.md#broken-data)
-**Verified:** 2026-10-20
+**Verified:** 2026-10-22
 
 `ImageCache.get(url, size)` in `cache.py` downloads an image it does not have through `Twitch.request`. In three
 cases it logs a warning and uses a 10 by 10 white image instead: the status is 404, `decode_image` cannot decode
@@ -79,3 +79,10 @@ of `Twitch.request`.
   retries those errors. The task names the failures that do reach the fallback.
 - 2026-10-20: `get()` decodes the whole body with `decode_image` and logs a warning for each fallback, so an
   image cut off after its header also gets the white image. The task's problem is unchanged.
+- 2026-10-22: Done. The claim still held: `tests/test_cache.py` gave a 404, a 403 page, a 200 page and
+  `aiohttp.InvalidURL`, and after a restart each URL showed the white image with no request. `ExitRequest` and
+  `ReloadRequest` did not pass up. `get()` now keeps a failed URL in memory only, until
+  `InventoryOverview.clear` calls `ImageCache.retry_failed` at the next reload, and lets the two requests pass
+  up. A 404 is tried again at each reload too, and a URL mapped to the white file of 10 by 10 pixels is
+  downloaded again ([cache.md](../../modules/cache.md#failed-downloads)). A failed image costs at most one
+  request per reload, and no GQL request.

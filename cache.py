@@ -9,6 +9,7 @@ from functools import partial
 from typing import Dict, TypedDict, NewType, TYPE_CHECKING
 
 from translate import _
+from exceptions import ExitRequest, ReloadRequest
 from savefiles import save_each
 from utils import json_load, json_save
 from imagedata import decode_image, png_mode
@@ -36,6 +37,9 @@ class ExpiringHash(TypedDict):
 
 Hashes = Dict[URLType, ExpiringHash]
 default_database: Hashes = {}
+# A file of this name and size is the white image that cache/ can still map a failed download to; get() downloads
+# such a URL again. The size tells it apart from a downloaded image of one color, which has the same name.
+OLD_FAILED_DOWNLOAD = (ImageHash("fffffffffffffffffffffffff.png"), (10, 10))
 
 
 class ImageCache:
@@ -55,6 +59,8 @@ class ImageCache:
             self._hashes = default_database.copy()
         self._images: dict[ImageHash, Image] = {}
         self._photos: dict[tuple[ImageHash, ImageSize], PhotoImage] = {}
+        self._blanks: dict[ImageSize, PhotoImage] = {}
+        self._failed: set[URLType] = set()
         self._lock = asyncio.Lock()
         self._altered: bool = False
         # cleanup the URLs
@@ -86,6 +92,10 @@ class ImageCache:
         if self._altered or force:
             json_save(CACHE_DB, self._hashes, sort=True)
 
+    def retry_failed(self) -> None:
+        """Have the next get() of each URL whose download failed download it again."""
+        self._failed.clear()
+
     def _new_expires(self) -> datetime:
         return datetime.now(timezone.utc) + self.LIFETIME
 
@@ -109,40 +119,34 @@ class ImageCache:
                     try:
                         loaded = Image_module.open(CACHE_PATH / img_hash)
                         loaded.load()  # force full decode so broken data is caught here
-                        self._images[img_hash] = image = loaded
+                        if (img_hash, loaded.size) != OLD_FAILED_DOWNLOAD:
+                            self._images[img_hash] = image = loaded
                     except (FileNotFoundError, Image_module.UnidentifiedImageError, OSError):
                         pass
-            if image is None:
-                try:
-                    async with self._twitch.request("GET", url) as response:
-                        if response.status != 404:
-                            image = decode_image(await response.read(), Image_module.open)
-                        if image is None:
-                            logger.warning(f"Image download gave no whole image (status {response.status}): {url}")
-                except Exception as exc:
-                    # not repr(exc): the repr of a connection error shows the proxy password
-                    logger.warning(f"Image download failed ({type(exc).__name__}: {exc}): {url}")
+            if image is None and url not in self._failed:
+                image = await self._download(url)
                 if image is None:
-                    # use a blank white image as a fallback
-                    image = Image_module.new("RGB", (10, 10), (255, 255, 255))
-                image = image.convert(png_mode(image.mode))
-                img_hash = self._hash(image)
-                self._images[img_hash] = image
-                # the URL is mapped even when the save fails: this run keeps the image in memory,
-                # and the next run cannot load the file and downloads the image again
-                save_each(
-                    [partial(image.save, CACHE_PATH / img_hash)],
-                    lambda error: logger.error(
-                        _("error", "file_not_saved").format(file=f"{CACHE_PATH.name}/{img_hash}", error=error)
-                    ),
-                )
-                self._hashes[url] = {
-                    "hash": img_hash,
-                    "expires": self._new_expires()
-                }
-        # NOTE: If self._hashes ever stops being updated in both above if cases,
-        # this will need to be moved
+                    # not mapped, so that the first get() after the next reload downloads it again
+                    self._failed.add(url)
+                else:
+                    image = image.convert(png_mode(image.mode))
+                    img_hash = self._hash(image)
+                    self._images[img_hash] = image
+                    # the URL is mapped even when the save fails: this run keeps the image in memory,
+                    # and the next run cannot load the file and downloads the image again
+                    save_each(
+                        [partial(image.save, CACHE_PATH / img_hash)],
+                        lambda error: logger.error(
+                            _("error", "file_not_saved").format(file=f"{CACHE_PATH.name}/{img_hash}", error=error)
+                        ),
+                    )
+                    self._hashes[url] = {
+                        "hash": img_hash,
+                        "expires": self._new_expires()
+                    }
         self._altered = True
+        if image is None:
+            return self._blank(size or (10, 10))
         if size is None:
             size = image.size
         photo_key = (img_hash, size)
@@ -156,3 +160,27 @@ class ImageCache:
                 image = Image_module.new("RGB", size, (255, 255, 255))
         self._photos[photo_key] = photo = PhotoImage(master=self._root, image=image)
         return photo
+
+    async def _download(self, url: URLType) -> Image | None:
+        """Return the image at url, or None after a warning when the download gives no whole image."""
+        try:
+            async with self._twitch.request("GET", url) as response:
+                image: Image | None = None
+                if response.status != 404:
+                    image = decode_image(await response.read(), Image_module.open)
+                if image is None:
+                    logger.warning(f"Image download gave no whole image (status {response.status}): {url}")
+                return image
+        except (ExitRequest, ReloadRequest):
+            raise
+        except Exception as exc:
+            # not repr(exc): the repr of a connection error shows the proxy password
+            logger.warning(f"Image download failed ({type(exc).__name__}: {exc}): {url}")
+            return None
+
+    def _blank(self, size: ImageSize) -> PhotoImage:
+        """Return a white image of the given size, which stands in for an image whose download failed."""
+        if size not in self._blanks:
+            blank = Image_module.new("RGB", size, (255, 255, 255))
+            self._blanks[size] = PhotoImage(master=self._root, image=blank)
+        return self._blanks[size]

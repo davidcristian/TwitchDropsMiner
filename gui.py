@@ -1483,6 +1483,8 @@ class InventoryOverview:
             child.destroy()
         self._drops.clear()
         self._campaigns.clear()
+        # fetch_inventory calls this once per reload, so each failed image download is tried once per reload
+        self._cache.retry_failed()
 
     def update_progress(self, drop: TimedDrop, label: ttk.Label) -> None:
         progress_text: str

@@ -27,6 +27,10 @@ session or an image. The app keeps running. The old `cookies.jar` stays as it wa
 again when it closes or restarts. You log in again at the next start only when no save succeeded and the old
 file holds no valid login. An image that could not be saved is downloaded again at the next start.
 
+**A white square in place of an image** on the Inventory tab means that the image download failed, for example
+because Twitch removed the image or a network login page answered instead. The app downloads the image again at
+the next reload, which runs at least once an hour. With `-v`, the Output box shows the URL and the reason.
+
 ## Command line flags
 
 Add the flags after the program name, in a terminal or in a shortcut. For example:

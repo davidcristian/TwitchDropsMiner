@@ -105,8 +105,8 @@ matches the maintainer's figure of 2500.
   through `gql_request`.
 - Campaign and drop images come from Twitch's image servers. `ImageCache` in `cache.py` keeps each image on disk
   for 7 days after its last use (`LIFETIME`), so a reload downloads only the images it does not have. A failed
-  download is stored as a blank placeholder and is not tried again while it is in use
-  ([017](../refinements/tasks/017-failed-image-downloads-cached.md)).
+  download shows a white image and is tried once per reload, so it costs at most one request per image per
+  reload ([cache.md](../modules/cache.md#failed-downloads)).
 
 ## Alternatives rejected
 

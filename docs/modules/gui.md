@@ -41,7 +41,9 @@ and keeps it as an attribute. The labels in quotes are the English strings from 
   `minute_almost_done()` returns `True` when no countdown runs or `ALMOST_DONE_SECONDS` (10) or fewer are left;
   `Twitch._watch_loop` calls it to decide whether to send the `CurrentDrop` GQL query.
 - **`InventoryOverview.add_campaign`** is a coroutine, because it awaits `ImageCache.get` for the campaign and
-  reward images ([cache.md](cache.md)). The filters are "Not linked", "Upcoming", "Expired", "Excluded" and
+  reward images ([cache.md](cache.md)). `clear()`, which `Twitch.fetch_inventory` calls at each reload, removes
+  the campaigns and calls `ImageCache.retry_failed`, so that each failed image download is tried once more
+  ([cache.md](cache.md#failed-downloads)). The filters are "Not linked", "Upcoming", "Expired", "Excluded" and
   "Finished". `refresh()` applies them again, and it runs each time the Inventory tab is opened. The campaigns are in
   a `ScrollArea` with both scroll bars always shown. The mouse wheel scrolls it, and Shift scrolls sideways
   ([scrollarea.md](scrollarea.md)).
