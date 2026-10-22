@@ -104,5 +104,7 @@ None of this sends a Twitch request.
   window size of at least 120 by 1 and 72 by 15 pixels. They now measure both. On macOS the window opened 20
   pixels smaller than `wm maxsize` on each axis, for a reason not yet known
   ([task 072](072-macos-window-smaller-than-wm-maxsize.md)), so its test is a strict `xfail` test there. The
-  title was "The Windows and macOS checks in CI have never run and are not required". The task stays open until
-  a Windows and a macOS run pass.
+  event loop runs a timer that is due within the resolution of its clock, which is 15.6 milliseconds for
+  Python 3.10 on Windows, so the 10 millisecond wait of a `start_task` test ended before the done callbacks of
+  the task ran. That test now waits for the callbacks. The title was "The Windows and macOS checks in CI have
+  never run and are not required". The task stays open until a Windows and a macOS run pass.

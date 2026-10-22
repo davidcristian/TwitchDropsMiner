@@ -34,8 +34,13 @@ def test_start_task_keeps_a_task_that_nothing_else_references_until_it_ends():
 
 def test_start_task_drops_its_reference_once_the_task_ends():
     async def scenario():
-        reference = weakref.ref(start_task(asyncio.sleep(0)))
-        await asyncio.sleep(0.01)
+        task = start_task(asyncio.sleep(0))
+        ended = asyncio.Event()
+        # done callbacks run in the order they were added, so the one of start_task has run when this one runs
+        task.add_done_callback(lambda _task: ended.set())
+        reference = weakref.ref(task)
+        del task
+        await ended.wait()
         gc.collect()
         return reference()
 
