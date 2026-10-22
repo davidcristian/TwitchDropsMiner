@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import threading
+import time
 
 import pytest
 
@@ -168,6 +169,10 @@ def test_a_title_change_from_another_thread_sends_no_request_on_the_connection_o
         # only the request of the icon thread that sets the window name
         assert (icon._display.display.request_serial - serial) % 65536 == 1
         window = connection.create_resource_object("window", icon._window.id)
+        # the icon thread sends its buffered request when it next reads its connection, which can come after this read
+        deadline = time.monotonic() + 5
+        while window.get_wm_name() != "Changed" and time.monotonic() < deadline:
+            time.sleep(0.01)
         assert window.get_wm_name() == "Changed"
     finally:
         icon.stop()
