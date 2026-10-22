@@ -110,25 +110,28 @@ encodes that body, before the request is sent.
 
 `GQLQuery(query, g64data)` sends its query text, with gzip and base64 encoded data. Only `Stream.gql_payload` in
 `channel.py` uses it, for the `sendSpadeEvents` watch mutation, and only `Channel._send_watch_gql` reads that
-payload. Nothing calls that method ([channel.md](channel.md#watching)). `GQLOperation` is either type, and
-`Twitch.gql_request` takes one operation or a list.
+payload. Nothing calls that method ([channel.md](channel.md#watching)), so its read of the response, which
+raises on a null field, never runs. `GQLOperation` is either type, and `Twitch.gql_request` takes one operation
+or a list.
 
 `GQL_QUERIES` maps the key the code uses to the operation Twitch knows. To update a hash, follow
-[gql-operations.md](../runbooks/gql-operations.md).
+[gql-operations.md](../runbooks/gql-operations.md). The last column names the functions that read the response,
+in [gqldata.md](gqldata.md) and [streamdata.md](streamdata.md). Each one has a test that sets each value of a
+complete response to null in turn ([ADR-0013](../adr/ADR-0013-test-standard.md)).
 
-| Key | `operationName` | Used in |
-| --- | --- | --- |
-| `GetStreamInfo` | `VideoPlayerStreamInfoOverlayChannel` | `channel.py` |
-| `ClaimDrop` | `DropsPage_ClaimDropRewards` | `inventory.py` |
-| `Inventory` | `Inventory` | `twitch.py` |
-| `CurrentDrop` | `DropCurrentSessionContext` | `twitch.py` |
-| `Campaigns` | `ViewerDropsDashboard` | `twitch.py` |
-| `CampaignDetails` | `DropCampaignDetails` | `twitch.py` |
-| `AvailableDrops` | `DropsHighlightService_AvailableDrops` | `channel.py`, `twitch.py` |
-| `PlaybackAccessToken` | `PlaybackAccessToken` | `channel.py` |
-| `GameDirectory` | `DirectoryPage_Game` | `twitch.py` |
-| `NotificationsDelete` | `OnsiteNotifications_DeleteNotification` | `twitch.py` |
-| `ClaimCommunityPoints`, `ChannelPointsContext`, `SlugRedirect`, `NotificationsView`, `NotificationsList` | | no caller ([task 022](../refinements/tasks/022-unused-code.md)) |
+| Key | `operationName` | Used in | Response read by |
+| --- | --- | --- | --- |
+| `GetStreamInfo` | `VideoPlayerStreamInfoOverlayChannel` | `channel.py` | `channel_streams`, `channel_stream` |
+| `ClaimDrop` | `DropsPage_ClaimDropRewards` | `inventory.py` | `claim_succeeded` |
+| `Inventory` | `Inventory` | `twitch.py` | `user_inventory`, `complete_campaigns` |
+| `CurrentDrop` | `DropCurrentSessionContext` | `twitch.py` | `current_drop` |
+| `Campaigns` | `ViewerDropsDashboard` | `twitch.py` | `campaign_summaries`, `complete_campaigns` |
+| `CampaignDetails` | `DropCampaignDetails` | `twitch.py` | `campaign_details`, `complete_campaigns` |
+| `AvailableDrops` | `DropsHighlightService_AvailableDrops` | `channel.py`, `twitch.py` | `channel_campaigns`, `available_campaigns` |
+| `PlaybackAccessToken` | `PlaybackAccessToken` | `channel.py` | `playback_token` |
+| `GameDirectory` | `DirectoryPage_Game` | `twitch.py` | `directory_streams` |
+| `NotificationsDelete` | `OnsiteNotifications_DeleteNotification` | `twitch.py` | not read |
+| `ClaimCommunityPoints`, `ChannelPointsContext`, `SlugRedirect`, `NotificationsView`, `NotificationsList` | | no caller ([task 022](../refinements/tasks/022-unused-code.md)) | |
 
 ### Client identities
 
