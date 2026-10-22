@@ -1,6 +1,6 @@
 # ADR-0013: Tests assert behavior, with an 80% coverage floor
 
-**Status:** Accepted (2026-10-21)
+**Status:** Accepted (2026-10-23)
 
 ## Context
 
@@ -76,6 +76,14 @@ installed none of these packages, so a fix in one of them was checked by a scrip
      `init.tcl`, Tcl found its write-only standard channel under that number and opened no channel, and the Tk
      being created failed with `Can't find a usable init.tcl`. The app is not affected, because no code of it
      closes or replaces a standard handle.
+7. **A run fails when a test leaves a thread running.** Python's exit waits for each thread that is not a
+   daemon thread, so such a thread keeps a finished run open forever, and the pre-commit hook with it.
+   `tests/threadcheck.py`, which `tests/conftest.py` loads, gives such a thread 5 seconds (`GRACE`) after the last
+   test to end. Then it prints the name and stack of each one that still runs, sets the exit status to 1 and
+   ends the process with `os._exit`. A test that starts a thread or a tray icon stops it in a `finally` block,
+   so a failed assertion does not leave it waiting. For this `tests/xorgicon.py` has `stop_icon`, which waits for
+   pystray's setup thread to show a real icon before it stops the icon, and `release_caller`, which answers the
+   change that a thread waits for on a fake X11 icon.
 
 ## Consequences
 
@@ -122,4 +130,5 @@ installed none of these packages, so a fix in one of them was checked by a scrip
 - Tasks [003](../refinements/tasks/003-test-suite.md) (closed by this record),
   [031](../refinements/tasks/031-tests-for-utils-and-settings.md) (the modules not yet tested) and
   [009](../refinements/tasks/009-trademark-symbols-in-game-names.md) (a defect whose strict `xfail` tests became
-  plain tests with its fix).
+  plain tests with its fix), and [075](../refinements/tasks/075-test-run-stays-open-after-the-last-test.md) (the
+  run that stayed open, which decision 7 answers).

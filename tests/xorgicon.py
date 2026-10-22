@@ -124,6 +124,20 @@ def record_uses(uses: list[tuple[str, str]]):
     return wrap
 
 
+def release_caller(icon: FakeXorgIcon, caller: threading.Thread) -> None:
+    """Answer the change that a caller thread waits for, as the icon thread would, and wait for the caller to end."""
+    if caller.is_alive():
+        icon._message_handlers[CLIENT_MESSAGE](client_message("_PYSTRAY__UPDATE_ICON"))
+    caller.join(5)
+
+
+def wait_until_shown(icon) -> None:
+    """Wait up to 5 seconds for pystray's setup thread to show a real icon."""
+    deadline = time.monotonic() + 5
+    while not icon.visible and time.monotonic() < deadline:
+        time.sleep(0.01)
+
+
 def start_icon(name: str, prepare=lambda icon: None):
     import pystray._xorg
     from PIL import Image
@@ -132,10 +146,17 @@ def start_icon(name: str, prepare=lambda icon: None):
     prepare(icon)
     thread = threading.Thread(target=icon.run)
     thread.start()
-    deadline = time.monotonic() + 5
-    while not icon.visible and time.monotonic() < deadline:
-        time.sleep(0.01)
+    wait_until_shown(icon)
     return icon, thread
+
+
+def stop_icon(icon, thread: threading.Thread) -> None:
+    """Stop a real icon that a thread runs, and wait for the thread to end."""
+    # A stop before pystray marks the icon running does nothing, so its thread runs on. A stop before the setup
+    # thread shows the icon leaves that thread waiting forever.
+    wait_until_shown(icon)
+    icon.stop()
+    thread.join(5)
 
 
 class FakeTray:

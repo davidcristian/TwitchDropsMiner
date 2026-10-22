@@ -126,8 +126,9 @@ fields of `lang/*.json`), ruff (the rules in `pyproject.toml`), `linecap.py` (th
 `prosecheck.py` (the Prose rules a script can read), `docscheck.py` (the links between docs, line numbers, the two
 indexes and the record formats), `rostercheck.py` (the module map, the module docs, the settings keys, the `gui.py`
 mock and this list), and pytest over `tests/`, which fails below 80% branch coverage of the modules `pyproject.toml`
-lists. A 3.11+ name such as `typing.Self` or `tomllib` fails only when its line runs, so only the Validate job on
-Python 3.10 finds it, and only where a test imports or calls it: avoid them.
+lists, and when a thread that Python's exit would wait for still runs after the last test. A 3.11+ name such as
+`typing.Self` or `tomllib` fails only when its line runs, so only the Validate job on Python 3.10 finds it, and
+only where a test imports or calls it: avoid them.
 
 The rest is checked by hand, and the report of a change shows the output of each:
 

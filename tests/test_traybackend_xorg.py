@@ -6,7 +6,7 @@ import threading
 import pytest
 
 from traybackend import BUTTON_PRESS_MASK, hides_by_stopping, icon_class
-from xorgicon import XORG_EVENTS, FakeXorgIcon, next_event
+from xorgicon import XORG_EVENTS, FakeXorgIcon, next_event, stop_icon
 
 
 def test_the_xorg_icon_window_selects_button_press_and_keeps_the_events_pystray_selects():
@@ -81,8 +81,7 @@ def test_a_left_click_on_the_docked_xorg_icon_runs_the_default_menu_item_and_a_r
         assert shown.wait(5)
         assert clicks == ["show"]
     finally:
-        icon.stop()
-        thread.join(5)
+        stop_icon(icon, thread)
         tray.destroy()
         connection.close()
 

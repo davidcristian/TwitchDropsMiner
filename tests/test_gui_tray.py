@@ -9,7 +9,7 @@ import pytest
 from fakes import FakeTwitch
 import gui as gui_module
 from traybackend import XORG_MODULE
-from xorgicon import FakeTray
+from xorgicon import FakeTray, wait_until_shown
 
 
 class FakeIcon:
@@ -73,6 +73,9 @@ def test_restoring_the_window_removes_the_x11_tray_icon_from_the_tray_and_minimi
                 tray.run_until(lambda: tray.icon is None)
                 rounds.append((window_id, gui.tray.icon is None, tray.exists(window_id)))
         finally:
+            # a stop before pystray's setup thread shows the icon leaves that thread waiting forever
+            if gui.tray.icon is not None:
+                wait_until_shown(gui.tray.icon)
             gui.tray.stop()
             tray.close()
         return rounds
