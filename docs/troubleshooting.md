@@ -174,7 +174,8 @@ library it needs. A run from source needs the system packages listed in
   container or an SSH session may have none. The X11 icon has no menu and shows no notifications. A left click
   on it shows the window, and a right click does nothing. To quit, show the window and close it. When the app
   starts before its tray, the icon appears once the tray has started. In the tray host tint2, the icon stays in
-  the tray while the window is open ([task 069](refinements/tasks/069-tint2-shows-hidden-x11-tray-icon.md)).
+  the tray while the window is open ([task 069](refinements/tasks/069-tint2-shows-hidden-x11-tray-icon.md)). A
+  left click on it then changes nothing: the window stays open, and `Minimize to Tray` works as before.
   Install these libraries, or `libgtk-3-0`, which depends on them, and start the app in a session with a bus to
   get the AppIndicator icon.
 - **Another tray backend.** pystray chooses its backend from the `PYSTRAY_BACKEND` environment variable when it

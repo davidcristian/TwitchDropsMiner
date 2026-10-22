@@ -112,3 +112,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [067: The GUI preview often crashes at start under the window manager openbox](tasks/067-gui-preview-crashes-under-openbox.md) | gui |
 | [068: The tray host tint2 shows no X11 tray icon when the app starts with `--tray`](tasks/068-tint2-shows-no-x11-icon-after-tray-start.md) | traybackend, gui |
 | [069: The tray host tint2 shows the X11 tray icon while the window is open](tasks/069-tint2-shows-hidden-x11-tray-icon.md) | traybackend, gui |
+| [070: The setup thread of a new X11 tray icon sometimes waits forever in `flush`](tasks/070-x11-tray-icon-setup-thread-waits-in-flush.md) | traybackend, gui |

@@ -30,7 +30,9 @@ by clearing the mapped flag of its `_XEMBED_INFO` property, which an XEmbed tray
 window. stalonetray, trayer and xfce4-panel hide the icon then; tint2 ignores the flag and keeps showing the icon.
 
 The app keeps one icon for its whole run. Stopping the icon at each restore and creating a new one at each
-`Minimize to Tray` would hide it in tint2 as well
+`Minimize to Tray` hides it in tint2 as well, but the setup thread of a new icon sometimes waits forever as the
+icon starts ([task 070](../refinements/tasks/070-x11-tray-icon-setup-thread-waits-in-flush.md)), and a new icon
+at each minimize gives that wait a chance at each one
 ([task 069](../refinements/tasks/069-tint2-shows-hidden-x11-tray-icon.md)). pystray also sends a dock request each
 time it shows the icon or changes its image, so two in a row when an icon starts. trayer embeds the window again
 for each request, and after two in a row it often leaves the icon out of its tray, so the subclass sends the
@@ -72,7 +74,8 @@ each message needs no lock and nothing to close at exit, and the app sends a few
   - `_send_message` calls pystray's in the icon thread. In another thread, it opens a new connection of the
     class of `_display`, sends the message on it with pystray's `_send_message`, then calls `sync`, without which
     Xvfb dropped the message, and closes it. pystray's dispatch then calls `flush` on the icon's connection,
-    which sends nothing.
+    which sends nothing, but once waited forever
+    ([task 070](../refinements/tasks/070-x11-tray-icon-setup-thread-waits-in-flush.md)).
   - `_create_window` calls pystray's and adds `ButtonPressMask` to the events that the new window selects,
     keeping the others.
   - `_hide` clears the mapped flag of the window's `_XEMBED_INFO` property, and `_show` sets it. `_show` then
