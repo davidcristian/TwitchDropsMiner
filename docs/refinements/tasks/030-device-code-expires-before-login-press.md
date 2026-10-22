@@ -1,9 +1,9 @@
 # A device code can expire before the Login press
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** twitch (login), gui (login form)
 **Origin:** Found on 2026-10-18 while the docs were written, [ADR-0010](../../adr/ADR-0010-device-code-login.md)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 `_AuthState._oauth_login` in `twitch.py` sends `POST https://id.twitch.tv/oauth2/device` first, and sets
 `expires_at` from the `expires_in` of the response (1800 seconds, as the code comment gives it). Only then
@@ -29,3 +29,10 @@ costs no extra request. An expired code still requests a new one as it does now.
 ## History
 
 - 2026-10-18: Opened. The agent that wrote ADR-0010 found the order of the device request and the `Login` press.
+- 2026-10-22: Done. The claim held when run with a fake session and a clock that follows the event loop: a
+  press 31 minutes after the request showed the expired first code, and the app requested a second code with
+  no press. That second request sent the fields of the token request in place of `scopes`. `LoginForm` now
+  has `ask_login`, which waits for the press, and `ask_enter_code`, which shows the code and opens the page.
+  `_oauth_login` sends the device request between them and keeps the two forms apart. Each press sends one
+  device request, and an expired code sends none until the next press. `tests/test_twitch_login.py` covers
+  presses from 0 seconds to 2 hours after the prompt ([ADR-0010](../../adr/ADR-0010-device-code-login.md)).

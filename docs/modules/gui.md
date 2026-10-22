@@ -115,7 +115,7 @@ Other modules use these names. Everything else in the file is internal to the GU
 
 | Caller | What it uses |
 | --- | --- |
-| `twitch.py` | `GUIManager(twitch)`; `start`, `close`, `close_requested`, `wait_until_closed`, `coro_unless_closed`, `prevent_close`, `print`, `save`, `set_games`, `clear_drop`; `status.update`; `tray.change_icon`; `channels.clear`, `clear_watching`, `set_watching`, `get_selection`, `set_selection`, `get_iids`; `inv.add_campaign`, `inv.clear`; `progress.minute_almost_done`, `progress.stop_timer`; `settings.set_wanted_games`, `set_detected`, `set_scanning`; `login.ask_enter_code`, `login.update`; `help._invalidate_button` |
+| `twitch.py` | `GUIManager(twitch)`; `start`, `close`, `close_requested`, `wait_until_closed`, `coro_unless_closed`, `prevent_close`, `print`, `save`, `set_games`, `clear_drop`; `status.update`; `tray.change_icon`; `channels.clear`, `clear_watching`, `set_watching`, `get_selection`, `set_selection`, `get_iids`; `inv.add_campaign`, `inv.clear`; `progress.minute_almost_done`, `progress.stop_timer`; `settings.set_wanted_games`, `set_detected`, `set_scanning`; `login.ask_login`, `login.ask_enter_code`, `login.update`; `help._invalidate_button` |
 | `inventory.py` | `display_drop`, `inv.update_drop`, `tray.notify` |
 | `channel.py` | `channels.display`, `channels.remove` |
 | `websocket.py` | `websockets.update`, `websockets.remove` |

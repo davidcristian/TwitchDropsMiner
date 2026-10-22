@@ -160,15 +160,17 @@ class _AuthState:
             "User-Agent": client_info.USER_AGENT,
             "X-Device-Id": self.device_id,
         }
-        payload = {
+        device_payload = {
             "client_id": client_info.CLIENT_ID,
             "scopes": "",  # no scopes needed
         }
         while True:
+            # the code is valid for expires_in from its request, so it is requested only after the press
+            await login_form.ask_login()
             try:
                 now = datetime.now(timezone.utc)
                 async with self._twitch.request(
-                    "POST", "https://id.twitch.tv/oauth2/device", headers=headers, data=payload
+                    "POST", "https://id.twitch.tv/oauth2/device", headers=headers, data=device_payload
                 ) as response:
                     # Twitch sends a 40 character device_code, an 8 letter user_code, an interval
                     # of 5 seconds and an expires_in of 1800 seconds.
@@ -182,7 +184,7 @@ class _AuthState:
                 # Print the code to the user, open them the activate page so they can type it in
                 await login_form.ask_enter_code(verification_uri, user_code)
 
-                payload = {
+                token_payload = {
                     "client_id": self._twitch._client_type.CLIENT_ID,
                     "device_code": device_code,
                     "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
@@ -194,7 +196,7 @@ class _AuthState:
                         "POST",
                         "https://id.twitch.tv/oauth2/token",
                         headers=headers,
-                        data=payload,
+                        data=token_payload,
                         invalidate_after=expires_at,
                     ) as response:
                         # 200 means success, 400 means the user haven't entered the code yet
@@ -205,7 +207,7 @@ class _AuthState:
                         self.access_token = cast(str, response_json["access_token"])
                         return self.access_token
             except RequestInvalid:
-                # the device_code has expired, request a new code
+                # the device_code has expired, so the next press requests a new code
                 continue
 
     def headers(self, *, user_agent: str = '', gql: bool = False) -> JsonType:

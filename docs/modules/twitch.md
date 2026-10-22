@@ -107,9 +107,11 @@ stream without a game ([streamdata.md](streamdata.md#null-stream-fields)).
 `get_auth` calls `_AuthState.validate`, which holds a lock so that concurrent callers log in once. It creates a
 random `session_id`, reads `device_id` from the `unique_id` cookie that a GET of `https://www.twitch.tv` sets, and
 takes `access_token` from the `auth-token` cookie in `cookies.jar`. Without that cookie, `_oauth_login` runs the
-OAuth device code flow: it POSTs to `https://id.twitch.tv/oauth2/device`, shows the code through the Login Form
-(`ask_enter_code`), then POSTs to `https://id.twitch.tv/oauth2/token` every `interval` seconds until the user has
-entered the code. An expired code raises `RequestInvalid`, and the flow starts again. A GET of
+OAuth device code flow: it waits for the `Login` press (`ask_login`), POSTs to
+`https://id.twitch.tv/oauth2/device`, shows the code through the Login Form (`ask_enter_code`), then POSTs to
+`https://id.twitch.tv/oauth2/token` every `interval` seconds until the user has entered the code. The code is
+requested after the press, because its lifetime counts from the request. An expired code raises
+`RequestInvalid`, and the flow starts again with a wait for the next press, so each press requests one code. A GET of
 `https://id.twitch.tv/oauth2/validate` returns `user_id`. After a 401 it clears the domain's cookies, and after
 a token for another client ID it deletes `cookies.jar`. In both cases it logs in again. Each of the two checks
 runs at most twice, then raises `RuntimeError`. At the end it saves the cookie jar with `save_cookies`, which

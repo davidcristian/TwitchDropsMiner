@@ -94,8 +94,8 @@ critical task takes the same path: `RESTART` raises it from `_run`.
 
 1. **Login.** `_AuthState._validate` takes the device ID from the `unique_id` cookie of `www.twitch.tv`.
    Without an `auth-token` cookie, `_oauth_login` runs the device code flow with the `ClientType.ANDROID_APP`
-   client ID: after the user presses `Login`, it prints a code from `id.twitch.tv/oauth2/device`, opens the
-   activation page and polls `id.twitch.tv/oauth2/token`. `id.twitch.tv/oauth2/validate` returns the user ID.
+   client ID: at each press of `Login`, it requests a code from `id.twitch.tv/oauth2/device`, prints it, opens
+   the activation page and polls `id.twitch.tv/oauth2/token`. `id.twitch.tv/oauth2/validate` returns the user ID.
 2. **Inventory.** `fetch_inventory` sends `Inventory` (campaigns in progress, rewards claimed), `Campaigns`
    (every campaign; it keeps `ACTIVE` and `UPCOMING`) and `CampaignDetails` for each campaign, 20 per request.
    It builds a `DropsCampaign` from each, and the Inventory tab loads their images through `ImageCache`.

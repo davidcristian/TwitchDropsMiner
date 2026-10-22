@@ -576,12 +576,16 @@ class LoginForm:
         finally:
             self._button.config(state="disabled")
 
-    async def ask_enter_code(self, page_url: URL, user_code: str) -> None:
+    async def ask_login(self) -> None:
+        """Ask the user to log in, and return when they press Login."""
         self.update(_("gui", "login", "required"), None)
         # ensure the window isn't hidden into tray when this runs
         self._manager.grab_attention(sound=False)
         self._manager.print(_("gui", "login", "request"))
         await self.wait_for_login_press()
+
+    async def ask_enter_code(self, page_url: URL, user_code: str) -> None:
+        """Show the code to enter, then open the activation page in the browser."""
         self._manager.print(f"Enter this code on the Twitch's device activation page: {user_code}")
         await asyncio.sleep(4)
         webopen(page_url)
