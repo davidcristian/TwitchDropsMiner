@@ -160,9 +160,9 @@ resolve() {
 2. Write the changes into `constraints.txt`, one `name==version` line per package, in the order of the names.
    A security release that is not two weeks old goes in by hand. When a package has dropped Python 3.10, the
    3.10 reports show an older version than the 3.14 ones: write both lines, each with a marker, such as
-   `Pillow==12.3.0; python_version < "3.11"` and `Pillow==13.0.0; python_version >= "3.11"`. Dependabot
-   proposes such a version for the single line, and its pull request fails on Python 3.10 until both lines
-   replace that line.
+   `Pillow==12.3.0; python_version < "3.11"` and `Pillow==13.0.0; python_version >= "3.11"`, and remove the
+   package's entry under `ignore` in `.github/dependabot.yml`, which keeps Dependabot from proposing such a
+   version for a single line.
 3. Check the file. `resolve` must print no pip error and no `no resolution` line, and `compare.py` must print
    nothing:
 

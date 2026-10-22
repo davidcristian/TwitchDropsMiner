@@ -85,9 +85,15 @@ use 3.10. [Task 048](../refinements/tasks/048-builds-install-the-newest-dependen
   each line to its newest version on its own, without resolving the whole set. A limit that another package sets
   therefore goes into `ignore`, and a new dependency of a new version fails the check of the build jobs until the
   runbook adds its line.
-- Dependabot reads the Python versions that a release supports for Python 3.14, so its pull request for a
-  release that drops Python 3.10 fails the jobs on 3.10 until two lines with markers replace the one. It leaves
-  out a line whose `python_version` marker does not hold on 3.14.
+- Dependabot chooses only releases whose `requires_python` accepts its Python. With no Python version set in the
+  repository, that is the newest one it has, 3.14, so it would propose a release that drops Python 3.10, which
+  the Validate job and the AppImage cannot install. `ignore` therefore leaves out each such release: on
+  2026-10-22, Pillow 13 and pre-commit 4.7, which require Python 3.11 and are two weeks old by 2026-11-01. A
+  security update of the older line still comes. A file that sets Python 3.10 for Dependabot would hold for every
+  package, but each changes other tools: pyenv and uv read `.python-version`, `requires-python` in `pyproject.toml`
+  makes the repository a package, and Dependabot reads `runtime.txt` as a requirements file too. When two lines
+  with markers replace a package's line, its `ignore` entry goes, and Dependabot then updates the line whose
+  `python_version` marker holds on 3.14 and leaves out the other.
 - A commit message of Dependabot has a subject that follows the commit rules and a body that does not, so the
   pull request is merged with a squash and a rewritten message.
 - A security update needs Dependabot alerts and security updates turned on in the repository settings. The

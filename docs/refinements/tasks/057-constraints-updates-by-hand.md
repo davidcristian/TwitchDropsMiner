@@ -43,3 +43,5 @@ None of this sends a Twitch request.
   with `-c`, so that the dependency graph, from which the security alerts come, reads it
   ([ADR-0016](../../adr/ADR-0016-exact-dependency-versions.md)). Only GitHub can show the first pull request of
   Dependabot and the packages of `constraints.txt` in the dependency graph.
+- 2026-10-22: Dependabot chooses releases for Python 3.14, so `ignore` leaves out the releases that drop Python
+  3.10, which the Validate job and the AppImage use: Pillow 13 and pre-commit 4.7.

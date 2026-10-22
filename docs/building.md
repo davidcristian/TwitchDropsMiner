@@ -235,9 +235,11 @@ from GitHub's dependency graph, which reads `constraints.txt` only through the `
   zstandard below 0.24 (pydpkg 1.9.5). It also leaves out the version updates of rust-just, whose version changes
   only together with the three hashes in `ci.yml` ([Run the checks](#run-the-checks)). A security update of it
   still comes, and fails the Validate job until those hashes change too.
-- Dependabot reads the Python versions that a release supports for Python 3.14, so it proposes a release that
-  drops Python 3.10. The Validate job and the AppImage then fail, and the
-  [runbook](runbooks/dependency-versions.md) writes two lines with markers in place of the one.
+- Dependabot chooses a release for Python 3.14, the newest Python it has, because no file here sets one. So
+  `ignore` also leaves out each release that drops Python 3.10, which the Validate job and the AppImage use:
+  Pillow 13 and pre-commit 4.7 on 2026-10-22. A security update of the older line still comes. Add such an
+  entry for each new release that drops Python 3.10, and remove it when two lines with markers replace the
+  package's line, as the [runbook](runbooks/dependency-versions.md) describes.
 - Its commit subject, such as `build: bump the python-packages group with 3 updates`, follows the
   [commit rules](../AGENTS.md#commits), but its body lists links, runs past 50 words and has lines longer than 72
   characters. Merge with a squash, and keep the subject or write one such as

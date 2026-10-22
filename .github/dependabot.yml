@@ -32,5 +32,13 @@ updates:
       - dependency-name: zstandard
         versions:
           - ">=0.24"
+      # The releases that require Python 3.11, which Dependabot would choose for Python 3.14. The Validate job and
+      # the AppImage run Python 3.10. Remove an entry when two lines with markers replace its package's line.
+      - dependency-name: Pillow
+        versions:
+          - ">=13"
+      - dependency-name: pre-commit
+        versions:
+          - ">=4.7"
     commit-message:
       prefix: build
