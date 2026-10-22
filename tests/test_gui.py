@@ -12,6 +12,7 @@ from channel import Channel
 from fakedialog import FakeDialogs
 from fakes import GAME, FakeTwitch, campaign_data, drop_data
 from folderpicker import FolderPicker
+from gqldata import complete_campaigns
 from gui import GUIManager
 from inventory import DropsCampaign
 
@@ -177,6 +178,16 @@ def test_the_tray_title_keeps_the_line_break_after_a_shortened_game_name(window)
 
     # a tray title has at most 127 characters, so the game name is cut to fit
     assert title.split("\n") == ["Twitch Drops Miner", "N" * 84 + "...", "Reward d1 0.0% (0/1)"]
+
+
+def test_the_main_tab_shows_no_text_for_a_campaign_name_that_a_server_error_set_to_null(window):
+    fake = FakeTwitch()
+    data = complete_campaigns({"c1": {**campaign_data([drop_data("d1")]), "name": None}})["c1"]
+    gui = window(fake)
+
+    gui.display_drop(DropsCampaign(fake, data, {}).timed_drops["d1"], countdown=False)
+
+    assert gui.progress._vars["campaign"]["name"].get() == ""
 
 
 @pytest.mark.skipif(tk.TkVersion >= 9, reason="Tk 9 sends a wheel turn on X11 as <MouseWheel>")

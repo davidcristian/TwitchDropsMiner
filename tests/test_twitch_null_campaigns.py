@@ -88,7 +88,7 @@ def drop_outcomes(path: NullPath, key: str, *, after: str = "", needs: bool = Fa
     no_benefit = {f"{key}.rewards": "", f"{key}.benefits": (), **unclaimed}
     outcomes = {
         **dict.fromkeys([path, *((*path, name) for name in ("id", "startAt", "endAt", "requiredMinutesWatched"))], gone),
-        (*path, "name"): Outcome(changed={f"{key}.name": None}),
+        (*path, "name"): Outcome(changed={f"{key}.name": ""}),
         (*path, "benefitEdges"): Outcome(changed=no_benefit),
         (*path, "benefitEdges", 0): Outcome(changed=no_benefit, warned=True),
         benefit: Outcome(changed=no_benefit, warned=True),
@@ -145,7 +145,7 @@ INVENTORY_OUTCOMES = {
     **dict.fromkeys([IN_PROGRESS[:-1], IN_PROGRESS, (*IN_PROGRESS, "game"), (*IN_PROGRESS, "self")], GONE),
     **dict.fromkeys([(*IN_PROGRESS, name) for name in ("id", "startAt", "endAt")], LEFT_OUT),
     **dict.fromkeys([(*IN_PROGRESS, "game", "id"), (*IN_PROGRESS, "game", "boxArtURL")], LEFT_OUT),
-    (*IN_PROGRESS, "name"): Outcome(changed={"c1.name": None}),
+    (*IN_PROGRESS, "name"): Outcome(changed={"c1.name": ""}),
     (*IN_PROGRESS, "accountLinkURL"): Outcome(changed={"c1.link": None}),
     (*IN_PROGRESS, "self", "isAccountConnected"): Outcome(changed={"c1.linked": False}, warned=True),
     **campaign_outcomes(IN_PROGRESS, "c1", claim=True, claimed=False),

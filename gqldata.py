@@ -113,10 +113,14 @@ def _has_null_time(data: JsonType) -> bool:
     return any(data.get(field) is None for field in TIME_FIELDS)
 
 
+def _text(data: JsonType, key: str) -> JsonType:
+    """Return data with a null name at key read as an empty one, which the window shows as no text."""
+    return {**data, key: ""} if key in data and data[key] is None else data
+
+
 def _named(edge: JsonType) -> JsonType:
     """Return a benefit edge whose null benefit name is read as an empty name, which rewards_text can join."""
-    benefit = edge["benefit"]
-    return edge if benefit.get("name") is not None else {**edge, "benefit": {**benefit, "name": ""}}
+    return {**edge, "benefit": _text(edge["benefit"], "name")}
 
 
 def _readable_drops(campaign_id: str, drops: list[JsonType | None]) -> list[JsonType]:
@@ -142,6 +146,7 @@ def _readable_drops(campaign_id: str, drops: list[JsonType | None]) -> list[Json
         benefit_edges = [_named(edge) for edge in edges if get_field(edge, "benefit") is not None]
         # BaseDrop reads isClaimed of a self, and without a self it finds the claim through gameEventDrops
         drop = {key: value for key, value in drop.items() if key != "self" or get_field(value, "isClaimed") is not None}
+        drop = _text(drop, "name")
         if len(benefit_edges) < len(edges):
             logger.warning(f"Skipped a null benefit of drop {drop['id']} in campaign {campaign_id}")
         if benefit_edges != edges:
@@ -203,6 +208,7 @@ def complete_campaigns(campaigns: dict[str, JsonType]) -> dict[str, JsonType]:
         if campaign["self"].get("isAccountConnected") is None:
             logger.warning(f"Read campaign {campaign_id} as not linked, because its account connection is null")
             campaign = {**campaign, "self": {**campaign["self"], "isAccountConnected": False}}
+        campaign = _text(campaign, "name")
         game = _readable_game(campaign_id, campaign["game"])
         if game is None:
             continue

@@ -100,7 +100,8 @@ only its summary, and `complete_campaigns` leaves it out unless the summary has 
   minutes, and counts as claimed when its benefits are in `gameEventDrops` ([inventory.md](inventory.md#claiming)).
   Reading a null `isClaimed` as False instead could send a `ClaimDrop` for a claimed drop.
 - A benefit whose `name` is null is read with an empty name, because `rewards_text` joins the names for the
-  Output box, the tray and the Main tab.
+  Output box, the tray and the Main tab. A null campaign or drop name is read the same way, so the window never
+  shows the text `None` ([Other null fields](#other-null-fields)).
 
 Each item left out logs a warning that names the drop and the campaign. A campaign whose drops are all left
 out is kept, as a campaign without drops ([inventory.md](inventory.md#public-contract)).
@@ -138,12 +139,12 @@ next reload, and none adds a request. `tests/test_twitch_null_campaigns.py` sets
 
 | Null field | Read as |
 | --- | --- |
-| a campaign's `name` | kept: the Inventory tab shows no name, and the Main tab shows `None` |
+| a campaign's `name` | an empty name, which the Inventory and Main tabs show as no text |
 | `accountLinkURL` | kept: the account link on the Inventory tab opens no page |
 | `status` of a campaign in progress | not `EXPIRED`, so its times decide whether it is active |
 | `self.isAccountConnected` | False, with a warning: the campaign counts as not linked, so it is mined only for a badge or emote with that setting on |
 | `allow.channels` | no ACL ([below](#nulls-that-read-as-none)) |
-| a drop's `name` | kept: a log line shows `None` |
+| a drop's `name` | an empty name, so a progress line in the Output box shows no name |
 | `preconditionDrops` | no preconditions ([below](#nulls-that-read-as-none)) |
 | `benefitEdges` | no benefits |
 | a benefit's `id` | kept: it matches no claimed benefit in `gameEventDrops` |

@@ -222,6 +222,13 @@ def test_complete_campaigns_reads_a_null_benefit_name_as_an_empty_name(caplog):
     assert warnings(caplog) == []
 
 
+def test_complete_campaigns_reads_a_null_campaign_or_drop_name_as_an_empty_name(caplog):
+    campaign = {**with_drops(drop("d1", name=None), drop("d2", name="Drop")), "name": None}
+    expected = {**with_drops(drop("d1", name=""), drop("d2", name="Drop")), "name": ""}
+    assert complete_campaigns({"A": campaign}) == {"A": expected}
+    assert warnings(caplog) == []
+
+
 def test_complete_campaigns_reads_a_self_with_a_null_claim_status_as_no_self():
     claim = {"dropInstanceID": "1#A#d1", "isClaimed": None, "currentMinutesWatched": 30}
     assert drops_of(with_drops(drop("d1", self=claim))) == [drop("d1")]
