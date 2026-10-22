@@ -35,6 +35,9 @@ installed none of these packages, so a fix in one of them was checked by a scrip
      test gives it and records the messages the app sends. `run_with_fast_clock` in
      `tests/livetwitch.py` runs a test on an event loop whose clock moves to the next timer when no task can run,
      so a test of code that waits for seconds takes milliseconds.
+   - Each function that reads a GQL response has a test that sets each value of a complete response to null in
+     turn, as a `server error` does, with `tests/nullpaths.py`. It runs the real reader and asserts the outcome
+     that the reader's module doc names for that value.
    - A test written only to reach a line is not allowed.
    - A known defect that is not fixed yet is a test of the correct behavior marked
      `pytest.mark.xfail(strict=True)`, whose reason names the task file. When the fix makes it pass, the strict

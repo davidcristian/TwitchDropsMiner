@@ -47,7 +47,8 @@ watch requests that make drop progress. `Twitch` keeps the tracked channels in `
   extra request is sent.
 - With it on, `get_stream` sends one more GQL query, `AvailableDrops`. The stream counts as drops enabled when
   one of the campaigns it lists is in `Twitch._campaigns` and that campaign's
-  `can_earn(channel, ignore_channel_status=True)` is True. A null `channel` in the response lists no campaigns.
+  `can_earn(channel, ignore_channel_status=True)` is True. A null `channel` in the response lists no campaigns,
+  and a null campaign or campaign ID is left out ([streamdata.md](streamdata.md#null-available-drops)).
 - A stream from `GameDirectory` takes `drops_enabled` from the caller instead. `CHANNELS_FETCH` queries the
   directory with the `DROPS_ENABLED` filter and passes True.
 
@@ -93,11 +94,12 @@ operations in batches of 20 per GQL request. With the extra drops check on, it a
 online channels, again 20 per request. So `n` channels cost `ceil(n / 20)` GQL requests, plus one per 20 online
 channels with the extra check.
 
-It then calls `external_update` on each channel in the response, with no campaigns for one whose
-`AvailableDrops` result is null. `external_update` drops the stream of an offline channel, so a channel that went
-offline after the cut at `MAX_CHANNELS` ranks as offline at the next `CHANNELS_FETCH`. A channel missing from
-the response, because its `user` or the user's `id` is null, keeps its current stream: a server error also sets
-`user` to null ([streamdata.md](streamdata.md#null-stream-fields)).
+It then calls `external_update` on each channel in the response, with no campaigns for one whose `AvailableDrops`
+result or channel ID is null ([streamdata.md](streamdata.md#null-available-drops)). `external_update` drops the
+stream of an offline channel, so a channel that went offline after the cut at `MAX_CHANNELS` ranks as offline at
+the next `CHANNELS_FETCH`. A channel missing from the response, because its `user` or the user's `id` is null,
+keeps its current stream: a server error also sets `user` to null
+([streamdata.md](streamdata.md#null-stream-fields)).
 
 `external_update` does not call `Twitch.on_channel_update`. `CHANNELS_FETCH` handles the new status after the
 check instead: it displays each channel it keeps, stops watching the watched channel when `can_watch` fails for
@@ -168,7 +170,7 @@ fails leaves the marked `Stream` in place, and the next cycle starts another one
   ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)).
 - `on_channel_update` ends with `display()`, so the GUI row matches the status after every change.
 
-**Dependencies.** `gqldata` (`get_field`), `streamdata` (`playback_token`, `channel_stream`), `utils` (`Game`,
+**Dependencies.** `streamdata` (`playback_token`, `channel_stream`, `available_campaigns`), `utils` (`Game`,
 `json_minify`, `isonow`), `exceptions` (`MinerException`, `RequestException`) and `constants` (`GQL_QUERIES`,
 `ONLINE_DELAY`, `CALL`, `URLType`, `GQLQuery`). Third party: aiohttp and yarl. `Twitch` and the GUI's
 `ChannelList` are imported for type checking only.

@@ -1,6 +1,6 @@
 # A null item in `AvailableDrops` data still raises
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** channel, twitch
 **Origin:** Found on 2026-10-22 while the stream reads were changed to read a null stream field as an offline
 channel or a stream without a game: the `AvailableDrops` data that the same checks read was not changed
@@ -31,3 +31,7 @@ drops enabled until its next check, as a stream with no campaigns does. No fix a
 
 - 2026-10-22: Opened. Found while the stream reads were changed to read a null stream field as an offline
   channel or a stream without a game, which closed [task 059](059-null-fields-in-stream-data.md).
+- 2026-10-22: Done. `channel_campaigns` leaves out a channel with a null ID, and it and `available_campaigns`,
+  which `Channel.get_stream` now reads through, leave out a null campaign or one with a null ID, with a warning
+  ([streamdata.md](../../modules/streamdata.md#null-available-drops)). `tests/test_twitch_null_streams.py` sets
+  each value of an `AvailableDrops` response to null in turn. No request is added.

@@ -115,3 +115,5 @@ The commit states the new worst case per hour, as AGENTS.md asks for a change to
 - 2026-10-22: A null field in the stream data of `GetStreamInfo` or `GameDirectory` no longer ends the run
   ([streamdata.md](../../modules/streamdata.md#null-stream-fields)). A null item in `AvailableDrops` data still does,
   with the extra drops check on ([task 060](060-null-fields-in-available-drops.md)).
+- 2026-10-22: A null field in `AvailableDrops` data no longer ends the run
+  ([streamdata.md](../../modules/streamdata.md#null-available-drops)).

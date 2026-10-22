@@ -78,14 +78,36 @@ def directory_streams(response: JsonType) -> list[JsonType]:
     return streams
 
 
+def _readable_campaigns(channel_id: int, campaigns: list[JsonType | None] | None) -> list[JsonType]:
+    """Return a channel's AvailableDrops campaigns without a null campaign or one with a null ID."""
+    campaigns = campaigns or []
+    readable = [campaign for campaign in campaigns if get_field(campaign, "id") is not None]
+    if len(readable) < len(campaigns):
+        logger.warning(
+            f"Skipped {len(campaigns) - len(readable)} available campaigns of channel {channel_id},"
+            " which are null or have a null ID"
+        )
+    return readable
+
+
 def channel_campaigns(responses: list[JsonType]) -> dict[int, list[JsonType]]:
-    """Return the drop campaigns of each channel in AvailableDrops responses, leaving out a null channel."""
+    """Return the drop campaigns of each channel in AvailableDrops responses, leaving out a null channel or ID."""
     campaigns: dict[int, list[JsonType]] = {}
     for response in responses:
         channel = get_field(response, "data", "channel")
-        if channel is not None:
-            campaigns[int(channel["id"])] = channel["viewerDropCampaigns"] or []
+        if channel is None:
+            continue
+        if channel.get("id") is None:
+            logger.warning("Skipped a channel with a null ID in an AvailableDrops response")
+            continue
+        channel_id = int(channel["id"])
+        campaigns[channel_id] = _readable_campaigns(channel_id, channel.get("viewerDropCampaigns"))
     return campaigns
+
+
+def available_campaigns(response: JsonType, channel_id: int) -> list[JsonType]:
+    """Return the drop campaigns of one channel's AvailableDrops response, or none when its channel is null."""
+    return _readable_campaigns(channel_id, get_field(response, "data", "channel", "viewerDropCampaigns"))
 
 
 def playback_token(response: JsonType) -> tuple[str, str] | None:

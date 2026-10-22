@@ -21,7 +21,11 @@ request and needs neither Twitch nor a display.
 - `channel_stream(response, channel_id)` returns the `user` of one channel's `GetStreamInfo` response, read in
   the same way, or None when `data` or `user` is null. `channel_id` names the channel in a warning.
 - `channel_campaigns(responses)` maps each channel ID, as an int, to the `viewerDropCampaigns` of an
-  `AvailableDrops` response, with an empty list for null, and leaves out a response whose `channel` is null.
+  `AvailableDrops` response, with an empty list for null. It leaves out a response whose `data` or `channel` is
+  null, and reads the other fields as [Null available drops](#null-available-drops) says.
+- `available_campaigns(response, channel_id)` returns the `viewerDropCampaigns` of one channel's
+  `AvailableDrops` response, read in the same way, or an empty list when `data`, `channel` or the list is null.
+  `channel_id` names the channel in a warning.
 - `playback_token(response)` returns the `value` and `signature` of a `PlaybackAccessToken` response, or None
   when `data`, `streamPlaybackAccessToken` or either of the two is null. `Stream.get_stream_url` then starts an
   online check ([channel.md](channel.md#a-null-playback-token)).
@@ -53,6 +57,20 @@ A live channel read as offline still sends `viewcount` events, and `Twitch.proce
 is pending, and waits `ONLINE_DELAY` (120 seconds) before its one `GetStreamInfo` query. So while the stream ID
 stays null, the channel costs at most 30 `GetStreamInfo` queries an hour, the rate of any online check, and no
 `AvailableDrops` query. The bulk check sends no `AvailableDrops` query for it either.
+
+## Null available drops
+
+With the extra drops check on, the bulk check and an online check send `AvailableDrops` for each live channel
+and read the campaigns it lists, through `channel_campaigns` and `available_campaigns`
+([channel.md](channel.md#drops-enabled)). Each case below logs a warning:
+
+- A channel whose `id` is null is left out of `channel_campaigns`, because the bulk check finds each channel by
+  its ID. An online check does not read that ID.
+- A campaign that is null, or whose `id` is null, is left out, because `Channel` finds each campaign in
+  `Twitch._campaigns` by its ID.
+
+A stream whose campaigns were left out counts as not drops enabled until its next check, as a stream with no
+campaigns does. No case adds a request.
 
 ## Invariants
 

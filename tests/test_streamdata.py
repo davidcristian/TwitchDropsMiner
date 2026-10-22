@@ -2,7 +2,14 @@ import logging
 
 import pytest
 
-from streamdata import channel_stream, playback_token, channel_streams, channel_campaigns, directory_streams
+from streamdata import (
+    channel_stream,
+    playback_token,
+    channel_streams,
+    channel_campaigns,
+    directory_streams,
+    available_campaigns,
+)
 
 GAME = {"id": "1", "name": "G"}
 
@@ -152,6 +159,35 @@ def test_channel_campaigns_maps_each_channel_id_to_its_campaigns():
 def test_channel_campaigns_leaves_out_a_null_channel():
     responses = [available_response(None), available_response({"id": "10", "viewerDropCampaigns": []})]
     assert channel_campaigns(responses) == {10: []}
+
+
+def test_channel_campaigns_leaves_out_a_channel_with_a_null_id(caplog):
+    null_id = {"id": None, "viewerDropCampaigns": [{"id": "A"}]}
+    responses = [available_response(null_id), available_response({"id": "10", "viewerDropCampaigns": []})]
+    assert channel_campaigns(responses) == {10: []}
+    assert warnings(caplog) == ["Skipped a channel with a null ID in an AvailableDrops response"]
+
+
+def test_channel_campaigns_leaves_out_a_null_campaign_and_one_with_a_null_id(caplog):
+    channel = {"id": "10", "viewerDropCampaigns": [None, {"id": None}, {"id": "A"}]}
+    assert channel_campaigns([available_response(channel)]) == {10: [{"id": "A"}]}
+    assert warnings(caplog) == ["Skipped 2 available campaigns of channel 10, which are null or have a null ID"]
+
+
+def test_available_campaigns_reads_the_campaigns_without_the_channel_id(caplog):
+    channel = {"id": None, "viewerDropCampaigns": [{"id": "A"}, None]}
+    assert available_campaigns(available_response(channel), 10) == [{"id": "A"}]
+    assert warnings(caplog) == ["Skipped 1 available campaigns of channel 10, which are null or have a null ID"]
+
+
+@pytest.mark.parametrize("response", [
+    available_response(None),
+    available_response({"id": "10", "viewerDropCampaigns": None}),
+    {"data": None},
+])
+def test_available_campaigns_returns_no_campaigns_for_a_null_channel_or_list(response, caplog):
+    assert available_campaigns(response, 10) == []
+    assert warnings(caplog) == []
 
 
 def token_response(token):
