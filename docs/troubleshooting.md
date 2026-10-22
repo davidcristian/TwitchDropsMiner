@@ -48,6 +48,7 @@ From source, the same command is `env/bin/python main.py -vvv --log`.
 | `--dump` | Writes the campaign data to `dump.dat`, without your user ID in the drop IDs, then closes the app. It runs one full reload, so use it once, not on every start. |
 | `--tray` | Starts the app hidden in the tray. On macOS it has no effect. |
 | `--version` | Shows the version in a dialog, then closes the app. |
+| `--help` | Shows the flags in a dialog, then closes the app. |
 
 [`manual.txt`](../manual.txt), which comes with every release, also lists the exit codes.
 
@@ -72,8 +73,8 @@ From source, the same command is `env/bin/python main.py -vvv --log`.
   SIGTERM to the process you started still closes the app and saves its files
   ([parentexit.md](modules/parentexit.md)).
 - **An "Argument Parser Error" dialog.** The app was started with a flag it does not know. Check the shortcut or
-  the command against the table above. After `--version`, this dialog shows the version and is not an error
-  ([task 025](refinements/tasks/025-version-and-help-shown-as-error.md)).
+  the command against the table above. The dialog after `--version` or `--help` has the title "Twitch Drops
+  Miner" and is not an error.
 
 ## Logging in
 

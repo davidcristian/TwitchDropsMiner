@@ -280,8 +280,7 @@ start_appimage aarch64 arm64
 - `shot.png` in `$ACT/start-<arch>` and `$ACT/start-appimage-<arch>` shows the window on the Main tab. With no
   network, the Output box lists `Cannot connect to Twitch, retrying in N seconds... (https://www.twitch.tv)`.
 - With `--version`, the screenshot shows a dialog with the version and the short commit hash, such as
-  `v16.dev.61d04a9`. The dialog has the error icon
-  ([task 025](../refinements/tasks/025-version-and-help-shown-as-error.md)).
+  `v16.dev.61d04a9`. The dialog has the information icon ([main.md](../modules/main.md#command-line-flags)).
 - After a start without a flag, each build has written `cookies.jar`, `settings.json`, `lock.file` and `cache/`
   next to its executable or `.AppImage` file.
 

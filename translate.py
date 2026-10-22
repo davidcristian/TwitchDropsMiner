@@ -47,6 +47,11 @@ class ErrorMessages(TypedDict):
     folder_not_writable: str
 
 
+class ArgumentMessages(TypedDict):
+    title: str
+    error_title: str
+
+
 class GUIStatus(TypedDict):
     name: str
     idle: str
@@ -281,6 +286,7 @@ class Translation(TypedDict):
     status: StatusMessages
     login: LoginMessages
     error: ErrorMessages
+    arguments: ArgumentMessages
     gui: GUIMessages
 
 
@@ -327,6 +333,10 @@ default_translation: Translation = {
             "The application cannot write to the folder it runs from, where it keeps its files:\n\n{error}\n\n"
             "Move the application to a folder you can write to."
         ),
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "Argument Parser Error",
     },
     "gui": {
         "output": "Output",

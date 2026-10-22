@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import io
 import logging
+import argparse
 # import an additional thing for proper PyInstaller freeze support
 from multiprocessing import freeze_support
 from pathlib import Path
+from typing import Any, NoReturn, Protocol, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from _typeshed import SupportsWrite
 
 
 def log_file_handler(path: Path, formatter: logging.Formatter) -> logging.FileHandler:
@@ -11,6 +17,38 @@ def log_file_handler(path: Path, formatter: logging.Formatter) -> logging.FileHa
     handler = logging.FileHandler(path, encoding="utf-8")
     handler.setFormatter(formatter)
     return handler
+
+
+class MessageBoxes(Protocol):
+    """The two dialogs of `tkinter.messagebox` that `Parser` shows."""
+
+    def showinfo(self, title: str, message: str) -> object: ...
+
+    def showerror(self, title: str, message: str) -> object: ...
+
+
+class Parser(argparse.ArgumentParser):
+    """An `ArgumentParser` that shows its output in a message box as it exits, an error box for a nonzero status."""
+
+    def __init__(self, *args: Any, boxes: MessageBoxes, title: str, error_title: str, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._boxes = boxes
+        self._title = title
+        self._error_title = error_title
+        self._message: io.StringIO = io.StringIO()
+
+    def _print_message(self, message: str, file: SupportsWrite[str] | None = None) -> None:
+        self._message.write(message)
+
+    def exit(self, status: int = 0, message: str | None = None) -> NoReturn:
+        try:
+            super().exit(status, message)
+        finally:
+            # argparse exits with status 0 after --help and --version, and with 2 for a wrong command line
+            if status == 0:
+                self._boxes.showinfo(self._title, self._message.getvalue())
+            else:
+                self._boxes.showerror(self._error_title, self._message.getvalue())
 
 
 if __name__ == "__main__":
@@ -21,16 +59,13 @@ if __name__ == "__main__":
     if sys.version_info < (3, 10):
         raise RuntimeError("Python 3.10 or higher is required")
 
-    import io
     import os
     import signal
     import asyncio
-    import argparse
     import warnings
     import traceback
     import tkinter as tk
     from tkinter import messagebox
-    from typing import NoReturn, TYPE_CHECKING
 
     from parentexit import LinuxProcess, end_with_runtime
     end_with_runtime(sys.platform, os.environ, LinuxProcess())
@@ -46,9 +81,6 @@ if __name__ == "__main__":
     from utils import resource_path, set_root_icon
     from constants import IS_PACKAGED, LOGGING_LEVELS, SELF_PATH, FILE_FORMATTER, LOG_PATH, LOCK_PATH
 
-    if TYPE_CHECKING:
-        from _typeshed import SupportsWrite
-
     if not IS_PACKAGED:
         save_template()
 
@@ -61,21 +93,6 @@ if __name__ == "__main__":
     # XWayland/Mutter lockups during heavy Tkinter layout updates.
     if sys.platform.startswith("linux") and "XMODIFIERS" not in os.environ:
         os.environ["XMODIFIERS"] = "@im=none"
-
-    class Parser(argparse.ArgumentParser):
-        def __init__(self, *args, **kwargs) -> None:
-            super().__init__(*args, **kwargs)
-            self._message: io.StringIO = io.StringIO()
-
-        def _print_message(self, message: str, file: SupportsWrite[str] | None = None) -> None:
-            self._message.write(message)
-            # print(message, file=self._message)
-
-        def exit(self, status: int = 0, message: str | None = None) -> NoReturn:
-            try:
-                super().exit(status, message)  # sys.exit(2)
-            finally:
-                messagebox.showerror("Argument Parser Error", self._message.getvalue())
 
     class ParsedArgs(argparse.Namespace):
         _verbose: int
@@ -122,6 +139,9 @@ if __name__ == "__main__":
     parser = Parser(
         SELF_PATH.name,
         description="A program that allows you to mine timed drops on Twitch.",
+        boxes=messagebox,
+        title=_("arguments", "title"),
+        error_title=_("arguments", "error_title"),
     )
     parser.add_argument("--version", action="version", version=f"v{__version__}")
     parser.add_argument("-v", dest="_verbose", action="count", default=0)

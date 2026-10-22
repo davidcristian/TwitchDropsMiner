@@ -1,9 +1,9 @@
 # `--version` and `--help` show their output as an error
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** main
 **Origin:** Found on 2026-10-18 while the docs were written, [main.md](../../modules/main.md#command-line-flags)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 `main.py` defines `Parser`, a subclass of `argparse.ArgumentParser`. Its `_print_message` writes argparse's
 output to a `StringIO`, and its `exit` always shows that text with
@@ -52,3 +52,8 @@ Cost: no Twitch requests. The parser exits before the app connects.
   for the session, `Twitch.request` passed the new proxy on the next request, but
   `Websocket._backoff_connect` reads the proxy once when its connection task starts and passed the old value
   on a reconnect. So a change reaches PubSub only after a restart.
+- 2026-10-22: Done. The claim still held: under Xvfb, `main.py --version` and `main.py --help` showed the error
+  icon. `Parser` now sits outside the `__main__` block and takes the message boxes and both titles as
+  arguments. Status 0 calls `showinfo` with `arguments.title`, "Twitch Drops Miner", and any other status
+  `showerror` with `arguments.error_title`, both new keys in `translate.py`. `tests/test_main.py` runs it with a
+  fake for `tkinter.messagebox` ([main.md](../../modules/main.md#command-line-flags)). No Twitch request.

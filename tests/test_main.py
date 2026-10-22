@@ -7,8 +7,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from constants import FILE_FORMATTER
-from main import log_file_handler
+from main import Parser, log_file_handler
 
 MAIN = Path(__file__).resolve().parent.parent / "main.py"
 # Runs main.py as a script on a fake Python 3.9, which cannot install truststore and has no typing.ParamSpec
@@ -48,3 +50,45 @@ def test_the_log_file_keeps_korean_and_chinese_text_when_the_locale_code_page_is
 
     line = (tmp_path / "log.txt").read_text(encoding="utf-8")
     assert re.fullmatch(r"\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}:\tWARNING:\tWatching 침착맨 and 中文频道\n", line)
+
+
+class FakeBoxes:
+    """The dialogs of `tkinter.messagebox`, which record each box they show as its kind, title and text."""
+
+    def __init__(self) -> None:
+        self.shown: list[tuple[str, str, str]] = []
+
+    def showinfo(self, title: str, message: str) -> None:
+        self.shown.append(("info", title, message))
+
+    def showerror(self, title: str, message: str) -> None:
+        self.shown.append(("error", title, message))
+
+
+def parse(*arguments: str) -> tuple[int | str | None, list[tuple[str, str, str]]]:
+    """Parse the arguments, and return the exit status and the boxes shown."""
+    boxes = FakeBoxes()
+    parser = Parser("app", boxes=boxes, title="Twitch Drops Miner", error_title="Argument Parser Error")
+    parser.add_argument("--version", action="version", version="v1.0")
+    with pytest.raises(SystemExit) as exit_info:
+        parser.parse_args(list(arguments))
+    return exit_info.value.code, boxes.shown
+
+
+def test_the_version_shows_in_an_information_box_with_the_app_name_as_its_title():
+    assert parse("--version") == (0, [("info", "Twitch Drops Miner", "v1.0\n")])
+
+
+def test_the_help_shows_in_an_information_box_with_the_app_name_as_its_title():
+    status, shown = parse("--help")
+
+    assert status == 0
+    assert [(kind, title) for kind, title, text in shown] == [("info", "Twitch Drops Miner")]
+    assert shown[0][2].startswith("usage: app [-h] [--version]\n")
+
+
+def test_an_unknown_flag_shows_the_usage_and_the_error_in_an_error_box():
+    usage = "usage: app [-h] [--version]\n"
+    error = "app: error: unrecognized arguments: --bogus\n"
+
+    assert parse("--bogus") == (2, [("error", "Argument Parser Error", usage + error)])

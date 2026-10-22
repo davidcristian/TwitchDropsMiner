@@ -18,6 +18,7 @@ the current language. Other languages are JSON files in `lang/`. To add a string
 | `status` | `StatusMessages` | Lines printed to the Output box, such as `watching` and `claimed_drop` |
 | `login` | `LoginMessages` | `unexpected_content`, and `chrome` (`ChromeMessages`), which no code reads ([task 022](../refinements/tasks/022-unused-code.md)) |
 | `error` | `ErrorMessages` | `no_connection`, `site_down`, `save_failed`, `file_not_saved`, `cannot_start`, `folder_not_writable` |
+| `arguments` | `ArgumentMessages` | `title` and `error_title`, the titles of the message box that shows the command line output ([main.md](main.md#command-line-flags)) |
 | `gui` | `GUIMessages` | The window's text, one nested type per part |
 
 `GUIMessages` contains `GUIStatus`, `GUITabs`, `GUITray`, `GUILoginForm`, `GUIWebsocket`, `GUIProgress`,

@@ -1,8 +1,8 @@
 # `main.py`
 
 **Purpose.** The entry point. It parses the command line, loads the settings, takes the single instance lock,
-sets up logging, runs `Twitch` and sets the exit code. Apart from its imports and `log_file_handler`, all of the
-file is inside `if __name__ == "__main__":`, so importing `main` runs nothing. `settings.py` imports `ParsedArgs`
+sets up logging, runs `Twitch` and sets the exit code. Apart from its imports, `log_file_handler` and `Parser`,
+all of the file is inside `if __name__ == "__main__":`, so importing `main` runs nothing. `settings.py` imports `ParsedArgs`
 from it for type checking only.
 
 ## Startup order
@@ -44,14 +44,18 @@ from `ParsedArgs`. `SettingsPanel` writes `-v` and `--tray` into the autostart c
 ([gui.md](gui.md)), so a renamed flag breaks an autostart entry that is already saved.
 
 `log_file_handler(path, formatter)` returns a `logging.FileHandler` that appends to the file at `path` in UTF-8
-and formats each record with `formatter` ([Logging](#logging)). It is the one function a test can import.
+and formats each record with `formatter` ([Logging](#logging)). It and `Parser` are the names a test can import.
 
 ## Command line flags
 
-`Parser` subclasses `argparse.ArgumentParser`. It collects argparse's output in a `StringIO` and shows it in a
-message box titled "Argument Parser Error" when argparse exits, also for `--help` and `--version`
-([task 025](../refinements/tasks/025-version-and-help-shown-as-error.md)). The flags for users are also in
-[troubleshooting.md](../troubleshooting.md#command-line-flags).
+`Parser(*args, boxes, title, error_title, **kwargs)` subclasses `argparse.ArgumentParser`. It collects
+argparse's output in a `StringIO` and shows it in a message box when argparse exits. For status 0, after
+`--help` and `--version`, it calls `boxes.showinfo` with `title`. For any other status, such as 2 for an unknown
+flag, it calls `boxes.showerror` with `error_title`. `boxes` is a `MessageBoxes`, an object with those two
+methods: `tkinter.messagebox` in the app, a fake in a test. The app passes the strings `arguments.title`
+("Twitch Drops Miner") and `arguments.error_title` ("Argument Parser Error") from `translate.py`. They show in
+English, because the language is set after the settings load, which need the parsed flags. The flags for users
+are also in [troubleshooting.md](../troubleshooting.md#command-line-flags).
 
 | Flag | `Settings` attribute | Effect |
 | --- | --- | --- |
@@ -133,8 +137,8 @@ box.
   [Startup order](#startup-order), step 4.
 - `freeze_support()` stays the first call in the `__main__` block, where the `multiprocessing` documentation
   requires it for a frozen executable.
-- Everything except `log_file_handler` and the imports of standard library modules stays under
-  `if __name__ == "__main__":`. In a run from source, the child process of the folder dialog imports `main.py`
+- Everything except `log_file_handler`, `Parser` with its `MessageBoxes` protocol and the imports of standard
+  library modules stays under `if __name__ == "__main__":`. In a run from source, the child process of the folder dialog imports `main.py`
   as `__mp_main__` and must not run the app. An older Python runs the code outside that block before the version
   check, so that code imports nothing that needs Python 3.10.
 - `client.save(force=True)` stays after `wait_until_closed()`, for the reason in
