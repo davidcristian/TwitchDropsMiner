@@ -51,11 +51,9 @@ all reconnect at the same moment.
   a full reload ([ADR-0002](ADR-0002-twitch-traffic-budget.md)). An error that repeats on every run costs up
   to one full reload per restart ([019](../refinements/tasks/019-restart-runs-a-full-reload.md)). Restarts
   are at least the delay apart: 10 minutes at the default, and 1 minute at the `1 min` choice.
-- `Twitch.shutdown()` clears the drops, channels, inventory, login state and `wanted_games`, so a restart
-  begins from the same state as a fresh start, except for `_campaigns`. That dictionary is never cleared and
-  keeps every campaign fetched since the app started
-  ([027](../refinements/tasks/027-campaigns-never-cleared.md)). `shutdown` also clears `_no_channel_printed`
-  and `_scan_errors_printed`, so the next run prints those messages again.
+- `Twitch.shutdown()` clears the drops, campaigns, channels, inventory, login state and `wanted_games`, so a
+  restart begins from the same state as a fresh start. `shutdown` also clears `_no_channel_printed` and
+  `_scan_errors_printed`, so the next run prints those messages again.
 - `shutdown` also empties the channel list in the window. A row left from the old run would show a status that
   no longer changes, and would keep its old `Channel` for `get_selection()` until a `CHANNELS_FETCH` replaces
   it. A selection made before the error is lost, as it is after a fresh start.

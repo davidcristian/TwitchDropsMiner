@@ -54,7 +54,8 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
 
 - `channels` is an `OrderedDict[int, Channel]` of at most `MAX_CHANNELS` (199) tracked channels. `inventory` is
   the `list[DropsCampaign]`, `wanted_games` the `list[Game]` to mine with the highest priority first, and
-  `watching_channel` an `AwaitableValue[Channel]`. `_campaigns` maps a campaign ID to its `DropsCampaign`.
+  `watching_channel` an `AwaitableValue[Channel]`. `_campaigns` maps the ID of each campaign of the latest
+  reload to its `DropsCampaign`.
 - `can_watch(channel)` returns True when the channel is online, a campaign of a game in `wanted_games` has
   `can_earn(channel)` True, and either the channel's game is in `wanted_games` with drops enabled, or that
   campaign is for a special game ([inventory.md](inventory.md#special-games)). A campaign whose game the Exclude
@@ -238,10 +239,11 @@ scanned again. A scan error is printed once while it persists ([gamelib.md](game
   sets `State.EXIT`, so the run ends without the automatic restart
   ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)).
 - `shutdown` cancels the online check of each tracked channel, clears the channels, the GUI channel list,
-  inventory, drops, login state, wanted games and triggers, and resets `_no_channel_printed` and
-  `_scan_errors_printed`, so the next `_run` starts as a fresh one would.
-  It does not clear `_campaigns` ([task 027](../refinements/tasks/027-campaigns-never-cleared.md)). A new field
-  filled during a run must be cleared there.
+  inventory, drops, `_campaigns`, login state, wanted games and triggers, and resets `_no_channel_printed` and
+  `_scan_errors_printed`, so the next `_run` starts as a fresh one would. A new field filled during a run must
+  be cleared there.
+- `fetch_inventory` clears `_campaigns` and `_drops` before it fills them. A campaign that the latest reload
+  left out then has no entry and makes no stream drops enabled ([channel.md](channel.md#drops-enabled)).
 - `channels` stays within `MAX_CHANNELS` ([websocket.md](websocket.md#the-199-channel-limit)).
 - `CHANNELS_FETCH` keeps the old channels in `channels` during its requests and replaces them after the last
   one, with no `await` in between. So `process_stream_state` and `process_stream_update` find the channel of an

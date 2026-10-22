@@ -32,14 +32,14 @@ main.py
    ├─ WebsocketPool     websocket.py: up to 8 Websocket connections to Twitch PubSub
    ├─ inventory         DropsCampaign list; each campaign holds its TimedDrop objects and ACL channels
    ├─ _drops            every TimedDrop by ID, to match PubSub drop events
-   ├─ _campaigns        every DropsCampaign by ID, for the AvailableDrops check
+   ├─ _campaigns        every DropsCampaign of the latest reload by ID, for the AvailableDrops check
    ├─ channels          the tracked Channel objects by ID; each holds its current Stream or None
    └─ watching_channel  an AwaitableValue with the Channel being watched
 ```
 
 A campaign's ACL lists the channels it allows (`allow.channels` in Twitch's data), which get `acl_based` set.
-A campaign with an empty ACL progresses on any channel that streams its game with drops enabled. Nothing
-clears `_campaigns`, not even `shutdown` ([task 027](refinements/tasks/027-campaigns-never-cleared.md)).
+A campaign with an empty ACL progresses on any channel that streams its game with drops enabled. Each reload
+replaces the entries of `_drops` and `_campaigns`, and `shutdown` clears both.
 
 ## The state machine
 

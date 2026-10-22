@@ -387,6 +387,7 @@ class Twitch:
             await self._session.close()
             self._session = None
         self._drops.clear()
+        self._campaigns.clear()
         for channel in self.channels.values():
             channel.cancel_online_check()
         self.channels.clear()
@@ -1489,6 +1490,7 @@ class Twitch:
         campaigns.sort(key=lambda c: c.eligible, reverse=True)
 
         self._drops.clear()
+        self._campaigns.clear()
         self.gui.inv.clear()
         self.inventory.clear()
         self._mnt_triggers.clear()

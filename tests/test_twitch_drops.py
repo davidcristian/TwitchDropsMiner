@@ -172,6 +172,48 @@ def test_a_reload_leaves_out_an_acl_channel_that_a_server_error_set_to_null(live
     assert [channel.id for channel in twitch.inventory[0].allowed_channels] == [1]
 
 
+def campaign_with_id(campaign_id: str) -> JsonType:
+    return {**campaign_data([drop_data(f"{campaign_id}-d1")]), "id": campaign_id}
+
+
+def enabled_by_campaign(twitch: Twitch, campaign_id: str) -> bool:
+    """Return whether a stream counts as drops enabled when `AvailableDrops` lists only this campaign for it."""
+    twitch.settings.available_drops_check = True
+    channel = Channel(twitch, id=1, login="c1")
+    channel.external_update(stream_user(1, online=True), [{"id": campaign_id}])
+    return channel.drops_enabled
+
+
+def test_a_campaign_that_the_latest_reload_left_out_makes_no_stream_drops_enabled(live_twitch):
+    reloads = iter([[campaign_with_id("A")], [campaign_with_id("B")]])
+    fake = FakeTwitch(gql=gql_answers(Inventory=lambda op: inventory(next(reloads)), Campaigns=NO_CAMPAIGNS))
+
+    async def scenario():
+        twitch = live_twitch(fake)
+        enabled = []
+        for _ in range(2):
+            await twitch.fetch_inventory()
+            enabled.append(enabled_by_campaign(twitch, "A"))
+        return enabled
+
+    assert run_with_fast_clock(scenario()) == [True, False]
+    assert fake.gql_sent == ["Inventory", "Campaigns"] * 2
+
+
+def test_a_campaign_of_a_run_that_shut_down_makes_no_stream_drops_enabled(live_twitch):
+    fake = FakeTwitch(gql=gql_answers(Inventory=inventory([campaign_with_id("A")]), Campaigns=NO_CAMPAIGNS))
+
+    async def scenario():
+        twitch = live_twitch(fake)
+        await twitch.fetch_inventory()
+        enabled = enabled_by_campaign(twitch, "A")
+        await twitch.shutdown()
+        return enabled, enabled_by_campaign(twitch, "A")
+
+    assert run_with_fast_clock(scenario()) == (True, False)
+    assert fake.gql_sent == ["Inventory", "Campaigns"]
+
+
 def test_the_watch_loop_sends_one_token_and_one_stream_query_per_online_check_while_the_token_is_null(live_twitch):
     fake = FakeTwitch(gql=campaign_answers(
         drop_data("d1"),

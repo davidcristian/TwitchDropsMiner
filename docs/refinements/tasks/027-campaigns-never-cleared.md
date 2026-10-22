@@ -1,9 +1,9 @@
 # The campaign map keeps every campaign since the app started
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** twitch (inventory), channel
 **Origin:** Found on 2026-10-18 while the docs were written, [twitch.md](../../modules/twitch.md#invariants)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 `Twitch._campaigns` maps a campaign ID to its `DropsCampaign`. `Twitch.fetch_inventory` in `twitch.py` adds
 each fetched campaign to it and never removes one. A few lines earlier it clears `_drops`, `inventory` and
@@ -80,3 +80,8 @@ in the same commit. The fix sends no Twitch request.
 - 2026-10-18: Opened. While the invariants of twitch.md were written, `shutdown` was found not to clear
   `_campaigns`. Two runs of the real `fetch_inventory` with stubbed responses showed the stale entry, its memory
   and its effect on `_check_drops_enabled`.
+- 2026-10-22: Closed. `fetch_inventory` clears `_campaigns` next to `_drops` before it fills it, and `shutdown`
+  clears it with the other run data. Two tests in `tests/test_twitch_drops.py` run the real `fetch_inventory`
+  with stubbed responses. A stream whose `AvailableDrops` campaign is one that the latest reload left out, or
+  one that a run fetched before `shutdown`, counts as not drops enabled. The invariant in twitch.md and the
+  consequences in ADR-0006 and ADR-0010 changed with the fix.

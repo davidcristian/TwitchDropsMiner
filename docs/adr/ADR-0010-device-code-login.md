@@ -89,9 +89,7 @@ written reason for the flow or for a client.
   upstream README has said so since 2024-09-15, when the client was already `ANDROID_APP`. Decision 2 gives
   today's.
 - **`Invalidate` starts a new run,** which costs one full reload (ADR-0002). A press during a fetch can have
-  its state replaced ([task 012](../refinements/tasks/012-button-requests-lost-during-a-fetch.md)). After it,
-  a login to another account leaves the first account's campaigns in `Twitch._campaigns`
-  ([task 027](../refinements/tasks/027-campaigns-never-cleared.md)).
+  its state replaced ([task 012](../refinements/tasks/012-button-requests-lost-during-a-fetch.md)).
 
 ## Alternatives rejected
 
@@ -113,6 +111,5 @@ written reason for the flow or for a client.
   [ADR-0009](ADR-0009-watch-method.md) for the watch requests, which send the same user agent.
 - Tasks [010](../refinements/tasks/010-unreachable-password-login.md) (the password login),
   [011](../refinements/tasks/011-login-token-in-debug-log.md) (the token in debug logs),
-  [012](../refinements/tasks/012-button-requests-lost-during-a-fetch.md) (a press during a fetch),
-  [014](../refinements/tasks/014-hard-coded-strings.md) (the hard-coded line with the user code) and
-  [027](../refinements/tasks/027-campaigns-never-cleared.md) (campaigns kept after another login).
+  [012](../refinements/tasks/012-button-requests-lost-during-a-fetch.md) (a press during a fetch) and
+  [014](../refinements/tasks/014-hard-coded-strings.md) (the hard-coded line with the user code).
