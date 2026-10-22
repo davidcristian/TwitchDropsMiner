@@ -1,9 +1,9 @@
 # A crashed background task ends the app instead of restarting it
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** utils (`task_wrapper`), twitch, websocket, main
 **Origin:** Found on 2026-10-18 while the docs were written, [twitch.md](../../modules/twitch.md#invariants)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 `task_wrapper(critical=True)` in `utils.py` wraps three tasks: `Twitch._watch_loop`, `Twitch._maintenance_task`
 and `Websocket._handle` (`websocket.py`). When one of them raises anything other than `ExitRequest` or
@@ -101,3 +101,8 @@ nothing, because the app stops.
   and an online check starts ([channel.md](../../modules/channel.md#a-null-playback-token)).
 - 2026-10-22: A null `currentMinutesWatched` in the `CurrentDrop` response no longer ends `_watch_loop`. It
   counts as no drop data, and the loop adds an estimated minute ([twitch.md](../../modules/twitch.md#watch-loop)).
+- 2026-10-22: Done. `task_wrapper` passes the error of a failed critical task to `Twitch.task_failed`, which
+  requests `State.RESTART`, and that state raises the error from `_run`, so the run restarts after the delay
+  of [ADR-0006](../../adr/ADR-0006-restart-after-fatal-error.md) or, at 0, `main()` exits with code 1. The
+  task now ends without the error: `Websocket.stop` awaited the failed `_handle` task and raised the error
+  again, so `Twitch.shutdown` failed after a websocket task failed.

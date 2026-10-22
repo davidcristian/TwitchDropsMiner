@@ -25,9 +25,8 @@ Any exception other than `ExitRequest` and `ReloadRequest` that leaves `Twitch._
 treats it as a fatal error. While the "Restart after a crash after" setting is not "Never", `Twitch.run` waits
 and starts again ([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)). Otherwise it raises the error to
 `main()`, which prints it and exits with code 1 ([main.md](main.md#exit-codes)). In a background task that
-`utils.task_wrapper` wraps, any other exception is logged and raised again; with `critical=True` the wrapper also
-calls `Twitch.close()`, so the run ends without the restart
-([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)).
+`utils.task_wrapper` wraps, any other exception is logged and raised again; with `critical=True` the wrapper
+passes it to `Twitch.task_failed` instead, and `Twitch._run` raises it as a fatal error.
 
 ## Each class
 

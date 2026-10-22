@@ -61,7 +61,7 @@ a connection, starts `_watch_loop`, subscribes the user's two PubSub topics and 
 | `CHANNELS_FETCH` | Adds the untracked ACL channels of wanted campaigns, checked with `bulk_check_online`, and up to 20 live channels with drops enabled for each wanted game that has a campaign without an ACL (`get_live_streams`). Sorts by priority, ACL first, then viewers, keeps the first `MAX_CHANNELS` (199) and subscribes their topics. The old channels stay in `channels` until the requests end ([twitch.md](modules/twitch.md#invariants)). Offline channels sort last and are cut first ([task 001](refinements/tasks/001-offline-acl-channels-trimmed-first.md)). When no channel is watched or `GAMES_UPDATE` came before, shows the active drop one minute lower with its countdown stopped; a refresh that keeps the watched channel leaves the countdown running. | `CHANNEL_SWITCH` |
 | `CHANNEL_SWITCH` | Watches the channel selected in the channel list when `can_watch` accepts it, else the first channel by priority for which `should_switch` is true, else keeps the current channel. | waits; `IDLE` when nothing can be watched |
 | `IDLE` | Sets the tray icon to `idle` and stops watching. With `--dump`, it and `CHANNEL_SWITCH` close the window instead, so the app exits after one full reload. | waits |
-| `RESTART` | Raises `ReloadRequest`. `run` catches it, calls `shutdown` and starts `_run` again, which logs in again. | a new run |
+| `RESTART` | Raises `ReloadRequest`. `run` catches it, calls `shutdown` and starts `_run` again, which logs in again. After a critical task failed, raises that task's error instead, which `run` handles as a fatal error. | a new run |
 | `EXIT` | Sets the status to exiting and returns from `_run`. | none |
 
 | Event | Source | Moves to |
@@ -77,7 +77,7 @@ a connection, starts `_watch_loop`, subscribes the user's two PubSub topics and 
 | `Switch` button above the channel list | `ChannelList` | `CHANNEL_SWITCH` |
 | `Invalidate` button on the Help tab | `HelpTab` | `RESTART` |
 | Window closed, tray `Quit`, SIGINT or SIGTERM on Linux, Windows shutdown | `GUIManager.close` | `EXIT` |
-| An exception in a task wrapped with `task_wrapper(critical=True)` | `utils.task_wrapper` | `EXIT` |
+| An exception in a task wrapped with `task_wrapper(critical=True)` | `utils.task_wrapper`, through `Twitch.task_failed` | `RESTART` |
 
 `on_channel_update` watches a channel that goes online and passes `should_switch` without a state change.
 A change to the Priority list, Exclude list or Priority mode sets no state; the next `GAMES_UPDATE` reads it.
@@ -86,8 +86,8 @@ A change to the Priority list, Exclude list or Priority mode sets no state; the 
 Never (`restart_delay` 0), `run` raises it again, and `main.py` prints it and keeps the window open. Otherwise
 `_await_restart` calls `shutdown` and waits ([ADR-0006](adr/ADR-0006-restart-after-fatal-error.md)), and `run`
 starts `_run` again, which begins with a full reload
-([task 019](refinements/tasks/019-restart-runs-a-full-reload.md)). A failed critical task moves to `EXIT`
-instead and is not restarted ([task 013](refinements/tasks/013-crashed-task-ends-the-app.md)).
+([task 019](refinements/tasks/019-restart-runs-a-full-reload.md)). The error of a failed critical task takes the
+same path: `RESTART` raises it from `_run`.
 
 ## Data flow
 
@@ -158,7 +158,8 @@ Nothing sends `ClaimCommunityPoints`, `ChannelPointsContext`, `SlugRedirect`, `N
 
 `refresh_interval` is "Check for new streams every": 0 (Never), 1, 2, 5, 10, 15 or 30 minutes, 5 by default
 ([ADR-0003](adr/ADR-0003-stream-refresh.md)). `_watch_loop`, `_maintenance_task` and `Websocket._handle` use
-`task_wrapper(critical=True)`: an exception in one moves the app to `EXIT`. `Twitch.shutdown` stops all three.
+`task_wrapper(critical=True)`: an exception in one ends the run as a fatal error. `Twitch.shutdown` stops all
+three.
 
 ## Platform differences
 

@@ -106,8 +106,8 @@ check: at most 30 of each an hour, plus 30 `AvailableDrops` with the extra drops
   the channel offline 120 seconds later, once `GetStreamInfo` returns no stream. A failed segment request
   changes nothing.
 - An exception from `send_watch`, or one other than `GQLException` from the `CurrentDrop` check, ends
-  `_watch_loop`, which runs under `task_wrapper(critical=True)`, and so ends the app
-  ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)). After a failed playlist request,
+  `_watch_loop`, which runs under `task_wrapper(critical=True)`, and so ends the run as a fatal error
+  ([ADR-0006](ADR-0006-restart-after-fatal-error.md)). After a failed playlist request,
   `PlaybackAccessToken` is sent for a stream that may have ended. A null token fails the cycle and starts an
   online check, as above, and nothing in this repo shows whether Twitch returns a token for an ended stream.
 - The README warns against watching a stream on the account the app uses ([Notes](../../README.md#notes)). No

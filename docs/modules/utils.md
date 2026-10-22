@@ -54,9 +54,11 @@ it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays
 
 - **`task_wrapper(afunc=None, *, critical=False)`** decorates a coroutine function that runs as a task. It
   ignores `ExitRequest` and `ReloadRequest`, and logs any other exception with its traceback and raises it again.
-  With `critical=True` it first calls `Twitch.close()` on the `Twitch` object found as the first argument or as
-  its `_twitch` attribute, so the failure of a required task stops the app, with no automatic restart
-  ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)). The critical tasks are
+  With `critical=True` it passes the exception to `Twitch.task_failed` on the `Twitch` object found as the first
+  argument or as its `_twitch` attribute, and the task ends without raising it. `Twitch._run` then raises it as
+  a fatal error, which restarts the run after the restart delay
+  ([twitch.md](twitch.md#restart-after-a-fatal-error)). `Websocket.stop` awaits its task, so a task that
+  raised the error would raise it again in `Twitch.shutdown`. The critical tasks are
   `Twitch._watch_loop`, `Twitch._maintenance_task` and `Websocket._handle`. Without `critical` it wraps the
   PubSub handlers `process_stream_state`, `process_stream_update`, `process_drops` and `process_notifications`
   in `twitch.py`, `Websocket.stop` and, in `gui.py`, `Twitch.detect_games` and `HelpTab._invalidate_token`.

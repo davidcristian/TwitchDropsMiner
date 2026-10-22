@@ -20,6 +20,9 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
 - `close()` sets `State.EXIT`, and `GUIManager.close` calls it. `prevent_close()` clears the GUI's close
   request, so the window stays open to show an error. `print(message)` writes to the Output box, and
   `save(force=False)` saves the GUI state and the settings; `main()` calls it at exit.
+- `task_failed(error)` stores the error of a failed critical task, the first one of a run, and requests
+  `State.RESTART`, whose handler raises it. `run` then handles it as a
+  [fatal error](#restart-after-a-fatal-error). `utils.task_wrapper` calls it.
 - `change_state(state)` requests the next `State` and sets the event `_run` waits on. Of the states requested
   during one pass of `_run`, the handler's own next state included, it keeps the first in `STATE_ORDER`:
   `EXIT`, `RESTART`, then the states of a reload in the order they run, then `IDLE`
@@ -183,10 +186,11 @@ no request. It prints the no campaign message once, and again only after a game 
 ## Restart after a fatal error
 
 When `_run` raises any exception other than `ReloadRequest` and `ExitRequest`, `run` calls `_await_restart`.
-With `settings.restart_delay` at 0 it returns False, and `run` raises the error to `main.py`, which shows it and
-stops. Otherwise it prints the traceback, calls `shutdown()`, shows the restart time in the status line and the
-Output box, and waits `restart_delay` minutes plus a random 0 to 60 seconds (`RESTART_JITTER`). `run` then starts
-`_run` again, which begins with a full reload
+`_run` also raises the error of a failed critical task, which `task_failed` stores ([Invariants](#invariants)).
+With `settings.restart_delay` at 0 `_await_restart` returns False, and `run` raises the error to `main.py`,
+which shows it and stops. Otherwise it prints the traceback, calls `shutdown()`, shows the restart time in the
+status line and the Output box, and waits `restart_delay` minutes plus a random 0 to 60 seconds
+(`RESTART_JITTER`). `run` then starts `_run` again, which begins with a full reload
 ([task 019](../refinements/tasks/019-restart-runs-a-full-reload.md)). Closing the window ends the wait and the
 app. Every error waits the same delay. The setting is "Restart after a crash after" on the Settings tab: "Never
 (stay stopped)", stored as 0, or 1, 5, 10, 15, 30 or 60 minutes, default 10
@@ -247,13 +251,14 @@ scanned again. A scan error is printed once while it persists ([gamelib.md](game
   `-vvvv`, a `DEBUG` record that `gamelib` logs there goes to `_TKOutputHandler` in `gui.py`, whose Tk call from
   that thread raises `RuntimeError` and ends the scan
   ([task 021](../refinements/tasks/021-scan-thread-logs-into-tk.md)).
-- `_watch_loop` and `_maintenance_task` use `task_wrapper(critical=True)`. An exception in either is logged and
-  sets `State.EXIT`, so the run ends without the automatic restart
-  ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)).
+- `_watch_loop`, `_maintenance_task` and `Websocket._handle` use `task_wrapper(critical=True)`. An exception in
+  one is logged and passed to `task_failed`, so the run ends with it as a
+  [fatal error](#restart-after-a-fatal-error). `EXIT` comes before `RESTART`, so a close requested at the same
+  time ends the app instead. The task itself ends without raising, because `Websocket.stop` awaits its task.
 - `shutdown` cancels the online check of each tracked channel, clears the channels, the GUI channel list,
   inventory, drops, `_campaigns`, login state, wanted games and triggers, and resets `_no_campaign_printed`,
-  `_no_channel_printed` and `_scan_errors_printed`, so the next `_run` starts as a fresh one would. A new field
-  filled during a run must be cleared there.
+  `_no_channel_printed`, `_scan_errors_printed` and `_task_error`, so the next `_run` starts as a fresh one
+  would. A new field filled during a run must be cleared there.
 - `fetch_inventory` clears `_campaigns` and `_drops` before it fills them. A campaign that the latest reload
   left out then has no entry and makes no stream drops enabled ([channel.md](channel.md#drops-enabled)).
 - `channels` stays within `MAX_CHANNELS` ([websocket.md](websocket.md#the-199-channel-limit)).

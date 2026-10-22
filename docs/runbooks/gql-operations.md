@@ -44,9 +44,8 @@ fixed, and each restart begins with a full reload
 ([task 019](../refinements/tasks/019-restart-runs-a-full-reload.md)). A call with an outdated hash sends 2
 requests, and the rate limiter counts both.
 
-A failure in the watch loop, such as an outdated `PlaybackAccessToken` hash, shows
-`ERROR: Exception in _watch_loop task` instead, and the app stops without a restart
-([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)).
+A failure in the watch loop, such as an outdated `PlaybackAccessToken` hash, first shows
+`ERROR: Exception in _watch_loop task` and its traceback. The lines above and the restart follow.
 
 When Twitch changes the variables or the response of an operation, the error differs: a `GQLException` with
 another message, or a `KeyError` or `TypeError` where the code reads the response. The steps below cover both

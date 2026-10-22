@@ -1,6 +1,6 @@
 # ADR-0006: Restart after a fatal error
 
-**Status:** Accepted (2026-08-25)
+**Status:** Accepted (2026-10-22)
 
 ## Context
 
@@ -20,7 +20,10 @@ all reconnect at the same moment.
    again. It is the same loop that restarts `_run` after a `ReloadRequest`, which `State.RESTART` raises. The
    window stays open, the tray icon stays, and the Output box keeps its lines, including the traceback. An
    `aiohttp.ContentTypeError` is first replaced by a `RequestException` with the "Unexpected content type
-   returned" message, which names the likely cause.
+   returned" message, which names the likely cause. An exception in a critical task (`_watch_loop`,
+   `_maintenance_task` or `Websocket._handle`) is a fatal error too: `task_wrapper` passes it to
+   `Twitch.task_failed`, which requests `State.RESTART`, and that state raises it from `_run`. The run cannot
+   go on without these tasks, and the same error raised in `_run` restarts the run.
 
 2. **The delay is a setting.** `restart_delay` holds minutes and defaults to 10. It is set by "Restart after a
    crash after:" in the General section of the Settings tab. Its choices are `SettingsPanel.RESTART_DELAYS`:
@@ -58,15 +61,17 @@ all reconnect at the same moment.
   no longer changes, and would keep its old `Channel` for `get_selection()` until a `CHANNELS_FETCH` replaces
   it. A selection made before the error is lost, as it is after a fresh start.
 - Only `Exception` subclasses restart the run. `ExitRequest` ends it, and `ReloadRequest` restarts it at once.
-- An exception in a critical task (`_watch_loop`, `_maintenance_task` or `Websocket._handle`) does not leave
-  `_run`. `task_wrapper` calls `Twitch.close`, so the app stops without a restart
-  ([013](../refinements/tasks/013-crashed-task-ends-the-app.md)).
+- A failed critical task restarts the run no sooner than any other fatal error, because its error leaves
+  `_run` and waits the same delay. A close requested at the same time ends the app, because `EXIT` comes
+  before `RESTART` ([ADR-0017](ADR-0017-state-requests.md)).
 
 ## Alternatives rejected
 
 - **Restart the whole process.** It would close the window and lose the lines in the Output box, while the
   loop in `Twitch.run` already restarts `_run` in place.
 - **No jitter.** After an outage, every copy of the app would reconnect at the same moment.
+- **Stopping the app when a critical task fails.** A bug in such a task can repeat on every run, but so can a
+  bug in `_run`, which restarts. "Never (stay stopped)" keeps the stop for a user who wants it.
 
 ## Related
 

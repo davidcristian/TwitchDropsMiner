@@ -5,7 +5,7 @@
 `Twitch.gql_request` sets the field that the error's `path` names to null ([twitch.md](twitch.md#gql-requests)),
 so each function here leaves out a null item or reads it as no value instead of raising. A raise in
 `CHANNELS_FETCH` ends the run, a raise in an online check ends that check, and a raise in the watch loop ends
-the app ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)). The functions read a field with
+the run as well ([utils.md](utils.md#tasks)). The functions read a field with
 `get_field` from [gqldata.md](gqldata.md), which reads the campaign data in the same way. The module sends no
 request and needs neither Twitch nor a display.
 

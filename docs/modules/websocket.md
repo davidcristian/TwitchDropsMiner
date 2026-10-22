@@ -134,8 +134,8 @@ warning and skipped, and the rest of its batch is handled. The handlers and what
   waiting for a connection.
 - Each event is handled in its own task, so the receive loop does not wait for a handler, and two events can be
   handled at the same time.
-- `_handle` uses `task_wrapper(critical=True)`: an exception that escapes its reconnect loop sets `State.EXIT` in
-  `Twitch` ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)).
+- `_handle` uses `task_wrapper(critical=True)`: an exception that escapes its reconnect loop ends the run as a
+  fatal error, through `Twitch.task_failed` ([utils.md](utils.md#tasks)).
 - `stop` keeps the `Websocket` objects, and the next `start` connects every one of them, including those left
   with no topics. A later `remove_topics` call stops the ones not needed. After a stop of a pool with 3
   connections, all 3 stay in `websockets` with 0 topics, and new topics go to the first one

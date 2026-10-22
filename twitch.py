@@ -322,6 +322,8 @@ class Twitch:
         self._scan_errors_printed: set[str] = set()
         # the Rescan button can be pressed while a scan is already running
         self._scanning_games: bool = False
+        # the error of a failed critical task, which _run raises as its own
+        self._task_error: Exception | None = None
         # NOTE: GQL is pretty volatile and breaks everything if one runs into their rate limit.
         # Do not modify the default, safe values.
         self._qgl_limiter = RateLimiter(capacity=5, window=1)
@@ -413,6 +415,7 @@ class Twitch:
         self._no_campaign_printed = False
         self._no_channel_printed = False
         self._scan_errors_printed.clear()
+        self._task_error = None
         # wait at least half a second + whatever it takes to complete the closing
         # this allows aiohttp to safely close the session
         await asyncio.sleep(start_time + 0.5 - time())
@@ -441,6 +444,12 @@ class Twitch:
         usually by the console or application window being closed.
         """
         self.change_state(State.EXIT)
+
+    def task_failed(self, error: Exception) -> None:
+        """End the run with the error of a failed critical task, so the run restarts as after a fatal error."""
+        if self._task_error is None:
+            self._task_error = error
+        self.change_state(State.RESTART)
 
     def prevent_close(self):
         """
@@ -926,6 +935,8 @@ class Twitch:
                     self.change_state(State.IDLE)
                 del new_watching, selected_channel, watching_channel
             elif self._state is State.RESTART:
+                if self._task_error is not None:
+                    raise self._task_error
                 raise ReloadRequest()
             elif self._state is State.EXIT:
                 self.gui.tray.change_icon("pickaxe")

@@ -88,10 +88,9 @@ message box titled "Argument Parser Error" when argparse exits, also for `--help
    ([Startup order](#startup-order), step 3).
 2. `await client.run()`. `Twitch.run` starts the client again after a `ReloadRequest` and returns after an
    `ExitRequest`. While the "Restart after a crash after" setting is not "Never", it also starts again after any
-   other exception ([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)). An exception reaches `main()`
-   only when `restart_delay` is 0, or when `Twitch._await_restart` raises itself. A failed critical task, such
-   as `_watch_loop`, calls `Twitch.close()` instead, and `run` returns without a restart
-   ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)).
+   other exception ([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)), the error of a failed critical
+   task such as `_watch_loop` included. An exception reaches `main()` only when `restart_delay` is 0, or when
+   `Twitch._await_restart` raises itself.
 3. An exception sets the exit code to 1, prints "Fatal error encountered:" and the traceback, and calls
    `client.prevent_close()`, so the window stays open.
 4. In `finally`, the SIGINT handler is removed, "Exiting..." is printed and `client.shutdown()` runs. The
@@ -116,7 +115,7 @@ box.
 
 | Code | When |
 | --- | --- |
-| 0 | The user closed the window, `--dump` finished, `--help` or `--version` ran, or a critical task failed ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)). |
+| 0 | The user closed the window, `--dump` finished, or `--help` or `--version` ran. |
 | 1 | `client.run()` raised an exception. With the default `restart_delay` of 10, the app starts again after an exception instead ([The run and the exit](#the-run-and-the-exit), step 2). |
 | 2 | argparse found an error in the command line, such as an unknown flag. |
 | 3 | Another process holds `lock.file`. |
