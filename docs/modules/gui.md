@@ -29,7 +29,8 @@ and keeps it as an attribute. The labels in quotes are the English strings from 
 
 - **`ChannelList`** has the columns Channel, Status, Game, 🎁 (drops enabled), Viewers and 📋 (the channel is on a
   campaign's list of allowed channels). "Switch" sends `State.CHANNEL_SWITCH`. `Twitch` then reads
-  `get_selection()` and watches the selected channel when `Twitch.can_watch` allows it. `display(channel,
+  `get_selection()` and watches the selected channel when `Twitch.can_watch` allows it, also after a reload
+  ([ADR-0017](../adr/ADR-0017-state-requests.md)). `display(channel,
   add=True)` adds a row, or updates the row with the same `iid` and stores the new object for it, so
   `get_selection()` returns the object that `Twitch.channels` holds and not an older one with the same `id`.
 - **`ConsoleOutput.print`** deletes the oldest lines past `MAX_LINES` (5000). A line costs about 0.4 KB, so the

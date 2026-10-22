@@ -28,6 +28,12 @@ lost, and no maintenance task was left to request the next one.
    request a reload, so the second request can come while the reload of the first runs.
 3. **After `EXIT` the state no longer changes,** so a late request cannot restart an app that is closing. A
    new run starts with `INVENTORY_FETCH`, and of the requests made before it keeps only `EXIT`.
+4. **A reload keeps the selection in the channel list.** The full cleanup of a reload deletes every row, and
+   with it the selected one. `CHANNELS_CLEANUP` stores the ID of a selected channel that it removes, and
+   `CHANNELS_FETCH` selects that channel again when the new list has it. `CHANNEL_SWITCH` watches the
+   selected channel whenever `can_watch` accepts it, so a `Switch` press during a reload watches the chosen
+   channel after it while that channel can still be watched. A stream refresh already keeps the selection
+   ([ADR-0003](ADR-0003-stream-refresh.md)), and a reload keeps it in the same way.
 
 ## Consequences
 
@@ -39,9 +45,10 @@ lost, and no maintenance task was left to request the next one.
 - A merged reload shows the campaign data of its own `Inventory` and `Campaigns` queries, which can be older
   than the press. A request that comes after `INVENTORY_FETCH` ends, during the rest of the reload, runs a new
   reload.
-- The full cleanup of a reload removes the channel list's selection, so after a `Switch` press during a
-  reload the app watches the channel that the priority order picks
-  ([074](../refinements/tasks/074-reload-removes-the-channel-selection.md)).
+- A selected channel stays watched through the hourly reload and every other reload, as it does through a
+  stream refresh, until the user selects another channel or it can no longer be watched. A restart after a
+  fatal error still empties the list and its selection ([ADR-0006](ADR-0006-restart-after-fatal-error.md)).
+  Keeping the selection sends no request.
 
 ## Alternatives rejected
 
@@ -49,6 +56,9 @@ lost, and no maintenance task was left to request the next one.
   reload: `GAMES_UPDATE`, the cleanup and the channel fetch.
 - **A second reload after the running one.** It repeats the most expensive work the app does for a press that
   the running reload already serves.
+- **Keeping only the selection of a `Switch` press during a reload.** A selection already decides every
+  `CHANNEL_SWITCH`, so a reload that drops a selection made before it would switch away from a channel the
+  user chose.
 
 ## Related
 
@@ -57,3 +67,4 @@ lost, and no maintenance task was left to request the next one.
 - [ADR-0002](ADR-0002-twitch-traffic-budget.md) (the events that run a full reload) and
   [ADR-0003](ADR-0003-stream-refresh.md) (the stream refresh).
 - [012](../refinements/tasks/012-button-requests-lost-during-a-fetch.md): the requests that were replaced.
+  [074](../refinements/tasks/074-reload-removes-the-channel-selection.md): the selection that a reload removed.

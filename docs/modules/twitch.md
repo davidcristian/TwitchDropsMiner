@@ -146,6 +146,11 @@ An offline channel has priority `MAX_INT`, so offline channels sort last and are
 a channel's topics and cancels its online check ([channel.md](channel.md#invariants)), and the rebuilt channel
 list has no row for it.
 
+`CHANNELS_CLEANUP` stores the ID of the selected channel when it removes that channel, which a full cleanup
+does to every channel, and `CHANNELS_FETCH` selects the channel again when the new list has it. So a
+selection, such as one made with a `Switch` press during a reload, outlasts the reload
+([ADR-0017](../adr/ADR-0017-state-requests.md)).
+
 ## Watch loop
 
 Every `WATCH_INTERVAL` (20 seconds) `_watch_loop` takes the watched channel, waiting until there is one, stops

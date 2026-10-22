@@ -630,6 +630,8 @@ class Twitch:
         ])
         full_cleanup: bool = False
         watch_restarted: bool = False
+        # the ID of the selected channel when the last cleanup removed it
+        removed_selection: int | None = None
         channels: Final[OrderedDict[int, Channel]] = self.channels
         # a run starts with a reload, so of the requests made before it only EXIT is kept
         self._state_change.clear()
@@ -749,6 +751,11 @@ class Twitch:
                         )
                     ]
                 full_cleanup = False
+                # removing a channel's row drops its selection, which the fetch restores when it adds the channel back
+                selection = self.gui.channels.get_selection()
+                removed_selection = (
+                    selection.id if selection is not None and selection in to_remove_channels else None
+                )
                 if to_remove_channels:
                     to_remove_topics: list[str] = []
                     for channel in to_remove_channels:
@@ -845,9 +852,10 @@ class Twitch:
                 for channel in ordered_channels:
                     channels[channel.id] = channel
                     channel.display(add=True)
-                # restore the selection, as long as the channel is still on the list
-                if gui_selection is not None and gui_selection.id in channels:
-                    self.gui.channels.set_selection(gui_selection)
+                # restore the selection, or the one the cleanup removed, as long as the channel is still on the list
+                selection_id = gui_selection.id if gui_selection is not None else removed_selection
+                if selection_id is not None and selection_id in channels:
+                    self.gui.channels.set_selection(channels[selection_id])
                 # subscribe to these channel's state updates
                 to_add_topics: list[WebsocketTopic] = []
                 for channel_id in channels:

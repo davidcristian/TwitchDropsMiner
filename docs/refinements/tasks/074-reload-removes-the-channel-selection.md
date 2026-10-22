@@ -1,6 +1,6 @@
 # A reload removes the selection in the channel list
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** twitch (state machine), gui
 **Origin:** Found on 2026-10-22 while a `Switch` press during a reload was made to run,
 [ADR-0017](../../adr/ADR-0017-state-requests.md)
@@ -32,3 +32,7 @@ none.
   ([012](012-button-requests-lost-during-a-fetch.md)), its `CHANNEL_SWITCH` was found to read no selection
   after the full cleanup. A `ttk.Treeview` under Xvfb showed that `delete` removes the row from the selection
   and that inserting the row again leaves it unselected.
+- 2026-10-22: Done. `CHANNELS_CLEANUP` stores the ID of a selected channel that it removes, and
+  `CHANNELS_FETCH` selects the channel again when the new list has it, so a `Switch` press during a reload
+  watches the chosen channel while `can_watch` accepts it. The selection outlasts every reload, as it outlasts
+  a stream refresh ([ADR-0017](../../adr/ADR-0017-state-requests.md)). Twitch requests: none.
