@@ -1,4 +1,5 @@
 import copy
+import logging
 
 import pytest
 
@@ -7,8 +8,10 @@ from gqldata import (
     CAMPAIGN_FIELDS,
     get_field,
     merge_data,
+    user_inventory,
     campaign_details,
     clear_error_field,
+    campaign_summaries,
     complete_campaigns,
 )
 
@@ -116,7 +119,15 @@ def test_merge_data_of_empty_dicts_is_empty():
 
 def test_campaign_details_maps_each_campaign_by_id():
     responses = [details_response(details("A")), details_response(details("B"))]
-    assert campaign_details(responses) == {"A": details("A"), "B": details("B")}
+    assert campaign_details(["A", "B"], responses) == {"A": details("A"), "B": details("B")}
+
+
+def test_campaign_details_maps_a_campaign_with_a_null_id_by_the_requested_id():
+    null_id = {**details("B"), "id": None}
+    assert campaign_details(["A", "B"], [details_response(details("A")), details_response(null_id)]) == {
+        "A": details("A"),
+        "B": null_id,
+    }
 
 
 @pytest.mark.parametrize("response", [
@@ -125,7 +136,7 @@ def test_campaign_details_maps_each_campaign_by_id():
     {"data": None},
 ])
 def test_campaign_details_leaves_out_a_null_campaign(response):
-    assert campaign_details([details_response(details("A")), response]) == {"A": details("A")}
+    assert campaign_details(["A", "B"], [details_response(details("A")), response]) == {"A": details("A")}
 
 
 def test_complete_campaigns_keeps_a_campaign_with_every_field():
@@ -147,6 +158,82 @@ def test_null_details_keep_a_campaign_in_progress_and_leave_out_one_with_only_a_
     inventory = {"P": details("P")}
     chunk = merge_data(
         {"P": summary("P"), "Q": summary("Q"), "R": summary("R")},
-        campaign_details([details_response(None), details_response(None), details_response(details("R"))]),
+        campaign_details(["P", "Q", "R"], [details_response(None), details_response(None), details_response(details("R"))]),
     )
     assert sorted(complete_campaigns(merge_data(inventory, chunk))) == ["P", "R"]
+
+
+def warnings(caplog):
+    return [record.getMessage() for record in caplog.records if record.levelno == logging.WARNING]
+
+
+def test_user_inventory_leaves_out_a_campaign_in_progress_and_a_claimed_benefit_with_a_null_id(caplog):
+    claimed = [{"id": None, "lastAwardedAt": START}, {"id": "b", "lastAwardedAt": START}]
+    in_progress = [{**details("N"), "id": None}, details("P")]
+    response = {"data": {"currentUser": {"inventory": {"dropCampaignsInProgress": in_progress, "gameEventDrops": claimed}}}}
+    assert user_inventory(response) == {"dropCampaignsInProgress": [details("P")], "gameEventDrops": claimed[1:]}
+    assert warnings(caplog) == [
+        "Skipped a campaign in progress with a null ID in the Inventory response",
+        "Skipped a claimed benefit with a null ID in the Inventory response",
+    ]
+
+
+@pytest.mark.parametrize("field", ["id", "status"])
+def test_campaign_summaries_leaves_out_a_campaign_with_a_null_id_or_status(field, caplog):
+    campaigns = [{**summary("N"), "status": "ACTIVE", field: None}, {**summary("A"), "status": "ACTIVE"}]
+    assert list(campaign_summaries({"data": {"currentUser": {"dropCampaigns": campaigns}}})) == ["A"]
+    assert warnings(caplog) == ["Skipped a campaign with a null ID or status in the Campaigns response"]
+
+
+def drops_of(campaign):
+    return complete_campaigns({"A": campaign})["A"]["timeBasedDrops"]
+
+
+def with_drops(*drops):
+    return {**details("A"), "timeBasedDrops": list(drops)}
+
+
+def drop(drop_id, *preconditions, **fields):
+    return {
+        "id": drop_id,
+        "startAt": START,
+        "endAt": END,
+        "requiredMinutesWatched": 60,
+        "preconditionDrops": [{"id": pre} for pre in preconditions] or None,
+        **fields,
+    }
+
+
+def test_complete_campaigns_leaves_out_a_drop_with_a_null_id_and_the_drops_after_it(caplog):
+    drops = [drop(None), drop("d2", None), drop("d3", "d2"), drop("d4")]
+    assert drops_of(with_drops(*drops)) == [drop("d4")]
+    assert warnings(caplog) == [
+        "Skipped a drop with a null ID of campaign A",
+        "Skipped drop d2 of campaign A, which has a null precondition",
+        "Skipped drop d3 of campaign A, whose precondition was skipped",
+    ]
+
+
+def test_complete_campaigns_reads_a_null_benefit_name_as_an_empty_name(caplog):
+    named = {"benefit": {"id": "b1", "name": "Reward"}}
+    null_name = drop("d1", benefitEdges=[named, {"benefit": {"id": "b2", "name": None}}])
+    expected = drop("d1", benefitEdges=[named, {"benefit": {"id": "b2", "name": ""}}])
+    assert drops_of(with_drops(null_name)) == [expected]
+    assert warnings(caplog) == []
+
+
+def test_complete_campaigns_reads_a_self_with_a_null_claim_status_as_no_self():
+    claim = {"dropInstanceID": "1#A#d1", "isClaimed": None, "currentMinutesWatched": 30}
+    assert drops_of(with_drops(drop("d1", self=claim))) == [drop("d1")]
+
+
+def test_complete_campaigns_reads_a_null_account_connection_as_not_linked(caplog):
+    campaign = {**details("A"), "self": {"isAccountConnected": None}}
+    assert complete_campaigns({"A": campaign}) == {"A": {**details("A"), "self": {"isAccountConnected": False}}}
+    assert warnings(caplog) == ["Read campaign A as not linked, because its account connection is null"]
+
+
+def test_complete_campaigns_reads_a_null_acl_status_as_an_enabled_acl():
+    channels = [{"id": "1", "name": "c1"}]
+    campaign = {**details("A"), "allow": {"channels": channels, "isEnabled": None}}
+    assert complete_campaigns({"A": campaign}) == {"A": {**details("A"), "allow": {"channels": channels}}}

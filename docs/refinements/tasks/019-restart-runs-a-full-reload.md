@@ -117,3 +117,7 @@ The commit states the new worst case per hour, as AGENTS.md asks for a change to
   with the extra drops check on ([task 060](060-null-fields-in-available-drops.md)).
 - 2026-10-22: A null field in `AvailableDrops` data no longer ends the run
   ([streamdata.md](../../modules/streamdata.md#null-available-drops)).
+- 2026-10-22: A null campaign account connection, drop claim status or benefit name, which raised when the
+  campaign was sorted or shown, no longer ends the run, and every other null field of campaign data has a
+  reading ([gqldata.md](../../modules/gqldata.md#other-null-fields)). A null user or inventory in the
+  `Inventory` or `Campaigns` response still does.

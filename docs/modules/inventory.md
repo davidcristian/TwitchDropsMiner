@@ -11,9 +11,10 @@ reload ([twitch.md](twitch.md#state-machine)). The only request the module sends
 
 `data` is one campaign, merged from the `Inventory`, `Campaigns` and `CampaignDetails` GQL responses.
 `claimed_benefits` maps a benefit ID to the time it was last awarded, from the inventory's `gameEventDrops`.
-`Twitch.fetch_inventory` leaves out a null drop or benefit, a drop or campaign with a null time, a drop with null
-required minutes, a campaign whose game has a null ID, name or box art, and a null ACL channel before it builds
-the campaign ([gqldata.md](gqldata.md#null-drops)).
+`Twitch.fetch_inventory` leaves out a null drop or benefit, a drop or campaign with a null ID or time, a drop with
+null required minutes, a campaign whose game has a null ID, name or box art, and a null ACL channel before it
+builds the campaign ([gqldata.md](gqldata.md#null-drops)). It reads the other null fields so that each attribute
+below holds a value of its type, except those that [gqldata.md](gqldata.md#other-null-fields) names as kept.
 
 - Data: `id`, `name`, `game` (a `Game`), `linked` (the user's account is connected to the game), `link_url`,
   `image_url` (the game's box art without its size suffix), `starts_at`, `ends_at`, `timed_drops` (a
@@ -131,7 +132,8 @@ minutes the campaign also displays its `first_drop`.
 - `Twitch` claims a drop on a `drop-claim` event, and in `State.GAMES_UPDATE` for every claimable drop of the
   campaigns that are not upcoming. So a drop with a claim ID that no event claimed is claimed at the next reload.
 - Without `self` data, a drop counts as claimed when at least one of its benefits is in `claimed_benefits` and
-  every such award time is between the drop's `starts_at` and `ends_at`. A null `self` counts as none.
+  every such award time is between the drop's `starts_at` and `ends_at`. A null `self`, or one whose
+  `isClaimed` is null, counts as none.
 - `generate_claim()` builds a claim ID as `<user ID>#<campaign ID>#<drop ID>`. Nothing calls it
   ([task 022](../refinements/tasks/022-unused-code.md)).
 

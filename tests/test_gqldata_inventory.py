@@ -29,7 +29,7 @@ def drop(drop_id, *preconditions):
         "id": drop_id,
         "startAt": START,
         "endAt": END,
-        "benefitEdges": [{"benefit": {"id": f"{drop_id}-benefit"}}],
+        "benefitEdges": [{"benefit": {"id": f"{drop_id}-benefit", "name": f"Reward {drop_id}"}}],
         "preconditionDrops": [{"id": pre} for pre in preconditions] or None,
         "requiredMinutesWatched": 60,
         "self": {"dropInstanceID": None, "isClaimed": False},
@@ -58,10 +58,10 @@ def test_complete_campaigns_leaves_out_a_null_drop_and_logs_it(caplog):
 
 @pytest.mark.parametrize("edge", [None, {"benefit": None}])
 def test_complete_campaigns_leaves_out_a_null_benefit_and_keeps_its_drop(edge, caplog):
-    null_benefit = {**drop("d1"), "benefitEdges": [edge, {"benefit": {"id": "kept"}}]}
+    null_benefit = {**drop("d1"), "benefitEdges": [edge, {"benefit": {"id": "kept", "name": "Kept"}}]}
     with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
         result = complete_campaigns(campaign_with(null_benefit))
-    assert drops_of(result) == [{**drop("d1"), "benefitEdges": [{"benefit": {"id": "kept"}}]}]
+    assert drops_of(result) == [{**drop("d1"), "benefitEdges": [{"benefit": {"id": "kept", "name": "Kept"}}]}]
     assert "Skipped a null benefit of drop d1 in campaign A" in caplog.text
 
 

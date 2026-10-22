@@ -1420,7 +1420,7 @@ class Twitch:
                 for cid in campaign_ids
             ]
         )
-        return merge_data(campaign_ids, campaign_details(response_list))
+        return merge_data(campaign_ids, campaign_details(list(campaign_ids), response_list))
 
     async def fetch_inventory(self) -> None:
         status_update = self.gui.status.update

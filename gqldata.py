@@ -67,14 +67,20 @@ def merge_data(primary: JsonType, secondary: JsonType) -> JsonType:
 
 
 def user_inventory(response: JsonType) -> JsonType:
-    """Return the inventory of an Inventory response, without a null campaign in progress."""
+    """Return the inventory of an Inventory response, without a null campaign in progress or a null ID."""
     inventory = get_field(response, "data", "currentUser", "inventory")
     claimed = get_field(inventory, "gameEventDrops")
     if not isinstance(claimed, list) or any(get_field(item, "lastAwardedAt") is None for item in claimed):
         # BaseDrop finds a drop without self data claimed only through the benefits in this list and their times
         raise GQLException("The Inventory response has a null inventory, claimed drop or award time")
-    in_progress = get_field(inventory, "dropCampaignsInProgress") or []
-    return {**inventory, "dropCampaignsInProgress": [c for c in in_progress if c is not None]}
+    in_progress = [c for c in get_field(inventory, "dropCampaignsInProgress") or [] if c is not None]
+    campaigns = [campaign for campaign in in_progress if campaign.get("id") is not None]
+    if len(campaigns) < len(in_progress):
+        logger.warning("Skipped a campaign in progress with a null ID in the Inventory response")
+    benefits = [item for item in claimed if item.get("id") is not None]
+    if len(benefits) < len(claimed):
+        logger.warning("Skipped a claimed benefit with a null ID in the Inventory response")
+    return {**inventory, "dropCampaignsInProgress": campaigns, "gameEventDrops": benefits}
 
 
 def campaign_summaries(response: JsonType) -> dict[str, JsonType]:
@@ -82,20 +88,23 @@ def campaign_summaries(response: JsonType) -> dict[str, JsonType]:
     user = get_field(response, "data", "currentUser")
     if user is None:
         raise GQLException("The Campaigns response has a null user")
-    return {
-        campaign["id"]: campaign
-        for campaign in get_field(user, "dropCampaigns") or []
-        if campaign is not None and campaign["status"] in ("ACTIVE", "UPCOMING")
-    }
+    summaries = [campaign for campaign in get_field(user, "dropCampaigns") or [] if campaign is not None]
+    readable = [summary for summary in summaries if None not in (summary.get("id"), summary.get("status"))]
+    if len(readable) < len(summaries):
+        logger.warning("Skipped a campaign with a null ID or status in the Campaigns response")
+    return {summary["id"]: summary for summary in readable if summary["status"] in ("ACTIVE", "UPCOMING")}
 
 
-def campaign_details(responses: list[JsonType]) -> dict[str, JsonType]:
-    """Return the campaigns of CampaignDetails responses by ID, leaving out a null one."""
+def campaign_details(campaign_ids: list[str], responses: list[JsonType]) -> dict[str, JsonType]:
+    """Return the campaign of each CampaignDetails response by the ID it was requested with, leaving out a null one.
+
+    responses holds one response for each ID in campaign_ids, in the same order.
+    """
     details: dict[str, JsonType] = {}
-    for response in responses:
+    for campaign_id, response in zip(campaign_ids, responses):
         campaign = get_field(response, "data", "user", "dropCampaign")
         if campaign is not None:
-            details[campaign["id"]] = campaign
+            details[campaign_id] = campaign
     return details
 
 
@@ -104,12 +113,21 @@ def _has_null_time(data: JsonType) -> bool:
     return any(data.get(field) is None for field in TIME_FIELDS)
 
 
+def _named(edge: JsonType) -> JsonType:
+    """Return a benefit edge whose null benefit name is read as an empty name, which rewards_text can join."""
+    benefit = edge["benefit"]
+    return edge if benefit.get("name") is not None else {**edge, "benefit": {**benefit, "name": ""}}
+
+
 def _readable_drops(campaign_id: str, drops: list[JsonType | None]) -> list[JsonType]:
-    """Return the drops without a null drop, time, benefit or precondition, and with a null self left out."""
+    """Return the drops without a null drop, ID, time, benefit or precondition, and with an unreadable self left out."""
     readable: dict[str, JsonType] = {}
     for drop in drops:
         if drop is None:
             logger.warning(f"Skipped a null drop of campaign {campaign_id}")
+            continue
+        if drop.get("id") is None:
+            logger.warning(f"Skipped a drop with a null ID of campaign {campaign_id}")
             continue
         if _has_null_time(drop):
             logger.warning(f"Skipped drop {drop['id']} of campaign {campaign_id}, which has a null start or end time")
@@ -117,14 +135,16 @@ def _readable_drops(campaign_id: str, drops: list[JsonType | None]) -> list[Json
         if drop.get("requiredMinutesWatched") is None:
             logger.warning(f"Skipped drop {drop['id']} of campaign {campaign_id}, which has null required minutes")
             continue
-        if any(pre is None for pre in drop.get("preconditionDrops") or []):
+        if any(get_field(pre, "id") is None for pre in drop.get("preconditionDrops") or []):
             logger.warning(f"Skipped drop {drop['id']} of campaign {campaign_id}, which has a null precondition")
             continue
         edges = drop.get("benefitEdges") or []
-        benefit_edges = [edge for edge in edges if get_field(edge, "benefit") is not None]
-        drop = {key: value for key, value in drop.items() if key != "self" or value is not None}
+        benefit_edges = [_named(edge) for edge in edges if get_field(edge, "benefit") is not None]
+        # BaseDrop reads isClaimed of a self, and without a self it finds the claim through gameEventDrops
+        drop = {key: value for key, value in drop.items() if key != "self" or get_field(value, "isClaimed") is not None}
         if len(benefit_edges) < len(edges):
             logger.warning(f"Skipped a null benefit of drop {drop['id']} in campaign {campaign_id}")
+        if benefit_edges != edges:
             drop["benefitEdges"] = benefit_edges
         readable[drop["id"]] = drop
     # TimedDrop looks up each precondition in its campaign, so a drop whose precondition was skipped goes too
@@ -141,6 +161,8 @@ def _readable_drops(campaign_id: str, drops: list[JsonType | None]) -> list[Json
 
 def _readable_acl(campaign_id: str, allow: JsonType) -> JsonType | None:
     """Return the ACL without a null channel or one with a null ID or name, or None when an enabled one keeps none."""
+    # DropsCampaign reads a missing isEnabled as an enabled ACL, and a null one as a disabled ACL
+    allow = {key: value for key, value in allow.items() if key != "isEnabled" or value is not None}
     channels = allow.get("channels") or []
     readable = [
         channel for channel in channels
@@ -178,6 +200,9 @@ def complete_campaigns(campaigns: dict[str, JsonType]) -> dict[str, JsonType]:
         if _has_null_time(campaign):
             logger.warning(f"Skipped campaign {campaign_id}, which has a null start or end time")
             continue
+        if campaign["self"].get("isAccountConnected") is None:
+            logger.warning(f"Read campaign {campaign_id} as not linked, because its account connection is null")
+            campaign = {**campaign, "self": {**campaign["self"], "isAccountConnected": False}}
         game = _readable_game(campaign_id, campaign["game"])
         if game is None:
             continue
