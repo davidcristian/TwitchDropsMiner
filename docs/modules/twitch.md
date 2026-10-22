@@ -259,10 +259,9 @@ scanned again. A scan error is printed once while it persists ([gamelib.md](game
   `GetStreamInfo` operation, 20 to a request, for every ACL channel of the wanted campaigns, and these can be
   thousands. New periodic work enters `State.CHANNELS_CLEANUP` instead, which moves on to `State.CHANNELS_FETCH`.
 - `_run`, the handlers, the tasks and the tkinter GUI share one asyncio event loop (`GUIManager._poll` runs the Tk
-  events). A blocking call freezes the window, so `detect_games` scans the folders with `asyncio.to_thread`. At
-  `-vvvv`, a `DEBUG` record that `gamelib` logs there goes to `_TKOutputHandler` in `gui.py`, whose Tk call from
-  that thread raises `RuntimeError` and ends the scan
-  ([task 021](../refinements/tasks/021-scan-thread-logs-into-tk.md)).
+  events). A blocking call freezes the window, so `detect_games` scans the folders with `asyncio.to_thread`. A
+  `DEBUG` record that `gamelib` logs there waits in the queue of `_TKOutputHandler` in `gui.py` until the event
+  loop thread writes it ([gui.md](gui.md#log-records-in-the-output-box)).
 - `_watch_loop`, `_maintenance_task` and `Websocket._handle` use `task_wrapper(critical=True)`. An exception in
   one is logged and passed to `task_failed`, so the run ends with it as a
   [fatal error](#restart-after-a-fatal-error). `EXIT` comes before `RESTART`, so a close requested at the same

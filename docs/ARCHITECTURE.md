@@ -15,10 +15,9 @@ event loop:
   Tk event is left, then sleeps 0.05 seconds. GUI callbacks therefore run on the event loop and need no locks.
 - **Two worker threads are the exception.** `TrayIcon` runs `pystray.Icon.run` with `loop.run_in_executor`, and
   its menu items pass their calls to the loop with `loop.call_soon_threadsafe`. `Twitch.detect_games` runs
-  `gamelib.scan_directories` with `asyncio.to_thread`, because reading game folders blocks. At `-vvvv` the
-  Output box's log handler runs on that thread for a DEBUG record of the scan. `_tkinter` raises `RuntimeError`
-  instead of writing the record, which ends the scan
-  ([task 021](refinements/tasks/021-scan-thread-logs-into-tk.md)).
+  `gamelib.scan_directories` with `asyncio.to_thread`, because reading game folders blocks. A log record of
+  either thread waits in a queue until the event loop thread writes it to the Output box
+  ([gui.md](modules/gui.md#log-records-in-the-output-box)).
 
 ```
 main.py

@@ -76,8 +76,9 @@ used ([task 022](../refinements/tasks/022-unused-code.md)).
 The asyncio event loop and Tk run on one thread, so Tk callbacks and coroutines need no locks.
 
 - `GUIManager.start()` creates the `_poll` task in place of `Tk.mainloop()`. It calls `Tk.dooneevent` with
-  `TKINTER_DONT_WAIT` (`1 << 1`) until no Tk event is left, then sleeps 0.05 seconds. With that flag Tcl returns
-  at once on an empty queue, which stops Tk from blocking inside an X11 or Wayland call during a large redraw.
+  `TKINTER_DONT_WAIT` (`1 << 1`) until no Tk event is left, writes the queued log records to the Output box
+  ([below](#log-records-in-the-output-box)), then sleeps 0.05 seconds. With that flag Tcl returns at once on an
+  empty queue, which stops Tk from blocking inside an X11 or Wayland call during a large redraw.
 - `Twitch._run` calls `start()` at the beginning of each run. `stop()` cancels the poll task and the progress
   timer; [main.py](main.md) calls it after the window is closed.
 - A Tk callback that needs async work starts a task: `HelpTab.invalidate_token`,
@@ -96,9 +97,15 @@ The asyncio event loop and Tk run on one thread, so Tk callbacks and coroutines 
 - `prevent_close()` clears the close request, so the window stays open to show a fatal error.
 - `close_window()` stops the tray icon, removes the log handler and destroys the Tk root.
 
+### Log records in the Output box
+
 `GUIManager.__init__` adds a `_TKOutputHandler` with `OUTPUT_FORMATTER` to the `TwitchDrops` logger, so every log
-record at the level set by `-v` that is logged on the event loop thread also appears in the Output box. A record
-from another thread does not ([Invariants](#invariants)).
+record at the level set by `-v` also appears in the Output box. The handler writes a record of the event loop
+thread at once. A record that another thread logs, such as a `DEBUG` record of the game scan thread at `-vvvv`,
+waits in a `queue.SimpleQueue` of the handler. `_poll` writes the queued records on each pass, and a record of the
+event loop thread writes them before itself, so the lines keep the order of the log calls. A queue, rather than
+`loop.call_soon_threadsafe` as the tray menu uses, needs no running event loop when the window is built, and the
+tests build it without one.
 
 ## Public contract
 
@@ -206,11 +213,10 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
 ## Invariants
 
 - Only the event loop thread calls Tk, because Tk is not thread safe. The pystray thread reaches the GUI only
-  through `loop.call_soon_threadsafe`. One path breaks this rule: at `-vvvv`, `gamelib.common.read_text` and
-  `gamelib.epic` log DEBUG records from the scan thread that `Twitch.detect_games` starts with
-  `asyncio.to_thread`, and `_TKOutputHandler` calls Tk from that thread. The call raises `RuntimeError`, which
-  ends the scan, and the record does not reach the Output box
-  ([task 021](../refinements/tasks/021-scan-thread-logs-into-tk.md)).
+  through `loop.call_soon_threadsafe`, and a log record of another thread only through the queue of
+  `_TKOutputHandler`. With a Tcl built with thread support, `_tkinter` passes a call from another thread to Tk
+  only while Tk runs `mainloop`, which the app never calls, and otherwise raises
+  `RuntimeError: main thread is not in main loop` in the calling thread after one second.
 - A Tk callback returns quickly and starts a task for slow work. The window and the miner share one thread, so a
   slow callback stops both. A Tk dialog that waits for the user, such as `filedialog.askdirectory`, does not
   return until it closes, so the folder dialog runs in a child process ([folderpicker.md](folderpicker.md)).

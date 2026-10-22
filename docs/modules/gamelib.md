@@ -225,9 +225,9 @@ next scan.
 - `match_games` returns only clear matches, because a wrong match mines a game the user did not choose, while a
   missed game can be added to the Priority list by hand ([ADR-0004](../adr/ADR-0004-installed-game-detection.md)).
 - Patterns and matching use the same `normalize`, so a list entry and a detected name compare the same way.
-- The scan reads the file system and blocks, so callers in the event loop run it in a thread. At the `DEBUG`
-  logging level, a record it logs then goes to `_TKOutputHandler` in `gui.py` on that thread, whose Tk call
-  raises `RuntimeError` and ends the scan ([task 021](../refinements/tasks/021-scan-thread-logs-into-tk.md)).
+- The scan reads the file system and blocks, so callers in the event loop run it in a thread. A `DEBUG` record
+  that it logs there reaches the Output box through the queue of `_TKOutputHandler` in `gui.py`
+  ([gui.md](gui.md#log-records-in-the-output-box)).
 - `appimage/AppImageBuilder.yml` copies and compiles `gamelib/` by name ([AGENTS.md](../../AGENTS.md#recipes)).
 - The scan error lines are English text built in `scan.py`. The GUI prints them inside the translated
   `Game scan: {error}` line, so they are not translated.

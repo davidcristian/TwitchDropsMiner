@@ -78,8 +78,8 @@ message box titled "Argument Parser Error" when argparse exits, also for `--help
   outside it, such as a Korean channel name, would be lost.
 - `TwitchDrops.gql` and `TwitchDrops.websocket` are set to DEBUG by their debug flag, to INFO at `-vvvv` or more
   so that the raw requests and messages stay hidden, and otherwise to NOTSET, which uses the `TwitchDrops` level.
-- `GUIManager` adds the handler that writes each record from the event loop thread to the Output box
-  ([gui.md](gui.md), [task 021](../refinements/tasks/021-scan-thread-logs-into-tk.md)).
+- `GUIManager` adds the handler that writes each record to the Output box from the event loop thread, also a
+  record that another thread logs ([gui.md](gui.md#log-records-in-the-output-box)).
 
 ## The run and the exit
 

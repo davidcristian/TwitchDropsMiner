@@ -1,9 +1,9 @@
 # At `-vvvv`, a log record from the game scan thread makes the scan fail
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** gui (`_TKOutputHandler`), gamelib, twitch (game detection)
 **Origin:** Found on 2026-10-18 while the docs were written, [gui.md](../../modules/gui.md#invariants)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 `Twitch.detect_games` in `twitch.py` runs `gamelib.scan_directories` in a worker thread with
 `asyncio.to_thread`. Two places in `gamelib` log at `DEBUG` from that thread:
@@ -77,3 +77,13 @@ The scan thread and the two `DEBUG` records came with installed game detection o
 - 2026-10-18: Opened while the docs were written. The claim was that the handler writes the records into the
   Tk widget from the scan thread. Calls with the real handler showed that the write raises `RuntimeError`
   instead, which ends the scan.
+- 2026-10-22: Done. The claim still held: with the real window under Xvfb, a log call on another thread raised
+  `RuntimeError: main thread is not in main loop` after one second. `_TKOutputHandler` now queues a record of
+  another thread, and the event loop thread writes it in `GUIManager._poll` or before its own next record
+  ([gui.md](../../modules/gui.md#log-records-in-the-output-box)). A queue needs no running event loop when the
+  window is built, which `loop.call_soon_threadsafe` needs, and the tests build it without one. The third
+  option, an `emit` that catches its own errors, was left out, because no Tk call on another thread is left to
+  fail. The game scan thread is the only one that logs to `TwitchDrops`: pystray logs to its own logger, and the
+  folder dialog runs in a child process. Two tests in `tests/test_gui.py` log from another thread and failed
+  with that `RuntimeError` before the change. A scan at `DEBUG` of a folder with two malformed Epic manifests
+  returned at once, where it had raised after one second, and the Output box showed both records.

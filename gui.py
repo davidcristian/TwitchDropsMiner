@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import os
 import sys
+import queue
 import shlex
 import ctypes
 import asyncio
 import logging
 import plistlib
+import threading
 import tkinter as tk
 from pathlib import Path
 from collections import abc
@@ -85,12 +87,32 @@ DIGITS = ceil(log10(WS_TOPICS_LIMIT))
 
 
 class _TKOutputHandler(logging.Handler):
+    """Writes each log record to the Output box, and queues a record that another thread logs for the Tk thread."""
+
     def __init__(self, output: GUIManager):
         super().__init__()
         self._output = output
+        # _tkinter passes a call from another thread to Tk only while Tk runs mainloop, which the app never calls
+        self._tk_thread: int = threading.get_ident()
+        self._queued: queue.SimpleQueue[str] = queue.SimpleQueue()
 
-    def emit(self, record):
-        self._output.print(self.format(record))
+    def emit(self, record: logging.LogRecord) -> None:
+        text = self.format(record)
+        if threading.get_ident() != self._tk_thread:
+            self._queued.put(text)
+            return
+        # the queued records were logged first, so the Output box keeps the order of the log calls
+        self.print_queued()
+        self._output.print(text)
+
+    def print_queued(self) -> None:
+        """Write the queued records to the Output box. Only the Tk thread calls this."""
+        while True:
+            try:
+                text = self._queued.get_nowait()
+            except queue.Empty:
+                return
+            self._output.print(text)
 
 
 class PlaceholderEntry(ttk.Entry):
@@ -2672,6 +2694,7 @@ class GUIManager:
                 # Drain pending Tk events non-blockingly
                 while do_one_event(DONT_WAIT):
                     pass
+                self._handler.print_queued()
                 self._minimum.follow()
             except tk.TclError:
                 # Root window was destroyed
