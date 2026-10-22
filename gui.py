@@ -1335,14 +1335,16 @@ class InventoryOverview:
         game_name: str = campaign.game.name
         listed_excluded = any_match(compile_patterns(self._settings.exclude), game_name)
         listed_priority = any_match(compile_patterns(self._settings.priority), game_name)
+        detected = game_name in self._settings.detected_games
         if (
             campaign.required_minutes > 0  # don't show sub-only campaigns
             and (not_linked or campaign.eligible)
             and (campaign.active or upcoming and campaign.upcoming or expired and campaign.expired)
+            # the list rule of State.GAMES_UPDATE, so that the tab shows the games the app mines
             and (
                 excluded or (
                     not listed_excluded
-                    and not priority_only or listed_priority
+                    and (not priority_only or listed_priority or detected)
                 )
             )
             and (finished or not campaign.finished)

@@ -62,8 +62,7 @@ in which order, and which entry put each one there.
 - Every place that reads the lists calls the same `gamelib` functions: the games to mine in `Twitch._run`,
   the Games Being Mined table, and the campaign filter of the Inventory tab
   (`InventoryOverview._update_visibility`). They cannot disagree on what an entry matches. The Inventory filter
-  does not count detected games, so under "Priority list only" it hides the campaigns of a detected game that the
-  app mines ([018](../refinements/tasks/018-inventory-tab-hides-detected-games.md)).
+  also counts the detected games as `Twitch._run` does, so it shows the campaigns of the games the app mines.
 - Entries are saved as typed, in the `priority` and `exclude` settings, and compiled at each use. An entry
   that is a game's exact name matches that game, unless the name contains a wildcard character.
 - Matching is local and adds no request to Twitch. A list edit takes effect at the next

@@ -1,9 +1,9 @@
 # The Inventory tab hides campaigns that are mined because the game is installed
 
-**Status:** open
+**Status:** done 2026-10-23
 **Area:** gui (Inventory tab)
 **Origin:** Found on 2026-10-18 while the docs were written, [gui.md](../../modules/gui.md#the-window)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-23
 
 `InventoryOverview._update_visibility(campaign)` in `gui.py` shows a campaign's frame only when all of these
 hold:
@@ -74,3 +74,7 @@ the name lookups in the condition on the same day.
 
 - 2026-10-18: Opened while the docs were written. `_update_visibility` was called with a stub campaign under
   each filter setting, and `git log -S` showed the commits that formed the condition.
+- 2026-10-23: Done. The claim held: a suite test under Xvfb found the campaign of a detected game hidden under
+  "Priority list only", and the campaign of a game on both lists shown in every Priority mode. Condition 4 is now
+  `excluded or (not listed_excluded and (not priority_only or listed_priority or detected))`.
+  `tests/test_gui_inventory.py` checks each list and Priority mode, with the "Excluded" filter on and off.

@@ -44,7 +44,9 @@ and keeps it as an attribute. The labels in quotes are the English strings from 
   reward images ([cache.md](cache.md)). `clear()`, which `Twitch.fetch_inventory` calls at each reload, removes
   the campaigns and calls `ImageCache.retry_failed`, so that each failed image download is tried once more
   ([cache.md](cache.md#failed-downloads)). The filters are "Not linked", "Upcoming", "Expired", "Excluded" and
-  "Finished". `refresh()` applies them again, and it runs each time the Inventory tab is opened. The campaigns are in
+  "Finished". Without "Excluded", the tab shows only a campaign whose game `State.GAMES_UPDATE` may mine: the game
+  matches no Exclude entry and, under "Priority list only", it matches a Priority entry or is in `detected_games`.
+  `refresh()` applies the filters again, and it runs each time the Inventory tab is opened. The campaigns are in
   a `ScrollArea` with both scroll bars always shown. The mouse wheel scrolls it, and Shift scrolls sideways
   ([scrollarea.md](scrollarea.md)).
 - **`SettingsPanel`** has the sections "Games Being Mined" (filled by `set_wanted_games`), "General", "Advanced",

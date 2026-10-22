@@ -44,7 +44,7 @@ widget and is changed only by the app or by editing the file.
 | `enable_badges_emotes` | `bool` | `False` | "Enable partial support for badges and emotes: " | `DropsCampaign.eligible` |
 | `available_drops_check` | `bool` | `False` | "Enable extra available drops check: " | `Stream.__init__` and `Twitch.bulk_check_online` |
 | `game_dirs` | `list[str]` | `[]` | "Game folders:" | `Twitch.detect_games` ([ADR-0004](../adr/ADR-0004-installed-game-detection.md)) |
-| `detected_games` | `list[str]` | `[]` | "Detected Games" list, filled by the app | `Twitch._run` in `State.GAMES_UPDATE`, and the Settings tab |
+| `detected_games` | `list[str]` | `[]` | "Detected Games" list, filled by the app | `Twitch._run` in `State.GAMES_UPDATE`, the Settings tab, and the inventory filter |
 | `connection_quality` | `int` | `1` | none | `Twitch.get_session`, which multiplies the HTTP timeouts by it |
 
 - The "Language" label is hard-coded English in `gui.py`, not a translation key
