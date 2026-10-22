@@ -1,9 +1,9 @@
 # The Settings tab repeats three setting defaults
 
-**Status:** open
+**Status:** done 2026-10-23
 **Area:** settings, gui
 **Origin:** Found on 2026-10-18 while the docs were written, [settings.md](../../modules/settings.md)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-23
 
 `default_settings` in `settings.py` holds the default of each setting. `SettingsPanel.__init__` in `gui.py`
 writes three of them again, as the value it sets when the stored one is not in its drop-down list:
@@ -78,3 +78,8 @@ Cost: no Twitch requests.
 
 - 2026-10-18: Opened. Found while the docs were written. Two runs of `python gui.py` from changed copies of
   the repo showed the fallback to 5 and 10 and the `KeyError` when the list lacks the fallback.
+- 2026-10-23: Done. The claim held: `SettingsPanel.__init__` still set the fallbacks 5, 10 and
+  `PriorityMode.PRIORITY_ONLY`. `settings.py` now has `setting_choices`, the values of each drop-down list, and
+  the panel builds its lists from it and reads each fallback from `default_settings`. `tests/test_settings.py`
+  checks that each default is in its list, and `tests/test_gui_settings.py` checks the panel with a changed
+  default and changed lists. The preview mock still repeats the defaults, as the new setting recipe asks.

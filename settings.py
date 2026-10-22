@@ -54,6 +54,21 @@ default_settings: SettingsFile = {
 }
 
 
+class SettingChoices(TypedDict):
+    priority_mode: tuple[PriorityMode, ...]
+    refresh_interval: tuple[int, ...]
+    restart_delay: tuple[int, ...]
+
+
+# The values that the drop-down list of a setting on the Settings tab offers, in their order there.
+# Each includes the default of its setting.
+setting_choices: SettingChoices = {
+    "priority_mode": (PriorityMode.PRIORITY_ONLY, PriorityMode.ENDING_SOONEST, PriorityMode.LOW_AVBL_FIRST),
+    "refresh_interval": (0, 1, 2, 5, 10, 15, 30),
+    "restart_delay": (0, 1, 5, 10, 15, 30, 60),
+}
+
+
 class Settings:
     # from args
     log: bool

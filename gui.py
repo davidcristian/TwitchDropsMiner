@@ -50,6 +50,7 @@ from exceptions import MinerException, ExitRequest
 from folderpicker import FolderPicker
 from traybackend import hides_by_stopping, icon_class, import_pystray, load_pystray, session_bus_error
 from scrollarea import MinimumSize, ScrollArea, Size, fitted_size
+from settings import default_settings, setting_choices
 from utils import resource_path, set_root_icon, webopen, start_task, task_wrapper, Game, _T
 from constants import (
     MAX_INT,
@@ -1572,26 +1573,26 @@ class SettingsPanel:
     def PRIORITY_MODES(self) -> dict[PriorityMode, str]:
         # NOTE: Translation calls have to be deferred here,
         # to allow changing the language before the settings panel is initialized.
-        return {
+        names: dict[PriorityMode, str] = {
             PriorityMode.PRIORITY_ONLY: _("gui", "settings", "priority_modes", "priority_only"),
             PriorityMode.ENDING_SOONEST: _("gui", "settings", "priority_modes", "ending_soonest"),
             PriorityMode.LOW_AVBL_FIRST: _(
                 "gui", "settings", "priority_modes", "low_availability"
             ),
         }
+        return {mode: names[mode] for mode in setting_choices["priority_mode"]}
 
     @cached_property
     def REFRESH_INTERVALS(self) -> dict[int, str]:
         # NOTE: Translation calls have to be deferred here,
         # to allow changing the language before the settings panel is initialized.
         return {
-            0: _("gui", "settings", "refresh_intervals", "disabled"),
-            **{
-                minutes: _("gui", "settings", "refresh_intervals", "minutes").format(
-                    minutes=minutes
-                )
-                for minutes in (1, 2, 5, 10, 15, 30)
-            },
+            minutes: (
+                _("gui", "settings", "refresh_intervals", "minutes").format(minutes=minutes)
+                if minutes
+                else _("gui", "settings", "refresh_intervals", "disabled")
+            )
+            for minutes in setting_choices["refresh_interval"]
         }
 
     @cached_property
@@ -1599,13 +1600,12 @@ class SettingsPanel:
         # NOTE: Translation calls have to be deferred here,
         # to allow changing the language before the settings panel is initialized.
         return {
-            0: _("gui", "settings", "restart_delays", "disabled"),
-            **{
-                minutes: _("gui", "settings", "restart_delays", "minutes").format(
-                    minutes=minutes
-                )
-                for minutes in (1, 5, 10, 15, 30, 60)
-            },
+            minutes: (
+                _("gui", "settings", "restart_delays", "minutes").format(minutes=minutes)
+                if minutes
+                else _("gui", "settings", "restart_delays", "disabled")
+            )
+            for minutes in setting_choices["restart_delay"]
         }
 
     def __init__(self, manager: GUIManager, master: ttk.Widget):
@@ -1614,15 +1614,15 @@ class SettingsPanel:
         self._folder_picker = FolderPicker()
         priority_mode = self._settings.priority_mode
         if priority_mode not in self.PRIORITY_MODES:
-            priority_mode = PriorityMode.PRIORITY_ONLY
+            priority_mode = default_settings["priority_mode"]
             self._settings.priority_mode = priority_mode
         refresh_interval = self._settings.refresh_interval
         if refresh_interval not in self.REFRESH_INTERVALS:
-            refresh_interval = 5
+            refresh_interval = default_settings["refresh_interval"]
             self._settings.refresh_interval = refresh_interval
         restart_delay = self._settings.restart_delay
         if restart_delay not in self.RESTART_DELAYS:
-            restart_delay = 10
+            restart_delay = default_settings["restart_delay"]
             self._settings.restart_delay = restart_delay
         self._vars: _SettingsVars = {
             "autostart": IntVar(master, 0),

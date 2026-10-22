@@ -93,7 +93,8 @@ rewrites it.
 
 **A new setting** touches four places, and missing the third is silent:
 
-1. `SettingsFile`, `default_settings` and the attribute list on `Settings`, in `settings.py`.
+1. `SettingsFile`, `default_settings` and the attribute list on `Settings`, in `settings.py`. A drop-down list
+   also gets its values in `setting_choices` there.
 2. The widget in `SettingsPanel`, in `gui.py`.
 3. The `settings=SimpleNamespace(...)` mock under `if __name__ == "__main__":` at the end of `gui.py`. Without it
    `python gui.py` fails with an `AttributeError`, and nothing else reports it.

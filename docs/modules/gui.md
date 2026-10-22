@@ -235,6 +235,7 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
   chosen with ➕ raise `AttributeError` in the preview.
 
 **Dependencies.** Repo modules: `translate`, `cache`, `colorfonts`, `gamelib`, `exceptions`, `folderpicker`,
-`traybackend`, `scrollarea`, `utils`, `constants`, and `registry` on Windows; `twitch`, `channel`, `settings` and
-`inventory` for type checking only. Third-party: `pystray`, Pillow, `yarl`, pywin32 (`win32api`, `win32con`,
-`win32gui`) on Windows, `AppKit` on macOS, and `aiohttp` in the preview.
+`traybackend`, `scrollarea`, `settings` (`default_settings`, `setting_choices`), `utils`, `constants`, and
+`registry` on Windows; `twitch`, `channel` and `inventory` for type checking only. Third-party: `pystray`,
+Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on Windows, `AppKit` on macOS, and `aiohttp` in the
+preview.

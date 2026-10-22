@@ -10,6 +10,8 @@ the `gui.py` preview mock fails only when `python gui.py` runs.
 
 - `SettingsFile` is the `TypedDict` of the keys in `settings.json`. `default_settings` is a `SettingsFile` with
   the default of each key.
+- `setting_choices` holds, for each setting with a drop-down list on the Settings tab (`priority_mode`,
+  `refresh_interval` and `restart_delay`), the values that the list offers, in their order there.
 - `Settings(args)` loads `settings.json` (`SETTINGS_PATH`) and keeps `args`, the `ParsedArgs` from
   [main.py](main.md). `main.py` creates the only instance and passes it to `Twitch`, which stores it as
   `Twitch.settings`.
@@ -56,7 +58,8 @@ widget and is changed only by the app or by editing the file.
   a change only in a connection task that starts later: at the next run, or in a connection that the pool adds
   when the others are full.
 - `refresh_interval` takes the values of its drop-down list, 0, 1, 2, 5, 10, 15 or 30 minutes, and
-  `restart_delay` takes 0, 1, 5, 10, 15, 30 or 60 minutes. In both lists 0 is shown as "Never".
+  `restart_delay` takes 0, 1, 5, 10, 15, 30 or 60 minutes, as `setting_choices` sets them. In both lists 0 is
+  shown as "Never".
 - `connection_quality` sets the timeouts to 5 seconds times its value for connecting and 10 seconds times its
   value in total. `Twitch.get_session` sets a value below 1 to 1 and a value above 6 to 6.
 
@@ -85,9 +88,9 @@ converted to a string, because a number or a nested list names no game or folder
 run from a terminal shows. The Output box and `log.txt` do not show it. The file keeps the removed items until a
 change to the settings is saved.
 
-Some values with the right type are corrected later. `SettingsPanel.__init__` sets a `refresh_interval` that is
-not in its list to 5, a `restart_delay` that is not in its list to 10, and an unknown `priority_mode` to
-`PriorityMode.PRIORITY_ONLY`. `Twitch.get_session` limits `connection_quality` to 1 through 6.
+Some values with the right type are corrected later. `SettingsPanel.__init__` sets a `priority_mode`,
+`refresh_interval` or `restart_delay` that is not in its list in `setting_choices` to its default in
+`default_settings`. `Twitch.get_session` limits `connection_quality` to 1 through 6.
 
 ## Saving `settings.json`
 
@@ -113,9 +116,9 @@ A `set`, `URL`, `Enum` or `datetime` value is written as `{"__type": <class name
   on the next start.
 - Every list and set setting holds strings. A list or set setting with items of another type needs a change to
   `drop_non_text_items`, which would otherwise remove all its items at load.
-- A default changed in `default_settings` for `refresh_interval` or `restart_delay` is changed in
-  `SettingsPanel.__init__` too, which repeats the defaults 5 and 10
-  ([task 026](../refinements/tasks/026-settings-defaults-written-twice.md)).
+- The default of each setting in `setting_choices` is one of its choices, which `tests/test_settings.py` checks.
+  Otherwise `SettingsPanel.__init__` raises `KeyError` for a stored value outside the list, the default
+  included, and the window is not built.
 
 **Dependencies.** Repo modules: `utils` (`json_load`, `json_save`), `savefiles` (`UnsavedChanges`),
 `settingsdata` (`drop_non_text_items`), `constants` (`SETTINGS_PATH`, `DEFAULT_LANG`, `PriorityMode`), and `main`
