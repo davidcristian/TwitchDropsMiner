@@ -1,11 +1,11 @@
 # Runbook: running the Linux CI jobs with act
 
 [act](https://github.com/nektos/act) runs the jobs of a GitHub Actions workflow in Docker containers on your own
-machine. This runbook runs the two Ubuntu entries of the Validate job and the `linux-pyinstaller` job of
-[`ci.yml`](../../.github/workflows/ci.yml) before a push, then starts each PyInstaller build. The Windows and
-macOS jobs cannot run under act. The jobs download Python, packages and libXft and send no Twitch request, and
-each build starts with no network. It was written on 2026-10-22 with act 0.2.89 and Docker Desktop on WSL 2,
-where Docker runs arm64 images with QEMU.
+machine. This runbook runs the two Ubuntu entries of the Validate job and the `linux-pyinstaller` and
+`linux-appimage` jobs of [`ci.yml`](../../.github/workflows/ci.yml) before a push, then starts each build. The
+Windows and macOS jobs cannot run under act. The jobs download Python, packages, Ubuntu packages, libXft, the
+AppImage runtime and AppRun, and send no Twitch request, and each build starts with no network. It was written
+on 2026-10-22 with act 0.2.89 and Docker Desktop on WSL 2, where Docker runs arm64 images with QEMU.
 
 Run every command from the repository folder. Set `ACT` to a folder outside the repository:
 
@@ -61,6 +61,39 @@ docker build --platform linux/arm64 --build-arg BASE=$base:act-22.04 -t tdm-act:
 | `p7zip-full` | `7z`, which creates the release zip file. |
 | `tk` | The Tk library that the `tkinter` of `actions/setup-python`'s Python loads. |
 | `fonts-noto-color-emoji` | The emoji font of GitHub's images, with which the window tests run. |
+
+act runs a job as the default user of its image, which is root in these images, and GitHub runs it as the user
+`runner`. As root, the `linux-appimage` job fails: pip installs appimage-builder into Ubuntu's system folder, and
+the check of the user's site folder prints `installcheck: no package found, so nothing was checked`. So that job
+runs in an image with a user `runner`. act changes the owner of the copied repository to that user before the
+first step:
+
+```bash
+mkdir -p "$ACT/user-image"
+cat > "$ACT/user-image/Dockerfile" <<'EOF'
+ARG BASE
+FROM ${BASE}
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3-dev fakeroot squashfs-tools \
+ && rm -rf /var/lib/apt/lists/* \
+ && useradd -m -u 1001 -s /bin/bash runner \
+ && echo 'runner ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/runner \
+ && chmod 0440 /etc/sudoers.d/runner
+USER runner
+ENV USER=runner RUNNER_USER=runner HOME=/home/runner PATH=/home/runner/.local/bin:${PATH}
+EOF
+docker build --platform linux/amd64 --build-arg BASE=tdm-act:22.04 -t tdm-act-user:22.04 "$ACT/user-image"
+docker build --platform linux/arm64 --build-arg BASE=tdm-act:22.04-arm64 -t tdm-act-user:22.04-arm64 \
+  "$ACT/user-image"
+```
+
+| Addition | Why the AppImage job needs it |
+| --- | --- |
+| `runner` with `sudo` and no password | The job's `sudo apt` lines, and a pip that installs into `~/.local`. |
+| `~/.local/bin` first in `PATH` | pip puts the `appimage-builder` command there. GitHub's images add this folder to `PATH`. |
+| `python3-dev` | The headers with which pip builds pycairo and PyGObject for Ubuntu's Python. Without them, pycairo stops with `ERROR: Python dependency not found`. GitHub's `install-python.sh` installs it. |
+| `fakeroot` | appimage-builder stops with `Could not find 'fakeroot' on $PATH` before it unpacks the Ubuntu packages. GitHub's images list it. |
+| `squashfs-tools` | `mksquashfs`, which appimage-builder runs to create the image. The job does not install it, so GitHub's images have it. |
 
 ## Configure act
 
@@ -127,18 +160,43 @@ shells, each with its own port.
   build at the same time. The x86_64 and aarch64 builds use the `x64` and `arm64` folders.
 - After a failed run, act leaves its container. `docker ps -a` lists it with a name that starts with `act-`, and
   `docker rm -f` removes it.
+- Under QEMU, `ldconfig` sometimes stops with `qemu: uncaught target signal 11 (Segmentation fault)`. In the
+  aarch64 build, PyInstaller finds a library in `/usr/lib/aarch64-linux-gnu` only through `ldconfig -p`, so when
+  that call stops, the build fails with `ValueError: Could not resolve any shared library of Gio 2.0`. The call
+  stopped in 2 of 20 tries, and on 2026-10-22 the build failed this way in three runs in a row. Run it again.
+
+The AppImage jobs run in the images with the user `runner`. A `-P` option on the command line replaces the one
+for the same label in `actrc`:
+
+```bash
+run_act 34570 -W "$ACT/ci-alone.yml" -j linux-appimage --matrix arch:x86_64 \
+  -P ubuntu-22.04=tdm-act-user:22.04 | tee "$ACT/appimage-x86_64.log"
+run_act 34571 -W "$ACT/ci-alone.yml" -j linux-appimage --matrix arch:aarch64 \
+  --container-architecture linux/arm64 -P ubuntu-22.04-arm=tdm-act-user:22.04-arm64 \
+  | tee "$ACT/appimage-aarch64.log"
+grep -hE ': OK$|Downloading:|Success - Main Check that the AppImage' "$ACT"/appimage-*.log
+```
+
+Each run ends with `Job succeeded`, after 80 seconds for `x86_64` and 6.5 minutes for `aarch64` under QEMU.
+`grep` prints, for each architecture, an `OK` line for the runtime, AppRun, its hooks library and the libXft
+archive, and the `Success` lines of the two steps that compare the AppImage with the checked files and with
+`constraints.txt`. It prints no `Downloading:` line: appimage-builder downloads the runtime or AppRun only when
+the recipe has not put a checked copy in its build folder ([building.md](../building.md#build-the-appimage)).
 
 These differences from GitHub's runners remain:
 
-- act runs a job as root, and GitHub as the `runner` user. Eight tests that need file modes which root
-  bypasses skip under act, so a Validate run shows 10 skipped tests where a run as another user shows 2.
+- act runs the Validate and PyInstaller jobs as root, and GitHub as the `runner` user. Eight tests that need
+  file modes which root bypasses skip under act, so a Validate run shows 10 skipped tests where a run as another
+  user shows 2.
+- The act images have Ubuntu's pipx package, and GitHub's images install pipx with pip. So in the AppImage job,
+  pip prints a dependency conflict between pipx and argcomplete, which does not stop the job.
 - `actions/setup-python` downloads the newest patch release, and on GitHub it may use an older one from the
   image's tool cache.
 
 ## Start a build
 
 The artifact zip file holds the release zip file, which holds the `Twitch Drops Miner` folder. This image is an
-Ubuntu 22.04 with the libraries that PyInstaller leaves to the system's graphics stack
+Ubuntu 22.04 with the libraries that PyInstaller and appimage-builder leave to the system's graphics stack
 ([task 061](../refinements/tasks/061-linux-build-needs-wayland-libraries.md)), fonts, an X server in memory and
 Pillow for a screenshot:
 
@@ -149,7 +207,7 @@ FROM ubuntu:22.04
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       xvfb xauth unzip python3-pil fontconfig-config fonts-dejavu-core fonts-noto-color-emoji \
-      libxcb1 libwayland-client0 libwayland-cursor0 libwayland-egl1 \
+      libxcb1 libxcb-render0 libwayland-client0 libwayland-cursor0 libwayland-egl1 \
  && rm -rf /var/lib/apt/lists/* \
  && useradd -m -u 1000 user
 EOF
@@ -175,19 +233,53 @@ Pass a flag after the platform to start the build with it, such as `start_build 
 `--init` makes Docker's init process the first process of the container. Without it, `xvfb-run` is that
 process and waits forever for the signal that Xvfb sends when it is ready.
 
+## Start an AppImage
+
+```bash
+start_appimage() {
+  name="Twitch.Drops.Miner.Linux.AppImage-$1"
+  dir="$ACT/start-appimage-$1"
+  rm -rf "$dir" && mkdir -p "$dir"
+  unzip -q -d "$dir" "$ACT/artifacts/1/$name/$name.zip"
+  unzip -q -d "$dir" "$dir/$name.zip"
+  if [ "$2" = arm64 ]; then
+    printf '\0\0\0' | dd of="$dir/Twitch Drops Miner/Twitch.Drops.Miner-$1.AppImage" bs=1 seek=8 conv=notrunc
+  fi
+  docker run --rm --init --network none --platform "linux/$2" -u 1000:1000 -e HOME=/home/user \
+    -e APPIMAGE_EXTRACT_AND_RUN=1 -v "$dir:/home/user" -w /home/user "tdm-run:$2" \
+    xvfb-run -a -s "-screen 0 1600x1000x24" sh -c '
+      timeout 60 "./Twitch Drops Miner/Twitch.Drops.Miner-$0.AppImage" "$@" > app.log 2>&1 &
+      sleep 20
+      python3 -c "from PIL import ImageGrab; ImageGrab.grab(xdisplay=\"$DISPLAY\").save(\"shot.png\")"
+      wait $!; echo "exit=$?"' "$1" "${@:3}"
+}
+start_appimage x86_64 amd64
+start_appimage aarch64 arm64
+```
+
+- The container has no FUSE device, so `APPIMAGE_EXTRACT_AND_RUN=1` makes the AppImage extract its files into
+  `/tmp` and start from there. A flag after the platform goes to the app, as for `start_build`.
+- In this mode, `timeout` ends only the AppImage runtime, and the app ends with the container
+  ([task 062](../refinements/tasks/062-appimage-without-fuse-ignores-sigterm.md)).
+- Docker's QEMU entry for arm64 runs only an ELF file with zeros in bytes 8 to 15 of its header. An AppImage
+  has its magic bytes `AI` and 2 at bytes 8 to 10, so `dd` sets them to zero in the copy. Without that, `sh`
+  reads the file as a script and prints `Syntax error: "(" unexpected`. The `x86_64` AppImage starts unchanged.
+
 ## Check the result
 
 - Each start prints `exit=124`: `timeout` ended an app that ran for a minute. `app.log` has no traceback.
-- `shot.png` in `$ACT/start-<arch>` shows the window on the Main tab. With no network, the Output box lists
-  `Cannot connect to Twitch, retrying in N seconds... (https://www.twitch.tv)`.
+- `shot.png` in `$ACT/start-<arch>` and `$ACT/start-appimage-<arch>` shows the window on the Main tab. With no
+  network, the Output box lists `Cannot connect to Twitch, retrying in N seconds... (https://www.twitch.tv)`.
 - With `--version`, the screenshot shows a dialog with the version and the short commit hash, such as
   `v16.dev.61d04a9`. The dialog has the error icon
   ([task 025](../refinements/tasks/025-version-and-help-shown-as-error.md)).
+- The AppImage writes `cookies.jar`, `lock.file` and `cache/` next to the `.AppImage` file.
 
 To clean up, remove the images, the volume and the folder:
 
 ```bash
-docker image rm tdm-act:24.04 tdm-act:22.04 tdm-act:22.04-arm64 tdm-run:amd64 tdm-run:arm64
+docker image rm tdm-act:24.04 tdm-act:22.04 tdm-act:22.04-arm64 tdm-act-user:22.04 tdm-act-user:22.04-arm64 \
+  tdm-run:amd64 tdm-run:arm64
 docker volume rm -f act-toolcache
 rm -rf "$ACT"
 ```

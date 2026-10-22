@@ -103,4 +103,5 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [058: `build.sh --nopause` exits with status 1 after a successful build](tasks/058-build-script-nopause-exit-status.md) | build |
 | [059: A null field in stream data still raises](tasks/059-null-fields-in-stream-data.md) | channel, twitch |
 | [060: A null item in `AvailableDrops` data still raises](tasks/060-null-fields-in-available-drops.md) | channel, twitch |
-| [061: The Linux PyInstaller build stops at start without the Wayland client libraries](tasks/061-linux-build-needs-wayland-libraries.md) | build, gui |
+| [061: The Linux builds stop at start without the Wayland client libraries](tasks/061-linux-build-needs-wayland-libraries.md) | build, appimage, gui |
+| [062: A SIGTERM to an AppImage that runs without FUSE leaves the app running](tasks/062-appimage-without-fuse-ignores-sigterm.md) | appimage |

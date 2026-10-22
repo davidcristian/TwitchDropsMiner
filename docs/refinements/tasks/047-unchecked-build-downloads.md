@@ -1,10 +1,10 @@
 # The hash checks of the Linux build downloads have not run in CI
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** ci, appimage
 **Origin:** Found on 2026-10-21 while the apt key URL in `appimage/AppImageBuilder.yml` moved to HTTPS: the
 recipe printed the SHA-256 of the libXft archive and compared it with nothing
-**Verified:** 2026-10-21
+**Verified:** 2026-10-22
 
 The Linux builds check three downloads against a SHA-256 written in the repo
 ([building.md](../../building.md#build-the-appimage)):
@@ -42,3 +42,10 @@ None of this sends a Twitch request.
   runtime started through FUSE and through `APPIMAGE_EXTRACT_AND_RUN`. The title was "The libXft archive and the
   AppImage runtime are not checked against a known hash". The task stays open until a CI run and a start of
   each AppImage show the steps above.
+- 2026-10-22: Closed. The four Linux build jobs ran under act 0.2.89
+  ([runbooks/linux-ci-with-act.md](../../runbooks/linux-ci-with-act.md)), `aarch64` under QEMU, and the
+  `linux-appimage` jobs as a user without root, as on GitHub. Each `sha256sum -c` line printed `OK`, neither
+  appimage-builder log has a `Downloading:` line, and the step that compares each AppImage with the checked
+  files passed. Both AppImages started with `APPIMAGE_EXTRACT_AND_RUN=1` and no network and showed the window,
+  on Ubuntu 22.04 with the libraries of [task 061](061-linux-build-needs-wayland-libraries.md). No pull request
+  run on GitHub was made; the runbook lists where act differs from GitHub's runners.

@@ -1,7 +1,7 @@
-# The Linux PyInstaller build stops at start without the Wayland client libraries
+# The Linux builds stop at start without the Wayland client libraries
 
 **Status:** open
-**Area:** build, gui
+**Area:** build, appimage, gui
 **Origin:** Found on 2026-10-22 while the build of the `linux-pyinstaller` job was started in an Ubuntu 22.04
 container that had only an X server, fonts and `unzip` installed
 **Verified:** 2026-10-22
@@ -26,23 +26,40 @@ extracted build reported only `libwayland-client.so.0`, `libwayland-cursor.so.0`
 found, apart from `librsvg-2.so.2`, which `build.spec` leaves out. The app stopped as above. With
 `libwayland-client0`, `libwayland-cursor0` and `libwayland-egl1` added, its window opened.
 
-On Debian and Ubuntu, `libgtk-3-0` depends on these three packages, so a desktop with GTK 3 has them, and the gap
-matters on a minimal X11 system. The AppImage was not checked.
+The AppImage has the same gap. appimage-builder leaves out of every AppImage the Ubuntu packages that the
+`graphics` list in `appimagebuilder/modules/deploy/apt/listings.py` names, unless the recipe's `include` names
+them: `libwayland-*`, `libxcb1`, `libxcb-render0`, `libx11-*` and the GL packages. Its bundled `libgdk-3.so.0`
+needs `libxcb-render.so.0` and the three Wayland libraries. On 2026-10-22, the `x86_64` and `aarch64` AppImages
+from the job ran with `APPIMAGE_EXTRACT_AND_RUN=1` under Xvfb in an `ubuntu:22.04` container with `xvfb`,
+`xauth`, `fontconfig-config` and two font packages, `aarch64` under QEMU
+([runbook](../../runbooks/linux-ci-with-act.md#start-an-appimage)). `ldd` over the extracted files reported
+only these four libraries as not found, apart from `libsqlite3.so.0` and `libtiff.so.5`, which the recipe leaves
+out. The app stopped as above. With the three Wayland packages added, it stopped on `libxcb-render.so.0`, and
+with `libxcb-render0` too, its window opened.
+
+On Debian and Ubuntu, `libgtk-3-0` depends on the three Wayland packages and, through `libcairo2`, on
+`libxcb-render0`, so a desktop with GTK 3 has them, and the gap matters on a minimal X11 system.
 
 ## What a fix involves
 
 One of:
 
 - Name the libraries in the README's Linux notes and in [troubleshooting.md](../../troubleshooting.md), with
-  the Debian and Ubuntu package names.
+  the Debian and Ubuntu package names, and `libxcb-render0` for the AppImage.
 - Catch the failure of the AppIndicator backend and start pystray's `xorg` backend, which needs only X11. The
   import is in `gui.py`, which is over the line cap
-  ([task 005](005-modules-over-the-line-cap.md)), so the code goes in a new module.
+  ([task 005](005-modules-over-the-line-cap.md)), so the code goes in a new module. Whether the AppImage then
+  starts without `libxcb-render0` was not checked.
 
-Bundling the libraries goes against PyInstaller's reason for leaving them out: a bundled Wayland library can
-differ from the one that the system's compositor and drivers use. None of this sends a Twitch request.
+Bundling the libraries, with `build.spec` or with the `include` list of the AppImage recipe, goes against the
+reason both tools leave them out: a bundled Wayland library can differ from the one that the system's
+compositor and drivers use, and appimage-builder's list names problems with the NVIDIA driver. None of this
+sends a Twitch request.
 
 ## History
 
 - 2026-10-22: Opened. Found while each build of the `linux-pyinstaller` job was started under Xvfb with no
   network.
+- 2026-10-22: Each AppImage of the `linux-appimage` job, run under act, stops the same way without the three
+  Wayland libraries or `libxcb-render0`, which appimage-builder leaves out. The title was "The Linux PyInstaller
+  build stops at start without the Wayland client libraries".
