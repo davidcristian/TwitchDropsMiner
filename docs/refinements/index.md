@@ -117,3 +117,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [072: On macOS the window opens 20 pixels smaller than `wm maxsize`](tasks/072-macos-window-smaller-than-wm-maxsize.md) | gui |
 | [073: A lower progress value takes minutes from the claimed drops of the campaign](tasks/073-lower-progress-value-for-claimed-drops.md) | inventory |
 | [074: A reload removes the selection in the channel list](tasks/074-reload-removes-the-channel-selection.md) | twitch, gui |
+| [075: A test run sometimes stays open after its last test](tasks/075-test-run-stays-open-after-the-last-test.md) | tests, repo checks |
