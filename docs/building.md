@@ -122,7 +122,8 @@ Run `build.bat` on Windows or `./build.sh` on Linux and macOS. The script:
 
 The executable ends up in `dist/`, and PyInstaller keeps its intermediate files in `build/`. PyInstaller creates
 both in the current folder, so run the script from the repository folder. Pass `--nopause` to either script to
-skip the `Press any key` prompts when another script calls it. `build.sh` exits with 0 after a successful build.
+skip the `Press any key` prompts, for example when another script calls it. `build.sh` exits with 0 after a
+successful build.
 
 `build.spec` finds `icons/` and `lang/` in its own folder, which PyInstaller passes to it as `SPECPATH`. It
 bundles every `lang/*.json` file except `English.json`, and the build fails with `FileNotFoundError` when
