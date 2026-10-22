@@ -47,6 +47,21 @@ and `channel_stream` in an online check, and from `GameDirectory`, through `dire
   a stream with no category has. Null `broadcastSettings` give a stream without a game and with a null `title`,
   which nothing reads.
 
+These cases log no warning, because each has a reading that the app already handles:
+
+- A null `data` or `user` in `GetStreamInfo` leaves the channel's stream as it is in the bulk check, and reads
+  as an offline channel in an online check. A null `stream` reads as an offline channel.
+- A null `GameDirectory` game, `streams` or `edges` lists no streams, and a null edge, `node` or `broadcaster` is
+  left out.
+- A null game reads as a stream with no category. A null game `name` or `displayName` is read from the other one.
+- A null `viewersCount` gives a stream whose viewers are unknown, until a `viewcount` event sets them. The
+  Channels list shows no count, and `CHANNELS_FETCH` sorts the channel as if it had no viewers.
+- A null `title` is kept, and nothing reads it.
+- A null `displayName` of a user or a broadcaster leaves the channel named by its login.
+
+A null in any other field changes nothing, because the app does not read it. `tests/test_twitch_null_streams.py`
+sets each value of a complete response to null in turn and checks each outcome in this section and the next.
+
 A game with a null field is read as no game rather than as offline because the app already handles a stream
 without a game, and such a stream adds no request. The channel then has no game to match the wanted games, and
 its `viewcount` events only update its viewers. It stays so until an online check reads the channel again, or
@@ -69,8 +84,9 @@ and read the campaigns it lists, through `channel_campaigns` and `available_camp
 - A campaign that is null, or whose `id` is null, is left out, because `Channel` finds each campaign in
   `Twitch._campaigns` by its ID.
 
-A stream whose campaigns were left out counts as not drops enabled until its next check, as a stream with no
-campaigns does. No case adds a request.
+A null `data`, `channel` or `viewerDropCampaigns` lists no campaigns, without a warning. A stream whose
+campaigns were left out counts as not drops enabled until its next check, as a stream with no campaigns does.
+No case adds a request.
 
 ## Invariants
 
