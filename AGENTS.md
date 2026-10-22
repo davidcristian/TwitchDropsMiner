@@ -50,6 +50,7 @@ burst of requests puts that account at risk.
 | `utils.py` | JSON helpers, `ExponentialBackoff` and task helpers |
 | `cache.py` | The image cache for game and drop artwork |
 | `registry.py` | Windows registry access, used for starting with Windows |
+| `autostart.py` | The entry that starts the app at login: `autostart_entry` returns the registry value, desktop file or launchd plist of each system, and `autostart_command` the command it runs |
 | `exceptions.py` | `MinerException` and its subclasses, including `ExitRequest` and `ReloadRequest` |
 | `redact.py` | `redact`, which hides the login token and other secrets in a value before a log call prints it |
 | `reconnect.py` | `ReconnectDelay`, the wait of a PubSub websocket before each reconnect |

@@ -69,7 +69,8 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [translate.md](modules/translate.md) | The translation types, `default_translation`, loading `lang/*.json` and the English fallback |
 | [utils.md](modules/utils.md) | JSON loading and saving, `ExponentialBackoff` and the task helpers |
 | [cache.md](modules/cache.md) | `ImageCache`: where images are stored, their expiry and broken data |
-| [registry.md](modules/registry.md) | The Windows registry wrapper and autostart on each OS |
+| [registry.md](modules/registry.md) | The Windows registry wrapper |
+| [autostart.md](modules/autostart.md) | The autostart entry on each OS, its command and the XDG autostart folder |
 | [exceptions.md](modules/exceptions.md) | Each exception class, what raises it and what catches it |
 | [redact.md](modules/redact.md) | `redact`: the secret key names it hides before a log call prints a value |
 | [reconnect.md](modules/reconnect.md) | `ReconnectDelay`: the wait of a websocket before each reconnect |

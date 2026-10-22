@@ -1,9 +1,9 @@
 # Autostart fails on Linux without an autostart folder, and from source outside Windows
 
-**Status:** open
+**Status:** done 2026-10-23
 **Area:** gui (`SettingsPanel` autostart)
-**Origin:** Found on 2026-10-18 while the docs were written, [registry.md](../../modules/registry.md#autostart-on-each-platform)
-**Verified:** 2026-10-18
+**Origin:** Found on 2026-10-18 while the docs were written, [autostart.md](../../modules/autostart.md#autostart-on-each-platform)
+**Verified:** 2026-10-23
 
 The Autostart and "Autostart into tray" checkboxes call `SettingsPanel.update_autostart` in `gui.py`. It has two
 defects outside Windows.
@@ -87,3 +87,13 @@ folder only.
 
 - 2026-10-18: Opened while the docs were written. `update_autostart` and `_query_autostart` were called with a
   temporary `HOME`, and the written `Exec` command was run with `sh`.
+- 2026-10-23: Done. Both claims held under Xvfb: checking Autostart with no autostart folder raised
+  `FileNotFoundError`, and with the folder the `Exec` command named `env/bin/pythonw`, which this `env/bin` lacks. The entry code moved
+  to `autostart.py` ([autostart.md](../../modules/autostart.md)), which creates the folder, uses
+  `$XDG_CONFIG_HOME/autostart` whenever that variable is an absolute path, and starts a source run with
+  `env/bin/python` outside Windows. `update_autostart` catches `OSError`, logs "Could not change the autostart
+  entry:" and sets the checkbox again. An entry written with `pythonw` is not rewritten by the app: unchecking
+  and checking the box writes it again, as [troubleshooting.md](../../troubleshooting.md#autostart) says.
+  `tests/test_autostart.py` and `tests/test_gui_settings.py` cover it on files in a temporary folder. Not run on
+  macOS: launchd starting the plist's `env/bin/python` command. Not run on Windows: `RegistryValue` and an
+  `OSError` from the registry.

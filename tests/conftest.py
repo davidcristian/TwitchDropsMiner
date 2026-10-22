@@ -80,12 +80,17 @@ def window(display, monkeypatch, tmp_path):
     """Return a function that builds the real window around a `FakeTwitch`, and close each window it built."""
     import cache
     import constants
+    import gui
+    from autostart import autostart_entry
     from gui import GUIManager
 
     # the window reads its icons from the app's folder and keeps the image cache in it
     monkeypatch.setattr(constants, "WORKING_DIR", REPO)
     monkeypatch.setattr(cache, "CACHE_PATH", tmp_path / "cache")
     monkeypatch.setattr(cache, "CACHE_DB", tmp_path / "cache" / "mapping.json")
+    # the Settings tab reads and writes its autostart entry as a desktop file in tmp_path on every system
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    monkeypatch.setattr(gui, "autostart_entry", lambda platform, environ, home: autostart_entry("linux", environ, home))
     windows: list[GUIManager] = []
 
     def build(fake):

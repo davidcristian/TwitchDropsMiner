@@ -62,11 +62,12 @@ and keeps it as an attribute. The labels in quotes are the English strings from 
   the folder dialog in a child process through `FolderPicker` ([folderpicker.md](folderpicker.md)), and stays
   disabled while the dialog is open. Adding a list entry with `*` or `?` prints the games it matches
   ([ADR-0005](../adr/ADR-0005-list-patterns.md)). The "Autostart" checkbox
-  writes the Windows `Run` registry value, a Linux `.desktop` file in the autostart folder or a macOS
-  `LaunchAgents` plist, named after `AUTOSTART_NAME` (`TwitchDropsMiner`). `_query_autostart` finds the entry by
-  these names, so a rename leaves the old entry in place ([ADR-0007](../adr/ADR-0007-kept-identifiers.md)). On
-  Linux the write fails when the autostart folder does not exist, and a run from source writes a `pythonw`
-  command ([task 015](../refinements/tasks/015-autostart-on-linux-and-macos.md)).
+  writes or removes the entry that `autostart_entry` returns for the system ([autostart.md](autostart.md)): the
+  Windows `Run` registry value, a Linux `.desktop` file in the XDG autostart folder or a macOS `LaunchAgents`
+  plist, named after `AUTOSTART_NAME` (`TwitchDropsMiner`). `_query_autostart` finds the entry by these names,
+  so a rename leaves the old entry in place ([ADR-0007](../adr/ADR-0007-kept-identifiers.md)). When the write or
+  removal raises `OSError`, `update_autostart` logs "Could not change the autostart entry:" with the error, and
+  sets the checkbox from `_query_autostart` again.
 - **`HelpTab`** "Invalidate" posts the access token to `https://id.twitch.tv/oauth2/revoke`, deletes
   `cookies.jar` when Twitch returns 200, and sets `State.RESTART`. The button stays disabled until a login
   completes.
@@ -234,8 +235,8 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
   needs. It has no `detect_games`, `get_auth` or `_client_type`, so "Rescan", the ❌ folder button and a folder
   chosen with ➕ raise `AttributeError` in the preview.
 
-**Dependencies.** Repo modules: `translate`, `cache`, `colorfonts`, `gamelib`, `exceptions`, `folderpicker`,
-`traybackend`, `scrollarea`, `settings` (`default_settings`, `setting_choices`), `utils`, `constants`, and
-`registry` on Windows; `twitch`, `channel` and `inventory` for type checking only. Third-party: `pystray`,
+**Dependencies.** Repo modules: `translate`, `cache`, `colorfonts`, `autostart`, `gamelib`, `exceptions`,
+`folderpicker`, `traybackend`, `scrollarea`, `settings` (`default_settings`, `setting_choices`), `utils` and
+`constants`; `twitch`, `channel` and `inventory` for type checking only. Third-party: `pystray`,
 Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on Windows, `AppKit` on macOS, and `aiohttp` in the
 preview.

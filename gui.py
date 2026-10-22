@@ -3,16 +3,13 @@ from __future__ import annotations
 import os
 import sys
 import queue
-import shlex
 import ctypes
 import asyncio
 import logging
-import plistlib
 import threading
 import tkinter as tk
 from pathlib import Path
 from collections import abc
-from textwrap import dedent
 from math import log10, ceil
 from contextlib import contextmanager
 from tkinter.font import Font, nametofont
@@ -36,6 +33,7 @@ if sys.platform == "darwin":
 from translate import _
 from cache import ImageCache
 from colorfonts import LoadedFontLibraries, skip_color_fonts
+from autostart import AutostartEntry, autostart_command, autostart_entry, source_python
 from gamelib import (
     GameMatch,
     MatchKind,
@@ -65,9 +63,6 @@ from constants import (
     State,
     PriorityMode,
 )
-if sys.platform == "win32":
-    from registry import RegistryKey, ValueType, ValueNotFound
-
 
 if TYPE_CHECKING:
     from twitch import Twitch
@@ -1566,9 +1561,6 @@ class _SettingsVars(TypedDict):
 
 
 class SettingsPanel:
-    AUTOSTART_NAME: str = "TwitchDropsMiner"
-    AUTOSTART_KEY: str = "HKCU/Software/Microsoft/Windows/CurrentVersion/Run"
-
     @cached_property
     def PRIORITY_MODES(self) -> dict[PriorityMode, str]:
         # NOTE: Translation calls have to be deferred here,
@@ -1612,6 +1604,7 @@ class SettingsPanel:
         self._manager = manager
         self._settings: Settings = manager._twitch.settings
         self._folder_picker = FolderPicker()
+        self._autostart: AutostartEntry = autostart_entry(sys.platform, os.environ, Path.home())
         priority_mode = self._settings.priority_mode
         if priority_mode not in self.PRIORITY_MODES:
             priority_mode = default_settings["priority_mode"]
@@ -1997,109 +1990,26 @@ class SettingsPanel:
         self._settings.dark_mode = bool(self._vars["dark_mode"].get())
         self._manager.apply_theme(self._settings.dark_mode)
 
-    def _get_self_path(self) -> str:
-        # NOTE: we need double quotes in case the path contains spaces
-        return f'"{SELF_PATH.resolve()!s}"'
-
     def _get_autostart_path(self) -> str:
-        flags: list[str] = []
-        # if applicable, include the current logging level as well
-        for lvl_idx, lvl_value in LOGGING_LEVELS.items():
-            if lvl_value == self._settings.logging_level:
-                if lvl_idx > 0:
-                    flags.append(f"-{'v' * lvl_idx}")
-                break
-        if self._vars["tray"].get():
-            flags.append("--tray")
-        if not IS_PACKAGED:
-            # non-packaged autostart has to be done through the venv path pythonw
-            return f"\"{SCRIPTS_PATH / 'pythonw'!s}\" {self._get_self_path()} {' '.join(flags)}"
-        return f"{self._get_self_path()} {' '.join(flags)}"
-
-    def _get_linux_autostart_filepath(self) -> Path:
-        autostart_folder: Path = Path("~/.config/autostart").expanduser()
-        if (config_home := os.environ.get("XDG_CONFIG_HOME")) is not None:
-            config_autostart: Path = Path(config_home, "autostart").expanduser()
-            if config_autostart.exists():
-                autostart_folder = config_autostart
-        return autostart_folder / f"{self.AUTOSTART_NAME}.desktop"
-
-    def _get_mac_autostart_filepath(self) -> Path:
-        return Path(
-            Path.home(), f"Library/LaunchAgents/com.devilxd.{self.AUTOSTART_NAME.lower()}.plist"
+        python = None if IS_PACKAGED else source_python(SCRIPTS_PATH, sys.platform)
+        return autostart_command(
+            SELF_PATH.resolve(), self._settings.logging_level, bool(self._vars["tray"].get()), python
         )
 
     def _query_autostart(self) -> bool:
-        if sys.platform == "win32":
-            with RegistryKey(self.AUTOSTART_KEY, read_only=True) as key:
-                try:
-                    value_type, value = key.get(self.AUTOSTART_NAME)
-                except ValueNotFound:
-                    return False
-                # TODO: Consider deleting the old value to avoid autostart errors
-                return (
-                    value_type is ValueType.REG_SZ
-                    and self._get_self_path() in value
-                )
-        elif sys.platform == "linux":
-            autostart_file: Path = self._get_linux_autostart_filepath()
-            if not autostart_file.exists():
-                return False
-            with autostart_file.open('r', encoding="utf8") as file:
-                # TODO: Consider deleting the old file to avoid autostart errors
-                return self._get_self_path() in file.read()
-        elif sys.platform == "darwin":
-            plist_file = self._get_mac_autostart_filepath()
-            if not plist_file.exists():
-                return False
-            with plist_file.open('r', encoding="utf8") as file:
-                return str(SELF_PATH.resolve()) in file.read()
+        return self._autostart.contains(SELF_PATH.resolve())
 
     def update_autostart(self) -> None:
         enabled = bool(self._vars["autostart"].get())
         self._settings.autostart_tray = bool(self._vars["tray"].get())
-        if sys.platform == "win32":
+        try:
             if enabled:
-                with RegistryKey(self.AUTOSTART_KEY) as key:
-                    key.set(
-                        self.AUTOSTART_NAME,
-                        ValueType.REG_SZ,
-                        self._get_autostart_path(),
-                    )
+                self._autostart.write(self._get_autostart_path())
             else:
-                with RegistryKey(self.AUTOSTART_KEY) as key:
-                    key.delete(self.AUTOSTART_NAME, silent=True)
-        elif sys.platform == "linux":
-            autostart_file: Path = self._get_linux_autostart_filepath()
-            if enabled:
-                file_contents: str = dedent(
-                    f"""
-                    [Desktop Entry]
-                    Type=Application
-                    Name=Twitch Drops Miner
-                    Description=Mine timed drops on Twitch
-                    Exec=sh -c '{self._get_autostart_path()}'
-                    """
-                )
-                with autostart_file.open('w', encoding="utf8") as file:
-                    file.write(file_contents)
-            else:
-                autostart_file.unlink(missing_ok=True)
-        elif sys.platform == "darwin":
-            plist_file = self._get_mac_autostart_filepath()
-
-            if enabled:
-                command_parts = shlex.split(self._get_autostart_path())
-                plist_data = {
-                    "Label": f"com.devilxd.{self.AUTOSTART_NAME.lower()}",
-                    "ProgramArguments": command_parts,
-                    "RunAtLoad": True,
-                }
-                plist_file.parent.mkdir(parents=True, exist_ok=True)
-                with plist_file.open("wb") as file:
-                    plistlib.dump(plist_data, file)
-            else:
-                plist_file.unlink(missing_ok=True)
+                self._autostart.remove()
+        except OSError as exc:
+            logger.error(_("error", "autostart_not_changed").format(error=exc))
+            self._vars["autostart"].set(self._query_autostart())
 
     def update_excluded_choices(self) -> None:
         self._exclude_entry.config(

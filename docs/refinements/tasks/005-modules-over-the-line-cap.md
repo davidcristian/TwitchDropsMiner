@@ -13,7 +13,7 @@ for the split now.
 
 | Module | Lines |
 | --- | --- |
-| `gui.py` | 3236 |
+| `gui.py` | 3183 |
 | `twitch.py` | 1629 |
 | `translate.py` | 597 |
 | `constants.py` | 519 |
@@ -35,7 +35,7 @@ Line counts are of the class or block today.
   - The Main tab panels: `StatusBar`, `WebsocketStatus`, `LoginForm`, `CampaignProgress` (163),
     `ConsoleOutput` and `ChannelList` (239).
   - `TrayIcon` (126), `InventoryOverview` (284) and `HelpTab` (103), one module each.
-  - `SettingsPanel` (807), which is over the cap by itself. Its `__init__` is 378 lines and builds each frame:
+  - `SettingsPanel` (723), which is over the cap by itself. Its `__init__` is 378 lines and builds each frame:
     Games Being Mined, General, Advanced, Priority, Exclude, Detected Games and the Reload row. Each frame can
     become its own class.
   - `GUIManager` (519), of which `apply_theme` is 213 lines and can move to a theme module.
@@ -89,3 +89,5 @@ Splits cost no Twitch requests.
   the new module `folderpicker.py`.
 - 2026-10-21: Measured `gui.py` again after the Settings tab started to scroll. The scrolling canvas of the
   Inventory tab moved to the new module `scrollarea.py`, which both tabs use.
+- 2026-10-23: Measured `gui.py` and `SettingsPanel` again after the autostart entry moved to the new module
+  `autostart.py`.

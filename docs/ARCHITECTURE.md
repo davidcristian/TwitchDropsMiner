@@ -167,7 +167,7 @@ three.
 
 | Area | Windows | Linux | macOS |
 | --- | --- | --- | --- |
-| Autostart | value `TwitchDropsMiner` in `HKCU/Software/Microsoft/Windows/CurrentVersion/Run`, through `registry.py` | `TwitchDropsMiner.desktop` in `~/.config/autostart`, or in `$XDG_CONFIG_HOME/autostart` when that folder exists | `~/Library/LaunchAgents/com.devilxd.twitchdropsminer.plist` with `RunAtLoad`; [ADR-0007](adr/ADR-0007-kept-identifiers.md) explains the name |
+| Autostart ([autostart.md](modules/autostart.md)) | value `TwitchDropsMiner` in `HKCU/Software/Microsoft/Windows/CurrentVersion/Run`, through `registry.py` | `TwitchDropsMiner.desktop` in `$XDG_CONFIG_HOME/autostart`, or in `~/.config/autostart` when that variable is not an absolute path; the app creates the folder | `~/Library/LaunchAgents/com.devilxd.twitchdropsminer.plist` with `RunAtLoad`; [ADR-0007](adr/ADR-0007-kept-identifiers.md) explains the name |
 | Tray | pystray | pystray, whose AppIndicator, GTK and X11 backends `traybackend.py` tries in turn, X11 alone without a DBus session bus; `build.spec` bundles `libayatana-appindicator3.so.1` | none: `Minimize to Tray`, `--tray` and the two tray settings are hidden or ignored |
 | Closing | a WndProc hook (pywin32) handles `WM_CLOSE` and `WM_QUERYENDSESSION`, so a Windows shutdown closes the app | `WM_DELETE_WINDOW`; SIGINT and SIGTERM call `GUIManager.close`, and in an AppImage without FUSE the end of its runtime sends that SIGTERM (`parentexit.py`) | `WM_DELETE_WINDOW` |
 | Dark mode | the `clam` ttk theme and the title bar color through DWM | the `clam` ttk theme | `NSAppearance` through AppKit |
@@ -178,8 +178,8 @@ three.
 | Other | | `main.py` sets `XMODIFIERS=@im=none` when it is unset; `webopen` restores `LD_LIBRARY_PATH` in a packaged build before it opens a browser | the notebook tab and checkbutton style changes are skipped |
 
 The autostart entry runs `SELF_PATH` with the current `-v` flags, plus `--tray` for "Autostart into tray". From
-source it runs `main.py` with the `pythonw` in `env/`, which only a Windows virtual environment has. On Linux the
-autostart folder must already exist ([task 015](refinements/tasks/015-autostart-on-linux-and-macos.md)).
+source it runs `main.py` with the Python in `env/`: `pythonw` on Windows, which opens no console window, and
+`python` on Linux and macOS, whose virtual environments have no `pythonw`.
 
 The [app files](troubleshooting.md#where-the-app-keeps-its-files) go in `WORKING_DIR`, the folder of
 `SELF_PATH` in `constants.py`; from source, `SELF_PATH` is `main.py`. `IS_PACKAGED` is set in a PyInstaller

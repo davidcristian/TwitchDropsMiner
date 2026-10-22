@@ -2,7 +2,7 @@
 
 **Purpose.** Wraps the standard `winreg` module: it opens one Windows registry key and reads, writes, deletes and
 lists its values. The app uses it for one thing, the Autostart setting on Windows. It imports `winreg` at the
-top, so it can be imported only on Windows, and `gui.py` imports it only when `sys.platform == "win32"`.
+top, so it can be imported only on Windows, and `autostart.py` imports it only when `sys.platform == "win32"`.
 
 ## Public contract
 
@@ -24,30 +24,11 @@ creates no keys. Used as a context manager, it closes the key on exit.
 `ValueType` (both `Enum`) give names to the `winreg` constants. `python registry.py` prints the values under
 `HKCU/Software/Microsoft/Windows/CurrentVersion/Run`.
 
-## Autostart on each platform
+## Autostart
 
-`SettingsPanel` in `gui.py` shows the `Autostart:` and `Autostart into tray:` checkboxes; macOS shows only the
-first. When the panel is built, `_query_autostart` sets the Autostart checkbox from the system. A click on either
-checkbox calls `update_autostart`, which stores the `autostart_tray` setting and writes or removes the entry.
-
-The command the entry runs comes from `_get_autostart_path`: the quoted `SELF_PATH`, then one flag of `-` and as
-many `v` letters as the index of the current logging level in `LOGGING_LEVELS` (such as `-vv`, none at index 0),
-then `--tray` when Autostart into tray is checked. From source, the command starts with `pythonw` from the
-`env/` scripts folder (`SCRIPTS_PATH`, [constants.md](constants.md#working-directory-and-paths)), which only a
-Windows virtual environment has ([task 015](../refinements/tasks/015-autostart-on-linux-and-macos.md)).
-
-| Platform | Where the entry is | What it contains |
-| --- | --- | --- |
-| Windows | The value `TwitchDropsMiner` (`AUTOSTART_NAME`) under `HKCU/Software/Microsoft/Windows/CurrentVersion/Run` (`AUTOSTART_KEY`), as `REG_SZ` | The command |
-| Linux | `~/.config/autostart/TwitchDropsMiner.desktop`, or `$XDG_CONFIG_HOME/autostart/TwitchDropsMiner.desktop` when `XDG_CONFIG_HOME` is set and that `autostart` folder exists | A `[Desktop Entry]` with `Exec=sh -c '<command>'` |
-| macOS | `~/Library/LaunchAgents/com.devilxd.twitchdropsminer.plist` | A plist with `Label`, `ProgramArguments` (the command split by `shlex.split`) and `RunAtLoad` set to true |
-
-Autostart counts as on when the entry contains the quoted `SELF_PATH` of the running copy; on macOS the path is
-not quoted, and on Windows the value must also be `REG_SZ`. A copy of the app at another path therefore shows
-the checkbox off, even when another copy has an entry. The Linux branch does not create the `autostart` folder,
-so writing the entry fails when that folder does not exist
-([task 015](../refinements/tasks/015-autostart-on-linux-and-macos.md)); the macOS branch creates `LaunchAgents`.
-The plist label keeps the `com.devilxd` prefix ([ADR-0007](../adr/ADR-0007-kept-identifiers.md)).
+`RegistryValue` in [autostart.py](autostart.md) reads, writes and deletes the value `TwitchDropsMiner` under
+`HKCU/Software/Microsoft/Windows/CurrentVersion/Run` through this class. [autostart.md](autostart.md) describes
+the entry on each platform.
 
 ## Invariants
 
@@ -55,7 +36,5 @@ The plist label keeps the `com.devilxd` prefix ([ADR-0007](../adr/ADR-0007-kept-
   systems. The AppImage still copies and compiles `registry.py` with the other top-level files; compiling does not
   import it.
 - A read opens the key with `read_only=True`, so it asks Windows for no more access than it uses.
-- A change to `AUTOSTART_NAME`, `AUTOSTART_KEY` or the file paths leaves existing entries in place: the app no
-  longer finds them, and they still start it at login.
 
 **Dependencies.** The standard library only (`winreg`). It imports no repo module.

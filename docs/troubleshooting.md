@@ -158,6 +158,21 @@ games, so such a game counts twice there. Only games with a campaign can match, 
 is left out. A name shown with `≈` was not an exact match; when it is the wrong game, add that game to the Exclude
 list. When an installed game is missing, add it to the Priority list by hand.
 
+## Autostart
+
+The Autostart checkbox on the Settings tab writes an entry that starts the app when you log in: a registry value
+on Windows, `TwitchDropsMiner.desktop` in `$XDG_CONFIG_HOME/autostart` or `~/.config/autostart` on Linux, and a
+plist in `~/Library/LaunchAgents` on macOS ([autostart.md](modules/autostart.md)).
+
+- **"Could not change the autostart entry: ..."** in the Output box. The app could not write or remove the
+  entry, and the checkbox shows whether the entry exists. The error names the file or folder, for example one
+  that your user may not write to.
+- **The box is checked, and a run from source on Linux or macOS does not start at login.** An entry written
+  before the app started a source run with `env/bin/python` runs `env/bin/pythonw`, which does not exist.
+  Uncheck Autostart and check it again to write the entry once more.
+- **The box is unchecked after the app moved to another folder.** The entry starts the app at its old path.
+  Check the box again to write the entry for the new path.
+
 ## The tray icon on Linux
 
 The tray icon uses [pystray](https://pystray.readthedocs.io/). The release builds include the AppIndicator

@@ -16,18 +16,18 @@ autostart entry only by its name, so a rename has effects on machines that alrea
 
 ## Decision
 
-1. **Keep the autostart names.** `SettingsPanel.AUTOSTART_NAME` in `gui.py` is `"TwitchDropsMiner"`, and it
-   forms the name of the autostart entry on every platform:
+1. **Keep the autostart names.** `AUTOSTART_NAME` in `autostart.py` is `"TwitchDropsMiner"`, and it forms the
+   name of the autostart entry on every platform (`autostart_entry`):
 
    - **Windows:** the registry value `TwitchDropsMiner` under the key
      `HKCU/Software/Microsoft/Windows/CurrentVersion/Run` (`AUTOSTART_KEY`).
-   - **Linux:** the file `TwitchDropsMiner.desktop` in `$XDG_CONFIG_HOME/autostart` when that folder exists,
-     otherwise in `~/.config/autostart` (`_get_linux_autostart_filepath`).
+   - **Linux:** the file `TwitchDropsMiner.desktop` in `$XDG_CONFIG_HOME/autostart`, or in
+     `~/.config/autostart` when `XDG_CONFIG_HOME` is not an absolute path (`xdg_autostart_folder`).
    - **macOS:** the LaunchAgent `~/Library/LaunchAgents/com.devilxd.twitchdropsminer.plist`, whose `Label` is
-     `com.devilxd.twitchdropsminer` (`_get_mac_autostart_filepath` and `update_autostart`).
+     `com.devilxd.twitchdropsminer` (`LAUNCH_AGENT_LABEL`).
 
-   `_query_autostart` looks for the entry under this name only, and `update_autostart` writes and deletes it
-   under this name only. With a new name, the app would not find or remove an entry that an older build
+   `SettingsPanel._query_autostart` in `gui.py` looks for the entry under this name only, and
+   `SettingsPanel.update_autostart` writes and deletes it under this name only. With a new name, the app would not find or remove an entry that an older build
    wrote.
 
 2. **Keep the AppImage id `io.github.devilxd.twitchdropsminer`.** `appimage/AppImageBuilder.yml` sets it as
@@ -51,9 +51,9 @@ autostart entry only by its name, so a rename has effects on machines that alrea
   [Windows notes](../../README.md#notes-about-the-windows-build) give the same step for an app moved to another
   folder.
 - Renaming any autostart name needs a migration: on start, the app looks for the entry under the old name,
-  removes it, and writes it again under the new name when the old entry holds this app's path.
-  `_query_autostart` marks the place with `TODO: Consider deleting the old value to avoid autostart errors`.
-  The app cannot do the same for a new AppImage id (decision 2).
+  removes it, and writes it again under the new name when the old entry holds this app's path. The place for
+  it is `SettingsPanel._query_autostart`, which reads the entry when the window is built. The app cannot do the
+  same for a new AppImage id (decision 2).
 - `git grep -i devilxd` outside `lang/`, `LICENSE*`, `AGENTS.md` and `docs/` finds only these identifiers, the
   About box credit with its English string in `translate.py`, and the README's credits, links and mentions of
   the original project.
@@ -66,8 +66,8 @@ autostart entry only by its name, so a rename has effects on machines that alrea
 ## Related
 
 - [ADR-0001](ADR-0001-independent-project.md): why the app does not present itself as DevilXD's work.
-- [gui.md](../modules/gui.md) (`SettingsPanel` and autostart), [registry.md](../modules/registry.md) (Windows
-  registry access).
+- [autostart.md](../modules/autostart.md) (the entry on each platform), [gui.md](../modules/gui.md)
+  (`SettingsPanel`), [registry.md](../modules/registry.md) (Windows registry access).
 - [building.md](../building.md): building the AppImage from `appimage/AppImageBuilder.yml`.
 - [Notes about the Windows build](../../README.md#notes-about-the-windows-build) in the README: autostart and a
   moved app.

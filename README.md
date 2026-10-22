@@ -67,6 +67,7 @@ Every 20 seconds, the app asks Twitch for the list of the newest video segments 
 - The Linux app should work out of the box on any modern distribution, as long as it has `glibc>=2.35`, plus a working display server.
 - The tray icon uses the AppIndicator library, whose bundled GTK libraries need the system's Wayland client libraries, even on X11. Without them, the tray icon has no menu and shows no notifications, but a left click on it still restores the window ([troubleshooting](docs/troubleshooting.md#the-tray-icon-on-linux)).
 - Every feature of the app is expected to work on Linux just as well as it does on Windows.
+- The Autostart option writes `TwitchDropsMiner.desktop` into `$XDG_CONFIG_HOME/autostart`, or into `~/.config/autostart` when that variable is not set, and creates the folder when it does not exist.
 - The size of the Linux app is significantly larger than the Windows app due to the inclusion of the `gtk3` library (and its dependencies), which is required for proper system tray/notifications support.
 - As an alternative to the native Linux app, you can run the Windows app via [Wine](https://www.winehq.org/) instead. It works really well!
 
