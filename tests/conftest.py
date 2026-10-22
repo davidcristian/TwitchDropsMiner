@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 import json
 import os
 import sys
@@ -94,6 +95,10 @@ def window(display, monkeypatch, tmp_path):
     yield build
     for manager in windows:
         manager.close_window()
+    # A closed window's Tk variables are cyclic garbage. A collection in another thread, such as a tray icon's,
+    # runs their __del__ there, which waits one second for each before it raises "main thread is not in main loop".
+    windows.clear()
+    gc.collect()
 
 
 @pytest.fixture
