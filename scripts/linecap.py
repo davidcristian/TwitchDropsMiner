@@ -1,4 +1,4 @@
-"""Fail on a Python file or AGENTS.md over 300 lines or other markdown over 250, except the modules named here."""
+"""Fail on a Python or markdown file over 300 lines, except the modules named here."""
 from __future__ import annotations
 
 import argparse
@@ -8,8 +8,7 @@ from pathlib import Path
 from sources import ROOT, Problem, read_texts, repo_files
 
 
-LIMITS = {".py": 300, ".md": 250}
-FILE_LIMITS = {"AGENTS.md": 300}
+LIMITS = {".py": 300, ".md": 300}
 # Inherited modules over the limit until the splits that the module-split task records are made.
 # An entry fails once its module is under the limit, so the list only shrinks.
 EXCEPTIONS = frozenset({
@@ -26,8 +25,6 @@ EXCEPTIONS = frozenset({
 
 def limit_for(name: str) -> int | None:
     """Return the line limit for the file at this repo path, or None when it has none."""
-    if name in FILE_LIMITS:
-        return FILE_LIMITS[name]
     for suffix, limit in LIMITS.items():
         if name.endswith(suffix):
             return limit

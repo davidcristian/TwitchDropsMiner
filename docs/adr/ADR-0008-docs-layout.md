@@ -1,6 +1,6 @@
 # ADR-0008: The docs layout
 
-**Status:** Accepted (2026-10-21)
+**Status:** Accepted (2026-10-22)
 
 ## Context
 
@@ -50,11 +50,10 @@ states which Cortex docs practices this repo adopts, which it does not, and why.
    [refinements/index.md](../refinements/index.md) gives each task's title and area and no status. So the list
    needs no edit when a task changes state, and it cannot disagree with a task file about a state.
 
-8. **A markdown file is at most 250 lines, AGENTS.md at most 300, and the prose rules apply to every doc.** The
+8. **A markdown file is at most 300 lines, and the prose rules apply to every doc.** The
    [Prose](../../AGENTS.md#prose) section of AGENTS.md sets both, and `just check` checks the parts a script can
-   read. A file that needs more lines says two things and is split. AGENTS.md has the higher limit because it
-   holds the module map, one row per module, and the module count grows as logic moves out of the modules over
-   the line cap ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
+   read. A file that needs more lines says two things and is split. The limit is the same as a Python module's,
+   so one number applies to every file that `scripts/linecap.py` measures.
 
 9. **Four Cortex practices are not adopted:**
    - **`docs/readings/`.** Cortex keeps the measurements its decisions rest on there, each with its date and
@@ -92,7 +91,7 @@ states which Cortex docs practices this repo adopts, which it does not, and why.
 
 - **The flatter layout of the maintainer's HeadStart repo.** Its `docs/README.md` maps single files, among
   them one `runbook.md` and a `roadmap.md` whose lists hold the open work, so every change of state edits one
-  shared file. It sets no line limit on docs, and 6 of its 16 module docs are over 250 lines.
+  shared file. It sets no line limit on docs, and 6 of its 16 module docs are over 300 lines.
 
 ## Related
 

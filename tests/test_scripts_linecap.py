@@ -16,9 +16,9 @@ def lines(count: int) -> str:
     [
         ("gui.py", 300),
         ("gamelib/scan.py", 300),
-        ("docs/index.md", 250),
+        ("docs/index.md", 300),
         ("AGENTS.md", 300),
-        ("docs/AGENTS.md", 250),
+        ("docs/AGENTS.md", 300),
         ("build.spec", None),
         ("a.json", None),
     ],
@@ -29,27 +29,27 @@ def test_limit_for_returns_the_limit_of_python_and_markdown_files_only(name, lim
 
 def test_cap_problems_accepts_files_at_their_limit(monkeypatch):
     monkeypatch.setattr(linecap, "EXCEPTIONS", frozenset())
-    assert linecap.cap_problems({"a.py": 300, "b.md": 250, "c.txt": 5000}) == []
+    assert linecap.cap_problems({"a.py": 300, "b.md": 300, "c.txt": 5000}) == []
 
 
 def test_cap_problems_reports_a_file_one_line_over_its_limit(monkeypatch):
     monkeypatch.setattr(linecap, "EXCEPTIONS", frozenset())
-    assert linecap.cap_problems({"a.py": 301, "docs/b.md": 251}) == [
+    assert linecap.cap_problems({"a.py": 301, "docs/b.md": 301}) == [
         Problem("a.py", 301, "301 lines; the limit is 300, so split it"),
-        Problem("docs/b.md", 251, "251 lines; the limit is 250, so split it"),
+        Problem("docs/b.md", 301, "301 lines; the limit is 300, so split it"),
     ]
 
 
-def test_cap_problems_accepts_agents_md_at_300_lines(monkeypatch):
+def test_cap_problems_accepts_markdown_files_of_251_and_300_lines(monkeypatch):
     monkeypatch.setattr(linecap, "EXCEPTIONS", frozenset())
-    assert linecap.cap_problems({"AGENTS.md": 300}) == []
+    assert linecap.cap_problems({"AGENTS.md": 300, "README.md": 251, "docs/b.md": 300}) == []
 
 
-def test_cap_problems_reports_agents_md_at_301_lines_and_another_markdown_file_at_251(monkeypatch):
+def test_cap_problems_reports_agents_md_and_another_markdown_file_at_301_lines(monkeypatch):
     monkeypatch.setattr(linecap, "EXCEPTIONS", frozenset())
-    assert linecap.cap_problems({"AGENTS.md": 301, "README.md": 251}) == [
+    assert linecap.cap_problems({"AGENTS.md": 301, "README.md": 301}) == [
         Problem("AGENTS.md", 301, "301 lines; the limit is 300, so split it"),
-        Problem("README.md", 251, "251 lines; the limit is 250, so split it"),
+        Problem("README.md", 301, "301 lines; the limit is 300, so split it"),
     ]
 
 
@@ -71,16 +71,20 @@ def test_check_measures_python_and_markdown_files_and_reports_the_long_one(tmp_p
     root = make_repo(tmp_path, {
         "short.py": lines(300),
         "pkg/long.py": lines(301),
-        "README.md": "line\n" * 250,
+        "README.md": "line\n" * 300,
         "data.json": "{}\n" * 900,
     })
     assert linecap.check(root) == (3, [Problem("pkg/long.py", 301, "301 lines; the limit is 300, so split it")])
 
 
-def test_check_measures_agents_md_against_300_lines_and_other_markdown_against_250(tmp_path, monkeypatch):
+def test_check_measures_every_markdown_file_against_300_lines(tmp_path, monkeypatch):
     monkeypatch.setattr(linecap, "EXCEPTIONS", frozenset())
-    root = make_repo(tmp_path, {"AGENTS.md": "line\n" * 300, "docs/AGENTS.md": "line\n" * 251})
-    assert linecap.check(root) == (2, [Problem("docs/AGENTS.md", 251, "251 lines; the limit is 250, so split it")])
+    root = make_repo(tmp_path, {
+        "AGENTS.md": "line\n" * 300,
+        "docs/a.md": "line\n" * 251,
+        "docs/AGENTS.md": "line\n" * 301,
+    })
+    assert linecap.check(root) == (3, [Problem("docs/AGENTS.md", 301, "301 lines; the limit is 300, so split it")])
 
 
 def test_check_counts_a_last_line_without_a_newline(tmp_path, monkeypatch):
@@ -105,10 +109,10 @@ def test_check_reports_an_exception_whose_module_is_now_short(tmp_path, monkeypa
 
 def test_main_prints_each_problem_and_a_summary_and_returns_1(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(linecap, "EXCEPTIONS", frozenset())
-    root = make_repo(tmp_path, {"docs/long.md": "x\n" * 260})
+    root = make_repo(tmp_path, {"docs/long.md": "x\n" * 310})
     assert linecap.main(["--root", str(root)]) == 1
     assert capsys.readouterr().out == (
-        "docs/long.md:260: 260 lines; the limit is 250, so split it\nlinecap: 1 files, 1 problems\n"
+        "docs/long.md:310: 310 lines; the limit is 300, so split it\nlinecap: 1 files, 1 problems\n"
     )
 
 

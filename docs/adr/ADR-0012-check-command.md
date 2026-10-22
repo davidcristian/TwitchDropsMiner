@@ -31,9 +31,9 @@ lint rules without its formatter or pyright.
    - `langcheck.py`: every `lang/*.json` file is a JSON object, and no string in it has a `str.format` field
      that the English string at the same keys lacks. It reads `default_translation` from `translate.py` with
      `ast`, so that it needs only the standard library, as the other scans do.
-   - `linecap.py`: at most 300 lines per Python file and in AGENTS.md, and 250 per other markdown file. The eight
-     inherited modules over 300 are named in `EXCEPTIONS`, and an entry fails once its module is under the limit,
-     so the list only shrinks as [task 005](../refinements/tasks/005-modules-over-the-line-cap.md) splits them.
+   - `linecap.py`: at most 300 lines per Python or markdown file. The eight inherited modules over 300 are named
+     in `EXCEPTIONS`, and an entry fails once its module is under the limit, so the list only shrinks as
+     [task 005](../refinements/tasks/005-modules-over-the-line-cap.md) splits them.
    - `dashcheck.py`: no em dash, en dash or other Unicode dash in any text file, and no spaced `--` in prose:
      markdown outside code, Python comments and docstrings, and `.txt` files. In a shell script or a recipe,
      `--` ends the options. `DASHES` in `sources.py` lists the Unicode dashes for this scan and `commitlint.py`.

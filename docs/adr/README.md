@@ -6,7 +6,7 @@ and contains nothing that is no longer true.
 
 ## The rules
 
-- **One decision per record, at most 250 lines.** A record that needs more is two decisions, or it contains
+- **One decision per record, at most 300 lines.** A record that needs more is two decisions, or it contains
   history that belongs in git.
 - **Edited in place.** When the decision changes, the record is rewritten to state the new decision, and its
   `**Status:**` date moves. Git keeps every earlier version, so nothing is appended: a record never ends with a

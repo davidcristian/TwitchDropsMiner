@@ -24,7 +24,7 @@ check-lang:
 check-ruff:
     {{python}} -m ruff check
 
-# At most 300 lines per Python file and AGENTS.md, and 250 per other markdown file, except the modules linecap.py names.
+# At most 300 lines per Python or markdown file, except the modules linecap.py names.
 check-linecap:
     {{python}} scripts/linecap.py
 
