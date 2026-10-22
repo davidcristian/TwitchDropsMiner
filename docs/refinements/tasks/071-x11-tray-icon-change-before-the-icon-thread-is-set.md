@@ -1,6 +1,6 @@
 # A change to the X11 tray icon fails when it comes before pystray sets the icon thread
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** traybackend, gui
 **Origin:** Found on 2026-10-22 while the X11 tray icon was started and stopped many thousands of times from
 source under Xvfb, with a thread of pure Python work and a thread switch interval of 0.1 milliseconds
@@ -29,3 +29,7 @@ then waits in the queue of the icon window's events until the icon thread reads 
 
 - 2026-10-22: Opened. Found while the fix that closed
   [task 070](070-x11-tray-icon-setup-thread-waits-in-flush.md) was checked with repeated starts.
+- 2026-10-22: Closed. The subclass that `icon_class` returns treats a missing `_thread` as another thread, so a
+  change that comes first waits in the queue of the icon window's events until the icon thread reads it
+  ([traybackend.md](../../modules/traybackend.md)). The test of that case in
+  `tests/test_traybackend_xorg_start.py` failed with `AttributeError` before the change and passes after it.

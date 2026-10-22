@@ -93,9 +93,6 @@ def test_an_error_of_a_change_in_the_icon_thread_is_raised_in_the_thread_that_ma
     assert errors == [icon.error]
 
 
-@pytest.mark.xfail(
-    strict=True, reason="docs/refinements/tasks/071-x11-tray-icon-change-before-the-icon-thread-is-set.md"
-)
 def test_a_change_before_pystray_sets_the_icon_thread_waits_for_the_icon_thread():
     icon = icon_class(FakeXorgIcon)(dispatched=True)
     # pystray's _run marks the icon ready, which lets the setup thread go on, before it sets _thread

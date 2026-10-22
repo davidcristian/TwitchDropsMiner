@@ -105,8 +105,13 @@ def icon_class(base: type) -> type:
                 setattr(self, method.__name__, partial(self._dispatch, method, atom))
             self._message_handlers[CLIENT_MESSAGE] = lambda event: self._run_action(actions.get(event.client_type))
 
+        # pystray's _run lets the setup thread go on before it sets _thread, so a change can come before it
+        def _in_icon_thread(self) -> bool:
+            thread = getattr(self, "_thread", None)
+            return thread is not None and threading.current_thread().ident == thread.ident
+
         def _dispatch(self, method: abc.Callable[[], None], atom: int) -> None:
-            if threading.current_thread().ident == self._thread.ident:
+            if self._in_icon_thread():
                 method()
                 return
             self._send_message(self._window, atom)
@@ -127,7 +132,7 @@ def icon_class(base: type) -> type:
         # python-xlib 0.33 can leave a thread that waits for a reply waiting forever when another thread sends a
         # request on the same connection, so a message from another thread goes through a new connection.
         def _send_message(self, window: object, client_type: int, *data: int) -> None:
-            if threading.current_thread().ident == self._thread.ident:
+            if self._in_icon_thread():
                 super()._send_message(window, client_type, *data)
                 return
             # pystray's _send_message reads only the _display of the icon that it is given

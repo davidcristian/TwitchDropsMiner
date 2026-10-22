@@ -82,11 +82,13 @@ at exit, and the app sends a few such messages a minute at most.
   - `_rewrite_implementation(*methods)` replaces pystray's, which pystray's `__init__` calls with `_show`,
     `_hide`, `_update_icon`, `_update_title` and `_stop`. For each method it sets an attribute of the same name.
     In the icon thread, that attribute calls the method. In another thread, it sends the icon window a client
-    message with `_send_message`, of an atom named after the method, such as `_PYSTRAY__SHOW` for `_show`. It
-    then waits until the icon thread has run the method, and raises the `Exception` that the method raised. The
-    handler of client messages that it sets runs the method of such an atom and ignores any other message. It
-    does not flush the icon's connection from the calling thread, as pystray's does: the new connection sends the
-    message, and the icon thread sends its own requests when it reads its next event.
+    message with `_send_message`, of an atom named after the method, such as `_PYSTRAY__SHOW` for `_show`. It then
+    waits until the icon thread has run the method, and raises the `Exception` that the method raised. pystray's
+    `_run` sets `_thread` only after it lets the setup thread go on, so until then every thread counts as another
+    thread, and its message waits until the icon thread reads it. The handler of client messages that it sets runs
+    the method of such an atom and ignores any other message. It does not flush the icon's connection from the
+    calling thread, as pystray's does: the new connection sends the message, and the icon thread sends its own
+    requests when it reads its next event.
   - `_send_message` calls pystray's in the icon thread. In another thread, it opens a new connection of the
     class of `_display`, sends the message on it with pystray's `_send_message`, then calls `sync`, without which
     Xvfb dropped the message, and closes it.
