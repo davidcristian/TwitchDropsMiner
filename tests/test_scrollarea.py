@@ -81,11 +81,13 @@ def test_a_fitted_area_in_a_smaller_window_shows_the_bars_it_needs_and_scrolls_t
     area = fitted_area(root, window)
     canvas = area.canvas
     view = Size(canvas.winfo_width(), canvas.winfo_height())
+    # the theme sets the size of a bar, such as 15 pixels on X11 and 17 on Windows
+    shown = Size(area._yscroll.winfo_width() * bars[1], area._xscroll.winfo_height() * bars[0])
     canvas.xview_moveto(1)
     canvas.yview_moveto(1)
 
     assert shown_bars(area) == bars
-    assert view == (window.width - BARS.width * bars[1], window.height - BARS.height * bars[0])
+    assert view == (window.width - shown.width, window.height - shown.height)
     assert (canvas.canvasx(view.width), canvas.canvasy(view.height)) == (
         max(CONTENT.width, view.width),
         max(CONTENT.height, view.height),
@@ -174,6 +176,8 @@ def test_a_resized_window_is_not_measured_again(root):
     root.geometry("700x400")
     root.update()
     root.minsize(1, 1)
+    # Tk on Windows and macOS reports at least the smallest size that the window manager allows
+    smallest = root.minsize()
     minimum.follow()
 
-    assert root.minsize() == (1, 1)
+    assert root.minsize() == smallest

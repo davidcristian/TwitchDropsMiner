@@ -99,5 +99,8 @@ None of this sends a Twitch request.
   branch coverage. On Windows a Tk failed to start with `Can't find a usable init.tcl`, because pytest's
   capture closed the standard handles that Tcl keeps. The tests now start Tcl without them
   ([ADR-0013](../../adr/ADR-0013-test-standard.md)). Under Wine 8.0.2 with the same Python, the failure
-  happened before that change and not after it. The title was "The Windows and macOS checks in CI have never
-  run and are not required". The task stays open until a Windows and a macOS run pass.
+  happened before that change and not after it. Two tests of `scrollarea.py` expected the sizes of Tk on X11:
+  Windows draws scroll bars 17 pixels wide in place of 15, and Tk on Windows and macOS reports a minimum
+  window size of at least 120 by 1 and 72 by 15 pixels. They now measure both. The title was "The Windows and
+  macOS checks in CI have never run and are not required". The task stays open until a Windows and a macOS
+  run pass.
