@@ -1,6 +1,6 @@
 # The thread of the X11 tray icon sometimes waits forever as the icon starts
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** traybackend, gui
 **Origin:** Found on 2026-10-22 while the window was minimized to the X11 tray icon and restored many times from
 source under Xvfb with the tray host stalonetray and the window manager openbox
@@ -34,3 +34,17 @@ of pystray. A test needs a way to reproduce the wait. None of this sends a Twitc
 
 - 2026-10-22: Opened. Found while the fix that closed
   [task 065](065-x11-tray-icon-left-on-screen-in-stalonetray.md) was checked with repeated minimizes.
+- 2026-10-22: Closed. The cause is in python-xlib 0.33: in `send_and_recv`, a thread that sends on a connection
+  while another thread reads it returns when data arrives, and does not wake a thread that started to wait for a
+  reply in the meantime. pystray's setup thread sends the show right after the dock request, while the icon thread
+  draws for the tray's first events, so the icon thread waited for the reply to `get_geometry` and no thread read
+  the connection. A copy of python-xlib that logs that return logged it from the setup thread in 15 of 30 runs; the
+  one blank icon of those runs came in the one run where a thread waited for a reply then. The subclass that
+  `icon_class` returns now sends a client message from another thread on a new connection
+  ([traybackend.md](../../modules/traybackend.md)). Counts from source under Xvfb with stalonetray and openbox, with
+  six minimizes and restores per run: the first icon stayed blank in 2 of 30 runs before and 0 of 30 after, and with
+  the logging copy in 1 of 30 before and 0 of 30 after, which logged no such return. The 360 minimizes of the runs
+  after the fix all showed the icon. A script that hides the icon, changes its image, shows it and changes its title
+  from another thread, as the app does, waited forever within 44 cycles in each of 6 runs before, with stalonetray
+  and trayer, and in none of 6 runs of 200 cycles after. Docking and showing the first icon in the icon thread would
+  have left that script's waits. No report of this wait was found among python-xlib's issues.

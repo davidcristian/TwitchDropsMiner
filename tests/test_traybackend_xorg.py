@@ -3,61 +3,11 @@ from __future__ import annotations
 import sys
 import threading
 import time
-from types import SimpleNamespace
 
 import pytest
 
-from traybackend import BUTTON_PRESS_MASK, XORG_MODULE, icon_class
-
-# ExposureMask and StructureNotifyMask, which pystray 0.19.5 selects on its xorg icon window
-XORG_EVENTS = (1 << 15) | (1 << 17)
-
-
-class FakeWindow:
-    def __init__(self) -> None:
-        self.mask = XORG_EVENTS
-        self.properties: list[tuple[str, str, int, list[int]]] = []
-
-    def get_attributes(self) -> SimpleNamespace:
-        return SimpleNamespace(your_event_mask=self.mask)
-
-    def change_attributes(self, *, event_mask: int) -> None:
-        self.mask = event_mask
-
-    def change_property(self, name: str, kind: str, size: int, data: list[int]) -> None:
-        self.properties.append((name, kind, size, data))
-
-
-class FakeDisplay:
-    def __init__(self) -> None:
-        self.flushes = 0
-
-    def flush(self) -> None:
-        self.flushes += 1
-
-
-class FakeXorgIcon:
-    _XEMBED_VERSION = 0
-    _XEMBED_MAPPED = 1
-
-    def __init__(self, systray_manager: str | None = None) -> None:
-        self._xembed_info = "_XEMBED_INFO"
-        self._display = FakeDisplay()
-        self._systray_manager = systray_manager
-        self.calls: list[str] = []
-        self._window = self._create_window()
-
-    def _create_window(self) -> FakeWindow:
-        return FakeWindow()
-
-    def _show(self) -> None:
-        self.calls.append("dock")
-
-    def _hide(self) -> None:
-        self.calls.append("undock")
-
-
-FakeXorgIcon.__module__ = XORG_MODULE
+from traybackend import BUTTON_PRESS_MASK, icon_class
+from xorgicon import XORG_EVENTS, FakeXorgIcon, next_event
 
 
 def test_the_xorg_icon_window_selects_button_press_and_keeps_the_events_pystray_selects():
@@ -85,16 +35,6 @@ def test_showing_the_xorg_icon_sets_its_xembed_mapped_flag_and_docks_it_only_whe
     icon._show()
     assert icon._window.properties == [("_XEMBED_INFO", "_XEMBED_INFO", 32, [0, 1])]
     assert (icon._display.flushes, icon.calls) == (1, calls)
-
-
-def next_event(connection, kind: int):
-    deadline = time.monotonic() + 10
-    while time.monotonic() < deadline:
-        while connection.pending_events():
-            if (event := connection.next_event()).type == kind:
-                return event
-        time.sleep(0.01)
-    pytest.fail(f"no X event of type {kind} within 10 seconds")
 
 
 def test_a_left_click_on_the_docked_xorg_icon_runs_the_default_menu_item_and_a_right_click_nothing(display):

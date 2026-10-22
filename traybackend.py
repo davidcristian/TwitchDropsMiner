@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import logging
+import threading
 import traceback
 from collections import abc
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 from typing import Protocol
 
 
@@ -64,6 +65,21 @@ def icon_class(base: type) -> type:
         return base
 
     class XorgIcon(base):
+        # python-xlib 0.33 can leave a thread that waits for a reply waiting forever when another thread sends a
+        # request on the same connection, so a message from another thread goes through a new connection.
+        def _send_message(self, window: object, client_type: int, *data: int) -> None:
+            if threading.current_thread().ident == self._thread.ident:
+                super()._send_message(window, client_type, *data)
+                return
+            # pystray's _send_message reads only the _display of the icon that it is given
+            connection = type(self._display)()
+            try:
+                base._send_message(SimpleNamespace(_display=connection), window, client_type, *data)
+                # Xvfb dropped the message when the connection closed right after it
+                connection.sync()
+            finally:
+                connection.close()
+
         # pystray's xorg icon runs its default menu item on a left click, but creates its window without
         # ButtonPressMask, so the X server does not send the click to pystray.
         def _create_window(self) -> IconWindow:
