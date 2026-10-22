@@ -201,6 +201,10 @@ folder holds only the files of the image, since `cookies.jar` and `settings.json
 file. To update a download, change its URL and hash together, with the hash checked against a signature or a
 published checksum, and move to a newer dated runtime release when type2-runtime publishes one.
 
+Neither `20251108` nor `continuous`, as of 2026-10-22, passes a signal on to the app in the extract mode: the
+runtime starts the app as its child and only waits for it. So `parentexit.py` has the kernel send the app
+SIGTERM when the runtime ends ([parentexit.md](modules/parentexit.md)).
+
 ## Exact versions
 
 `constraints.txt` sets the exact version of every package that a build installs from PyPI, with the packages

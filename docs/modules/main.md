@@ -13,26 +13,29 @@ from it for type checking only.
 2. The version check, which raises `RuntimeError("Python 3.10 or higher is required")` on an older Python. The
    `__main__` block imports only `sys` before it, because `truststore` and `utils.py`, which imports
    `typing.ParamSpec`, need 3.10.
-3. `truststore.inject_into_ssl()`, so that TLS connections check certificates against the operating system's
+3. `end_with_runtime` ([parentexit.md](parentexit.md)). When an AppImage without FUSE started the app as a child
+   of its runtime, the kernel sends the app SIGTERM when the runtime ends. It runs before the slower imports,
+   because the app does not notice a runtime that ends before this call.
+4. `truststore.inject_into_ssl()`, so that TLS connections check certificates against the operating system's
    certificate store. It runs before `twitch` imports `aiohttp`, because `aiohttp/connector.py` creates its
    default SSL context when it is imported.
-4. The imports, then, in a run from source, `save_template()`, which rewrites `lang/English.json`
+5. The imports, then, in a run from source, `save_template()`, which rewrites `lang/English.json`
    ([translate.md](translate.md#why-langenglishjson-is-rewritten-on-every-run-from-source)).
-5. `warnings.simplefilter("default", ResourceWarning)`, which shows the `ResourceWarning` for an unclosed
+6. `warnings.simplefilter("default", ResourceWarning)`, which shows the `ResourceWarning` for an unclosed
    resource, hidden by default, once per code location.
-6. On Linux, when `XMODIFIERS` is not set, it is set to `@im=none`. This turns off the X input method, which the
+7. On Linux, when `XMODIFIERS` is not set, it is set to `@im=none`. This turns off the X input method, which the
    code comment names as the cause of XWayland and Mutter lockups during large Tk layout updates.
-7. A hidden `tk.Tk` root with the app icon, as the parent of the message boxes in steps 8, 9 and 11.
-8. `Parser.parse_args` into a `ParsedArgs` namespace.
-9. `Settings(args)` ([settings.md](settings.md)). Any exception shows the "Settings error" message box with the
-   traceback and exits with code 4.
-10. `_.set_language(settings.language)`, so the window and the message box of step 11 use the chosen language.
+8. A hidden `tk.Tk` root with the app icon, as the parent of the message boxes in steps 9, 10 and 12.
+9. `Parser.parse_args` into a `ParsedArgs` namespace.
+10. `Settings(args)` ([settings.md](settings.md)). Any exception shows the "Settings error" message box with the
+    traceback and exits with code 4.
+11. `_.set_language(settings.language)`, so the window and the message box of step 12 use the chosen language.
     A `ValueError` for an unknown language keeps English.
-11. `lock_file(LOCK_PATH)` takes the lock on `lock.file` in the app's folder ([instancelock.md](instancelock.md)).
+12. `lock_file(LOCK_PATH)` takes the lock on `lock.file` in the app's folder ([instancelock.md](instancelock.md)).
     When the file cannot be opened or written, for example in a read only folder, the "Cannot start" message box
     shows the error and the app exits with code 5. When another process holds the lock, the app exits with code
     3 and shows nothing. The hidden root is then destroyed.
-12. `asyncio.run(main())` in a `with` block on the lock file, which closes the file after the run.
+13. `asyncio.run(main())` in a `with` block on the lock file, which closes the file after the run.
 
 ## Public contract
 
@@ -81,6 +84,8 @@ message box titled "Argument Parser Error" when argparse exits, also for `--help
 ## The run and the exit
 
 1. `Twitch(settings)` creates the client and its window. On Linux, SIGINT and SIGTERM call `client.gui.close()`.
+   In an AppImage without FUSE, the end of the runtime sends that SIGTERM
+   ([Startup order](#startup-order), step 3).
 2. `await client.run()`. `Twitch.run` starts the client again after a `ReloadRequest` and returns after an
    `ExitRequest`. While the "Restart after a crash after" setting is not "Never", it also starts again after any
    other exception ([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)). An exception reaches `main()`
@@ -89,7 +94,11 @@ message box titled "Argument Parser Error" when argparse exits, also for `--help
    ([task 013](../refinements/tasks/013-crashed-task-ends-the-app.md)).
 3. An exception sets the exit code to 1, prints "Fatal error encountered:" and the traceback, and calls
    `client.prevent_close()`, so the window stays open.
-4. In `finally`, the signal handlers are removed, "Exiting..." is printed and `client.shutdown()` runs.
+4. In `finally`, the SIGINT handler is removed, "Exiting..." is printed and `client.shutdown()` runs. The
+   SIGTERM handler stays until `asyncio.run` closes the loop, so a SIGTERM during the shutdown, or while the
+   window shows a fatal error, also closes the window and the files are saved. A SIGTERM that `timeout` sends
+   to its process group, or systemd to every process of a service, reaches an AppImage without FUSE twice: once
+   directly and once from the kernel at the end of the runtime.
 5. When the user did not close the window, the tray icon changes to `error`, the Output box shows "Application
    Terminated. Close the window to exit the application.", the status shows "Terminated", and
    `grab_attention(sound=True)` shows the window and rings the bell.
@@ -120,8 +129,9 @@ box.
 
 - The version check stays before every import that needs Python 3.10, so that an older Python shows its
   message ([Startup order](#startup-order), step 2).
+- `end_with_runtime` stays before the slower imports, for the reason in [Startup order](#startup-order), step 3.
 - `truststore.inject_into_ssl()` stays before the first import of `aiohttp`, for the reason in
-  [Startup order](#startup-order), step 3.
+  [Startup order](#startup-order), step 4.
 - `freeze_support()` stays the first call in the `__main__` block, where the `multiprocessing` documentation
   requires it for a frozen executable.
 - Everything except `log_file_handler` and the imports of standard library modules stays under
@@ -135,6 +145,6 @@ box.
 - A flag with the name of a `SettingsFile` key hides that key, because `Settings` reads `ParsedArgs` attributes
   before the settings file ([settings.md](settings.md)).
 
-**Dependencies.** Repo modules: `translate`, `twitch`, `settings`, `version`, `exceptions`, `instancelock`, `utils`,
-`constants`. Third-party: `truststore`. Standard library: `argparse`, `asyncio`, `logging`, `pathlib`, `signal`,
+**Dependencies.** Repo modules: `translate`, `twitch`, `settings`, `version`, `exceptions`, `instancelock`,
+`parentexit`, `utils`, `constants`. Third-party: `truststore`. Standard library: `argparse`, `asyncio`, `logging`, `pathlib`, `signal`,
 `tkinter`.

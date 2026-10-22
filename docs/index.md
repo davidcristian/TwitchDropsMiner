@@ -77,6 +77,7 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [savefiles.md](modules/savefiles.md) | `save_each`: the saves during a run, where a failed save is logged and the run goes on. `replace_file`: a write through a second file that keeps the old file when it fails. `UnsavedChanges`: whether a file has a change to write |
 | [ratelimit.md](modules/ratelimit.md) | `RateLimiter`: at most 5 GQL requests start in any second and at most 5 are open |
 | [instancelock.md](modules/instancelock.md) | `lock_file`: the lock on `lock.file`, and the result for a file it cannot open or write |
+| [parentexit.md](modules/parentexit.md) | `end_with_runtime`: the SIGTERM at the end of the AppImage runtime without FUSE, and how the app finds that runtime |
 | [mousewheel.md](modules/mousewheel.md) | `wheel_events` and `wheel_scroll`: the wheel events of each windowing system and their direction |
 | [scrollarea.md](modules/scrollarea.md) | `ScrollArea`: the scrolling canvas of the Inventory and Settings tabs, its scroll bars and wheel, the window size at start and the minimum window size |
 | [folderpicker.md](modules/folderpicker.md) | `FolderPicker` and `ChildDialog`: the folder dialog in a child process, which the app polls for the answer |

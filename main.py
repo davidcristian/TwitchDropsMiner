@@ -32,6 +32,9 @@ if __name__ == "__main__":
     from tkinter import messagebox
     from typing import NoReturn, TYPE_CHECKING
 
+    from parentexit import LinuxProcess, end_with_runtime
+    end_with_runtime(sys.platform, os.environ, LinuxProcess())
+
     import truststore
     truststore.inject_into_ssl()
 
@@ -190,8 +193,9 @@ if __name__ == "__main__":
             client.print(traceback.format_exc())
         finally:
             if sys.platform == "linux":
+                # SIGTERM stays handled until the loop closes, so a second one, such as the one parentexit.py has
+                # the kernel send, cannot end the app before it saves its files
                 loop.remove_signal_handler(signal.SIGINT)
-                loop.remove_signal_handler(signal.SIGTERM)
             client.print(_("gui", "status", "exiting"))
             await client.shutdown()
         if not client.gui.close_requested:

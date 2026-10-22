@@ -256,7 +256,8 @@ start_appimage() {
       timeout 60 "./Twitch Drops Miner/Twitch.Drops.Miner-$0.AppImage" "$@" > app.log 2>&1 &
       sleep 20
       python3 -c "from PIL import ImageGrab; ImageGrab.grab(xdisplay=\"$DISPLAY\").save(\"shot.png\")"
-      wait $!; echo "exit=$?"' "$1" "${@:3}"
+      wait $!; echo "exit=$?"
+      while pgrep -x python3 > /dev/null; do sleep 1; done' "$1" "${@:3}"
 }
 start_appimage x86_64 amd64
 start_appimage aarch64 arm64
@@ -264,8 +265,9 @@ start_appimage aarch64 arm64
 
 - The container has no FUSE device, so `APPIMAGE_EXTRACT_AND_RUN=1` makes the AppImage extract its files into
   `/tmp` and start from there. A flag after the platform goes to the app, as for `start_build`.
-- In this mode, `timeout` ends only the AppImage runtime, and the app ends with the container
-  ([task 062](../refinements/tasks/062-appimage-without-fuse-ignores-sigterm.md)).
+- In this mode, the app runs as a child of the AppImage runtime. `timeout` sends SIGTERM to both, because they
+  are in its process group, and the `pgrep` loop waits until the app has saved its files and ended. A SIGTERM
+  to the runtime alone reaches the app too, except under QEMU ([parentexit.md](../modules/parentexit.md)).
 - Docker's QEMU entry for arm64 runs only an ELF file with zeros in bytes 8 to 15 of its header. An AppImage
   has its magic bytes `AI` and 2 at bytes 8 to 10, so `dd` sets them to zero in the copy. Without that, `sh`
   reads the file as a script and prints `Syntax error: "(" unexpected`. The `x86_64` AppImage starts unchanged.
@@ -280,7 +282,8 @@ start_appimage aarch64 arm64
 - With `--version`, the screenshot shows a dialog with the version and the short commit hash, such as
   `v16.dev.61d04a9`. The dialog has the error icon
   ([task 025](../refinements/tasks/025-version-and-help-shown-as-error.md)).
-- The AppImage writes `cookies.jar`, `lock.file` and `cache/` next to the `.AppImage` file.
+- After a start without a flag, each build has written `cookies.jar`, `settings.json`, `lock.file` and `cache/`
+  next to its executable or `.AppImage` file.
 
 To clean up, remove the images, the volume and the folder:
 

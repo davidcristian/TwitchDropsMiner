@@ -59,6 +59,7 @@ burst of requests puts that account at risk.
 | `settingsdata.py` | `drop_non_text_items`, which removes the items that are not strings from the list and set settings at load |
 | `ratelimit.py` | `RateLimiter`, which limits how many GQL requests start in any second and how many are open at once |
 | `instancelock.py` | `lock_file`, the lock on `lock.file` that lets one copy of the app run per folder |
+| `parentexit.py` | `end_with_runtime`, which has the kernel send the app SIGTERM when the AppImage runtime that started it without FUSE ends |
 | `mousewheel.py` | `wheel_events` and `wheel_scroll`, which read a mouse wheel turn on each windowing system |
 | `scrollarea.py` | `ScrollArea`, the canvas with scroll bars of the Inventory and Settings tabs, and the window size calculations |
 | `folderpicker.py` | `FolderPicker`, which shows the game folder dialog in a child process, so the miner keeps running while it is open |

@@ -62,6 +62,11 @@ From source, the same command is `env/bin/python main.py -vvv --log`.
   with an unknown name and resets a value of the wrong type to its default. It removes an entry that is not text,
   such as a number, from the Priority, Exclude and game folder lists, and prints a warning for each to the
   terminal it was started from.
+- **The AppImage prints "Cannot mount AppImage, please check your FUSE setup."** The system or container lacks
+  FUSE, with which an AppImage mounts its files. Start it with `--appimage-extract-and-run`, or with
+  `APPIMAGE_EXTRACT_AND_RUN=1` set: it then extracts its files into a temporary folder and starts the app. A
+  SIGTERM to the process you started still closes the app and saves its files
+  ([parentexit.md](modules/parentexit.md)).
 - **An "Argument Parser Error" dialog.** The app was started with a flag it does not know. Check the shortcut or
   the command against the table above. After `--version`, this dialog shows the version and is not an error
   ([task 025](refinements/tasks/025-version-and-help-shown-as-error.md)).
