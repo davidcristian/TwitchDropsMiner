@@ -76,8 +76,11 @@ if sys.platform == "linux":
     for libraries_path in candidate_library_paths:
         if (libraries_path / "libayatana-appindicator3.so.1").exists():
             break
-    datas.append(
-        (libraries_path / "girepository-1.0/AyatanaAppIndicator3-0.1.typelib", "gi_typelibs")
+    # pystray calls gi.require_version("DBus", "1.0") but imports nothing from it, so PyInstaller's gi hooks
+    # leave that typelib out, and the app stops at start on a system without it.
+    datas.extend(
+        (libraries_path / "girepository-1.0" / typelib, "gi_typelibs")
+        for typelib in ("AyatanaAppIndicator3-0.1.typelib", "DBus-1.0.typelib")
     )
     binaries.append((libraries_path / "libayatana-appindicator3.so.1", "."))
 

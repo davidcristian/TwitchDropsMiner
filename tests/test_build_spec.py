@@ -76,3 +76,13 @@ def test_the_build_adds_no_setuptools_module(spec_dir, monkeypatch):
 
     assert "PIL._tkinter_finder" in hidden
     assert [name for name in hidden if name.split(".")[0] in ("setuptools", "distutils")] == []
+
+
+def test_the_linux_build_bundles_each_typelib_that_the_tray_icon_requires(spec_dir, monkeypatch):
+    add_translations(spec_dir, "Polski")
+    monkeypatch.setattr(sys, "platform", "linux")
+
+    typelibs = [path for path, dest in run_spec(spec_dir, monkeypatch)["datas"] if dest == "gi_typelibs"]
+
+    assert sorted(path.name for path in typelibs) == ["AyatanaAppIndicator3-0.1.typelib", "DBus-1.0.typelib"]
+    assert len({path.parent for path in typelibs}) == 1

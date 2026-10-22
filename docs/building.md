@@ -138,9 +138,12 @@ These settings at the top of `build.spec` change the build:
 | `one_dir` | Builds a folder of files instead of a single executable. |
 | `optimize` | `1` removes `assert` statements, `2` also removes docstrings. |
 
-On Linux, `build.spec` bundles `libayatana-appindicator3.so.1` and the `AyatanaAppIndicator3-0.1` typelib from
-the first of `/usr/lib/<arch>-linux-gnu`, `/usr/lib64` and `/usr/lib` that has the library, so install the tray
-packages above before you build. CI also builds libXft 2.3.9 from source, after it checks the archive against
+On Linux, `build.spec` bundles `libayatana-appindicator3.so.1` and the `AyatanaAppIndicator3-0.1` and `DBus-1.0`
+typelibs from the first of `/usr/lib/<arch>-linux-gnu`, `/usr/lib64` and `/usr/lib` that has the library, so
+install the tray packages above before you build. pystray requires the `DBus-1.0` typelib but imports nothing
+from it, so PyInstaller does not add it by itself. Without it, the built app stops at start with
+`ValueError: Namespace DBus not available` on a system that lacks the typelib, such as Ubuntu 22.04 without
+`gir1.2-freedesktop`. CI also builds libXft 2.3.9 from source, after it checks the archive against
 the SHA-256 in [Build the AppImage](#build-the-appimage), and runs PyInstaller under `xvfb-run`; the
 `linux-pyinstaller` job in `ci.yml` shows both steps.
 
