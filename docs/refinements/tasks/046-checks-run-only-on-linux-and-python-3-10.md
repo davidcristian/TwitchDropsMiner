@@ -101,6 +101,8 @@ None of this sends a Twitch request.
   ([ADR-0013](../../adr/ADR-0013-test-standard.md)). Under Wine 8.0.2 with the same Python, the failure
   happened before that change and not after it. Two tests of `scrollarea.py` expected the sizes of Tk on X11:
   Windows draws scroll bars 17 pixels wide in place of 15, and Tk on Windows and macOS reports a minimum
-  window size of at least 120 by 1 and 72 by 15 pixels. They now measure both. The title was "The Windows and
-  macOS checks in CI have never run and are not required". The task stays open until a Windows and a macOS
-  run pass.
+  window size of at least 120 by 1 and 72 by 15 pixels. They now measure both. On macOS the window opened 20
+  pixels smaller than `wm maxsize` on each axis, for a reason not yet known
+  ([task 072](072-macos-window-smaller-than-wm-maxsize.md)), so its test is a strict `xfail` test there. The
+  title was "The Windows and macOS checks in CI have never run and are not required". The task stays open until
+  a Windows and a macOS run pass.

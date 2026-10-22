@@ -178,7 +178,8 @@ After `apply_theme`, `GUIManager.__init__` calls `_fit_to_screen`. When the wind
 frame), the window opens at `fitted_size` of the two and the Settings tab scrolls. Otherwise the window keeps
 following its requested size, so a large screen shows it as before. On a screen 1366 by 768 pixels the preview
 window is 1351 pixels wide. On a screen 1280 by 720 pixels it is 1265 by 690 in both themes, and the Output box
-has room for 9 lines in light mode and 7 in dark mode.
+has room for 9 lines in light mode and 7 in dark mode. On macOS in CI the window opened 20 pixels smaller than
+`wm maxsize` on each axis ([task 072](../refinements/tasks/072-macos-window-smaller-than-wm-maxsize.md)).
 
 ## The preview
 

@@ -114,3 +114,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [069: The tray host tint2 shows the X11 tray icon while the window is open](tasks/069-tint2-shows-hidden-x11-tray-icon.md) | traybackend, gui |
 | [070: The setup thread of a new X11 tray icon sometimes waits forever in `flush`](tasks/070-x11-tray-icon-setup-thread-waits-in-flush.md) | traybackend, gui |
 | [071: A change to the X11 tray icon fails when it comes before pystray sets the icon thread](tasks/071-x11-tray-icon-change-before-the-icon-thread-is-set.md) | traybackend, gui |
+| [072: On macOS the window opens 20 pixels smaller than `wm maxsize`](tasks/072-macos-window-smaller-than-wm-maxsize.md) | gui |

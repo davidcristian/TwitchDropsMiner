@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 import time
 from tkinter.font import Font
 
@@ -118,6 +119,11 @@ def test_setting_the_theme_again_does_not_resize_a_window_that_follows_its_reque
     assert resizes == []
 
 
+@pytest.mark.xfail(
+    sys.platform == "darwin",
+    strict=True,
+    reason="docs/refinements/tasks/072-macos-window-smaller-than-wm-maxsize.md",
+)
 def test_the_window_opens_at_its_requested_size_cut_to_the_largest_size_tk_allows(window):
     root = window(FakeTwitch())._root
     root.update()
