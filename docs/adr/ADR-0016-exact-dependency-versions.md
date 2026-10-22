@@ -23,10 +23,10 @@ use 3.10. [Task 048](../refinements/tasks/048-builds-install-the-newest-dependen
    of `requirements.txt` and PyInstaller with the packages they depend on, pip and wheel, the packages that pip
    needs to build PyGObject and pycairo from source on Linux (meson-python, meson, ninja, patchelf and theirs),
    the tools that the AppImage job installs before appimage-builder, and the packages that appimage-builder
-   needs, as the requirements of its release 1.1.0 on PyPI name them. It covers every build: Python 3.14 on
-   Windows `x86_64`, macOS `arm64` and Linux `x86_64` and `aarch64`, and Python 3.10 on Linux for the AppImage.
-   A package that only some builds install has one line, which the others ignore. `requirements.txt` keeps its
-   ranges for a person who installs it into an environment of their own.
+   needs, as `setup.py` at the commit that the AppImage job installs names them. It covers every build:
+   Python 3.14 on Windows `x86_64`, macOS `arm64` and Linux `x86_64` and `aarch64`, and Python 3.10 on Linux
+   for the AppImage. A package that only some builds install has one line, which the others ignore.
+   `requirements.txt` keeps its ranges for a person who installs it into an environment of their own.
 2. **Every `pip install` of a build passes `-c constraints.txt`**, in the build jobs of `ci.yml`, the AppImage
    recipe, `setup_env.sh`, `setup_env.bat`, `build.sh` and `build.bat`. Each one that installs
    `requirements.txt`, PyInstaller or appimage-builder also passes `--build-constraint constraints.txt`. `-c`
@@ -66,10 +66,11 @@ use 3.10. [Task 048](../refinements/tasks/048-builds-install-the-newest-dependen
 - A package that drops Python 3.10, as Pillow 13 does, needs two lines with `python_version` markers before the
   3.14 builds can move to its new version.
 - The AppImage job installs appimage-builder from a git commit, and its lines in the file follow the
-  requirements of release 1.1.0 instead. Reading the commit needs GitHub, and a resolve for another platform
-  accepts only wheels, not a git commit. A requirement that the commit adds installs at its newest release. A
-  version limit at the commit that a line of the file breaks makes pip fail the install step of the job
-  ([task 056](../refinements/tasks/056-appimage-builder-dependencies-newest.md)).
+  `install_requires` of `setup.py` at that commit: the 12 requirements of release 1.1.0 on PyPI, and libconf and
+  pydpkg. pydpkg 1.9.5 requires PGPy13 0.6.1rc1, a pre-release, and a zstandard below 0.24, so the file sets
+  zstandard 0.23.0 rather than its newest release. A resolve for another platform accepts only wheels, so the
+  runbook builds a wheel of the commit first. `tests/test_constraints.py` checks that the commit in `ci.yml` is
+  the one whose requirements it lists.
 - No tool proposes a new version, and no check finds a package that a listed package depends on and the file
   lacks. Such a new dependency of a new version installs at its newest release until the runbook finds it
   ([task 057](../refinements/tasks/057-constraints-updates-by-hand.md)).
@@ -83,13 +84,13 @@ use 3.10. [Task 048](../refinements/tasks/048-builds-install-the-newest-dependen
   - on a CPython 3.10.20, the pip lines of the AppImage recipe and job installed the versions in the file;
   - with a copy of the file that set meson 1.12.0, `-c` alone gave the build environment of PyGObject meson
     1.12.1, the newest, and `--build-constraint` gave it 1.12.0.
-- On 2026-10-22, pip 26.2.1 on a CPython 3.10.20 ran the pip lines of the AppImage job, with appimage-builder
-  1.1.0 from PyPI in place of the commit. It installed 30 packages, each except appimage-builder at the version
-  in the file, and built jsonpath-rw, which has no wheel, from source. The runbook's resolve chose the same
-  versions for `x86_64` and `aarch64`.
-- Not checked: the installs on Windows and macOS, the pip 22.0.2 of Ubuntu 22.04, which the AppImage job and
-  recipe replace first, and the install of appimage-builder at its commit with the file. The CI run of the pull
-  request shows them.
+- On 2026-10-22, in fresh `ubuntu:22.04` containers for `amd64` and `arm64`, a user without root ran the four
+  pip commands of the AppImage job, with Ubuntu's Python 3.10.12 and pip 22.0.2, as the job does on GitHub. pip
+  installed appimage-builder from the commit and 38 packages, each at the version in the file. It built
+  appimage-builder and jsonpath-rw from source, in build environments whose 6 packages were also at those
+  versions. The runbook's resolve chose the same versions for `x86_64` and `aarch64`.
+- Not checked: the installs on Windows and macOS, and the pip 22.0.2 of Ubuntu 22.04 in the AppImage recipe,
+  which replaces it first. The CI run of the pull request shows them.
 
 ## Alternatives rejected
 

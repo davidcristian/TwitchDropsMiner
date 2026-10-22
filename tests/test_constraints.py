@@ -13,10 +13,11 @@ INSTALLERS = (
     "build.sh",
     "build.bat",
 )
-# The requirements of appimage-builder 1.1.0 on PyPI. The AppImage job installs it from a later git commit.
+# The commit of appimage-builder that the AppImage job installs, and the requirements in its setup.py.
+APPIMAGE_BUILDER_COMMIT = "1a8794d3c89f288fbd82b9accd7c0b74611147d5"
 APPIMAGE_BUILDER_REQUIRES = (
     "PyYAML", "docker", "requests", "schema", "packaging", "questionary", "emrichen", "ruamel.yaml", "roam",
-    "urllib3", "lief", "python-gnupg",
+    "urllib3", "lief", "python-gnupg", "libconf", "pydpkg",
 )
 INSTALL = re.compile(r"""\bpip"?\s+install\s(.*)""")
 TOKEN = re.compile(r'"[^"]*"|\S+')
@@ -83,6 +84,14 @@ def test_every_package_that_a_build_names_has_a_line_in_constraints_txt():
 
     assert {"pip", "pyinstaller", "pygobject"} <= named | required
     assert sorted((named | required) - listed_packages()) == []
+
+
+def test_the_appimage_job_installs_the_commit_whose_requirements_are_listed():
+    arguments = [argument for _, command in install_commands() for argument in command]
+
+    assert [argument for argument in arguments if argument.startswith("git+")] == [
+        f"git+https://github.com/AppImageCrafters/appimage-builder.git@{APPIMAGE_BUILDER_COMMIT}"
+    ]
 
 
 def test_every_package_that_appimage_builder_requires_has_a_line_in_constraints_txt():

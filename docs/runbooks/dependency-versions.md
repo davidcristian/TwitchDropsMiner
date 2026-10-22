@@ -9,7 +9,8 @@ send no Twitch request. Run every command from the repository folder, on Linux, 
 
 - Once a month, and at once when a release fixes a security issue in a listed package.
 - In the pull request that changes `requirements.txt`, the app's lines in `requirements-dev.txt`,
-  `BUILD_PYTHON_VERSION` in `ci.yml` or the Ubuntu release of the Linux builds.
+  `BUILD_PYTHON_VERSION` in `ci.yml`, the Ubuntu release of the Linux builds or the commit of appimage-builder
+  that the AppImage job installs.
 
 A new version is the newest release that has been on PyPI for at least two weeks, as for the tools in
 `requirements-dev.txt` ([ADR-0012](../adr/ADR-0012-check-command.md)). A release that fixes a security issue
@@ -90,13 +91,15 @@ The PyInstaller builds run Python 3.14 on four platforms, and the AppImage and t
 3.10, so `resolve` runs the eight pairs. PyGObject has no wheel for Linux, so `resolve` leaves it out, and it
 asks for the packages of a build from source on Linux only, where the builds compile PyGObject and pycairo.
 The AppImage job installs appimage-builder from a git commit, which pip cannot resolve for another platform, so
-for Python 3.10 on Linux `resolve` asks for its release 1.1.0 on PyPI instead. One package it needs,
-jsonpath-rw, has no wheel on PyPI, so pip first builds one at the version in the file. Run this and define
-`resolve` in the same shell:
+pip first builds a wheel of that commit, and for Python 3.10 on Linux `resolve` asks for that wheel. The
+wheel has the requirements of `setup.py` at the commit. One package they need, jsonpath-rw, has no wheel on
+PyPI, so pip builds one at the version in the file too. Run this and define `resolve` in the same shell:
 
 ```bash
+rm -f "$TDM"/wheels/appimage_builder-*.whl
 "$TDM/venv/bin/python" -m pip wheel --no-deps --wheel-dir "$TDM/wheels" -c constraints.txt \
-  --build-constraint constraints.txt jsonpath-rw
+  --build-constraint constraints.txt jsonpath-rw \
+  "$(grep -o 'git+https://github.com/AppImageCrafters/[^ ]*' .github/workflows/ci.yml)"
 resolve() {
   rm -f "$TDM"/report-*.json
   grep -v PyGObject requirements.txt > "$TDM/requirements.txt"
@@ -104,7 +107,7 @@ resolve() {
     for tag in win_amd64 macosx_11_0_arm64 manylinux_2_35_x86_64 manylinux_2_35_aarch64; do
       linux=""
       case $tag in manylinux*) linux="meson-python ninja patchelf" ;; esac
-      case $tag-$python in manylinux*-3.10) linux="$linux appimage-builder==1.1.0 --find-links $TDM/wheels" ;; esac
+      case $tag-$python in manylinux*-3.10) linux="$linux $TDM/wheels/appimage_builder-*.whl --find-links $TDM/wheels" ;; esac
       "$TDM/venv/bin/python" "$TDM/target_pip.py" "$tag" "$python" "$TDM/report-$tag-$python.json" \
         -r "$TDM/requirements.txt" pip wheel pyinstaller setuptools setuptools_scm $linux "$@" \
         || echo "no resolution for $tag with Python $python"
@@ -145,6 +148,6 @@ Commit `constraints.txt` with the change that needed it, or alone for an update,
 `build: update aiohttp to 3.14.6`. The pull request runs the Validate job and every build with the new versions
 ([building.md](../building.md#release-builds)).
 
-The lines for the packages that appimage-builder needs follow the requirements of its release 1.1.0, which
-can differ from those at the commit that the AppImage job installs
-([task 056](../refinements/tasks/056-appimage-builder-dependencies-newest.md)).
+A pull request that moves the AppImage job to another commit of appimage-builder also sets that commit and the
+`install_requires` list of its `setup.py` in `APPIMAGE_BUILDER_COMMIT` and `APPIMAGE_BUILDER_REQUIRES` in
+`tests/test_constraints.py`. The test fails until the commit there and in `ci.yml` match.
