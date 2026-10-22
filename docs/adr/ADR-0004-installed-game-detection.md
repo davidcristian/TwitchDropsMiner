@@ -1,6 +1,6 @@
 # ADR-0004: Installed game detection
 
-**Status:** Accepted (2026-10-20)
+**Status:** Accepted (2026-10-23)
 
 ## Context
 
@@ -54,7 +54,9 @@ a game the user never chose. A missed match costs little, because the user can s
    - variant (`MatchKind.VARIANT`): equal after the roman numerals in `ROMAN_NUMERALS` become digits or the
      trailing `EDITION_WORDS` are removed, on either side. `ROMAN_NUMERALS` holds 2 to 39, the numbers written
      with `i`, `v` and `x` only, because `xl`, `dc` and `mix` are words in titles. `collection`, `remaster` and
-     `remastered` are not edition words;
+     `remastered` are not edition words. A local name that starts with a native title, as `原神 Genshin Impact`,
+     is also matched by its English title here and in the fuzzy step, within the limits in
+     [gamelib.md](../modules/gamelib.md#matching-rules);
    - fuzzy (`MatchKind.FUZZY`): a `difflib.SequenceMatcher` ratio of at least `FUZZY_THRESHOLD` (0.92), both
      normalized names at least `FUZZY_MIN_LENGTH` (8) characters long, the same numbers on both sides (each
      run of digits, also inside a word, and the roman numerals), and no second Twitch name also at or above
@@ -94,6 +96,8 @@ a game the user never chose. A missed match costs little, because the user can s
   and `legacy` stay edition words, so a name that ends in one of them alone still matches the name without
   it. Only `collection`, `remaster` and `remastered` are left out, so every other edition match still pairs.
   A wrong match shows with `≈`, and the Exclude list overrides it.
+- A native title that names another game than the English title after it, with no number, still pairs with
+  that English title. Twitch names are English, so without the English title such a name matches nothing.
 - The scan reads local files only and sends no request to Twitch. A changed result enters
   `State.GAMES_UPDATE`, not `State.INVENTORY_FETCH`, so a `Rescan` never causes a full reload
   ([ADR-0002](ADR-0002-twitch-traffic-budget.md)). It does fetch the channels again: one `GameDirectory`

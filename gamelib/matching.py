@@ -118,6 +118,24 @@ def _variants(normalized: str) -> set[str]:
     return variants
 
 
+def _is_native_word(word: str) -> bool:
+    """Whether a word of a normalized name has no letter a to z or digit and does not end with a numeral."""
+    # a native title such as 仙剑奇侠传七 ends with a sequel number that its English title can leave out
+    return not any(char.isascii() or char.isdigit() for char in word) and not word[-1].isnumeric()
+
+
+def _latin_title(normalized: str) -> str:
+    """The words after a leading native title, as "genshin impact" in "原神 genshin impact", or "" for no such form."""
+    tokens = normalized.split()
+    start = 0
+    while start < len(tokens) and _is_native_word(tokens[start]):
+        start += 1
+    latin = " ".join(tokens[start:])
+    if start == 0 or not latin.isascii() or len(latin) < FUZZY_MIN_LENGTH:
+        return ""
+    return latin
+
+
 def _numbers(normalized: str) -> list[str]:
     """The numbers in a name, in order: roman numeral words as digits, and every run of digits, even inside a word."""
     numerals = {**ROMAN_NUMERALS, **SINGLE_LETTER_NUMERALS}
@@ -183,7 +201,8 @@ def _match_one(
             return None  # ambiguous, so return no match instead of a guess
         return GameMatch(next(iter(candidates)), local, MatchKind.EXACT)
     # 2. match through an alternative form on either side
-    local_variants = _variants(local_normalized)
+    latin = _latin_title(local_normalized)
+    local_variants = _variants(local_normalized) | _variants(latin)
     variant_hits: set[str] = set()
     for variant in local_variants:
         variant_hits.update(variant_lookup.get(variant, ()))
@@ -208,6 +227,8 @@ def _match_one(
         if _numbers(normalized) != local_numbers:
             continue
         ratio = SequenceMatcher(None, local_normalized, normalized).ratio()
+        if latin and normalized.isascii():
+            ratio = max(ratio, SequenceMatcher(None, latin, normalized).ratio())
         if ratio > best_ratio:
             runner_up = best_ratio
             best_ratio, best_name = ratio, game_name

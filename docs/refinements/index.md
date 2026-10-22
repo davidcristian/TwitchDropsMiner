@@ -118,3 +118,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [073: A lower progress value takes minutes from the claimed drops of the campaign](tasks/073-lower-progress-value-for-claimed-drops.md) | inventory |
 | [074: A reload removes the selection in the channel list](tasks/074-reload-removes-the-channel-selection.md) | twitch, gui |
 | [075: A test run sometimes stays open after its last test](tasks/075-test-run-stays-open-after-the-last-test.md) | tests, repo checks |
+| [076: A name that ends with a lone letter such as Σ pairs with the name without it](tasks/076-lone-letter-at-the-end-pairs-as-fuzzy.md) | gamelib |

@@ -167,6 +167,26 @@ a candidate decides:
    game written once with its lone numeral and once without (`Mortal Kombat XL` and `Mortal Kombat X`) does not
    pair, which [ADR-0004](../adr/ADR-0004-installed-game-detection.md) accepts.
 
+A local name that starts with a native title and ends with an English one, such as `原神 Genshin Impact`, is
+also matched by its English title. The native title is the leading words that hold no letter `a` to `z` and no
+digit. The English title is the rest: it must be written in `a` to `z` and digits only, with at least
+`FUZZY_MIN_LENGTH` characters. Step 2 adds its variants to those of the whole name, so `原神 Genshin Impact`
+matches `Genshin Impact` as `VARIANT`. Step 3 also compares it with each Twitch name written in `a` to `z` and
+digits, so `雀魂麻將(MahjongSoul)` matches `Mahjong Soul` as `FUZZY`. Step 1 compares the whole name only. These
+limits keep two games apart:
+
+- Only a local name is read this way, because the app asks Twitch for English names. `仙剑奇侠传 Sword and Fairy`
+  does not match a Twitch name `轩辕剑 Sword and Fairy`.
+- A digit in the native title, or a numeral at the end of one of its words, can name a sequel that the English
+  title leaves out, so `三國志14 Romance of the Three Kingdoms` and `仙剑奇侠传七 Sword and Fairy` keep their whole name.
+  A numeral inside a word counts as a letter: `鬼谷八荒 Tale of Immortal` matches `Tale of Immortal`.
+- Words of another script after the English title keep the whole name: `Escape from Tarkov: Арена` does not
+  match `Escape from Tarkov`.
+
+A native title that names another game than its English title, with no number, still matches that title. A
+correct pair is missed when the sequel number is in both titles but the native title ends with it, as in
+`天命奇御二 Fate Seeker II`.
+
 A step that finds more than one Twitch name gives no match, and the next step is not tried. A fuzzy match is
 also dropped when a second Twitch name reaches the threshold. For example, a local `Halo Infinite` gets no match
 when the inventory has both `Halo Infinite` and `Halo: Infinite`. The GUI shows a match that is not `EXACT` with
