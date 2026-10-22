@@ -16,8 +16,9 @@ MODULE_DOCS = "docs/modules/"
 # Map entries that are not Python modules, and modules whose contract is in another module's doc, with that doc.
 NOT_MODULES = {"docs/"}
 DOCUMENTED_ELSEWHERE = {"version.py": "constants.md"}
-# The scripts that are not scans: the helpers, and commitlint.py, which the commit-msg hook runs.
-NOT_SCANS = {"bannedwords.py", "linerefs.py", "sources.py", "commitlint.py"}
+# The scripts that are not scans: the helpers, commitlint.py, which the commit-msg hook runs, and installcheck.py,
+# which the build jobs in CI run.
+NOT_SCANS = {"bannedwords.py", "linerefs.py", "sources.py", "commitlint.py", "installcheck.py"}
 _ROW = re.compile(r"\| `([^`]+)` \|")
 _SCRIPT = re.compile(r"scripts/(\w+\.py)")
 

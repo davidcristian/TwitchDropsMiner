@@ -32,3 +32,6 @@ None of this sends a Twitch request.
 ## History
 
 - 2026-10-22: Opened. Found while the update rule for `constraints.txt` was written.
+- 2026-10-22: Each build job runs `scripts/installcheck.py` after its installs, which fails on a package that
+  `constraints.txt` lacks or sets to another version. The AppImage job checks the user's site folder and the
+  AppDir, so the Debian packages of Ubuntu's Python stay out.

@@ -46,6 +46,11 @@ use 3.10. [Task 048](../refinements/tasks/048-builds-install-the-newest-dependen
    `requirements.txt`, the app's lines of `requirements-dev.txt`, `BUILD_PYTHON_VERSION` or the Ubuntu release
    of the Linux builds updates the file too. [runbooks/dependency-versions.md](../runbooks/dependency-versions.md)
    gives the commands.
+6. **Each build job checks what pip installed.** After the installs, `scripts/installcheck.py` fails on a
+   package that the file lacks or sets to another version. The PyInstaller jobs check every package that their
+   Python can import. The AppImage job checks the user's site folder, into which pip installs as a user without
+   root, and so leaves out the Debian packages of Ubuntu's Python; after the build it checks the app's packages
+   in the AppDir.
 
 ## Consequences
 
@@ -71,9 +76,8 @@ use 3.10. [Task 048](../refinements/tasks/048-builds-install-the-newest-dependen
   zstandard 0.23.0 rather than its newest release. A resolve for another platform accepts only wheels, so the
   runbook builds a wheel of the commit first. `tests/test_constraints.py` checks that the commit in `ci.yml` is
   the one whose requirements it lists.
-- No tool proposes a new version, and no check finds a package that a listed package depends on and the file
-  lacks. Such a new dependency of a new version installs at its newest release until the runbook finds it
-  ([task 057](../refinements/tasks/057-constraints-updates-by-hand.md)).
+- No tool proposes a new version ([task 057](../refinements/tasks/057-constraints-updates-by-hand.md)). A new
+  dependency of a new version fails the check of the build jobs until the runbook adds its line.
 - On 2026-10-21, with pip 26.2.1:
   - the runbook's resolve for the eight pairs of platform and Python, with each target's markers, chose every
     package at the version in the file;
@@ -89,6 +93,11 @@ use 3.10. [Task 048](../refinements/tasks/048-builds-install-the-newest-dependen
   installed appimage-builder from the commit and 38 packages, each at the version in the file. It built
   appimage-builder and jsonpath-rw from source, in build environments whose 6 packages were also at those
   versions. The runbook's resolve chose the same versions for `x86_64` and `aarch64`.
+- On 2026-10-22, the commands of the new check steps passed after the job's installs: with setup-python's
+  CPython 3.14.9 in the act image for `ubuntu-22.04`, on 23 packages, and as a user without root in a fresh
+  `ubuntu:22.04` container, on 39 packages in the user's site folder and 18 in the AppDir. Each failed with six
+  1.16.0 or idna 3.10 in place of the version in the file, and with colorama, which the file lacks. Run without
+  `--folder` in the AppImage container, the check reported 13 Debian packages.
 - Not checked: the installs on Windows and macOS, and the pip 22.0.2 of Ubuntu 22.04 in the AppImage recipe,
   which replaces it first. The CI run of the pull request shows them.
 

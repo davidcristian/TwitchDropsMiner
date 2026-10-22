@@ -204,7 +204,8 @@ justfile               the recipes of just check, one per check
 pyproject.toml         the ruff, pytest and coverage settings; the app is not a package
 .pre-commit-config.yaml  the git hooks: just check before a commit, two checks of the commit message
 .gitattributes         git stores the .bat files unconverted, so save each with CRLF line endings for cmd.exe
-scripts/               the check scripts that just check runs, and commitlint.py for commit messages
+scripts/               the check scripts that just check runs, commitlint.py for commit messages, and
+                       installcheck.py, which each build job runs after its installs
 tests/                 the pytest suite, one file per module under test
 version.py             __version__; CI appends the short commit hash
 LICENSE, LICENSE.MIT   GNU AGPL v3 for the project; MIT for the code from DevilXD; every release includes both

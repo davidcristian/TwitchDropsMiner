@@ -144,6 +144,10 @@ jobs:
         run: |
           python3 -m pip install -c constraints.txt --build-constraint constraints.txt pyinstaller
 
+      - name: Check that pip installed only the versions in constraints.txt
+        run: |
+          python3 scripts/installcheck.py
+
       - name: Create portable executable
         run: |
           pyinstaller build.spec
@@ -196,6 +200,10 @@ jobs:
       - name: Install PyInstaller
         run: |
           python3 -m pip install -c constraints.txt --build-constraint constraints.txt pyinstaller
+
+      - name: Check that pip installed only the versions in constraints.txt
+        run: |
+          python3 scripts/installcheck.py
 
       - name: Create portable executable
         run: |
@@ -262,6 +270,10 @@ jobs:
       - name: Install PyInstaller
         run: |
           python3 -m pip install -c constraints.txt --build-constraint constraints.txt pyinstaller
+
+      - name: Check that pip installed only the versions in constraints.txt
+        run: |
+          python3 scripts/installcheck.py
 
       # NOTE: Remove this step if/once libxft gets updated to 2.3.5 or newer on Ubuntu 22.04, which currently has 2.3.4.
       - name: Build a recent version of libXft
@@ -339,6 +351,12 @@ jobs:
           # TODO: Switch to a stable release if/when a version newer than 1.1.0 is released.
           python3 -m pip install -c constraints.txt --build-constraint constraints.txt git+https://github.com/AppImageCrafters/appimage-builder.git@1a8794d3c89f288fbd82b9accd7c0b74611147d5
 
+      # The job runs as a user without root, so pip installs each package into the user's site folder, and Ubuntu's own
+      # packages stay in another one. constraints.txt does not list appimage-builder, which comes from a git commit.
+      - name: Check that pip installed only the versions in constraints.txt
+        run: |
+          python3 scripts/installcheck.py --skip appimage-builder --folder "$(python3 -m site --user-site)"
+
       - name: Create AppImage
         env:
           ARCH: ${{matrix.arch}}
@@ -356,6 +374,11 @@ jobs:
           cmp -n "$(stat -c %s "${runtime}")" "${runtime}" Twitch.Drops.Miner-${{matrix.arch}}.AppImage
           cmp appimage-build/AppRun/v2.0.0/AppRun-Release-${{matrix.arch}} AppDir/AppRun
           cmp appimage-build/AppRun/v2.0.0/libapprun_hooks-Release-${{matrix.arch}}.so AppDir/lib/${{matrix.arch}}/libapprun_hooks.so
+
+      # The recipe installs requirements.txt into this folder, which the AppImage adds to PYTHONPATH.
+      - name: Check that the AppImage contains only the versions in constraints.txt
+        run: |
+          python3 scripts/installcheck.py --folder AppDir/usr/lib/python3.10/site-packages
 
       - name: Create release folder
         run: |

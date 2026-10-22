@@ -211,6 +211,16 @@ with `-c constraints.txt`, and `requirements.txt` keeps its ranges for an instal
 [ADR-0016](adr/ADR-0016-exact-dependency-versions.md) says why the file sets no hashes. Its lines for
 appimage-builder follow the requirements in `setup.py` at the commit that the AppImage job installs.
 
+After its installs, each build job runs `scripts/installcheck.py`. It reads the name and version of each
+installed package with `importlib.metadata`, and fails on a package that `constraints.txt` lacks or sets to
+another version. A line with a marker, such as `python_version < "3.11"`, counts only where the marker holds,
+and the script fails on a marker other than `name op "value"` clauses joined by `and`. The PyInstaller jobs
+check every package that their Python can import. The AppImage job installs into Ubuntu's own Python as a user
+without root, so it checks only the user's site folder, where pip puts each package, and leaves out
+appimage-builder, which comes from a git commit. After the build it checks
+`AppDir/usr/lib/python3.10/site-packages`, the folder of the app's packages in the AppImage. A folder without
+packages fails the check. To run it, use `python scripts/installcheck.py`, with `--folder <path>` for one folder.
+
 ## Release builds
 
 CI runs on every push to `master`, on every pull request and when it is started by hand. It builds for
