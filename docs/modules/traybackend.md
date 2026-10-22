@@ -21,6 +21,21 @@ without `ButtonPressMask`, the X11 event mask with which a client receives the c
 server does not send the click to pystray. `icon_class` adds that mask, so a left click on the icon restores the
 window.
 
+The X11 backend hides its icon by unmapping its window, which removes it from the screen, and moving it from the
+tray to the root window. The tray host stalonetray maps a docked icon window again when its client unmaps it, and
+maps an icon window on the root window when it leaves the tray. So the hidden icon stayed at the top left corner
+of the screen, and a window manager showed it as a window of its own. Moving the window out of the tray before the
+unmap leaves it on the screen too. The subclass that `icon_class` returns keeps the window docked and hides it
+by clearing the mapped flag of its `_XEMBED_INFO` property, which an XEmbed tray reads to show or hide a docked
+window. stalonetray, trayer and xfce4-panel hide the icon then; tint2 ignores the flag and keeps showing the icon.
+
+Stopping the icon at each restore and creating a new one at each `Minimize to Tray` hides it in tint2 as well,
+but pystray's icon thread sometimes waits forever while a new icon starts
+([task 066](../refinements/tasks/066-x11-tray-icon-thread-waits-forever-at-start.md)), so the subclass keeps one
+icon. pystray also sends a dock request each time it shows the icon or changes its image, so two in a row when an
+icon starts. trayer embeds the window again for each request, and after two in a row it often leaves the icon
+out of its tray, so the subclass sends the request at a show only while the icon is not docked.
+
 ## Public contract
 
 - `import_pystray(load, environ, platform, bus_error)` returns the pystray module that `load` returns. `gui.py`
@@ -33,11 +48,17 @@ window.
     first two logs a warning and tries the next. An error from `xorg`, and any other error, propagates.
   - Before it returns or raises, it sets `PYSTRAY_BACKEND` back to its earlier value, or removes it.
 - `icon_class(base)` returns `base`, the `Icon` class of the loaded pystray, unless its module is `pystray._xorg`.
-  Then it returns a subclass whose `_create_window` calls pystray's and adds `ButtonPressMask` to the events that
-  the new window selects, keeping the others. `gui.py` creates its icon from `icon_class(pystray.Icon)`.
-  `_create_window` is private to pystray, and `constraints.txt` keeps it stable by setting the pystray version
-  exactly. A suite test docks a real X11 icon under Xvfb and sends it a click, so a pystray release that renames
-  the method fails `just check`.
+  Then it returns a subclass, which `gui.py` creates its icon from:
+  - `_create_window` calls pystray's and adds `ButtonPressMask` to the events that the new window selects,
+    keeping the others.
+  - `_hide` clears the mapped flag of the window's `_XEMBED_INFO` property, and `_show` sets it. `_show` then
+    calls pystray's `_show`, which sends the dock request, only while `_systray_manager` is None.
+
+  These names, and `_window`, `_display`, `_xembed_info` and the `_XEMBED_` constants that the subclass reads, are
+  private to pystray, and `constraints.txt` keeps them stable by setting the pystray version exactly. Suite tests
+  dock a real X11 icon under Xvfb: one sends it a click, and one hides and shows it in a window that acts as
+  stalonetray does and counts its dock requests. A pystray release that renames one of these names fails
+  `just check`.
 - `load_pystray()` imports pystray with an `import` statement, so that PyInstaller finds the package and bundles
   it, and returns the module.
 - `session_bus_error()` opens the DBus session bus with `Gio.bus_get_sync`, the call that pystray's icon thread
@@ -60,9 +81,8 @@ window.
   and neither `log.txt` nor the Output box shows it. PyGObject prints its own warning before it, which names the
   library that failed to load.
 - The X11 backend has no menu and shows no notifications. Its icon needs a tray that supports the XEmbed system
-  tray protocol. A left click on it runs "Show", which restores the window and hides the icon. In the tray host
-  stalonetray the icon stays on the screen instead
-  ([task 065](../refinements/tasks/065-x11-tray-icon-left-on-screen-in-stalonetray.md)).
+  tray protocol. A left click on it runs "Show", which restores the window and hides the icon. The icon stays
+  docked while it is hidden, so tint2, which ignores the XEmbed mapped flag, keeps showing it.
 - A right or middle click and the mouse wheel on the X11 icon do nothing, as pystray runs the default item for
   the left button only. A right click opens the menu of the other backends, and the X11 icon has none. Running
   "Show" on it too would need a second private method of pystray, and the window that a left click restores has

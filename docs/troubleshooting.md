@@ -173,10 +173,11 @@ library it needs. A run from source needs the system packages listed in
   `libxcb-render0` (Debian and Ubuntu names). A desktop session starts a session bus, but a bare X server, a
   container or an SSH session may have none. The X11 icon has no menu and shows no notifications. A left click
   on it shows the window, and a right click does nothing. To quit, show the window and close it. In the tray
-  host stalonetray, the icon then stays at the top left corner of the screen until the next `Minimize to Tray`
-  ([task 065](refinements/tasks/065-x11-tray-icon-left-on-screen-in-stalonetray.md)). Install these
-  libraries, or `libgtk-3-0`, which depends on them, and start the app in a session with a bus to get the
-  AppIndicator icon.
+  host tint2, the icon stays in the tray while the window is open, and after a start with `--tray` no icon
+  appears ([task 068](refinements/tasks/068-tint2-shows-no-x11-icon-after-tray-start.md)). Sometimes the icon
+  shows no image and a click on it does nothing
+  ([task 066](refinements/tasks/066-x11-tray-icon-thread-waits-forever-at-start.md)). Install these libraries, or
+  `libgtk-3-0`, which depends on them, and start the app in a session with a bus to get the AppIndicator icon.
 - **Another tray backend.** pystray chooses its backend from the `PYSTRAY_BACKEND` environment variable when it
   is set, for example to `gtk` or `xorg`.
 

@@ -1,4 +1,4 @@
-"""Imports pystray with the first tray backend that loads, and makes the icon of its X11 backend receive clicks."""
+"""Imports pystray with the first tray backend that loads, and fixes how its X11 icon receives clicks and hides."""
 from __future__ import annotations
 
 import logging
@@ -59,11 +59,11 @@ def session_bus_error() -> str | None:
 
 
 def icon_class(base: type) -> type:
-    """Return base, or a subclass whose window receives clicks when base is the Icon class of pystray's xorg backend."""
+    """Return base, or a subclass that receives clicks and hides in its tray when base is pystray's xorg Icon class."""
     if base.__module__ != XORG_MODULE:
         return base
 
-    class ClickableIcon(base):
+    class XorgIcon(base):
         # pystray's xorg icon runs its default menu item on a left click, but creates its window without
         # ButtonPressMask, so the X server does not send the click to pystray.
         def _create_window(self) -> IconWindow:
@@ -71,7 +71,23 @@ def icon_class(base: type) -> type:
             window.change_attributes(event_mask=window.get_attributes().your_event_mask | BUTTON_PRESS_MASK)
             return window
 
-    return ClickableIcon
+        # pystray hides the icon by unmapping its window and moving it out of the tray, and stalonetray then maps
+        # that window on the screen. A clear XEmbed mapped flag makes the tray hide the icon instead.
+        def _hide(self) -> None:
+            self._set_mapped_flag(False)
+
+        def _show(self) -> None:
+            self._set_mapped_flag(True)
+            # a second dock request for a docked window makes trayer embed it again, and often leave it out
+            if self._systray_manager is None:
+                super()._show()
+
+        def _set_mapped_flag(self, mapped: bool) -> None:
+            flags = self._XEMBED_MAPPED if mapped else 0
+            self._window.change_property(self._xembed_info, self._xembed_info, 32, [self._XEMBED_VERSION, flags])
+            self._display.flush()
+
+    return XorgIcon
 
 
 def _describe(error: BaseException) -> str:

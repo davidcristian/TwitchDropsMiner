@@ -108,3 +108,6 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [063: The X11 tray icon does not respond to a click](tasks/063-x11-tray-icon-ignores-clicks.md) | gui, traybackend |
 | [064: A SIGTERM leaves the app running while its AppIndicator tray icon is shown without a session bus](tasks/064-sigterm-ignored-with-appindicator-tray.md) | gui, main |
 | [065: The X11 tray icon stays on the screen after it restores the window in stalonetray](tasks/065-x11-tray-icon-left-on-screen-in-stalonetray.md) | gui, traybackend |
+| [066: The thread of the X11 tray icon sometimes waits forever as the icon starts](tasks/066-x11-tray-icon-thread-waits-forever-at-start.md) | traybackend, gui |
+| [067: The GUI preview often crashes at start under the window manager openbox](tasks/067-gui-preview-crashes-under-openbox.md) | gui |
+| [068: The tray host tint2 shows no X11 tray icon when the app starts with `--tray`](tasks/068-tint2-shows-no-x11-icon-after-tray-start.md) | traybackend, gui |
