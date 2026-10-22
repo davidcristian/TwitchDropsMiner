@@ -70,7 +70,7 @@ says what each file holds.
 | `BASE_TOPICS` | 2 | The user topics added at login, `Drops` and `Notifications` |
 | `TOPICS_PER_CHANNEL` | 2 | The channel topics, `StreamState` and `StreamUpdate` |
 | `MAX_TOPICS` | 398 | `MAX_WEBSOCKETS * WS_TOPICS_LIMIT - BASE_TOPICS` |
-| `MAX_CHANNELS` | 199 | `MAX_TOPICS // TOPICS_PER_CHANNEL`. `CHANNELS_FETCH` sorts the channels by priority, ACL (a campaign's list of allowed channels) and viewer count, keeps the first 199 and drops the rest. [Task 001](../refinements/tasks/001-offline-acl-channels-trimmed-first.md) describes which ones are dropped first |
+| `MAX_CHANNELS` | 199 | `MAX_TOPICS // TOPICS_PER_CHANNEL`. `CHANNELS_FETCH` keeps 199 channels and drops the rest. [ADR-0018](../adr/ADR-0018-channel-slots.md) gives the channels that keep their slot |
 | `MAX_INT` | `sys.maxsize` | The rank of a game or channel that is not wanted, below every real rank |
 
 ### `State` and `PriorityMode`

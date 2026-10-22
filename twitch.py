@@ -553,6 +553,29 @@ class Twitch:
             return viewers
         return -1
 
+    def _slot_order(
+        self, channels: list[Channel], acl_priority: dict[Channel, int], selected_id: int | None
+    ) -> list[Channel]:
+        """
+        Returns the channels in the order in which they keep one of the MAX_CHANNELS slots.
+        channels is sorted by get_priority, and acl_priority maps a channel to the best priority of the wanted
+        games whose campaigns list it in their ACL.
+        """
+        best = next((self.get_priority(channel) for channel in channels if self.can_watch(channel)), None)
+
+        def key(channel: Channel) -> tuple[bool, int]:
+            priority = self.get_priority(channel)
+            # CHANNEL_SWITCH watches one of these next, so they keep their slots first
+            if (priority == best or channel.id == selected_id) and self.can_watch(channel):
+                return (False, priority)
+            # An offline ACL channel, or one that streams another game, ranks with the game of its campaign, ahead of
+            # the live channels of games with a lower priority, so it keeps the subscription to its stream-up event.
+            if priority == MAX_INT:
+                priority = acl_priority.get(channel, MAX_INT)
+            return (True, priority)
+
+        return sorted(channels, key=key)
+
     async def run(self):
         if self.settings.dump:
             with open(DUMP_PATH, 'w', encoding="utf8"):
@@ -795,6 +818,8 @@ class Twitch:
                 # NOTE: we use another set so that we can set them online separately
                 no_acl: set[Game] = set()
                 acl_channels: set[Channel] = set()
+                # the best priority of the wanted games whose campaigns list the channel in their ACL
+                acl_priority: dict[Channel, int] = {}
                 next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
                 for campaign in self.inventory:
                     if (
@@ -803,6 +828,9 @@ class Twitch:
                     ):
                         if campaign.allowed_channels:
                             acl_channels.update(campaign.allowed_channels)
+                            game_priority = self.wanted_games.index(campaign.game)
+                            for channel in campaign.allowed_channels:
+                                acl_priority[channel] = min(game_priority, acl_priority.get(channel, game_priority))
                         else:
                             no_acl.add(campaign.game)
                 # remove all ACL channels that already exist from the other set
@@ -823,11 +851,18 @@ class Twitch:
                 )
                 ordered_channels.sort(key=lambda ch: ch.acl_based, reverse=True)
                 ordered_channels.sort(key=self.get_priority)
-                # ensure that we won't end up with more channels than we can handle
-                # NOTE: we trim from the end because that's where the non-priority,
-                # offline (or online but low viewers) channels end up
-                to_remove_channels = ordered_channels[MAX_CHANNELS:]
-                ordered_channels = ordered_channels[:MAX_CHANNELS]
+                # ensure that we won't end up with more channels than we can handle,
+                # keeping the list in this order
+                selection = self.gui.channels.get_selection()
+                kept_channels = set(
+                    self._slot_order(
+                        ordered_channels,
+                        acl_priority,
+                        selection.id if selection is not None else removed_selection,
+                    )[:MAX_CHANNELS]
+                )
+                to_remove_channels = [ch for ch in ordered_channels if ch not in kept_channels]
+                ordered_channels = [ch for ch in ordered_channels if ch in kept_channels]
                 if to_remove_channels:
                     # the tracked channels and the gui list are replaced below,
                     # so unsubscribe from their topics and cancel their online checks
@@ -849,7 +884,7 @@ class Twitch:
                 if self.gui.channels.get_iids() != set(
                     channel.iid for channel in ordered_channels
                 ):
-                    gui_selection = self.gui.channels.get_selection()
+                    gui_selection = selection
                     self.gui.channels.clear()
                 # set our new channel list
                 # NOTE: a stream event during the awaits above looks up its channel in this map,
@@ -905,6 +940,8 @@ class Twitch:
                 del (
                     no_acl,
                     acl_channels,
+                    acl_priority,
+                    kept_channels,
                     new_channels,
                     to_add_topics,
                     ordered_channels,

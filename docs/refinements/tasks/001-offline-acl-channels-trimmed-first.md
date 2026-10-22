@@ -1,9 +1,9 @@
 # Offline ACL channels are trimmed first
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** twitch (channel selection)
 **Origin:** [ADR-0003](../../adr/ADR-0003-stream-refresh.md)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 A campaign's ACL (access control list) is its `allowed_channels` list, and only the channels on it can
 progress that campaign. These are ACL channels. The app tracks at most `MAX_CHANNELS` channels, because each
@@ -52,3 +52,8 @@ common case was chosen. See [twitch.md](../../modules/twitch.md) for the state m
 - 2026-08-03: Found and deferred when the new stream check was decided.
 - 2026-10-18: Opened. Written down while the docs were written. Checking it against the code showed that the
   refresh queries the cut channels again, so they are found at the next pass, not only at the next reload.
+- 2026-10-22: Done. Checked against the code first: the three sorts, `get_priority` and the cut were as
+  described. `CHANNELS_FETCH` now keeps first the channels that `CHANNEL_SWITCH` can watch next, which are those
+  of the best game that `can_watch` accepts and the selected one, and ranks the others by the priority of a
+  game, an offline ACL channel by that of its campaign. The channel list keeps its order
+  ([ADR-0018](../../adr/ADR-0018-channel-slots.md)). Twitch requests: none added.

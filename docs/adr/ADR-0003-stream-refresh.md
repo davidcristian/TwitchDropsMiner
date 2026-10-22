@@ -56,8 +56,9 @@ A shorter full reload is not an option, because a reload is the most expensive w
    countdown stopped (`subone=True`) only when no channel is watched or `State.GAMES_UPDATE` restarted the
    watch, so a refresh that keeps the watched channel leaves the countdown running.
 
-6. **The change is the smallest one that fixes the common case.** Two other causes of late discovery are known
-   and stay open as refinement tasks (see Related).
+6. **The change is the smallest one that fixes the common case.** Two other causes of late discovery have
+   their own changes: the channels kept at the `MAX_CHANNELS` limit ([ADR-0018](ADR-0018-channel-slots.md)),
+   and the single check after a stream-up event, which stays open as a refinement task (see Related).
 
 ## Consequences
 
@@ -69,9 +70,9 @@ The GQL requests of one refresh:
 - `acl_channels.difference_update(new_channels)` drops the ACL channels already tracked. When every ACL channel
   of the wanted campaigns is on the tracked list, `bulk_check_online` receives an empty set and sends nothing.
 - The tracked list holds at most `MAX_CHANNELS` channels, 199 from the PubSub topic limits in `constants.py`.
-  When the wanted campaigns list more ACL channels than that, the ones left off the list are checked again on
-  every refresh. That costs one `GetStreamInfo` request per 20 of them, plus one `AvailableDrops` request per
-  20 online ones when `available_drops_check` is on.
+  When the wanted campaigns and the directory list more channels than that, the ACL channels left off the list
+  are checked again on every refresh. That costs one `GetStreamInfo` request per 20 of them, plus one
+  `AvailableDrops` request per 20 online ones when `available_drops_check` is on.
 - A refresh that keeps the watched channel leaves the drop countdown running, so the `CurrentDrop` check of
   `_watch_loop` (`minute_almost_done`) sends nothing more because of it.
 
@@ -80,7 +81,7 @@ default interval, at most 11 refreshes run between two hourly reloads, because e
 minutes after the previous wait began.
 
 - The check of ACL channels left off the list also finds one that went live since the last refresh. If it
-  streams a wanted game, the channel fetch sorts it ahead of every offline channel.
+  streams a wanted game, the channel fetch ranks it with that game ([ADR-0018](ADR-0018-channel-slots.md)).
 - `WebsocketPool.add_topics` skips topics it already has, so a refresh that keeps the same channels sends no
   websocket message.
 - `_maintenance_task` reads `refresh_interval` each time it schedules a wait, so a new value applies from the
@@ -92,8 +93,8 @@ minutes after the previous wait began.
 
 - **A shorter or user-set full reload.** It repeats the most expensive work the app does (ADR-0002) to find
   streams that a channel fetch finds for a few requests.
-- **Fixing every known cause of late discovery at once.** The refresh fixes the common case. The other two
-  causes are in the channel ordering and in the online check after a stream-up event, and stay open as tasks.
+- **Fixing every known cause of late discovery at once.** The refresh fixes the common case, and each of the
+  other two causes has its own change (decision 6).
 
 ## Related
 
@@ -101,8 +102,7 @@ minutes after the previous wait began.
 - [twitch.md](../modules/twitch.md) (`_maintenance_task` and the `State` machine),
   [settings.md](../modules/settings.md), [gui.md](../modules/gui.md), [constants.md](../modules/constants.md),
   [websocket.md](../modules/websocket.md).
-- [001-offline-acl-channels-trimmed-first.md](../refinements/tasks/001-offline-acl-channels-trimmed-first.md):
-  offline ACL channels sort last in `State.CHANNELS_FETCH`, so they are the first ones removed at
-  `MAX_CHANNELS` and get no PubSub events.
+- [ADR-0018](ADR-0018-channel-slots.md): the channels that keep a PubSub subscription at `MAX_CHANNELS`, where
+  an offline ACL channel ranks with the game of its campaign.
 - [002-online-delay-single-try.md](../refinements/tasks/002-online-delay-single-try.md): after a stream-up
   event, the app waits `ONLINE_DELAY` (120 seconds) and checks the stream once.

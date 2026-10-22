@@ -246,13 +246,13 @@ def stream_user(channel_id: int, *, online: bool) -> JsonType:
     }
 
 
-def directory(*channels: tuple[int, int]) -> JsonType:
-    """Return a `GameDirectory` response that lists each channel, given as its ID and viewers, streaming GAME."""
+def directory(*channels: tuple[int, int], game: JsonType = GAME) -> JsonType:
+    """Return a `GameDirectory` response that lists each channel, given as its ID and viewers, streaming game."""
     return {"data": {"game": {"streams": {"edges": [
         {"node": {
             "id": str(100 + channel_id),
             "broadcaster": {"id": str(channel_id), "login": f"c{channel_id}", "displayName": f"C{channel_id}"},
-            "game": {"id": GAME["id"], "name": GAME["name"]},
+            "game": {"id": game["id"], "name": game["name"]},
             "viewersCount": viewers,
             "title": "title",
         }}

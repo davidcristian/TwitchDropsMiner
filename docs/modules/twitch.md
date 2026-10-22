@@ -141,10 +141,14 @@ each one does, the state that follows it and the events that change it. `fetch_i
 `INVENTORY_FETCH` saves the image cache and the settings through `save_each`, which logs a save that raises
 `OSError`, so a full disk does not end the run ([savefiles.md](savefiles.md)).
 
-An offline channel has priority `MAX_INT`, so offline channels sort last and are the first ones cut at
-`MAX_CHANNELS` ([task 001](../refinements/tasks/001-offline-acl-channels-trimmed-first.md)). The cut unsubscribes
-a channel's topics and cancels its online check ([channel.md](channel.md#invariants)), and the rebuilt channel
-list has no row for it.
+`CHANNELS_FETCH` lists the channels by priority, ACL first, then viewers, and keeps at most `MAX_CHANNELS` of
+them, in that order ([ADR-0018](../adr/ADR-0018-channel-slots.md)). The channels that `CHANNEL_SWITCH` can watch next
+keep their slots first: those that `can_watch` accepts with the best priority among them, and the selected
+channel when `can_watch` accepts it. Every other channel ranks by the priority of its game. An ACL channel that
+is offline, or streams a game that is not wanted, ranks with the best of the wanted games whose campaigns list
+it. So an offline ACL channel keeps its subscription ahead of the live channels of games with a lower priority.
+The cut unsubscribes a channel's topics and cancels its online check ([channel.md](channel.md#invariants)), and
+the rebuilt channel list has no row for it.
 
 `CHANNELS_CLEANUP` stores the ID of the selected channel when it removes that channel, which a full cleanup
 does to every channel, and `CHANNELS_FETCH` selects the channel again when the new list has it. So a
