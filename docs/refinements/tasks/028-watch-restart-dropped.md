@@ -1,9 +1,9 @@
 # A watch restart in the first 15 seconds of a cycle has no effect
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** twitch (watch loop)
 **Origin:** Found on 2026-10-18 while the docs were written, [twitch.md](../../modules/twitch.md#watch-loop)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 `Twitch.restart_watching` in `twitch.py` stops the minute countdown with `gui.progress.stop_timer()` and sets
 the event `_watching_restart`, so that the watch loop sends its next watch request at once. One cycle of
@@ -78,3 +78,9 @@ claim and from `GAMES_UPDATE`.
 
 - 2026-10-18: Opened. While the watch loop in twitch.md was written, `_watch_sleep` was found to clear the
   event first. A run of the real `_watch_loop` timed the next request after calls at three points of a cycle.
+- 2026-10-22: Closed. `_watch_loop` clears `_watching_restart` as it sends each watch request, and
+  `_watch_sleep` no longer clears it. A call during steps 1 to 3 ends the step 4 wait as soon as it starts,
+  and a call before a request has no further effect, where clearing after the wait would have shortened the
+  next cycle too. The step 2 wait still does not end on the event: that option sends more requests. A call
+  adds at most one cycle. The tests in `tests/test_twitch_watch.py` time the real `_watch_loop` on a fast
+  clock, with calls 5, 14 and 17 seconds into a cycle and one before it.

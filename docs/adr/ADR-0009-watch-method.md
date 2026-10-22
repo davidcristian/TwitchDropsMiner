@@ -1,6 +1,6 @@
 # ADR-0009: Watching by playlist HEAD requests
 
-**Status:** Accepted (2026-10-20)
+**Status:** Accepted (2026-10-22)
 
 ## Context
 
@@ -18,7 +18,8 @@ The original project has switched between these methods five times since 2024-06
 ([task 022](../refinements/tasks/022-unused-code.md#how-it-came-about) lists the commits). The last switch,
 "Change the mining method to playlist HEAD requests" (2026-10-09), made `send_watch` the HEAD method with a
 `HEAD` request for every segment instead of only the last one, and changed `WATCH_INTERVAL` from 59 to 20
-seconds. This project took it and added one step: an online check after a failed playlist request.
+seconds. This project took it and changed two things: an online check after a failed playlist request, and a
+watch restart that counts at any time in a cycle.
 None of the five commits has a message body, so the code comments are the only written reasons, quoted below.
 
 ## Decision
@@ -47,8 +48,10 @@ None of the five commits has a message body, so the code comments are the only w
    Once 15 seconds have passed since the noted time, it sends one `CurrentDrop` GQL query when
    `gui.progress.minute_almost_done()` is True: the minute countdown has stopped or has at most 10 seconds
    (`ALMOST_DONE_SECONDS`) left. It then waits until 20 seconds after the noted time, or not at all when
-   `send_watch` took longer. `restart_watching` can end only that last wait
-   ([task 028](../refinements/tasks/028-watch-restart-dropped.md)).
+   `send_watch` took longer. `restart_watching` ends only that last wait. A call earlier in the cycle ends it
+   as soon as it starts, because the loop clears the event that the call sets only as it sends the next watch
+   request. So the `CurrentDrop` check keeps its place, and a call starts the next cycle at most 5 seconds
+   early.
 
 3. **The Spade and GQL methods stay in `channel.py` with no caller.** No code calls them, or `get_spade_url`,
    `Stream.spade_payload`, `Stream.gql_payload` and `Stream._watch_payload`, which only they use. The comment
@@ -76,6 +79,10 @@ playlist request ([channel.md](../modules/channel.md#online-checks)). A stream r
 At one cycle per 20 seconds, an hour has 180 cycles: 180 playlist GETs and about 2700 `HEAD` requests, about
 2880 HTTP requests in all, and at most 180 `CurrentDrop` queries. These figures are counted from the code and
 the comment's segment count. Nothing in this repo measures the segment count of a real playlist.
+
+A `restart_watching` call adds at most one cycle, because it starts the next cycle at most 5 seconds early.
+`process_drops` calls it after a drop claim whose campaign continues on the channel, and `State.GAMES_UPDATE`
+after each reload and each change of the detected games.
 
 A playlist request that fails every cycle while `GetStreamInfo` still returns the stream adds, per online check
 of about 120 seconds, 1 `GetStreamInfo` and 2 each of `PlaybackAccessToken` and the usher GET: one after the
@@ -114,6 +121,9 @@ check: at most 30 of each an hour, plus 30 `AvailableDrops` with the extra drops
 - **One `HEAD` request for the last segment only.** The HEAD method did this while it was in use from
   2024-06-22 to 2025-08-17, and the 2026-10-09 commit changed it to every segment without a written reason.
   Nothing here shows that Twitch counts one segment today.
+- **Ending the 15 second wait on a restart too.** The next watch request would go out at once, but the
+  `CurrentDrop` check would then come with no time for a progress update, and each call would start the next
+  cycle up to 20 seconds early instead of 5, which sends more requests.
 
 ## Related
 
@@ -124,6 +134,5 @@ check: at most 30 of each an hour, plus 30 `AvailableDrops` with the extra drops
   the user agent that every request sends. [How It Works](../../README.md#how-it-works) in the README.
 - [gql-operations.md](../runbooks/gql-operations.md): the `PlaybackAccessToken` and `CurrentDrop` hashes.
   [upstream-fixes.md](../runbooks/upstream-fixes.md): bringing in a change of method from upstream.
-- Tasks [022](../refinements/tasks/022-unused-code.md) (the unused methods),
-  [028](../refinements/tasks/028-watch-restart-dropped.md) (a restart early in a cycle) and
+- Tasks [022](../refinements/tasks/022-unused-code.md) (the unused methods) and
   [013](../refinements/tasks/013-crashed-task-ends-the-app.md) (an exception in the watch loop).

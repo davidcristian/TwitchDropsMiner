@@ -66,8 +66,8 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
   watched channel cannot be watched, has a lower priority, or has the same priority while only the new channel
   is ACL-based (on a campaign's ACL, its access control list of allowed channels).
 - `watch(channel)` and `stop_watching()` set and clear the watched channel. `restart_watching()` stops the
-  minute countdown and ends the watch loop's wait, so the next watch request goes out at once. A call before
-  that wait starts is lost ([task 028](../refinements/tasks/028-watch-restart-dropped.md)).
+  minute countdown and ends the current watch cycle after its `CurrentDrop` check, so the next watch request
+  goes out early ([Watch loop](#watch-loop)).
 - `Channel` calls `on_channel_update(channel, stream_before, stream_after)` after a status change. It watches a
   channel that came online or changed its stream, if `should_switch` allows it, and enters
   `State.CHANNEL_SWITCH` when the watched channel can no longer be watched.
@@ -148,6 +148,13 @@ seconds later, when `gui.progress.minute_almost_done()` is True (the countdown f
 at most 10 seconds left), it sends a `CurrentDrop` GQL query for the drop's minutes, one per cycle at most.
 When that fails or names no drop, which a null `currentUser`, `dropID` or `currentMinutesWatched` also does,
 `DropsCampaign.bump_minutes` adds an estimated minute ([inventory.md](inventory.md#progress)).
+
+`restart_watching()` sets the event `_watching_restart`, which ends the wait for the rest of the 20 seconds.
+The loop clears the event as it sends each watch request, so a call before a request has no further effect.
+A call during a cycle ends that wait as soon as it starts, about 15 seconds after the request, or at once
+when the call comes later. The 15 second wait does not end on the event, so each cycle keeps its
+`CurrentDrop` check, and a call starts the next cycle at most 5 seconds early
+([ADR-0009](../adr/ADR-0009-watch-method.md#decision)).
 
 ## Maintenance task
 

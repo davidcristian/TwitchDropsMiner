@@ -123,9 +123,9 @@ instead and is not restarted ([task 013](refinements/tasks/013-crashed-task-ends
    in case `stream-down` was missed ([channel.md](modules/channel.md#a-failed-playlist-request)).
 8. **Claiming.** A `drop-claim` event contains the drop instance ID, and `TimedDrop.claim` sends `ClaimDrop`.
    Then `process_drops` sends `CurrentDrop` until Twitch reports another drop, at most 8 times, and ends the
-   watch loop's wait ([task 028](refinements/tasks/028-watch-restart-dropped.md)) when the campaign continues
-   on the channel. Otherwise it moves to `INVENTORY_FETCH`, as the reward notification also does. An event for
-   a drop that is already claimed does nothing.
+   current watch cycle after its `CurrentDrop` check ([twitch.md](modules/twitch.md#watch-loop)) when the
+   campaign continues on the channel. Otherwise it moves to `INVENTORY_FETCH`, as the reward notification
+   also does. An event for a drop that is already claimed does nothing.
 
 ## Twitch traffic
 
@@ -147,7 +147,7 @@ Nothing sends `ClaimCommunityPoints`, `ChannelPointsContext`, `SlugRedirect`, `N
 | Task | Started by | Runs |
 | --- | --- | --- |
 | `GUIManager._poll` | `GUIManager.start`, at the start of `_run` | every 0.05 seconds |
-| `Twitch._watch_loop` | `_run`, once per run | every `WATCH_INTERVAL` (20 seconds); the `CurrentDrop` check 15 seconds into a cycle |
+| `Twitch._watch_loop` | `_run`, once per run | every `WATCH_INTERVAL` (20 seconds); the `CurrentDrop` check 15 seconds into a cycle; `restart_watching` ends a cycle after that check |
 | `Twitch._maintenance_task` | the end of each `fetch_inventory` | sleeps until the earliest of: `refresh_interval` minutes plus up to `REFRESH_JITTER` (60 seconds); the start or end of a campaign or drop that can progress within the hour; one hour after it started, when it moves to `INVENTORY_FETCH` and ends |
 | `Websocket._handle`, one per connection | `WebsocketPool.start` and `WebsocketPool.add_topics` | each pass collects messages until 0.5 seconds pass with no message; a `PING` every 3 minutes; reconnects at once after a connection that stayed open `WS_MIN_UPTIME` (60 seconds), and otherwise after a backoff delay of up to 3 minutes |
 | `Channel._online_delay`, one per channel | `Channel.check_online` | once, `ONLINE_DELAY` (120 seconds) after the event |

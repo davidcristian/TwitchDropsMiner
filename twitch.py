@@ -915,7 +915,6 @@ class Twitch:
 
     async def _watch_sleep(self, delay: float) -> None:
         # we use wait_for here to allow an asyncio.sleep-like that can be ended prematurely
-        self._watching_restart.clear()
         with suppress(asyncio.TimeoutError):
             await asyncio.wait_for(self._watching_restart.wait(), timeout=delay)
 
@@ -929,6 +928,9 @@ class Twitch:
                 self.stop_watching()
                 continue
             # logger.log(CALL, f"Sending watch payload to: {channel.name}")
+            # This request is the one that an earlier restart asked for, so only a restart
+            # during the cycle ends its last wait
+            self._watching_restart.clear()
             last_sent: float = time()
             succeeded: bool = await channel.send_watch()
             if not succeeded:
