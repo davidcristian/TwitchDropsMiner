@@ -25,17 +25,21 @@ The X11 backend hides its icon by unmapping its window, which removes it from th
 tray to the root window. The tray host stalonetray maps a docked icon window again when its client unmaps it, and
 maps an icon window on the root window when it leaves the tray. So the hidden icon stayed at the top left corner
 of the screen, and a window manager showed it as a window of its own. Moving the window out of the tray before the
-unmap leaves it on the screen too. The subclass that `icon_class` returns keeps the window docked and hides it
-by clearing the mapped flag of its `_XEMBED_INFO` property, which an XEmbed tray reads to show or hide a docked
-window. stalonetray, trayer and xfce4-panel hide the icon then; tint2 ignores the flag and keeps showing the icon.
+unmap leaves it on the screen too. An XEmbed tray reads the mapped flag of the `_XEMBED_INFO` property of a docked
+window to show or hide it. stalonetray, trayer and xfce4-panel hide the icon when the flag is clear, but tint2
+17.0.1 ignores the flag and keeps showing the icon
+([task 069](../refinements/tasks/069-tint2-shows-hidden-x11-tray-icon.md)).
 
-The app keeps one icon for its whole run. Stopping the icon at each restore and creating a new one at each
-`Minimize to Tray` hides it in tint2 as well, and
-[task 069](../refinements/tasks/069-tint2-shows-hidden-x11-tray-icon.md) records why the app does not do that.
-pystray also sends a dock request each
-time it shows the icon or changes its image, so two in a row when an icon starts. trayer embeds the window again
-for each request, and after two in a row it often leaves the icon out of its tray, so the subclass sends the
-request at a show only while the icon is not docked.
+So the app stops the X11 icon to hide it: `hides_by_stopping` returns True for it, and `TrayIcon.restore` in
+`gui.py` then stops the icon instead of hiding it ([gui.md](gui.md#the-tray-icon)). pystray's `_stop` destroys the
+icon window, and each of these four trays removes a destroyed window. The next `Minimize to Tray` creates a new
+icon, with its own window and X connection. pystray closes the connection of a stopped icon when Python's garbage
+collector frees the icon. In 40 rounds of `Minimize to Tray` and a left click from source, at most 11
+connections of stopped icons were open at once, and twice the collector freed them all.
+
+pystray sends a dock request each time it shows the icon or changes its image, so two in a row when an icon
+starts. trayer embeds the window again for each request, and after two in a row it often leaves the icon out of its
+tray, so the subclass sends the request at a show only while the icon is not docked.
 
 pystray sends a dock request only when it shows the icon, changes its image or sees its tray end. With pystray
 alone, a tray host that takes the system tray selection `_NET_SYSTEM_TRAY_S0` after that never receives one, so
@@ -94,17 +98,19 @@ at exit, and the app sends a few such messages a minute at most.
     Xvfb dropped the message, and closes it.
   - `_create_window` calls pystray's and adds `ButtonPressMask` to the events that the new window selects,
     keeping the others.
-  - `_hide` clears the mapped flag of the window's `_XEMBED_INFO` property, and `_show` sets it. `_show` then
-    calls pystray's `_show`, which sends the dock request, only while `_systray_manager` is None.
+  - `_show` calls pystray's `_show`, which sends the dock request, only while `_systray_manager` is None.
 
-  These names, and `_window`, `_display`, `_thread`, `_message_handlers`, `_net_system_tray_sx`, `_xembed_info`
-  and the `_XEMBED_` constants that the subclass reads, are private to pystray, and `constraints.txt` keeps them
-  stable by setting the pystray and python-xlib versions exactly. Suite tests run a real X11 icon under Xvfb: one
-  sends it a click, one hides and shows it in a window that acts as stalonetray does and counts its dock
-  requests, one takes the tray selection after the icon has started and waits for the dock request, one
-  counts the requests on the icon's connection at a title change from another thread, and one records the thread
-  of each use of the icon's connection from the start of the icon to its stop. A pystray release that
-  renames one of these names fails `just check`.
+  These names, and `_window`, `_display`, `_thread`, `_message_handlers`, `_net_system_tray_sx` and
+  `_systray_manager` that the subclass reads, are private to pystray, and `constraints.txt` keeps them stable by
+  setting the pystray and python-xlib versions exactly. Suite tests run a real X11 icon under Xvfb: one sends it a
+  click, one takes the tray selection after the icon has started and waits for the dock request, one counts the
+  requests on the icon's connection at a title change from another thread, and one records the thread of each use
+  of the icon's connection from the start of the icon to its stop. One in `tests/test_gui_tray.py` minimizes and
+  restores the window twice with a tray that keeps each icon window that is not destroyed on the screen, and counts
+  the dock requests. A pystray release that renames one of these names fails `just check`.
+- `hides_by_stopping(icon)` returns True when a class in the method resolution order of the icon's type comes
+  from `pystray._xorg`, as the subclass of `icon_class` and pystray's own xorg `Icon` do, and False for the icon
+  of any other backend.
 - `load_pystray()` imports pystray with an `import` statement, so that PyInstaller finds the package and bundles
   it, and returns the module.
 - `session_bus_error()` opens the DBus session bus with `Gio.bus_get_sync`, the call that pystray's icon thread
@@ -126,12 +132,12 @@ at exit, and the app sends a few such messages a minute at most.
 - `gui.py` imports this module before `main.py` sets up logging, so Python prints the warning to standard error,
   and neither `log.txt` nor the Output box shows it. PyGObject prints its own warning before it, which names the
   library that failed to load.
-- Once the X11 icon has started, only the icon thread uses its connection: no other thread sends a request on
+- Once an X11 icon has started, only its icon thread uses its connection: no other thread sends a request on
   it, flushes it or reads from it. The thread that creates the icon uses it before the icon thread starts, and
   pystray closes it when the icon is freed, after the icon thread has ended.
 - The X11 backend has no menu and shows no notifications. Its icon needs a tray that supports the XEmbed system
-  tray protocol. A left click on it runs "Show", which restores the window and hides the icon. The icon stays
-  docked while it is hidden, so tint2, which ignores the XEmbed mapped flag, keeps showing it.
+  tray protocol. A left click on it runs "Show", which restores the window and stops the icon, so no X11 icon
+  exists while the window is open.
 - A right or middle click and the mouse wheel on the X11 icon do nothing, as pystray runs the default item for
   the left button only. A right click opens the menu of the other backends, and the X11 icon has none. Running
   "Show" on it too would need a second private method of pystray, and the window that a left click restores has

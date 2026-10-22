@@ -127,6 +127,14 @@ backend receive clicks ([traybackend.md](traybackend.md)).
   back through `loop.call_soon_threadsafe`, so their handlers run on the event loop thread.
 - `minimize()` hides the window and shows the icon. `restore()` hides the icon and shows the window. With
   `--tray`, `GUIManager.__init__` calls `minimize()` once the window is built.
+- With the X11 backend, `restore()` stops the icon instead of hiding it, because `hides_by_stopping` returns True
+  for it ([traybackend.md](traybackend.md)), and the next `minimize()` creates a new icon. While the window is
+  open, no icon exists: `change_icon` only stores the state, `update_title` and `notify` do nothing, and the new
+  icon takes the stored state and the title of the drop on the Main tab. `restore()` stops the icon only once
+  pystray's setup thread has shown it and `visible` is True. pystray's `stop` does nothing before the icon thread
+  marks the icon ready, and a stop while the setup thread still waits for a change can leave that thread waiting
+  forever. A `restore()` before that, which only `grab_attention` can cause, keeps the icon, and the next
+  `restore()` stops it.
 - On macOS, `minimize()` does nothing, the button is hidden and `--tray` is ignored.
 - `change_icon(state)` takes `pickaxe`, `active`, `idle`, `error` or `maint`, the files in `icons/`, and raises
   `ValueError` for any other name. It stores the state when no icon exists yet.

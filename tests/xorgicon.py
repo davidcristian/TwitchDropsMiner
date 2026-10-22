@@ -1,4 +1,4 @@
-"""Fakes of pystray's xorg icon and of an X connection, and helpers that run a real X11 icon, for the tray tests."""
+"""Fakes of pystray's xorg icon, an X connection and a tray, and helpers that run a real X11 icon, for tray tests."""
 from __future__ import annotations
 
 import threading
@@ -18,16 +18,12 @@ ATOMS = {"MANAGER": 1, "_NET_SYSTEM_TRAY_S0": 2, "_NET_WM_CM_S0": 3, "_PYSTRAY__
 class FakeWindow:
     def __init__(self) -> None:
         self.mask = XORG_EVENTS
-        self.properties: list[tuple[str, str, int, list[int]]] = []
 
     def get_attributes(self) -> SimpleNamespace:
         return SimpleNamespace(your_event_mask=self.mask)
 
     def change_attributes(self, *, event_mask: int) -> None:
         self.mask = event_mask
-
-    def change_property(self, name: str, kind: str, size: int, data: list[int]) -> None:
-        self.properties.append((name, kind, size, data))
 
 
 class FakeDisplay:
@@ -59,11 +55,7 @@ class FakeDisplay:
 
 
 class FakeXorgIcon:
-    _XEMBED_VERSION = 0
-    _XEMBED_MAPPED = 1
-
     def __init__(self, systray_manager: str | None = None, dispatched: bool = False) -> None:
-        self._xembed_info = "_XEMBED_INFO"
         self._display = FakeDisplay()
         self._systray_manager = systray_manager
         self._net_system_tray_sx = ATOMS["_NET_SYSTEM_TRAY_S0"]
@@ -81,9 +73,6 @@ class FakeXorgIcon:
 
     def _show(self) -> None:
         self.calls.append("dock")
-
-    def _hide(self) -> None:
-        self.calls.append("undock")
 
     def _update_icon(self) -> None:
         if self.error is not None:
@@ -147,3 +136,79 @@ def start_icon(name: str, prepare=lambda icon: None):
     while not icon.visible and time.monotonic() < deadline:
         time.sleep(0.01)
     return icon, thread
+
+
+class FakeTray:
+    # Embeds the icon of a dock request in a window of its own inside the tray. It ignores the XEmbed mapped flag,
+    # as tint2 17.0.1 does. As stalonetray 0.8.1 does, it maps a docked icon window that its client unmaps, maps an
+    # icon window that its client moves out of the tray on the root window, and removes a destroyed icon window.
+    def __init__(self) -> None:
+        from Xlib import X, display as xdisplay
+
+        self.connection = xdisplay.Display()
+        # stalonetray ignores the errors of its requests on an icon window that its client has destroyed
+        self.connection.set_error_handler(lambda error, request: None)
+        self.root = self.connection.screen().root
+        self.tray = self.root.create_window(0, 0, 48, 48, 0, X.CopyFromParent)
+        self.holder = self.tray.create_window(0, 0, 48, 48, 0, X.CopyFromParent)
+        self.opcode = self.connection.intern_atom("_NET_SYSTEM_TRAY_OPCODE")
+        self.tray.set_selection_owner(
+            self.connection.intern_atom(f"_NET_SYSTEM_TRAY_S{self.connection.get_default_screen()}"), X.CurrentTime
+        )
+        self.tray.map()
+        self.connection.flush()
+        self.icon = None
+        self.dock_requests = 0
+
+    def handle(self, event) -> None:
+        from Xlib import X
+
+        if event.type == X.ClientMessage and event.client_type == self.opcode and event.data[1][1] == 0:
+            self.dock_requests += 1
+            if self.icon is None:
+                self.icon = self.connection.create_resource_object("window", event.data[1][2])
+                self.icon.change_attributes(event_mask=X.StructureNotifyMask)
+                self.icon.reparent(self.holder, 0, 0)
+                self.icon.map()
+                self.holder.map()
+        elif self.icon is None or event.window.id != self.icon.id:
+            return
+        elif event.type == X.DestroyNotify:
+            self.icon = None
+            self.holder.unmap()
+        elif event.type == X.UnmapNotify:
+            self.icon.map()
+        elif event.type == X.ReparentNotify and event.parent.id != self.holder.id:
+            self.icon.change_attributes(event_mask=X.NoEventMask)
+            self.icon.unmap()
+            self.icon.reparent(self.root, 0, 0)
+            self.icon.map()
+        self.connection.flush()
+
+    def run_until(self, condition) -> None:
+        deadline = time.monotonic() + 5
+        while not condition() and time.monotonic() < deadline:
+            while self.connection.pending_events():
+                self.handle(self.connection.next_event())
+            time.sleep(0.01)
+
+    def icon_state(self) -> tuple[str, str]:
+        from Xlib import X
+
+        parent = self.icon.query_tree().parent.id
+        holder = {self.holder.id: "in the tray", self.root.id: "on the root window"}.get(parent, hex(parent))
+        states = {X.IsUnmapped: "unmapped", X.IsUnviewable: "unviewable", X.IsViewable: "viewable"}
+        return holder, states[self.icon.get_attributes().map_state]
+
+    def exists(self, window_id: int) -> bool:
+        from Xlib.error import BadWindow
+
+        try:
+            self.connection.create_resource_object("window", window_id).get_attributes()
+        except BadWindow:
+            return False
+        return True
+
+    def close(self) -> None:
+        self.tray.destroy()
+        self.connection.close()

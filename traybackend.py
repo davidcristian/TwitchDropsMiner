@@ -71,7 +71,7 @@ def session_bus_error() -> str | None:
 
 
 def icon_class(base: type) -> type:
-    """Return base, or a subclass that fixes docking, hiding and clicks when base is pystray's xorg Icon class."""
+    """Return base, or a subclass that fixes docking, clicks and changes when base is pystray's xorg Icon class."""
     if base.__module__ != XORG_MODULE:
         return base
 
@@ -151,23 +151,19 @@ def icon_class(base: type) -> type:
             window.change_attributes(event_mask=window.get_attributes().your_event_mask | BUTTON_PRESS_MASK)
             return window
 
-        # pystray hides the icon by unmapping its window and moving it out of the tray, and stalonetray then maps
-        # that window on the screen. A clear XEmbed mapped flag makes the tray hide the icon instead.
-        def _hide(self) -> None:
-            self._set_mapped_flag(False)
-
+        # a second dock request for a docked window makes trayer embed it again, and often leave it out
         def _show(self) -> None:
-            self._set_mapped_flag(True)
-            # a second dock request for a docked window makes trayer embed it again, and often leave it out
             if self._systray_manager is None:
                 super()._show()
 
-        def _set_mapped_flag(self, mapped: bool) -> None:
-            flags = self._XEMBED_MAPPED if mapped else 0
-            self._window.change_property(self._xembed_info, self._xembed_info, 32, [self._XEMBED_VERSION, flags])
-            self._display.flush()
-
     return XorgIcon
+
+
+def hides_by_stopping(icon: object) -> bool:
+    """Return True for an icon of pystray's xorg backend, which the app stops to hide and creates again to show."""
+    # stalonetray, tint2, trayer and xfce4-panel remove a destroyed icon window. stalonetray shows an icon that
+    # pystray hides, and tint2 shows one with a clear XEmbed mapped flag.
+    return any(cls.__module__ == XORG_MODULE for cls in type(icon).__mro__)
 
 
 def _describe(error: BaseException) -> str:

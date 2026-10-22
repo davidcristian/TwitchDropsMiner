@@ -1,6 +1,6 @@
 # The tray host tint2 shows the X11 tray icon while the window is open
 
-**Status:** declined 2026-10-22
+**Status:** done 2026-10-22
 **Area:** traybackend, gui
 **Origin:** Found on 2026-10-22 while the X11 tray icon was restored and minimized many times from source under
 Xvfb in the tray hosts stalonetray, tint2, trayer and xfce4-panel
@@ -39,3 +39,18 @@ sends a Twitch request.
   app keeps one icon. The same check of the current version, 8 runs per host, kept the icon shown in tint2 after
   48 of 48 restores and hid it after 48 of 48 in each other host, and no run waited. In tint2, 24 left clicks on
   the icon while the window was open left the window open, and each next `Minimize to Tray` worked.
+- 2026-10-22: Reopened. The wait that set this change aside is gone: the fix that closed
+  [task 070](070-x11-tray-icon-setup-thread-waits-in-flush.md) keeps other threads off the icon's connection, and
+  the fix that closed [task 071](071-x11-tray-icon-change-before-the-icon-thread-is-set.md) lets a change that
+  comes before the icon thread wait for it, so a new icon at each `Minimize to Tray` no longer risks either.
+- 2026-10-22: Closed. With the X11 backend, `TrayIcon.restore` stops the icon and the next `Minimize to Tray`
+  creates a new one ([traybackend.md](../../modules/traybackend.md)). It stops the icon only once pystray's setup
+  thread has shown it: a stop right after pystray marked a new icon ready left the setup thread waiting forever in
+  159 of 160 tries. From source under Xvfb in the four hosts, each with and without openbox, 10 runs per host of
+  six restores, two of them started with `--tray`, checked the earlier version and this one. Each docked and drew
+  248 of 248 icons, showed no blank icon, stray window or lost click, showed the window within 0.2 seconds of
+  each click, and ended 0.6 seconds after SIGTERM. The icon was shown after 60 and 0 of 240 restores, and the
+  tray looked as before the app started after 120 and 240. Under xtrace, trayer received one dock request for
+  each of 19 new icons. With a busy thread, 24,000 new icons were shown, changed and stopped without a wait. The
+  x86_64 PyInstaller build started with `--tray` in tint2 and stalonetray, each with and without openbox, hid the
+  icon at each of 12 restores and ended 0.6 seconds after SIGTERM.

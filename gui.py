@@ -46,7 +46,7 @@ from gamelib import (
 )
 from exceptions import MinerException, ExitRequest
 from folderpicker import FolderPicker
-from traybackend import icon_class, import_pystray, load_pystray, session_bus_error
+from traybackend import hides_by_stopping, icon_class, import_pystray, load_pystray, session_bus_error
 from scrollarea import MinimumSize, ScrollArea, Size, fitted_size
 from utils import resource_path, set_root_icon, webopen, start_task, task_wrapper, Game, _T
 from constants import (
@@ -1159,8 +1159,11 @@ class TrayIcon:
 
     def restore(self):
         if self.icon is not None:
-            # self.stop()
-            self.icon.visible = False
+            if not hides_by_stopping(self.icon):
+                self.icon.visible = False
+            elif self.icon.visible:
+                # pystray's setup thread shows a new icon, and a stop before that can leave the thread waiting forever
+                self.stop()
         self._manager._root.deiconify()
 
     def notify(
