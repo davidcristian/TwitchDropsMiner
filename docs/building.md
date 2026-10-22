@@ -221,6 +221,28 @@ appimage-builder, which comes from a git commit. After the build it checks
 `AppDir/usr/lib/python3.10/site-packages`, the folder of the app's packages in the AppImage. A folder without
 packages fails the check. To run it, use `python scripts/installcheck.py`, with `--folder <path>` for one folder.
 
+Dependabot proposes the new versions. The `pip` entry in [`.github/dependabot.yml`](../.github/dependabot.yml)
+reads `constraints.txt`, `requirements.txt` and `requirements-dev.txt`. On the first day of each month it opens
+one pull request for all of them, with each new version at least 14 days on PyPI (`cooldown`). A release that
+fixes a security issue comes at once, in a pull request of its own, because the cooldown applies only to version
+updates. That needs Dependabot alerts and security updates turned on in the repository settings. The alerts come
+from GitHub's dependency graph, which reads `constraints.txt` only through the `-c constraints.txt` line of
+`requirements-dev.txt`. The other settings:
+
+- `versioning-strategy: increase-if-necessary` keeps a range of `requirements.txt` while the new version is in it.
+- Dependabot moves each line to its newest version without resolving the whole set, so `ignore` keeps the limits
+  that other packages set: PyGObject below 3.51 (`requirements.txt`), pyaml below 22 (emrichen 0.4.0) and
+  zstandard below 0.24 (pydpkg 1.9.5). It also leaves out the version updates of rust-just, whose version changes
+  only together with the three hashes in `ci.yml` ([Run the checks](#run-the-checks)). A security update of it
+  still comes, and fails the Validate job until those hashes change too.
+- Dependabot reads the Python versions that a release supports for Python 3.14, so it proposes a release that
+  drops Python 3.10. The Validate job and the AppImage then fail, and the
+  [runbook](runbooks/dependency-versions.md) writes two lines with markers in place of the one.
+- Its commit subject, such as `build: bump the python-packages group with 3 updates`, follows the
+  [commit rules](../AGENTS.md#commits), but its body lists links, runs past 50 words and has lines longer than 72
+  characters. Merge with a squash, and keep the subject or write one such as
+  `build: update multidict, pycparser and tomli`, with no body or a body of your own.
+
 ## Release builds
 
 CI runs on every push to `master`, on every pull request and when it is started by hand. It builds for
@@ -255,6 +277,6 @@ comment, so that a tag moved to other code does not change what a job runs.
 [`.github/dependabot.yml`](../.github/dependabot.yml) has Dependabot check the actions once a week and open a
 pull request that updates a SHA and its comment. Its commit subjects start with `ci:`, but its commit bodies list
 links and commit hashes, which the [commit rules](../AGENTS.md#commits) do not allow, so rewrite the message
-when you merge such a pull request.
+when you merge such a pull request. Its updates of the Python packages are in [Exact versions](#exact-versions).
 
 Before you open a pull request, run the checks in [AGENTS.md](../AGENTS.md#what-every-change-must-pass).

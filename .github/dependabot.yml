@@ -6,3 +6,31 @@ updates:
       interval: weekly
     commit-message:
       prefix: ci
+  # constraints.txt and requirements-dev.txt: one pull request a month, each version at least two weeks old. A
+  # security update skips the wait. docs/building.md says why each setting is here.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 14
+    versioning-strategy: increase-if-necessary
+    groups:
+      python-packages:
+        patterns:
+          - "*"
+    ignore:
+      # Its version changes together with the three hashes of the just release in ci.yml.
+      - dependency-name: rust-just
+      # The limits that requirements.txt, emrichen 0.4.0 and pydpkg 1.9.5 set.
+      - dependency-name: PyGObject
+        versions:
+          - ">=3.51"
+      - dependency-name: pyaml
+        versions:
+          - ">=22"
+      - dependency-name: zstandard
+        versions:
+          - ">=0.24"
+    commit-message:
+      prefix: build

@@ -1,4 +1,7 @@
 # The tools `just check` runs, and the app's packages that the tests import. Builds install requirements.txt only.
+# GitHub's dependency graph, from which Dependabot raises security alerts, reads constraints.txt only through
+# this line.
+-c constraints.txt
 pre-commit==4.6.2
 pytest==9.1.1
 pytest-cov==7.1.0

@@ -189,7 +189,7 @@ lang/                  one translation file per language, named after the langua
 icons/                 pickaxe.ico (window and tray) and active, idle, error, maint: the tray icon states
 appimage/              AppImageBuilder.yml, the AppImage recipe, and pickaxe.png, its icon
 .github/workflows/     ci.yml: the Validate job (just check), the four builds and the dev-build pre-release
-.github/dependabot.yml  weekly updates of the action SHAs in ci.yml
+.github/dependabot.yml  weekly updates of the action SHAs in ci.yml, monthly ones of the Python packages
 .vscode/               launch.json debug configurations and tasks.json build tasks
 build.spec             PyInstaller spec: one-file build, icons, translations, Linux tray library, macOS .app
 setup_env.sh, .bat     create env/ and install requirements.txt into it

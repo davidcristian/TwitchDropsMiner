@@ -1,6 +1,6 @@
 # Nothing proposes a new version for `constraints.txt` or checks that it lists every indirect package
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** build, ci
 **Origin:** Found on 2026-10-22 while the update rule for `constraints.txt` was written
 **Verified:** 2026-10-22
@@ -37,3 +37,9 @@ None of this sends a Twitch request.
   AppDir, so the Debian packages of Ubuntu's Python stay out.
 - 2026-10-22: Step 1 of the runbook saves the files of the kept lines into a folder that `--find-links` names,
   so that a kept line newer than two weeks, such as aiohttp 3.14.5, resolves with `--uploaded-prior-to P14D`.
+- 2026-10-22: Closed. dependabot-core reads `constraints.txt` as a requirements file, so a `pip` entry in
+  `.github/dependabot.yml` opens one pull request a month with a cooldown of 14 days, which security updates
+  skip, and leaves out rust-just and the limits that other packages set. `requirements-dev.txt` names the file
+  with `-c`, so that the dependency graph, from which the security alerts come, reads it
+  ([ADR-0016](../../adr/ADR-0016-exact-dependency-versions.md)). Only GitHub can show the first pull request of
+  Dependabot and the packages of `constraints.txt` in the dependency graph.

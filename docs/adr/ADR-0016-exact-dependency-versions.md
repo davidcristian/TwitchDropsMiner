@@ -39,13 +39,17 @@ use 3.10. [Task 048](../refinements/tasks/048-builds-install-the-newest-dependen
    moves the file to it. The check tools keep their exact versions in `requirements-dev.txt`
    ([ADR-0012](ADR-0012-check-command.md)), and the file does not set the packages they depend on. The job
    passes no `--build-constraint`: the pip that Python 3.10 includes, 23.0.1, does not have the option.
+   `requirements-dev.txt` also names the file in a `-c constraints.txt` line, the only way in which GitHub's
+   dependency graph reads it.
 4. **No hashes.** pip runs without `--require-hashes`, for the reasons under Alternatives rejected.
-5. **The versions are updated by hand,** once a month and at once for a release that fixes a security issue,
-   in a pull request that runs every build. A new version is the newest release that has been on PyPI for at
-   least two weeks, as for the check tools, except a security release. A pull request that changes
-   `requirements.txt`, the app's lines of `requirements-dev.txt`, `BUILD_PYTHON_VERSION` or the Ubuntu release
-   of the Linux builds updates the file too. [runbooks/dependency-versions.md](../runbooks/dependency-versions.md)
-   gives the commands.
+5. **Dependabot proposes the new versions,** in one pull request a month and at once for a release that fixes
+   a security issue, and each pull request runs every build. A new version is the newest release that has been
+   on PyPI for at least two weeks, as for the check tools, except a security release. The `pip` entry in
+   `.github/dependabot.yml` sets this with `cooldown`, which security updates skip, and its settings are
+   explained in [building.md](../building.md#exact-versions). A pull request that changes `requirements.txt`,
+   the app's lines of `requirements-dev.txt`, `BUILD_PYTHON_VERSION` or the Ubuntu release of the Linux builds
+   updates the file too. [runbooks/dependency-versions.md](../runbooks/dependency-versions.md) gives the
+   commands, and checks a pull request of Dependabot.
 6. **Each build job checks what pip installed.** After the installs, `scripts/installcheck.py` fails on a
    package that the file lacks or sets to another version. The PyInstaller jobs check every package that their
    Python can import. The AppImage job checks the user's site folder, into which pip installs as a user without
@@ -76,8 +80,19 @@ use 3.10. [Task 048](../refinements/tasks/048-builds-install-the-newest-dependen
   zstandard 0.23.0 rather than its newest release. A resolve for another platform accepts only wheels, so the
   runbook builds a wheel of the commit first. `tests/test_constraints.py` checks that the commit in `ci.yml` is
   the one whose requirements it lists.
-- No tool proposes a new version ([task 057](../refinements/tasks/057-constraints-updates-by-hand.md)). A new
-  dependency of a new version fails the check of the build jobs until the runbook adds its line.
+- Dependabot's `pip` updates read every `.txt` file in the root whose name contains `requirements` or whose
+  lines are all requirements, options or comments, so they read and update `constraints.txt` as it is. They move
+  each line to its newest version on its own, without resolving the whole set. A limit that another package sets
+  therefore goes into `ignore`, and a new dependency of a new version fails the check of the build jobs until the
+  runbook adds its line.
+- Dependabot reads the Python versions that a release supports for Python 3.14, so its pull request for a
+  release that drops Python 3.10 fails the jobs on 3.10 until two lines with markers replace the one. It leaves
+  out a line whose `python_version` marker does not hold on 3.14.
+- A commit message of Dependabot has a subject that follows the commit rules and a body that does not, so the
+  pull request is merged with a squash and a rewritten message.
+- A security update needs Dependabot alerts and security updates turned on in the repository settings. The
+  alerts come from the dependency graph. It reads a `.txt` file whose name does not contain a word such as
+  `requirements` only when a file whose name does names it with `-r` or `-c`, as `requirements-dev.txt` does.
 - On 2026-10-21, with pip 26.2.1:
   - the runbook's resolve for the eight pairs of platform and Python, with each target's markers, chose every
     package at the version in the file;
@@ -98,8 +113,10 @@ use 3.10. [Task 048](../refinements/tasks/048-builds-install-the-newest-dependen
   `ubuntu:22.04` container, on 39 packages in the user's site folder and 18 in the AppDir. Each failed with six
   1.16.0 or idna 3.10 in place of the version in the file, and with colorama, which the file lacks. Run without
   `--folder` in the AppImage container, the check reported 13 Debian packages.
-- Not checked: the installs on Windows and macOS, and the pip 22.0.2 of Ubuntu 22.04 in the AppImage recipe,
-  which replaces it first. The CI run of the pull request shows them.
+- Not checked: the installs on Windows and macOS, the pip 22.0.2 of Ubuntu 22.04 in the AppImage recipe, which
+  replaces it first, and a run of Dependabot and the dependency graph, which happen only on GitHub. The CI run of
+  the pull request shows the first two, and the first pull request of Dependabot and the dependency graph page
+  of the repository show the others.
 
 ## Alternatives rejected
 
@@ -119,6 +136,6 @@ use 3.10. [Task 048](../refinements/tasks/048-builds-install-the-newest-dependen
 - [runbooks/dependency-versions.md](../runbooks/dependency-versions.md): updating a version.
 - [ADR-0012](ADR-0012-check-command.md): the Validate job and the versions of the check tools.
 - [ADR-0015](ADR-0015-release-build-python.md): the Python of the builds.
-- Tasks [048](../refinements/tasks/048-builds-install-the-newest-dependencies.md) (closed by this record),
-  [056](../refinements/tasks/056-appimage-builder-dependencies-newest.md) and
-  [057](../refinements/tasks/057-constraints-updates-by-hand.md).
+- Tasks [048](../refinements/tasks/048-builds-install-the-newest-dependencies.md) and
+  [057](../refinements/tasks/057-constraints-updates-by-hand.md) (closed by this record), and
+  [056](../refinements/tasks/056-appimage-builder-dependencies-newest.md).
