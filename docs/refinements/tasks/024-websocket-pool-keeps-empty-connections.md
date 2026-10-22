@@ -1,9 +1,9 @@
 # After a restart, the PubSub pool connects websockets that have no topics
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** websocket
 **Origin:** Found on 2026-10-18 while the docs were written, [websocket.md](../../modules/websocket.md#invariants)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 `WebsocketPool.stop(clear_topics=True)` in `websocket.py` calls `Websocket.stop(remove=True)` on each connection.
 That closes the connection, clears its `topics` and removes its row from the Websocket Status box, but the pool
@@ -78,3 +78,9 @@ fatal error added the third path through `shutdown()` on 2026-08-25.
 - 2026-10-20: `WebsocketPool.start()` now calls `start_nowait()` on each connection and does not wait for it,
   and `Websocket.start` was removed. The empty connections still start, so the task stays open.
 - 2026-10-21: Importing `websocket.py` in a test no longer fails, so the fix can have a suite test.
+- 2026-10-22: Done. The claim still held: `WebsocketPool.stop` kept the stopped objects, and `start` connected
+  each one again. With `clear_topics`, `stop` now empties `websockets`, so the next `add_topics` creates and
+  connects only the connections its topics fill ([websocket.md](../../modules/websocket.md#invariants)). The
+  test in `tests/test_websocket.py` runs 120 topics, a stop with `clear_topics` and 10 topics. Before the change
+  the pool held `[10, 0, 0]` and opened 6 connections, after it `[10]` and 4. The change sends no GQL request
+  and removes up to 7 PubSub connections after a restart, with the `PING` that each sends every 3 minutes.

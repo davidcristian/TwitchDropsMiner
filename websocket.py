@@ -367,6 +367,9 @@ class WebsocketPool:
     async def stop(self, *, clear_topics: bool = False):
         self._running.clear()
         await asyncio.gather(*(ws.stop(remove=clear_topics) for ws in self.websockets))
+        if clear_topics:
+            # the next start would connect each kept connection again, also one that the next topics leave empty
+            self.websockets.clear()
 
     def add_topics(self, topics: abc.Iterable[WebsocketTopic]):
         # ensure no topics end up duplicated

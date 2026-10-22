@@ -36,6 +36,15 @@ def pubsub_server(*connections: FakePubSub, opened: list[float]) -> Callable[[],
     return connect
 
 
+def channel_topics(count: int) -> list[WebsocketTopic]:
+    """Return the StreamState topics of the channels 1 to count, whose events do nothing."""
+
+    async def process(channel_id: int, message: JsonType) -> None:
+        pass
+
+    return [WebsocketTopic("Channel", "StreamState", channel_id, process) for channel_id in range(1, count + 1)]
+
+
 async def run_pubsub(twitch: Twitch, seconds: float, received: list[JsonType] | None = None) -> None:
     """Start PubSub with the drop event topic of user 1, run it for seconds of loop time, then stop it."""
 
@@ -108,3 +117,29 @@ def test_a_received_message_is_logged_with_its_secrets_hidden(live_twitch, caplo
         "Websocket[0] received: {'type': 'RESPONSE', 'nonce': 'n', 'data': {'auth_token': '<hidden>'}}"
     ]
     assert "secret-token" not in caplog.text
+
+
+def test_a_restart_with_fewer_topics_connects_only_the_websockets_that_hold_them(live_twitch):
+    opened: list[float] = []
+    server = pubsub_server(*(FakePubSub() for _ in range(8)), opened=opened)
+
+    async def scenario() -> list[int]:
+        twitch = live_twitch(FakeTwitch(), pubsub=server)
+        pool = twitch.websocket
+        await twitch.get_auth()
+        pool.start()
+        pool.add_topics(channel_topics(120))
+        await asyncio.sleep(30)
+        # Twitch.shutdown stops the pool this way before a restart, and the next run starts it and subscribes again
+        await pool.stop(clear_topics=True)
+        pool.start()
+        pool.add_topics(channel_topics(10))
+        await asyncio.sleep(30)
+        topics = [len(websocket.topics) for websocket in pool.websockets]
+        await pool.stop()
+        return topics
+
+    topics = run_with_fast_clock(scenario())
+
+    # 3 connections hold the 120 topics of the first run, and 1 the 10 topics of the next
+    assert (topics, len(opened)) == ([10], 4)

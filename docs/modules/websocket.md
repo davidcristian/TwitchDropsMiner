@@ -15,8 +15,8 @@ this module.
 - `start()` sets `running` and starts the task of every `Websocket` in `websockets`. It returns at once and
   does not wait for a connection ([below](#starting-without-a-connection)).
 - `await stop(*, clear_topics=False)` clears `running` and stops every connection. With `clear_topics`, as
-  `Twitch.shutdown` calls it, it also removes their topics and their rows in the GUI's Websocket Status box. The
-  `Websocket` objects stay in `websockets`.
+  `Twitch.shutdown` calls it, it also removes their topics and their rows in the GUI's Websocket Status box, and
+  empties `websockets`. Without it, the `Websocket` objects stay in `websockets` with their topics.
 - `add_topics(topics)` subscribes `WebsocketTopic`s and skips the ones already subscribed. It fills the
   connections in order, up to `WS_TOPICS_LIMIT` topics each, and creates a connection when the others are full,
   started at once when the pool is running. It raises `MinerException("Maximum topics limit has been reached")`
@@ -136,10 +136,9 @@ warning and skipped, and the rest of its batch is handled. The handlers and what
   handled at the same time.
 - `_handle` uses `task_wrapper(critical=True)`: an exception that escapes its reconnect loop ends the run as a
   fatal error, through `Twitch.task_failed` ([utils.md](utils.md#tasks)).
-- `stop` keeps the `Websocket` objects, and the next `start` connects every one of them, including those left
-  with no topics. A later `remove_topics` call stops the ones not needed. After a stop of a pool with 3
-  connections, all 3 stay in `websockets` with 0 topics, and new topics go to the first one
-  ([task 024](../refinements/tasks/024-websocket-pool-keeps-empty-connections.md)).
+- `stop(clear_topics=True)` empties `websockets`, because the next `start` connects every `Websocket` in it. So
+  after a restart, `add_topics` creates and connects only the connections that the new topics fill, as on the
+  first run. A run with 120 topics and a next run with 10 open 3 connections and then 1.
 - The module is over the 300 line cap ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
 
 **Dependencies.** `utils` (`ExponentialBackoff`, `AwaitableValue`, `start_task`, `task_wrapper`, `chunk`,
