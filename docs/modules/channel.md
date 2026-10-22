@@ -13,7 +13,7 @@ watch requests that make drop progress. `Twitch` keeps the tracked channels in `
 - `Channel.from_acl(twitch, data)` builds a channel from a campaign's ACL (access control list, the channels a
   campaign allows), with `acl_based=True` and no stream.
 - `Channel.from_directory(twitch, data, *, drops_enabled=False)` builds a live channel, with its `Stream`, from a
-  `GameDirectory` result that `directory_streams` read ([gqldata.md](gqldata.md#null-stream-fields)).
+  `GameDirectory` result that `directory_streams` read ([streamdata.md](streamdata.md#null-stream-fields)).
 - Two channels are equal when their `id` is equal, and the hash is the `id`.
 - Properties: `id`, `name` (the display name, or the login), `url`, `iid` (the row key in the GUI channel list),
   `game`, `viewers` (settable), `drops_enabled`, `acl_based`, and `stream_gql`, the `GetStreamInfo` operation for
@@ -24,7 +24,7 @@ watch requests that make drop progress. `Twitch` keeps the tracked channels in `
 - `cancel_online_check()` cancels a pending check. `set_offline()` cancels it too, and when the channel was
   online, it drops the stream and calls `Twitch.on_channel_update`.
 - `get_stream()` fetches the stream with GQL and returns it, or None when the channel is offline or its stream
-  has a null ID ([gqldata.md](gqldata.md#null-stream-fields)). `update_stream()` stores that result, calls
+  has a null ID ([streamdata.md](streamdata.md#null-stream-fields)). `update_stream()` stores that result, calls
   `Twitch.on_channel_update(channel, before, after)` and returns True when the channel is online.
 - `external_update(channel_data, available_drops)` sets the stream from the `GetStreamInfo` data that
   [`bulk_check_online`](#bulk-check) fetched, or drops it when that data has no stream.
@@ -97,7 +97,7 @@ It then calls `external_update` on each channel in the response, with no campaig
 `AvailableDrops` result is null. `external_update` drops the stream of an offline channel, so a channel that went
 offline after the cut at `MAX_CHANNELS` ranks as offline at the next `CHANNELS_FETCH`. A channel missing from
 the response, because its `user` or the user's `id` is null, keeps its current stream: a server error also sets
-`user` to null ([gqldata.md](gqldata.md#null-stream-fields)).
+`user` to null ([streamdata.md](streamdata.md#null-stream-fields)).
 
 `external_update` does not call `Twitch.on_channel_update`. `CHANNELS_FETCH` handles the new status after the
 check instead: it displays each channel it keeps, stops watching the watched channel when `can_watch` fails for
@@ -146,7 +146,7 @@ status of 400 or above and no online check is pending, `send_watch` also clears 
 ### A null playback token
 
 A server error can set `streamPlaybackAccessToken`, or its `value` or `signature`, to null
-([gqldata.md](gqldata.md#public-contract)). `get_stream_url` then logs a warning, marks the `Stream`, calls
+([streamdata.md](streamdata.md#public-contract)). `get_stream_url` then logs a warning, marks the `Stream`, calls
 `check_online()` and returns None, so the cycle fails. For a marked `Stream` it sends no request: it calls
 `check_online()` again, which starts a check only when none is pending, and returns None. The check stores a new
 `Stream` when the channel is still live, and the next cycle requests a token for it.
@@ -168,7 +168,7 @@ fails leaves the marked `Stream` in place, and the next cycle starts another one
   ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)).
 - `on_channel_update` ends with `display()`, so the GUI row matches the status after every change.
 
-**Dependencies.** `gqldata` (`get_field`, `playback_token`, `channel_stream`), `utils` (`Game`, `json_minify`,
-`isonow`), `exceptions` (`MinerException`, `RequestException`) and `constants` (`GQL_QUERIES`, `ONLINE_DELAY`,
-`CALL`, `URLType`, `GQLQuery`). Third party: aiohttp and yarl. `Twitch` and the GUI's `ChannelList` are imported
-for type checking only.
+**Dependencies.** `gqldata` (`get_field`), `streamdata` (`playback_token`, `channel_stream`), `utils` (`Game`,
+`json_minify`, `isonow`), `exceptions` (`MinerException`, `RequestException`) and `constants` (`GQL_QUERIES`,
+`ONLINE_DELAY`, `CALL`, `URLType`, `GQLQuery`). Third party: aiohttp and yarl. `Twitch` and the GUI's
+`ChannelList` are imported for type checking only.

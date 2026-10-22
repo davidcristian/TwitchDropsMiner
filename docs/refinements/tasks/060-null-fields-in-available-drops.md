@@ -22,9 +22,9 @@ stub data raised `TypeError` for each null field in this table:
 
 ## What a fix involves
 
-`channel_campaigns` in `gqldata.py` leaves out a channel with a null ID and a null campaign, with a warning, and
+`channel_campaigns` in `streamdata.py` leaves out a channel with a null ID and a null campaign, with a warning, and
 `get_stream` reads its response through the same function, as the stream reads do
-([gqldata.md](../../modules/gqldata.md#null-stream-fields)). A stream whose campaigns were left out counts as not
+([streamdata.md](../../modules/streamdata.md#null-stream-fields)). A stream whose campaigns were left out counts as not
 drops enabled until its next check, as a stream with no campaigns does. No fix adds a request.
 
 ## History

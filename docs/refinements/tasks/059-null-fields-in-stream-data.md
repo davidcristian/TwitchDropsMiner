@@ -33,7 +33,7 @@ No fix adds a request.
 - 2026-10-22: Opened. Found while the campaign reads were changed to leave out a campaign whose game has a null
   ID, name or box art, which closed [task 037](037-null-fields-in-other-gql-reads.md).
 - 2026-10-22: Done. The stream data of `GetStreamInfo` and `GameDirectory` goes through readers in `gqldata.py`
-  ([gqldata.md](../../modules/gqldata.md#null-stream-fields)). A stream with a null ID reads as an offline
+  ([streamdata.md](../../modules/streamdata.md#null-stream-fields)). A stream with a null ID reads as an offline
   channel, and a directory stream with a null ID, broadcaster ID or login is left out. A user with a null ID is
   left out of the bulk check. A game with a null ID or name, and null broadcast settings, give a stream without
   a game. A live channel read as offline costs at most one `GetStreamInfo` per `ONLINE_DELAY`, through its

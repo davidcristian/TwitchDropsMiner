@@ -12,7 +12,8 @@ from typing import Any, SupportsInt, cast, TYPE_CHECKING
 import aiohttp
 from yarl import URL
 
-from gqldata import get_field, playback_token, channel_stream
+from gqldata import get_field
+from streamdata import playback_token, channel_stream
 from utils import Game, json_minify, isonow
 from exceptions import MinerException, RequestException
 from constants import CALL, GQL_QUERIES, ONLINE_DELAY, URLType, GQLQuery

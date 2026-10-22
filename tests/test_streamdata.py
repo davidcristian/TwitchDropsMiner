@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from gqldata import channel_stream, channel_streams, directory_streams
+from streamdata import channel_stream, playback_token, channel_streams, channel_campaigns, directory_streams
 
 GAME = {"id": "1", "name": "G"}
 
@@ -114,3 +114,59 @@ def test_directory_streams_leaves_out_a_stream_with_a_null_id_broadcaster_id_or_
 def test_directory_streams_reads_a_game_with_a_null_id_or_name_as_no_game(game, caplog):
     assert directory_streams(directory_response(directory_node(game=game))) == [directory_node(game=None)]
     assert warnings(caplog) == ["Read the stream of channel 10 without a game, because its game has a null ID or name"]
+
+
+def game_response(game):
+    return {"data": {"game": game}}
+
+
+def test_directory_streams_returns_the_streams_with_a_broadcaster():
+    live = {"id": "1", "broadcaster": {"id": "9", "login": "c9"}, "game": None}
+    edges = [{"node": live}, {"node": {"id": "2", "broadcaster": None}}, {"node": None}]
+    assert directory_streams(game_response({"streams": {"edges": edges}})) == [live]
+
+
+@pytest.mark.parametrize("response", [
+    game_response(None),
+    game_response({"streams": None}),
+    game_response({"streams": {"edges": None}}),
+    {"data": {}},
+    {"data": None},
+])
+def test_directory_streams_returns_no_streams_for_a_null_game(response):
+    assert directory_streams(response) == []
+
+
+def available_response(channel):
+    return {"data": {"channel": channel}}
+
+
+def test_channel_campaigns_maps_each_channel_id_to_its_campaigns():
+    responses = [
+        available_response({"id": "10", "viewerDropCampaigns": [{"id": "A"}]}),
+        available_response({"id": "11", "viewerDropCampaigns": None}),
+    ]
+    assert channel_campaigns(responses) == {10: [{"id": "A"}], 11: []}
+
+
+def test_channel_campaigns_leaves_out_a_null_channel():
+    responses = [available_response(None), available_response({"id": "10", "viewerDropCampaigns": []})]
+    assert channel_campaigns(responses) == {10: []}
+
+
+def token_response(token):
+    return {"data": {"streamPlaybackAccessToken": token}}
+
+
+def test_playback_token_returns_the_value_and_the_signature():
+    assert playback_token(token_response({"value": "v", "signature": "s"})) == ("v", "s")
+
+
+@pytest.mark.parametrize("response", [
+    token_response({"value": None, "signature": "s"}),
+    token_response({"value": "v", "signature": None}),
+    token_response(None),
+    {"data": None},
+])
+def test_playback_token_returns_none_for_a_null_token_value_or_signature(response):
+    assert playback_token(response) is None

@@ -70,6 +70,7 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [redact.md](modules/redact.md) | `redact`: the secret key names it hides before a log call prints a value |
 | [reconnect.md](modules/reconnect.md) | `ReconnectDelay`: the wait of a websocket before each reconnect |
 | [gqldata.md](modules/gqldata.md) | `get_field`, `merge_data` and the readers that leave out a field a server error set to null |
+| [streamdata.md](modules/streamdata.md) | The readers of stream, channel and playback token data, which read a null field as no stream, no game or no campaign |
 | [imagedata.md](modules/imagedata.md) | `decode_image`: the full decode of an image download, which returns None for broken data; `png_mode`: the mode to save it in as PNG |
 | [savefiles.md](modules/savefiles.md) | `save_each`: the saves during a run, where a failed save is logged and the run goes on. `replace_file`: a write through a second file that keeps the old file when it fails. `UnsavedChanges`: whether a file has a change to write |
 | [ratelimit.md](modules/ratelimit.md) | `RateLimiter`: at most 5 GQL requests start in any second and at most 5 are open |

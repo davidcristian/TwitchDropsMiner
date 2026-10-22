@@ -88,11 +88,12 @@ The code comment on the limiter says not to change these values ([ADR-0002](../a
 | `service timeout`, `request cancelled`, `service unavailable`, `context deadline exceeded` | retries with `ExponentialBackoff(maximum=60)`, with no limit on the count |
 | any other message, or an `error` key | raises `GQLException` |
 
-The reads of `fetch_inventory`, `fetch_campaigns`, `get_live_streams`, `bulk_check_online`, `_watch_loop` and
-`process_drops` go through [gqldata.md](gqldata.md), which leaves out an item that a server error set to null, so such
-an error does not end the run. A null user or inventory in the `Inventory` or `Campaigns` response still ends it
+The reads of `fetch_inventory`, `fetch_campaigns`, `_watch_loop` and `process_drops` go through
+[gqldata.md](gqldata.md), and those of `get_live_streams` and `bulk_check_online` through
+[streamdata.md](streamdata.md). Both leave out an item that a server error set to null, so such an error does
+not end the run. A null user or inventory in the `Inventory` or `Campaigns` response still ends it
 ([gqldata.md](gqldata.md#a-null-inventory)). A null field in stream data is read as an offline channel or a
-stream without a game ([gqldata.md](gqldata.md#null-stream-fields)).
+stream without a game ([streamdata.md](streamdata.md#null-stream-fields)).
 
 ## Login
 
@@ -246,5 +247,5 @@ scanned again. A scan error is printed once while it persists ([gamelib.md](game
   one, with no `await` in between. So `process_stream_state` and `process_stream_update` find the channel of an
   event that arrives during the requests, and a `stream-down` for the watched channel still makes the app switch.
 
-**Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `gqldata`, `translate`, `redact`,
-`savefiles`, `ratelimit`, `exceptions`, `utils` and `constants`. Third party: aiohttp and yarl.
+**Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `gqldata`, `streamdata`, `translate`,
+`redact`, `savefiles`, `ratelimit`, `exceptions`, `utils` and `constants`. Third party: aiohttp and yarl.
