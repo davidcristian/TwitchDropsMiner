@@ -104,14 +104,18 @@ Three sources change a drop's minutes:
 
 `update_minutes(new_minutes)` computes the change from the drop's `real_current_minutes`, limited so that the drop
 stays between 0 and `required_minutes`. `DropsCampaign._update_real_minutes` then adds that same change to every
-drop of the campaign, caps each at `required_minutes` and sets its `extra_current_minutes` to 0. The floor at 0
-holds only for the drop that was updated. For example, with two drops at 10 and 1 minutes, an update of the first
-to 8 leaves them at 8 and -2 ([task 016](../refinements/tasks/016-negative-minutes-for-other-drops.md)).
+drop of the campaign, keeps each between 0 and `required_minutes` and sets its `extra_current_minutes` to 0. For
+example, with two drops at 10 and 1 minutes, an update of the first to 8 leaves them at 8 and 0.
 
 When an estimate reaches `MAX_EXTRA_MINUTES`, `bump_minutes` logs a warning and enters `State.CHANNEL_SWITCH`.
 Check 4 then fails for that drop. The progress handlers in `Twitch` skip a drop that cannot progress, so it stays
 at the limit until the next reload builds new objects, unless an update for another drop of the campaign resets
 its estimate.
+
+Every drop of the campaign gets the change, a drop that cannot progress included, because that reset is the only
+way a drop at the limit can progress again before the next reload. A claimed drop also gets the change, so a lower
+value for another drop takes minutes from it
+([task 073](../refinements/tasks/073-lower-progress-value-for-claimed-drops.md)).
 
 After every change a drop calls `gui.inv.update_drop` for its row on the Inventory tab. After a change of
 minutes the campaign also displays its `first_drop`.

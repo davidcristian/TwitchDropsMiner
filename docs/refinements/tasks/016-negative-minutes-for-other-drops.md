@@ -1,9 +1,9 @@
 # A lower progress value sets other drops of the campaign below zero minutes
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** inventory (drop progress)
 **Origin:** Found on 2026-10-18 while the docs were written, [inventory.md](../../modules/inventory.md#progress)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 `TimedDrop.update_minutes(new_minutes)` in `inventory.py` computes `delta = new_minutes - real_current_minutes`,
 limits it so that this drop stays between 0 and `required_minutes`, and passes it to
@@ -80,3 +80,9 @@ restarting the timer" replaced that `return` with the assignment to 0 and kept t
 - 2026-10-18: Opened while the docs were written. The writer's script and two more scripts, with campaign data
   built in the script, confirmed the negative values. `git log -L` on `_update_real_minutes` showed when the
   lower limit changed.
+- 2026-10-22: Closed. `TimedDrop._update_real_minutes` stops each drop at 0 minutes, and a test in
+  `tests/test_inventory.py` updates the first of the two drops above to 8 minutes. Every drop still gets the
+  change, a drop that cannot progress included, because the reset of `extra_current_minutes` is how a drop at
+  `MAX_EXTRA_MINUTES` progresses again before the next reload. Restoring the `can_earn` check would end that,
+  and a second test asserts it ([inventory.md](../../modules/inventory.md#progress)). Opened
+  [task 073](073-lower-progress-value-for-claimed-drops.md) for the minutes a claimed drop loses.

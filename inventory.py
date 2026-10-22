@@ -284,7 +284,7 @@ class TimedDrop(BaseDrop):
     def _update_real_minutes(self, delta: int) -> None:
         if self.real_current_minutes + delta < 0:
             self.real_current_minutes = 0
-        if self.real_current_minutes + delta < self.required_minutes:
+        elif self.real_current_minutes + delta < self.required_minutes:
             self.real_current_minutes += delta
         else:
             self.real_current_minutes = self.required_minutes
