@@ -172,12 +172,11 @@ library it needs. A run from source needs the system packages listed in
   `libwayland-client0`, `libwayland-cursor0` and `libwayland-egl1`, and the AppImage also without
   `libxcb-render0` (Debian and Ubuntu names). A desktop session starts a session bus, but a bare X server, a
   container or an SSH session may have none. The X11 icon has no menu and shows no notifications. A left click
-  on it shows the window, and a right click does nothing. To quit, show the window and close it. In the tray
-  host tint2, the icon stays in the tray while the window is open
-  ([task 069](refinements/tasks/069-tint2-shows-hidden-x11-tray-icon.md)), and after a start with `--tray` no icon
-  appears ([task 068](refinements/tasks/068-tint2-shows-no-x11-icon-after-tray-start.md)). Install these
-  libraries, or `libgtk-3-0`, which depends on them, and start the app in a session with a bus to get the
-  AppIndicator icon.
+  on it shows the window, and a right click does nothing. To quit, show the window and close it. When the app
+  starts before its tray, the icon appears once the tray has started. In the tray host tint2, the icon stays in
+  the tray while the window is open ([task 069](refinements/tasks/069-tint2-shows-hidden-x11-tray-icon.md)).
+  Install these libraries, or `libgtk-3-0`, which depends on them, and start the app in a session with a bus to
+  get the AppIndicator icon.
 - **Another tray backend.** pystray chooses its backend from the `PYSTRAY_BACKEND` environment variable when it
   is set, for example to `gtk` or `xorg`.
 

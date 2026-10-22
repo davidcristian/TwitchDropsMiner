@@ -7,10 +7,11 @@ from types import SimpleNamespace
 
 import pytest
 
-from traybackend import XORG_MODULE, icon_class
+from traybackend import CLIENT_MESSAGE, XORG_MODULE, icon_class
 
 # ExposureMask and StructureNotifyMask, which pystray 0.19.5 selects on its xorg icon window
 XORG_EVENTS = (1 << 15) | (1 << 17)
+ATOMS = {"MANAGER": 1, "_NET_SYSTEM_TRAY_S0": 2, "_NET_WM_CM_S0": 3, "_PYSTRAY__SHOW": 4}
 
 
 class FakeWindow:
@@ -36,6 +37,8 @@ class FakeDisplay:
         self.messages: list[tuple[str, int, tuple[int, ...]]] = []
         self.synced = 0
         self.closed = False
+        self.root = FakeWindow()
+        self.root.mask = 0
         FakeDisplay.opened.append(self)
 
     def flush(self) -> None:
@@ -47,6 +50,12 @@ class FakeDisplay:
     def close(self) -> None:
         self.closed = True
 
+    def screen(self) -> SimpleNamespace:
+        return SimpleNamespace(root=self.root)
+
+    def intern_atom(self, name: str) -> int:
+        return ATOMS[name]
+
 
 class FakeXorgIcon:
     _XEMBED_VERSION = 0
@@ -56,8 +65,10 @@ class FakeXorgIcon:
         self._xembed_info = "_XEMBED_INFO"
         self._display = FakeDisplay()
         self._systray_manager = systray_manager
+        self._net_system_tray_sx = ATOMS["_NET_SYSTEM_TRAY_S0"]
         self._thread = threading.current_thread()
         self.calls: list[str] = []
+        self._message_handlers = {CLIENT_MESSAGE: lambda event: self.calls.append(f"pystray {event.client_type}")}
         self._window = self._create_window()
 
     def _create_window(self) -> FakeWindow:
@@ -69,11 +80,18 @@ class FakeXorgIcon:
     def _hide(self) -> None:
         self.calls.append("undock")
 
+    def _update_icon(self) -> None:
+        self.calls.append("dock and draw")
+
     def _send_message(self, window: str, client_type: int, *data: int) -> None:
         self._display.messages.append((window, client_type, data))
 
 
 FakeXorgIcon.__module__ = XORG_MODULE
+
+
+def client_message(client_type: str, selection: str) -> SimpleNamespace:
+    return SimpleNamespace(client_type=ATOMS[client_type], data=(32, [0, ATOMS[selection], 9, 0, 0]))
 
 
 def next_event(connection, kind: int):

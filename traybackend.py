@@ -1,4 +1,4 @@
-"""Imports pystray with the first tray backend that loads, and fixes how its X11 icon receives clicks and hides."""
+"""Imports pystray with the first tray backend that loads, and fixes how its X11 icon docks, hides and gets clicks."""
 from __future__ import annotations
 
 import logging
@@ -17,8 +17,10 @@ BACKEND_VARIABLE = "PYSTRAY_BACKEND"
 BACKENDS = ("appindicator", "gtk", "xorg")
 BACKEND_ERRORS = (ImportError, ValueError, AssertionError)
 XORG_MODULE = "pystray._xorg"
-# the X11 protocol's ButtonPressMask, which is Xlib.X.ButtonPressMask
+# the X11 protocol's ButtonPressMask, StructureNotifyMask and ClientMessage event type, which Xlib.X names so
 BUTTON_PRESS_MASK = 1 << 2
+STRUCTURE_NOTIFY_MASK = 1 << 17
+CLIENT_MESSAGE = 33
 
 
 class WindowAttributes(Protocol):
@@ -33,6 +35,13 @@ class IconWindow(Protocol):
     def get_attributes(self) -> WindowAttributes: ...
 
     def change_attributes(self, *, event_mask: int) -> object: ...
+
+
+class ClientMessage(Protocol):
+    """An Xlib ClientMessage event: the atom that names its type, and its format with its five numbers."""
+
+    client_type: int
+    data: tuple[int, abc.Sequence[int]]
 
 
 def load_pystray() -> ModuleType:
@@ -60,11 +69,29 @@ def session_bus_error() -> str | None:
 
 
 def icon_class(base: type) -> type:
-    """Return base, or a subclass that receives clicks and hides in its tray when base is pystray's xorg Icon class."""
+    """Return base, or a subclass that fixes docking, hiding and clicks when base is pystray's xorg Icon class."""
     if base.__module__ != XORG_MODULE:
         return base
 
     class XorgIcon(base):
+        # pystray docks the icon only as it starts or shows it. A tray that starts later, as tint2 does 15 seconds
+        # after its own start without a window manager, announces itself with a MANAGER message to the root window.
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            super().__init__(*args, **kwargs)
+            self._display.screen().root.change_attributes(event_mask=STRUCTURE_NOTIFY_MASK)
+            self._manager_atom = self._display.intern_atom("MANAGER")
+            pystray_handler = self._message_handlers[CLIENT_MESSAGE]
+            self._message_handlers[CLIENT_MESSAGE] = lambda event: self._on_client_message(event, pystray_handler)
+
+        def _on_client_message(
+            self, event: ClientMessage, pystray_handler: abc.Callable[[ClientMessage], None]
+        ) -> None:
+            if event.client_type != self._manager_atom:
+                pystray_handler(event)
+            elif event.data[1][1] == self._net_system_tray_sx and self._systray_manager is None:
+                # docks the icon and draws its image
+                self._update_icon()
+
         # python-xlib 0.33 can leave a thread that waits for a reply waiting forever when another thread sends a
         # request on the same connection, so a message from another thread goes through a new connection.
         def _send_message(self, window: object, client_type: int, *data: int) -> None:

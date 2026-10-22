@@ -36,6 +36,14 @@ time it shows the icon or changes its image, so two in a row when an icon starts
 for each request, and after two in a row it often leaves the icon out of its tray, so the subclass sends the
 request at a show only while the icon is not docked.
 
+pystray sends a dock request only when it shows the icon, changes its image or sees its tray end. With pystray
+alone, a tray host that takes the system tray selection `_NET_SYSTEM_TRAY_S0` after that never receives one, so
+after a start with `--tray` no icon appears and nothing can show the window again. tint2 17.0.1 takes the
+selection only after it has waited up to 15 seconds for a window manager to set `_NET_NUMBER_OF_DESKTOPS`, and a
+desktop may start its panel after an app that starts with it. A tray announces itself with a `MANAGER` client
+message to the root window, so the subclass receives the structure events of the root window, which include that
+message, and then docks an undocked icon.
+
 pystray's icon thread reads the X events of the icon's connection to the X server, and for each change, such as a
 show, a hide, a new image or a new title, another thread sends a client message to the icon window on that same
 connection. In python-xlib 0.33, `send_and_recv` lets a thread that sends but does not read return when data
@@ -58,6 +66,9 @@ each message needs no lock and nothing to close at exit, and the app sends a few
   - Before it returns or raises, it sets `PYSTRAY_BACKEND` back to its earlier value, or removes it.
 - `icon_class(base)` returns `base`, the `Icon` class of the loaded pystray, unless its module is `pystray._xorg`.
   Then it returns a subclass, which `gui.py` creates its icon from:
+  - `__init__` calls pystray's, selects `StructureNotifyMask` on the root window and wraps pystray's handler of
+    client messages. A `MANAGER` message that names `_NET_SYSTEM_TRAY_S0` while `_systray_manager` is None
+    calls `_update_icon`, which docks the icon and draws it. Any other client message goes to pystray's handler.
   - `_send_message` calls pystray's in the icon thread. In another thread, it opens a new connection of the
     class of `_display`, sends the message on it with pystray's `_send_message`, then calls `sync`, without which
     Xvfb dropped the message, and closes it. pystray's dispatch then calls `flush` on the icon's connection,
@@ -67,12 +78,13 @@ each message needs no lock and nothing to close at exit, and the app sends a few
   - `_hide` clears the mapped flag of the window's `_XEMBED_INFO` property, and `_show` sets it. `_show` then
     calls pystray's `_show`, which sends the dock request, only while `_systray_manager` is None.
 
-  These names, and `_window`, `_display`, `_thread`, `_xembed_info` and the `_XEMBED_` constants that the
-  subclass reads, are private to pystray, and `constraints.txt` keeps them stable by setting the pystray and
-  python-xlib versions exactly. Suite tests run a real X11 icon under Xvfb: one sends it a click, one hides and
-  shows it in a window that acts as stalonetray does and counts its dock requests, and one counts the requests on
-  the icon's connection at a title change from another thread. A pystray release that renames one of these names
-  fails `just check`.
+  These names, and `_window`, `_display`, `_thread`, `_message_handlers`, `_net_system_tray_sx`, `_xembed_info`
+  and the `_XEMBED_` constants that the subclass reads, are private to pystray, and `constraints.txt` keeps them
+  stable by setting the pystray and python-xlib versions exactly. Suite tests run a real X11 icon under Xvfb: one
+  sends it a click, one hides and shows it in a window that acts as stalonetray does and counts its dock
+  requests, one takes the tray selection after the icon has started and waits for the dock request, and one
+  counts the requests on the icon's connection at a title change from another thread. A pystray release that
+  renames one of these names fails `just check`.
 - `load_pystray()` imports pystray with an `import` statement, so that PyInstaller finds the package and bundles
   it, and returns the module.
 - `session_bus_error()` opens the DBus session bus with `Gio.bus_get_sync`, the call that pystray's icon thread
