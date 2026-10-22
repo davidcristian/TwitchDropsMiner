@@ -5,9 +5,10 @@ returns only when it closes, and the app runs Tk and asyncio on one thread
 ([gui.md](gui.md#how-the-gui-runs-with-asyncio)). In the app's own process the dialog would stop every task
 while it is open, so the miner would send no watch request or PubSub ping and the countdown would stop. This
 module shows the dialog in a child process and checks for its answer between other tasks.
-`SettingsPanel.game_dir_add` in `gui.py` uses it. The module imports no other module of the app, so the child
-process loads only this module and the standard library. `tests/test_folderpicker.py` runs `FolderPicker` with
-fake dialogs and `ChildDialog` with real child processes that run the fake functions in `tests/fakedialog.py`.
+`SettingsPanel.game_dir_add` in `gui.py` uses it. Of the app's modules it imports only `colorfonts`, which
+imports none, so the child process loads only these two and the standard library. `tests/test_folderpicker.py`
+runs `FolderPicker` with fake dialogs and `ChildDialog` with real child processes that run the fake functions in
+`tests/fakedialog.py`.
 
 ## Public contract
 
@@ -26,8 +27,9 @@ fake dialogs and `ChildDialog` with real child processes that run the fake funct
     standard error.
   - `close()` kills the child and waits for it to end.
   - The child is a daemon process, so `multiprocessing` ends it when the app exits instead of waiting for it.
-- `ask_on_top(title, start)` creates a hidden Tk root with the `-topmost` attribute and calls
-  `filedialog.askdirectory` with `mustexist=True` and `start` as the initial folder. It returns `""` on Cancel.
+- `ask_on_top(title, start)` calls `skip_color_fonts` ([colorfonts.md](colorfonts.md)), creates a hidden Tk
+  root with the `-topmost` attribute and calls `filedialog.askdirectory` with `mustexist=True` and `start` as
+  the initial folder. It returns `""` on Cancel.
 - `Dialog` is the `Protocol` of `answer()` and `close()` that `FolderPicker` calls. Tests pass a fake one.
 
 ## The child process
@@ -53,8 +55,9 @@ second window of the app.
 ## Invariants
 
 - One dialog at a time: `SettingsPanel` disables the ➕ button until `choose` returns.
-- The module imports no module of the app, because the child imports it.
+- Of the app's modules, the module imports only `colorfonts`, which imports none, because the child imports it.
 - The main module keeps all of its work under `if __name__ == "__main__":`
   ([main.md](main.md#invariants)).
 
-**Dependencies.** None: the standard library only (`asyncio`, `multiprocessing`, `tkinter`).
+**Dependencies.** Repo modules: `colorfonts`. Otherwise the standard library only (`asyncio`, `multiprocessing`,
+`tkinter`).

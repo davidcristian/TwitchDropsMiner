@@ -33,6 +33,7 @@ if sys.platform == "darwin":
 
 from translate import _
 from cache import ImageCache
+from colorfonts import LoadedFontLibraries, skip_color_fonts
 from gamelib import (
     GameMatch,
     MatchKind,
@@ -2454,6 +2455,7 @@ class GUIManager:
         self._twitch: Twitch = twitch
         self._poll_task: asyncio.Task[NoReturn] | None = None
         self._close_requested = asyncio.Event()
+        skip_color_fonts(LoadedFontLibraries())
         self._root = root = Tk(className=WINDOW_TITLE)
         # withdraw immediately to prevent the window from flashing
         self._root.withdraw()

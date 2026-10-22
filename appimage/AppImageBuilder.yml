@@ -17,7 +17,7 @@ script:
   - curl -fL "https://github.com/AppImageCrafters/AppRun/releases/download/v2.0.0/libapprun_hooks-Release-$ARCH.so" -o "AppRun/v2.0.0/libapprun_hooks-Release-$ARCH.so"
   - sha256sum -c "$SOURCE_DIR/runtime-$ARCH.sha256"
 
-  # Build a recent version of libXft first. This fixes an issue where the app won't start with libXft 2.3.3 if an emoji font is installed on the system.
+  # Build a recent version of libXft first. libXft before 2.3.5 cannot draw the color glyphs of emoji fonts.
   - curl -fL https://xorg.freedesktop.org/releases/individual/lib/libXft-2.3.9.tar.xz -o libXft.tar.xz
   - echo "60a25b78945ed6932635b3bb1899a517d31df7456e69867ffba27f89ff3976f5  libXft.tar.xz" | sha256sum -c -
   - tar xvf libXft.tar.xz

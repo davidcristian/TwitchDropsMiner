@@ -181,6 +181,15 @@ library it needs. A run from source needs the system packages listed in
 - **Another tray backend.** pystray chooses its backend from the `PYSTRAY_BACKEND` environment variable when it
   is set, for example to `gtk` or `xorg`.
 
+## Symbols show as empty boxes on Linux
+
+In a run from source, symbols such as ❌, ⏳ and ➕ show as empty boxes when libXft, the library with which Tk
+draws text, is older than 2.3.5, and the first font with these symbols is a color emoji font, such as Noto Color
+Emoji. Ubuntu 22.04 has libXft 2.3.4. Such a libXft cannot draw color fonts, and a glyph of one can end the app
+with a segmentation fault, so the app leaves color fonts out ([colorfonts.md](modules/colorfonts.md)). Install a
+font with black and white versions of the symbols, such as Symbola (`fonts-symbola` on Debian and Ubuntu), or
+use a release build, which includes libXft 2.3.9 and shows them in color.
+
 ## Reporting a problem
 
 Report a problem on this project's [Issues page](https://github.com/davidcristian/TwitchDropsMiner/issues). Do

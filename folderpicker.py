@@ -8,6 +8,8 @@ from multiprocessing.connection import Connection
 from tkinter import Tk, filedialog
 from typing import Protocol
 
+from colorfonts import LoadedFontLibraries, skip_color_fonts
+
 POLL_SECONDS = 0.1
 
 Ask = abc.Callable[[str, str], str]
@@ -27,6 +29,7 @@ class Dialog(Protocol):
 
 def ask_on_top(title: str, start: str) -> str:
     """Show Tk's folder dialog above the other windows and return the folder chosen, or "" on Cancel."""
+    skip_color_fonts(LoadedFontLibraries())
     root = Tk()
     root.withdraw()
     root.attributes("-topmost", True)

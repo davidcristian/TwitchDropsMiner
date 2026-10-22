@@ -9,8 +9,9 @@ replace edit in this file, read the `gui.py` recipe in [AGENTS.md](../../AGENTS.
 
 ## The window
 
-`GUIManager.__init__` builds each part and keeps it as an attribute. The labels in quotes are the English strings
-from [translate.md](translate.md).
+`GUIManager.__init__` first calls `skip_color_fonts`, which leaves color fonts out of the fonts Tk uses when
+libXft is older than 2.3.5 ([colorfonts.md](colorfonts.md)), and then creates the `Tk` root. It builds each part
+and keeps it as an attribute. The labels in quotes are the English strings from [translate.md](translate.md).
 
 | Attribute | Class | Tab | What it shows |
 | --- | --- | --- | --- |
@@ -213,7 +214,7 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
   needs. It has no `detect_games`, `get_auth` or `_client_type`, so "Rescan", the ❌ folder button and a folder
   chosen with ➕ raise `AttributeError` in the preview.
 
-**Dependencies.** Repo modules: `translate`, `cache`, `gamelib`, `exceptions`, `folderpicker`, `traybackend`,
-`scrollarea`, `utils`, `constants`, and `registry` on Windows; `twitch`, `channel`, `settings` and `inventory`
-for type checking only. Third-party: `pystray`, Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on
-Windows, `AppKit` on macOS, and `aiohttp` in the preview.
+**Dependencies.** Repo modules: `translate`, `cache`, `colorfonts`, `gamelib`, `exceptions`, `folderpicker`,
+`traybackend`, `scrollarea`, `utils`, `constants`, and `registry` on Windows; `twitch`, `channel`, `settings` and
+`inventory` for type checking only. Third-party: `pystray`, Pillow, `yarl`, pywin32 (`win32api`, `win32con`,
+`win32gui`) on Windows, `AppKit` on macOS, and `aiohttp` in the preview.

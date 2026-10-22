@@ -13,6 +13,7 @@ from fakedialog import FakeDialogs
 from fakes import GAME, FakeTwitch, campaign_data, drop_data
 from folderpicker import FolderPicker
 from gqldata import complete_campaigns
+import gui as gui_module
 from gui import GUIManager
 from inventory import DropsCampaign
 
@@ -124,6 +125,29 @@ def test_closing_the_window_closes_an_open_folder_dialog(window):
     assert dialogs.opened[0].closed
     assert twitch.settings.game_dirs == []
     assert twitch.scans == 0
+
+
+def test_the_window_leaves_color_fonts_out_before_tk_starts_when_libxft_is_older_than_2_3_5(window, monkeypatch):
+    events: list[str] = []
+
+    class OldXft:
+        def xft_version(self) -> int:
+            return 20304
+
+        def use_fontconfig_rules(self, rules: bytes) -> bool:
+            events.append("rules")
+            return True
+
+    class RecordedTk(tk.Tk):
+        def __init__(self, *args, **kwargs) -> None:
+            events.append("Tk")
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr(gui_module, "LoadedFontLibraries", OldXft)
+    monkeypatch.setattr(gui_module, "Tk", RecordedTk)
+    window(FakeTwitch())
+
+    assert events == ["rules", "Tk"]
 
 
 def test_a_channel_added_again_is_the_object_that_the_selection_returns(window):

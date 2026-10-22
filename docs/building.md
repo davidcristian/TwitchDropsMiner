@@ -165,8 +165,9 @@ The `linux-appimage` job in `ci.yml` builds the AppImage on Ubuntu 22.04 with
 
 - takes its system packages, including `python3-tk` and `gir1.2-ayatanaappindicator3-0.1`, from the Ubuntu 22.04
   archives, and fetches the key that signs them from `keyserver.ubuntu.com` over HTTPS;
-- builds libXft 2.3.9, because the app does not start with libXft 2.3.3 when an emoji font is installed. It
-  checks the archive with `sha256sum -c` against the SHA-256 written in the recipe and in `ci.yml`;
+- builds libXft 2.3.9, because libXft before 2.3.5 cannot draw the color glyphs of emoji fonts, so the app
+  leaves color fonts out with it ([colorfonts.md](modules/colorfonts.md)). It checks the archive with
+  `sha256sum -c` against the SHA-256 written in the recipe and in `ci.yml`;
 - downloads the AppImage runtime of the `20251108` release of `AppImage/type2-runtime` and AppRun `v2.0.0` of
   `AppImageCrafters/AppRun`, and checks each against `appimage/runtime-<arch>.sha256`. It puts them where
   appimage-builder looks before it downloads its own, unchecked, copy: `prime/` and `AppRun/v2.0.0/` in its build
