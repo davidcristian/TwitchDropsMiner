@@ -137,12 +137,15 @@ def _latin_title(normalized: str) -> str:
 
 
 def _numbers(normalized: str) -> list[str]:
-    """The numbers in a name, in order: roman numeral words as digits, and every run of digits, even inside a word."""
+    """The numbers in a name, in order: roman numeral words as digits, every run of digits, and each lone letter."""
     numerals = {**ROMAN_NUMERALS, **SINGLE_LETTER_NUMERALS}
     numbers: list[str] = []
     for token in normalized.split():
         if token in numerals:
             numbers.append(numerals[token])
+        elif len(token) == 1 and token.isalpha():
+            # a lone letter often names a release of a series, as Σ in "ninja gaiden σ" does
+            numbers.append(token)
         else:
             # "lineage2" and "三國志14" hold a number too; each digit is written in 0 to 9
             numbers.extend("".join(str(unicodedata.digit(char)) for char in run) for run in re.findall(r"\d+", token))

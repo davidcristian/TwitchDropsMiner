@@ -61,7 +61,8 @@ a game the user never chose. A missed match costs little, because the user can s
      normalized names at least `FUZZY_MIN_LENGTH` (8) characters long, the same numbers on both sides (each
      run of digits, also inside a word, and the roman numerals), and no second Twitch name also at or above
      the threshold. A lone `i`, `v` or `x` counts as a number here and nowhere else, since a single letter is
-     often part of a title.
+     often part of a title. Any other word of one letter counts here as itself, because such a letter often
+     names another release of a series, as `Σ` in `NINJA GAIDEN Σ` does.
 
    The numeric token check separates a sequel from its prequel: an installed `Counter-Strike 2` gets no match
    against a campaign for `Counter-Strike`, and `Grand Theft Auto V` none against `Grand Theft Auto`. The Detected
@@ -90,7 +91,8 @@ a game the user never chose. A missed match costs little, because the user can s
 
 - A lone `I`, `V` or `X` that is part of a title or an edition blocks a fuzzy match, so the same game written
   with and without it is not paired: `Mortal Kombat XL` against `Mortal Kombat X`, or
-  `The Elder Scrolls V: Skyrim` against `The Elder Scrolls: Skyrim`. Such a game can be added to the Priority
+  `The Elder Scrolls V: Skyrim` against `The Elder Scrolls: Skyrim`. Any other lone letter does the same, the
+  article `a` too: `A Plague Tale: Innocence` against `Plague Tale: Innocence`. Such a game can be added to the Priority
   list by hand, while a sequel paired with its original would mine a game the user did not choose.
 - The other edition words can still pair a re-release with a different game of the same plain name. `classic`
   and `legacy` stay edition words, so a name that ends in one of them alone still matches the name without

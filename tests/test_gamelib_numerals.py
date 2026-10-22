@@ -48,3 +48,39 @@ def test_match_games_keeps_a_word_that_is_not_a_correct_numeral_below_40_as_a_wo
 def test_roman_numerals_lists_2_to_39_without_the_lone_letters():
     assert sorted(map(int, ROMAN_NUMERALS.values())) == [number for number in range(2, 40) if number not in (5, 10)]
     assert (ROMAN_NUMERALS["xix"], ROMAN_NUMERALS["xxiv"], ROMAN_NUMERALS["xxxix"]) == ("19", "24", "39")
+
+
+@pytest.mark.parametrize(
+    ("local_name", "game_name"),
+    [
+        ("NINJA GAIDEN Σ", "Ninja Gaiden"),
+        ("Ninja Gaiden", "NINJA GAIDEN Σ"),
+        ("NINJA GAIDEN Σ", "NINJA GAIDEN Ω"),
+        ("Kingdom Hearts χ Back Cover", "Kingdom Hearts Back Cover"),
+        ("New Super Mario Bros. U", "New Super Mario Bros."),
+        ("Persona Q: Shadow of the Labyrinth", "Persona: Shadow of the Labyrinth"),
+    ],
+    ids=[
+        "greek letter at the end", "greek letter on the twitch side", "another greek letter",
+        "greek letter inside the name", "latin letter at the end", "latin letter inside the name",
+    ],
+)
+def test_match_games_gives_no_fuzzy_match_when_a_lone_letter_differs(local_name, game_name):
+    assert match_one(local_name, [game_name]) == []
+
+
+@pytest.mark.parametrize(
+    ("local_name", "game_name", "kind"),
+    [
+        ("Dragon Ball Z: Kakarott", "Dragon Ball Z: Kakarot", MatchKind.FUZZY),
+        ("NINJA GAIDEN Σ", "Ninja Gaiden: Σ", MatchKind.EXACT),
+        ("New Super Mario Bros. U Deluxe", "New Super Mario Bros. U", MatchKind.VARIANT),
+    ],
+)
+def test_match_games_pairs_names_with_the_same_lone_letters(local_name, game_name, kind):
+    assert match_one(local_name, [game_name]) == [(game_name, kind)]
+
+
+def test_match_games_gives_no_fuzzy_match_when_one_name_lacks_the_article_a():
+    # The cost that ADR-0004 accepts: the article "a" is a lone letter too.
+    assert match_one("A Plague Tale: Innocence", ["Plague Tale: Innocence"]) == []

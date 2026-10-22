@@ -160,12 +160,15 @@ a candidate decides:
    so `Mortal Kombat XL` is not a variant of `Mortal Kombat 40`.
 3. **`FUZZY`**: only for normalized names of at least `FUZZY_MIN_LENGTH` (8) characters on both sides, and only
    when the numbers in both names are equal, in order: every run of digits, also inside a word (`lineage2`),
-   the `ROMAN_NUMERALS` words, and a lone `i`, `v` or `x` (`SINGLE_LETTER_NUMERALS`). The
-   `difflib.SequenceMatcher` ratio must be at least `FUZZY_THRESHOLD` (0.92). The number rule keeps
-   `Counter-Strike 2` from matching `Counter-Strike`, and `Grand Theft Auto V` from matching `Grand Theft Auto`.
-   `Grand Theft Auto 5` and `Grand Theft Auto V` have the same numbers, so they pair as a fuzzy match. The same
-   game written once with its lone numeral and once without (`Mortal Kombat XL` and `Mortal Kombat X`) does not
-   pair, which [ADR-0004](../adr/ADR-0004-installed-game-detection.md) accepts.
+   the `ROMAN_NUMERALS` words, a lone `i`, `v` or `x` (`SINGLE_LETTER_NUMERALS`), and any other word of one
+   letter, in any script, which counts as itself. The `difflib.SequenceMatcher` ratio must be at least
+   `FUZZY_THRESHOLD` (0.92). The number rule keeps `Counter-Strike 2` from matching `Counter-Strike`, and
+   `Grand Theft Auto V` from matching `Grand Theft Auto`. A lone letter often names another release of a series,
+   so `NINJA GAIDEN Σ` does not match `Ninja Gaiden` or `NINJA GAIDEN Ω`, and `New Super Mario Bros. U` does not
+   match `New Super Mario Bros.`. `Grand Theft Auto 5` and `Grand Theft Auto V` have the same numbers, so they
+   pair as a fuzzy match. The same game written once with its lone numeral or letter and once without
+   (`Mortal Kombat XL` and `Mortal Kombat X`, or `A Plague Tale: Innocence` and `Plague Tale: Innocence`) does
+   not pair, which [ADR-0004](../adr/ADR-0004-installed-game-detection.md) accepts.
 
 A local name that starts with a native title and ends with an English one, such as `原神 Genshin Impact`, is
 also matched by its English title. The native title is the leading words that hold no letter `a` to `z` and no
