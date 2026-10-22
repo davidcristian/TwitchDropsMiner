@@ -30,10 +30,9 @@ by clearing the mapped flag of its `_XEMBED_INFO` property, which an XEmbed tray
 window. stalonetray, trayer and xfce4-panel hide the icon then; tint2 ignores the flag and keeps showing the icon.
 
 The app keeps one icon for its whole run. Stopping the icon at each restore and creating a new one at each
-`Minimize to Tray` hides it in tint2 as well, but the setup thread of a new icon sometimes waits forever as the
-icon starts ([task 070](../refinements/tasks/070-x11-tray-icon-setup-thread-waits-in-flush.md)), and a new icon
-at each minimize gives that wait a chance at each one
-([task 069](../refinements/tasks/069-tint2-shows-hidden-x11-tray-icon.md)). pystray also sends a dock request each
+`Minimize to Tray` hides it in tint2 as well, and
+[task 069](../refinements/tasks/069-tint2-shows-hidden-x11-tray-icon.md) records why the app does not do that.
+pystray also sends a dock request each
 time it shows the icon or changes its image, so two in a row when an icon starts. trayer embeds the window again
 for each request, and after two in a row it often leaves the icon out of its tray, so the subclass sends the
 request at a show only while the icon is not docked.
@@ -46,14 +45,22 @@ desktop may start its panel after an app that starts with it. A tray announces i
 message to the root window, so the subclass receives the structure events of the root window, which include that
 message, and then docks an undocked icon.
 
-pystray's icon thread reads the X events of the icon's connection to the X server, and for each change, such as a
-show, a hide, a new image or a new title, another thread sends a client message to the icon window on that same
-connection. In python-xlib 0.33, `send_and_recv` lets a thread that sends but does not read return when data
-arrives, and that return does not wake a thread that started to wait for a reply in the meantime. So with pystray
-alone, the icon thread sometimes waits forever for the reply to `get_geometry` as it draws the icon, most often as
-the icon starts: the icon shows no image and ignores clicks. The subclass sends a client message from another
-thread on a new connection, so only the icon thread sends requests on the icon's connection. A new connection for
-each message needs no lock and nothing to close at exit, and the app sends a few such messages a minute at most.
+pystray's icon thread reads the X events of the icon's connection to the X server. pystray runs each change, such
+as a show, a hide, a new image, a new title or a stop, in that thread: another thread sends a client message to
+the icon window, flushes the icon's connection and waits until the icon thread has run the change. The first
+change comes from pystray's setup thread, which shows the icon as it starts. python-xlib 0.33 fails in two ways
+when two threads use one connection at once. In its `send_and_recv`, a thread that sends but does not read
+returns when data arrives, and that return does not wake a thread that started to wait for a reply in the
+meantime. With pystray alone, the icon thread then sometimes waits forever for the reply to `get_geometry` as it
+draws the icon, most often as the icon starts: the icon shows no image and ignores clicks. And a `flush` ends only
+while the bytes sent stay at most the count it noted at its start, so when the icon thread sends a request during
+a flush from another thread, the flush loops forever
+([task 070](../refinements/tasks/070-x11-tray-icon-setup-thread-waits-in-flush.md)). `Icon.stop` waits up to 5
+seconds for the setup thread, and Python waits for it at exit, so the app then does not end after SIGTERM. The
+subclass replaces pystray's dispatch: another thread sends the client message on a new connection and then only
+waits, and the icon thread runs the change and passes back its error, if any. So once the icon has started, only
+the icon thread uses the icon's connection. A new connection for each message needs no lock and nothing to close
+at exit, and the app sends a few such messages a minute at most.
 
 ## Public contract
 
@@ -70,12 +77,19 @@ each message needs no lock and nothing to close at exit, and the app sends a few
   Then it returns a subclass, which `gui.py` creates its icon from:
   - `__init__` calls pystray's, selects `StructureNotifyMask` on the root window and wraps pystray's handler of
     client messages. A `MANAGER` message that names `_NET_SYSTEM_TRAY_S0` while `_systray_manager` is None
-    calls `_update_icon`, which docks the icon and draws it. Any other client message goes to pystray's handler.
+    calls `_update_icon`, which docks the icon and draws it. Any other client message goes to the handler that
+    `_rewrite_implementation` sets.
+  - `_rewrite_implementation(*methods)` replaces pystray's, which pystray's `__init__` calls with `_show`,
+    `_hide`, `_update_icon`, `_update_title` and `_stop`. For each method it sets an attribute of the same name.
+    In the icon thread, that attribute calls the method. In another thread, it sends the icon window a client
+    message with `_send_message`, of an atom named after the method, such as `_PYSTRAY__SHOW` for `_show`. It
+    then waits until the icon thread has run the method, and raises the `Exception` that the method raised. The
+    handler of client messages that it sets runs the method of such an atom and ignores any other message. It
+    does not flush the icon's connection from the calling thread, as pystray's does: the new connection sends the
+    message, and the icon thread sends its own requests when it reads its next event.
   - `_send_message` calls pystray's in the icon thread. In another thread, it opens a new connection of the
     class of `_display`, sends the message on it with pystray's `_send_message`, then calls `sync`, without which
-    Xvfb dropped the message, and closes it. pystray's dispatch then calls `flush` on the icon's connection,
-    which sends nothing, but once waited forever
-    ([task 070](../refinements/tasks/070-x11-tray-icon-setup-thread-waits-in-flush.md)).
+    Xvfb dropped the message, and closes it.
   - `_create_window` calls pystray's and adds `ButtonPressMask` to the events that the new window selects,
     keeping the others.
   - `_hide` clears the mapped flag of the window's `_XEMBED_INFO` property, and `_show` sets it. `_show` then
@@ -85,8 +99,9 @@ each message needs no lock and nothing to close at exit, and the app sends a few
   and the `_XEMBED_` constants that the subclass reads, are private to pystray, and `constraints.txt` keeps them
   stable by setting the pystray and python-xlib versions exactly. Suite tests run a real X11 icon under Xvfb: one
   sends it a click, one hides and shows it in a window that acts as stalonetray does and counts its dock
-  requests, one takes the tray selection after the icon has started and waits for the dock request, and one
-  counts the requests on the icon's connection at a title change from another thread. A pystray release that
+  requests, one takes the tray selection after the icon has started and waits for the dock request, one
+  counts the requests on the icon's connection at a title change from another thread, and one records the thread
+  of each use of the icon's connection from the start of the icon to its stop. A pystray release that
   renames one of these names fails `just check`.
 - `load_pystray()` imports pystray with an `import` statement, so that PyInstaller finds the package and bundles
   it, and returns the module.
@@ -109,7 +124,9 @@ each message needs no lock and nothing to close at exit, and the app sends a few
 - `gui.py` imports this module before `main.py` sets up logging, so Python prints the warning to standard error,
   and neither `log.txt` nor the Output box shows it. PyGObject prints its own warning before it, which names the
   library that failed to load.
-- Only the icon thread sends requests on the connection of the X11 icon.
+- Once the X11 icon has started, only the icon thread uses its connection: no other thread sends a request on
+  it, flushes it or reads from it. The thread that creates the icon uses it before the icon thread starts, and
+  pystray closes it when the icon is freed, after the icon thread has ended.
 - The X11 backend has no menu and shows no notifications. Its icon needs a tray that supports the XEmbed system
   tray protocol. A left click on it runs "Show", which restores the window and hides the icon. The icon stays
   docked while it is hidden, so tint2, which ignores the XEmbed mapped flag, keeps showing it.

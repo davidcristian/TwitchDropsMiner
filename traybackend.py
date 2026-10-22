@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import logging
+import queue
 import threading
 import traceback
 from collections import abc
+from functools import partial
 from types import ModuleType, SimpleNamespace
 from typing import Protocol
 
@@ -91,6 +93,36 @@ def icon_class(base: type) -> type:
             elif event.data[1][1] == self._net_system_tray_sx and self._systray_manager is None:
                 # docks the icon and draws its image
                 self._update_icon()
+
+        # pystray runs these methods in the icon thread: another thread sends the icon window a client message and
+        # waits. pystray's own dispatch also flushes the icon's connection from that thread, which once never returned.
+        def _rewrite_implementation(self, *methods: abc.Callable[[], None]) -> None:
+            self._results: queue.SimpleQueue[Exception | None] = queue.SimpleQueue()
+            actions: dict[int, abc.Callable[[], None]] = {}
+            for method in methods:
+                atom = self._display.intern_atom(f"_PYSTRAY_{method.__name__.upper()}")
+                actions[atom] = method
+                setattr(self, method.__name__, partial(self._dispatch, method, atom))
+            self._message_handlers[CLIENT_MESSAGE] = lambda event: self._run_action(actions.get(event.client_type))
+
+        def _dispatch(self, method: abc.Callable[[], None], atom: int) -> None:
+            if threading.current_thread().ident == self._thread.ident:
+                method()
+                return
+            self._send_message(self._window, atom)
+            if (error := self._results.get()) is not None:
+                raise error
+
+        def _run_action(self, method: abc.Callable[[], None] | None) -> None:
+            if method is None:
+                return
+            # the icon thread keeps handling events, and the waiting thread raises the error
+            try:
+                method()
+            except Exception as error:
+                self._results.put(error)
+            else:
+                self._results.put(None)
 
         # python-xlib 0.33 can leave a thread that waits for a reply waiting forever when another thread sends a
         # request on the same connection, so a message from another thread goes through a new connection.

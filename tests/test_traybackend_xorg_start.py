@@ -6,7 +6,9 @@ import threading
 import pytest
 
 from traybackend import CLIENT_MESSAGE, STRUCTURE_NOTIFY_MASK, icon_class
-from xorgicon import ATOMS, FakeDisplay, FakeXorgIcon, client_message, next_event, start_icon
+from xorgicon import (
+    ATOMS, FakeDisplay, FakeXorgIcon, client_message, next_event, record_uses, sent_message, start_icon,
+)
 
 
 def test_the_xorg_icon_receives_the_structure_events_of_the_root_window():
@@ -46,6 +48,76 @@ def test_a_message_from_another_thread_goes_through_a_new_connection_that_it_syn
     assert icon._display.messages == []
     connections = [(connection.messages, connection.synced, connection.closed) for connection in FakeDisplay.opened]
     assert connections == [([("icon", 4, ())], 1, True)]
+
+
+def test_a_change_in_the_icon_thread_runs_at_once_and_opens_no_connection():
+    icon = icon_class(FakeXorgIcon)(dispatched=True)
+    FakeDisplay.opened.clear()
+    icon._update_icon()
+    assert (icon.calls, FakeDisplay.opened) == (["dock and draw"], [])
+
+
+def test_a_change_from_another_thread_sends_its_message_on_a_new_connection_and_waits_for_the_icon_thread():
+    icon = icon_class(FakeXorgIcon)(dispatched=True)
+    FakeDisplay.opened.clear()
+    caller = threading.Thread(target=icon._update_icon)
+    caller.start()
+    assert sent_message() == [(icon._window, ATOMS["_PYSTRAY__UPDATE_ICON"], ())]
+    icon._message_handlers[CLIENT_MESSAGE](client_message("_NET_WM_CM_S0"))
+    caller.join(0.2)
+    assert caller.is_alive()
+    assert (icon.calls, icon._display.flushes, icon._display.messages) == ([], 0, [])
+    icon._message_handlers[CLIENT_MESSAGE](client_message("_PYSTRAY__UPDATE_ICON"))
+    caller.join(5)
+    assert not caller.is_alive()
+    assert icon.calls == ["dock and draw"]
+
+
+def test_an_error_of_a_change_in_the_icon_thread_is_raised_in_the_thread_that_made_it():
+    icon = icon_class(FakeXorgIcon)(dispatched=True)
+    icon.error = ValueError("no tray")
+    errors: list[Exception] = []
+
+    def update() -> None:
+        try:
+            icon._update_icon()
+        except ValueError as error:
+            errors.append(error)
+
+    FakeDisplay.opened.clear()
+    caller = threading.Thread(target=update)
+    caller.start()
+    sent_message()
+    icon._message_handlers[CLIENT_MESSAGE](client_message("_PYSTRAY__UPDATE_ICON"))
+    caller.join(5)
+    assert errors == [icon.error]
+
+
+@pytest.mark.xfail(
+    strict=True, reason="docs/refinements/tasks/071-x11-tray-icon-change-before-the-icon-thread-is-set.md"
+)
+def test_a_change_before_pystray_sets_the_icon_thread_waits_for_the_icon_thread():
+    icon = icon_class(FakeXorgIcon)(dispatched=True)
+    # pystray's _run marks the icon ready, which lets the setup thread go on, before it sets _thread
+    del icon._thread
+    errors: list[AttributeError] = []
+
+    def update() -> None:
+        try:
+            icon._update_icon()
+        except AttributeError as error:
+            errors.append(error)
+
+    FakeDisplay.opened.clear()
+    caller = threading.Thread(target=update)
+    caller.start()
+    caller.join(0.5)
+    assert errors == []
+    assert sent_message() == [(icon._window, ATOMS["_PYSTRAY__UPDATE_ICON"], ())]
+    icon._thread = threading.current_thread()
+    icon._message_handlers[CLIENT_MESSAGE](client_message("_PYSTRAY__UPDATE_ICON"))
+    caller.join(5)
+    assert icon.calls == ["dock and draw"]
 
 
 def test_the_xorg_icon_docks_in_a_tray_that_starts_after_it(display):
@@ -105,3 +177,34 @@ def test_a_title_change_from_another_thread_sends_no_request_on_the_connection_o
         thread.join(5)
         tray.destroy()
         connection.close()
+
+
+def test_only_the_icon_thread_uses_the_connection_of_the_xorg_icon_from_its_start_to_its_stop(display):
+    if sys.platform != "linux":
+        pytest.skip("pystray uses its xorg backend on Linux")
+    from PIL import Image
+    from Xlib import X, display as xdisplay
+
+    connection = xdisplay.Display()
+    tray = connection.screen().root.create_window(0, 0, 1, 1, 0, X.CopyFromParent)
+    tray.set_selection_owner(
+        connection.intern_atom(f"_NET_SYSTEM_TRAY_S{connection.get_default_screen()}"), X.CurrentTime
+    )
+    connection.flush()
+    uses: list[tuple[str, str]] = []
+    icon, thread = start_icon("connection_test", record_uses(uses))
+    try:
+        assert icon.visible
+        icon.visible = False
+        icon.visible = True
+        icon.icon = Image.new("RGB", (24, 24), "red")
+        icon.title = "Changed"
+    finally:
+        icon.stop()
+        thread.join(5)
+        tray.destroy()
+        connection.close()
+    assert not thread.is_alive()
+    assert [use for use in uses if use[0] != thread.name] == []
+    # the image is drawn and the window destroyed on this connection, so the record sees its requests
+    assert {(thread.name, "GetGeometry"), (thread.name, "DestroyWindow")} <= set(uses)
