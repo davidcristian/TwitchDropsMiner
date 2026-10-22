@@ -1,6 +1,6 @@
 # The X11 tray icon does not respond to a click
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** gui, traybackend
 **Origin:** Found on 2026-10-22 while each Linux build was started with `--tray` under Xvfb with the tray host
 `stalonetray`, on a system where the AppIndicator and GTK backends of pystray fail to load
@@ -39,3 +39,21 @@ None of this sends a Twitch request.
 
 - 2026-10-22: Opened. Found while the tray backend fallback that closed
   [task 061](061-linux-build-needs-wayland-libraries.md) was checked in the Linux builds.
+- 2026-10-22: Closed. `icon_class` in `traybackend.py` returns a subclass of pystray's xorg `Icon` whose
+  `_create_window` adds `ButtonPressMask` to the events of the icon window, and `gui.py` creates its icon from
+  it. A suite test docks a real X11 icon under Xvfb and sends it a right and a left click: the left click runs
+  "Show" and the right click nothing. Without the subclass, or with `_create_window` renamed in a copy of
+  pystray, the left click runs nothing and the test fails. Under act, the x86_64 and aarch64 builds of both
+  Linux jobs ran with `--tray` under Xvfb and `stalonetray` with no session bus, and the x86_64 builds also with
+  a bus and without the Wayland libraries. For each, `xwininfo -events` listed `ButtonPress` for the icon
+  window, a right click with `xdotool` left the window hidden, and a left click showed it, twice in a row. The
+  x86_64 builds of the commit before listed no `ButtonPress`, and a left click left the window hidden. With a
+  bus and the libraries, the x86_64 PyInstaller builds of both commits loaded the AppIndicator library,
+  printed no `Tray icon:` line, and opened the menu with "Show" and "Quit" on a left click on their icon. A
+  right click stays without an action, and "Quit" cannot be reached from the X11 icon
+  ([traybackend.md](../../modules/traybackend.md)). The check found
+  [task 065](065-x11-tray-icon-left-on-screen-in-stalonetray.md).
+- 2026-10-22: pystray's maintainers closed a 2023 report that a click on the X11 icon under the tray `tint2`
+  did nothing (https://github.com/moses-palmer/pystray/issues/151) without a change, and the missing mask would
+  explain it. A new report that names the mask could let a later pystray release make the subclass
+  unnecessary. Nothing was reported.

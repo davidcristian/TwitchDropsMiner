@@ -45,7 +45,7 @@ from gamelib import (
 )
 from exceptions import MinerException, ExitRequest
 from folderpicker import FolderPicker
-from traybackend import import_pystray, load_pystray, session_bus_error
+from traybackend import icon_class, import_pystray, load_pystray, session_bus_error
 from scrollarea import MinimumSize, ScrollArea, Size, fitted_size
 from utils import resource_path, set_root_icon, webopen, start_task, task_wrapper, Game, _T
 from constants import (
@@ -1133,7 +1133,7 @@ class TrayIcon:
             pystray.Menu.SEPARATOR,
             pystray.MenuItem(_("gui", "tray", "quit"), bridge(self.quit)),
         )
-        self.icon = pystray.Icon(
+        self.icon = icon_class(pystray.Icon)(
             "twitch_miner", self._icon_images[self._icon_state], self.get_title(drop), menu
         )
         # self.icon.run_detached()

@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import logging
 import sys
-from types import ModuleType
+import threading
+import time
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
-from traybackend import BACKEND_VARIABLE, import_pystray, load_pystray, session_bus_error
+from traybackend import (
+    BACKEND_VARIABLE, BUTTON_PRESS_MASK, XORG_MODULE, icon_class, import_pystray, load_pystray, session_bus_error
+)
 
 PYSTRAY = ModuleType("pystray")
 
@@ -181,3 +185,96 @@ def test_load_pystray_chooses_the_backend_again_after_a_failed_import(monkeypatc
     monkeypatch.setenv(BACKEND_VARIABLE, "dummy")
     assert load_pystray() is sys.modules["pystray"]
     assert "pystray._dummy" in sys.modules
+
+
+# ExposureMask and StructureNotifyMask, which pystray 0.19.5 selects on its xorg icon window
+XORG_EVENTS = (1 << 15) | (1 << 17)
+
+
+class FakeWindow:
+    def __init__(self) -> None:
+        self.mask = XORG_EVENTS
+
+    def get_attributes(self) -> SimpleNamespace:
+        return SimpleNamespace(your_event_mask=self.mask)
+
+    def change_attributes(self, *, event_mask: int) -> None:
+        self.mask = event_mask
+
+
+class FakeXorgIcon:
+    def __init__(self) -> None:
+        self.window = self._create_window()
+
+    def _create_window(self) -> FakeWindow:
+        return FakeWindow()
+
+
+FakeXorgIcon.__module__ = XORG_MODULE
+
+
+def test_the_xorg_icon_window_selects_button_press_and_keeps_the_events_pystray_selects():
+    icon = icon_class(FakeXorgIcon)()
+    assert isinstance(icon, FakeXorgIcon)
+    assert icon.window.mask == XORG_EVENTS | BUTTON_PRESS_MASK
+
+
+@pytest.mark.parametrize("module", ["pystray._appindicator", "pystray._gtk", "pystray._dummy", "pystray._win32"])
+def test_the_icon_class_of_another_backend_is_returned_unchanged(module):
+    icon = type("Icon", (), {"__module__": module})
+    assert icon_class(icon) is icon
+
+
+def next_event(connection, kind: int):
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        while connection.pending_events():
+            if (event := connection.next_event()).type == kind:
+                return event
+        time.sleep(0.01)
+    pytest.fail(f"no X event of type {kind} within 10 seconds")
+
+
+def test_a_left_click_on_the_docked_xorg_icon_runs_the_default_menu_item_and_a_right_click_nothing(display):
+    if sys.platform != "linux":
+        pytest.skip("pystray uses its xorg backend on Linux")
+    import pystray._xorg
+    from PIL import Image
+    from Xlib import X, display as xdisplay
+    from Xlib.protocol import event
+
+    # The test owns the system tray selection, as a tray does, so pystray sends it the dock request of the icon.
+    connection = xdisplay.Display()
+    root = connection.screen().root
+    tray = root.create_window(0, 0, 1, 1, 0, X.CopyFromParent)
+    tray.set_selection_owner(
+        connection.intern_atom(f"_NET_SYSTEM_TRAY_S{connection.get_default_screen()}"), X.CurrentTime
+    )
+    connection.flush()
+    clicks: list[str] = []
+    shown = threading.Event()
+
+    def show() -> None:
+        clicks.append("show")
+        shown.set()
+
+    menu = pystray.Menu(pystray.MenuItem("Show", show, default=True))
+    icon = icon_class(pystray._xorg.Icon)("click_test", Image.new("RGB", (24, 24)), "Click test", menu)
+    thread = threading.Thread(target=icon.run)
+    thread.start()
+    try:
+        window = connection.create_resource_object("window", next_event(connection, X.ClientMessage).data[1][2])
+        for button in (3, 1):
+            press = event.ButtonPress(
+                time=X.CurrentTime, root=root, window=window, child=X.NONE, root_x=0, root_y=0, event_x=0,
+                event_y=0, state=0, same_screen=1, detail=button,
+            )
+            window.send_event(press, event_mask=X.ButtonPressMask)
+        connection.flush()
+        assert shown.wait(5)
+        assert clicks == ["show"]
+    finally:
+        icon.stop()
+        thread.join(5)
+        tray.destroy()
+        connection.close()

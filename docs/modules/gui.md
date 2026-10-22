@@ -118,7 +118,8 @@ The GUI calls back into `Twitch` through `settings`, `change_state`, `state_chan
 ## The tray icon
 
 `TrayIcon` wraps a `pystray.Icon` named `twitch_miner`. `gui.py` imports pystray through `import_pystray`, which
-chooses the tray backend ([traybackend.md](traybackend.md)).
+chooses the tray backend, and creates the icon from `icon_class(pystray.Icon)`, which makes the icon of the X11
+backend receive clicks ([traybackend.md](traybackend.md)).
 
 - The icon is created on the first `minimize()`, not at start. `pystray.Icon.run` blocks, so it runs in a thread
   of the default executor (`loop.run_in_executor`). The menu items "Show" (the default action) and "Quit" call

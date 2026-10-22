@@ -171,10 +171,12 @@ library it needs. A run from source needs the system packages listed in
   warning that starts with `Tray icon:` to standard error. The release builds do so on an X11 system without
   `libwayland-client0`, `libwayland-cursor0` and `libwayland-egl1`, and the AppImage also without
   `libxcb-render0` (Debian and Ubuntu names). A desktop session starts a session bus, but a bare X server, a
-  container or an SSH session may have none. The X11 icon has no menu, shows no notifications and
-  does not respond to a click ([task 063](refinements/tasks/063-x11-tray-icon-ignores-clicks.md)), so after
-  `Minimize to Tray` the window stays hidden as described above. Install these libraries, or `libgtk-3-0`,
-  which depends on them, and start the app in a session with a bus to get the AppIndicator icon.
+  container or an SSH session may have none. The X11 icon has no menu and shows no notifications. A left click
+  on it shows the window, and a right click does nothing. To quit, show the window and close it. In the tray
+  host stalonetray, the icon then stays at the top left corner of the screen until the next `Minimize to Tray`
+  ([task 065](refinements/tasks/065-x11-tray-icon-left-on-screen-in-stalonetray.md)). Install these
+  libraries, or `libgtk-3-0`, which depends on them, and start the app in a session with a bus to get the
+  AppIndicator icon.
 - **Another tray backend.** pystray chooses its backend from the `PYSTRAY_BACKEND` environment variable when it
   is set, for example to `gtk` or `xorg`.
 

@@ -1,10 +1,11 @@
-"""Imports pystray with the first tray backend that loads, so a broken GTK library leaves the X11 backend."""
+"""Imports pystray with the first tray backend that loads, and makes the icon of its X11 backend receive clicks."""
 from __future__ import annotations
 
 import logging
 import traceback
 from collections import abc
 from types import ModuleType
+from typing import Protocol
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -14,6 +15,23 @@ BACKEND_VARIABLE = "PYSTRAY_BACKEND"
 # that fails to load makes PyGObject raise ValueError or AssertionError.
 BACKENDS = ("appindicator", "gtk", "xorg")
 BACKEND_ERRORS = (ImportError, ValueError, AssertionError)
+XORG_MODULE = "pystray._xorg"
+# the X11 protocol's ButtonPressMask, which is Xlib.X.ButtonPressMask
+BUTTON_PRESS_MASK = 1 << 2
+
+
+class WindowAttributes(Protocol):
+    """The reply of `IconWindow.get_attributes`, with the events that the X server sends to this client."""
+
+    your_event_mask: int
+
+
+class IconWindow(Protocol):
+    """The calls of an Xlib window that read and set the events which the X server sends to this client."""
+
+    def get_attributes(self) -> WindowAttributes: ...
+
+    def change_attributes(self, *, event_mask: int) -> object: ...
 
 
 def load_pystray() -> ModuleType:
@@ -38,6 +56,22 @@ def session_bus_error() -> str | None:
     except GLib.Error as error:
         return str(error.message)
     return None
+
+
+def icon_class(base: type) -> type:
+    """Return base, or a subclass whose window receives clicks when base is the Icon class of pystray's xorg backend."""
+    if base.__module__ != XORG_MODULE:
+        return base
+
+    class ClickableIcon(base):
+        # pystray's xorg icon runs its default menu item on a left click, but creates its window without
+        # ButtonPressMask, so the X server does not send the click to pystray.
+        def _create_window(self) -> IconWindow:
+            window: IconWindow = super()._create_window()
+            window.change_attributes(event_mask=window.get_attributes().your_event_mask | BUTTON_PRESS_MASK)
+            return window
+
+    return ClickableIcon
 
 
 def _describe(error: BaseException) -> str:

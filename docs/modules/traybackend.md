@@ -16,6 +16,11 @@ appears, the setup thread waits forever, and Python waits for that thread at exi
 ([task 064](../refinements/tasks/064-sigterm-ignored-with-appindicator-tray.md)). `import_pystray` checks the bus
 first and uses the X11 backend when it cannot connect.
 
+The X11 backend runs the default menu item, "Show", on a left click on its icon. But it creates the icon window
+without `ButtonPressMask`, the X11 event mask with which a client receives the clicks on a window, so the X
+server does not send the click to pystray. `icon_class` adds that mask, so a left click on the icon restores the
+window.
+
 ## Public contract
 
 - `import_pystray(load, environ, platform, bus_error)` returns the pystray module that `load` returns. `gui.py`
@@ -27,6 +32,12 @@ first and uses the X11 backend when it cannot connect.
     calls `load`. An error in `BACKEND_ERRORS` (`ImportError`, `ValueError`, `AssertionError`) from the
     first two logs a warning and tries the next. An error from `xorg`, and any other error, propagates.
   - Before it returns or raises, it sets `PYSTRAY_BACKEND` back to its earlier value, or removes it.
+- `icon_class(base)` returns `base`, the `Icon` class of the loaded pystray, unless its module is `pystray._xorg`.
+  Then it returns a subclass whose `_create_window` calls pystray's and adds `ButtonPressMask` to the events that
+  the new window selects, keeping the others. `gui.py` creates its icon from `icon_class(pystray.Icon)`.
+  `_create_window` is private to pystray, and `constraints.txt` keeps it stable by setting the pystray version
+  exactly. A suite test docks a real X11 icon under Xvfb and sends it a click, so a pystray release that renames
+  the method fails `just check`.
 - `load_pystray()` imports pystray with an `import` statement, so that PyInstaller finds the package and bundles
   it, and returns the module.
 - `session_bus_error()` opens the DBus session bus with `Gio.bus_get_sync`, the call that pystray's icon thread
@@ -49,8 +60,15 @@ first and uses the X11 backend when it cannot connect.
   and neither `log.txt` nor the Output box shows it. PyGObject prints its own warning before it, which names the
   library that failed to load.
 - The X11 backend has no menu and shows no notifications. Its icon needs a tray that supports the XEmbed system
-  tray protocol, and it does not respond to a click
-  ([task 063](../refinements/tasks/063-x11-tray-icon-ignores-clicks.md)).
+  tray protocol. A left click on it runs "Show", which restores the window and hides the icon. In the tray host
+  stalonetray the icon stays on the screen instead
+  ([task 065](../refinements/tasks/065-x11-tray-icon-left-on-screen-in-stalonetray.md)).
+- A right or middle click and the mouse wheel on the X11 icon do nothing, as pystray runs the default item for
+  the left button only. A right click opens the menu of the other backends, and the X11 icon has none. Running
+  "Show" on it too would need a second private method of pystray, and the window that a left click restores has
+  every action of the menu.
+- "Quit" cannot be reached from the X11 icon, because it has no menu. The window's close button quits the app
+  once a left click has restored the window.
 
 **Dependencies.** None: the standard library only. `load_pystray` imports pystray, and `session_bus_error`
 imports PyGObject.
