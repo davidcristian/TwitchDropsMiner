@@ -284,4 +284,6 @@ pull request that updates a SHA and its comment. Its commit subjects start with 
 links and commit hashes, which the [commit rules](../AGENTS.md#commits) do not allow, so rewrite the message
 when you merge such a pull request. Its updates of the Python packages are in [Exact versions](#exact-versions).
 
-Before you open a pull request, run the checks in [AGENTS.md](../AGENTS.md#what-every-change-must-pass).
+Before you open a pull request, run the checks in [AGENTS.md](../AGENTS.md#what-every-change-must-pass). To
+run the Ubuntu Validate entries and the Linux PyInstaller builds of `ci.yml` on your own machine first, see
+[runbooks/linux-ci-with-act.md](runbooks/linux-ci-with-act.md).

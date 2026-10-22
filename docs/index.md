@@ -21,6 +21,8 @@ Start here. The rules for working in this repo are in [AGENTS.md](../AGENTS.md).
   Linux without a display.
 - [runbooks/dependency-versions.md](runbooks/dependency-versions.md): updating the package versions in
   `constraints.txt` and checking them for every build.
+- [runbooks/linux-ci-with-act.md](runbooks/linux-ci-with-act.md): running the Ubuntu Validate entries and the
+  Linux PyInstaller builds of `ci.yml` with act before a push, and starting each build.
 - [refinements/](refinements/index.md): the deferred work, one file per task.
 
 ## Decisions

@@ -87,3 +87,8 @@ None of this sends a Twitch request.
 - 2026-10-22: The Validate job installs `requirements-dev.txt` with `-c constraints.txt`
   ([ADR-0016](../../adr/ADR-0016-exact-dependency-versions.md)), so the Windows and macOS runs install the
   versions that the file sets.
+- 2026-10-22: The two Ubuntu entries ran under act 0.2.89, as
+  [runbooks/linux-ci-with-act.md](../../runbooks/linux-ci-with-act.md) describes, and passed. On Python
+  3.10.22 and 3.14.9, `just check` reported 1650 passed and 10 skipped, with 98.08% and 98.15% branch
+  coverage. Eight of the skips need a user other than root, which act uses. The Windows and macOS entries still
+  have no run.
