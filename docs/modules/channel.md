@@ -24,8 +24,9 @@ watch requests that make drop progress. `Twitch` keeps the tracked channels in `
 - `cancel_online_check()` cancels a pending check. `set_offline()` cancels it too, and when the channel was
   online, it drops the stream and calls `Twitch.on_channel_update`.
 - `get_stream()` fetches the stream with GQL and returns it, or None when the channel is offline or its stream
-  has a null ID ([streamdata.md](streamdata.md#null-stream-fields)). `update_stream()` stores that result, calls
-  `Twitch.on_channel_update(channel, before, after)` and returns True when the channel is online.
+  has a null ID ([streamdata.md](streamdata.md#null-stream-fields)). `update_stream(*, tries=1)` stores that
+  result, calls `Twitch.on_channel_update(channel, before, after)` and returns True when the channel is online.
+  A channel that was offline is fetched up to `tries` times, `ONLINE_DELAY` apart, while it has no stream.
 - `external_update(channel_data, available_drops)` sets the stream from the `GetStreamInfo` data that
   [`bulk_check_online`](#bulk-check) fetched, or drops it when that data has no stream.
 - `send_watch()` sends one watch cycle; see [Watching](#watching).
@@ -72,20 +73,34 @@ These change a channel's status:
 
 Twitch sends `stream-up` before the stream data is available, as the `pending_online` docstring says. So
 `check_online` does not fetch at once. It starts `_online_delay`, which waits `ONLINE_DELAY` (120 seconds) and
-then calls `update_stream` once. `update_stream` sends one `GetStreamInfo` query, plus `AvailableDrops` when the
-extra check is on. The check stays pending until that request returns, so events during the wait or the request
-start no second check, and a cancelled check stores no result. The check ends before `update_stream` passes the
-old and new stream to `Twitch.on_channel_update`, so the row shows the new status:
+then calls `update_stream` with `ONLINE_TRIES` (3). `update_stream` sends one `GetStreamInfo` query, plus
+`AvailableDrops` when the extra check is on and the channel is live. The stream data can come more than 120
+seconds after the event, so when a channel that was offline still has no stream, `update_stream` waits
+`ONLINE_DELAY` and sends the query again, up to 3 queries in all. A channel that was online gets one query, in
+which no stream means that its stream ended. The check stays pending until its last request returns, so events
+during the waits or the requests start no second check, and a cancelled check stores no result. The check ends
+before `update_stream` passes the old and new stream to `Twitch.on_channel_update`, so the row shows the new
+status:
 
 - Offline to online: `Twitch` watches the channel when `should_switch` allows it, and prints
   "`{channel} goes ONLINE, switching...`".
-- Offline to offline: the result is only logged. Nothing checks the channel again until its next websocket
-  event, such as a `viewcount`, or until `CHANNELS_FETCH` adds it anew. A tracked ACL channel stays tracked, so
-  that happens at the next reload ([task 002](../refinements/tasks/002-online-delay-single-try.md)).
+- Offline to offline, after the third query: `update_stream` logs "`{channel} has no stream after 3 checks`" at
+  `INFO`. Nothing checks the channel again until its next websocket event, such as a `viewcount`, or until
+  `CHANNELS_FETCH` adds it anew, which for a tracked ACL channel is the next reload.
 - Online before the check, after a settings update or a failed playlist request: when the watched channel can
   no longer be watched, `Twitch` enters `State.CHANNEL_SWITCH`, and prints
   "`{channel} goes OFFLINE, switching...`" when the stream ended.
   Another channel that is still online is watched when `should_switch` allows it.
+
+A query that raises `MinerException` ends the check without a further try, because `Twitch.request` and
+`Twitch.gql_request` already retry a timeout, a connection error, a 5xx status and a `service error`
+([twitch.md](twitch.md#gql-requests)). `_online_delay` logs the error at `WARNING` with its traceback and
+updates the row, and the stream stays as it was. An error that wraps an `ExitRequest`, from a window that is
+closing, ends the check with no log line.
+
+One check sends at most 3 `GetStreamInfo` queries in 6 minutes, 2 more than a single try, and the 2 go out only
+while an offline channel has no stream. Each query follows a wait of 120 seconds, and a channel has one check at
+a time, so one channel still sends at most 30 an hour ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)).
 
 ## Bulk check
 
@@ -171,6 +186,6 @@ fails leaves the marked `Stream` in place, and the next cycle starts another one
 - `on_channel_update` ends with `display()`, so the GUI row matches the status after every change.
 
 **Dependencies.** `streamdata` (`playback_token`, `channel_stream`, `available_campaigns`), `utils` (`Game`,
-`json_minify`, `isonow`), `exceptions` (`MinerException`, `RequestException`) and `constants` (`GQL_QUERIES`,
-`ONLINE_DELAY`, `CALL`, `URLType`, `GQLQuery`). Third party: aiohttp and yarl. `Twitch` and the GUI's
-`ChannelList` are imported for type checking only.
+`json_minify`, `isonow`), `exceptions` (`ExitRequest`, `MinerException`, `RequestException`) and `constants`
+(`GQL_QUERIES`, `ONLINE_DELAY`, `ONLINE_TRIES`, `CALL`, `URLType`, `GQLQuery`). Third party: aiohttp and yarl.
+`Twitch` and the GUI's `ChannelList` are imported for type checking only.

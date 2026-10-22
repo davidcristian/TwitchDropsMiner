@@ -58,7 +58,8 @@ A shorter full reload is not an option, because a reload is the most expensive w
 
 6. **The change is the smallest one that fixes the common case.** Two other causes of late discovery have
    their own changes: the channels kept at the `MAX_CHANNELS` limit ([ADR-0018](ADR-0018-channel-slots.md)),
-   and the single check after a stream-up event, which stays open as a refinement task (see Related).
+   and the further tries of the online check after a stream-up event
+   ([channel.md](../modules/channel.md#after-a-stream-up-event)).
 
 ## Consequences
 
@@ -104,5 +105,5 @@ minutes after the previous wait began.
   [websocket.md](../modules/websocket.md).
 - [ADR-0018](ADR-0018-channel-slots.md): the channels that keep a PubSub subscription at `MAX_CHANNELS`, where
   an offline ACL channel ranks with the game of its campaign.
-- [002-online-delay-single-try.md](../refinements/tasks/002-online-delay-single-try.md): after a stream-up
-  event, the app waits `ONLINE_DELAY` (120 seconds) and checks the stream once.
+- [channel.md](../modules/channel.md#after-a-stream-up-event): after a stream-up event, the app waits
+  `ONLINE_DELAY` (120 seconds) and checks the stream, up to 3 times while the channel has no stream.

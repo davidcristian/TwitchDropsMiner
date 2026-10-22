@@ -1,9 +1,9 @@
 # A stream-up check makes a single try
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** channel (online checks)
 **Origin:** [ADR-0003](../../adr/ADR-0003-stream-refresh.md)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 When PubSub sends `stream-up` for a tracked channel, `Twitch.process_stream_state` calls
 `Channel.check_online` in [channel.py](../../../channel.py). That starts `Channel._online_delay`, which waits
@@ -43,3 +43,10 @@ common case was chosen. See [channel.md](../../modules/channel.md).
 - 2026-08-03: Found and deferred when the new stream check was decided.
 - 2026-10-18: Opened. Written down while the docs were written. Checking it against the code showed that the
   empty result is logged at the `CALL` level, and that a later PubSub message can start a new check.
+- 2026-10-22: Done. Checked against the code first: the single `update_stream` call, the `CALL` level log
+  and the unawaited exception were as described, and a check that a settings update or a `viewcount` started
+  also kept a later `stream-up` from starting its own. An online check of a channel that was offline now
+  queries up to 3 times, 120 seconds apart, while it has no stream, and logs at `INFO` when it ends without
+  one. A `MinerException` from `get_stream` ends the check and is logged at `WARNING`, unless it wraps the
+  `ExitRequest` of a closing window ([channel.md](../../modules/channel.md#after-a-stream-up-event)). Twitch
+  requests: at most 2 more `GetStreamInfo` per check, and still at most 30 an hour per channel.

@@ -34,6 +34,8 @@ passes it to `Twitch.task_failed` instead, and `Twitch._run` raises it as a fata
 
 - `Channel.get_stream` wraps a `MinerException` from `Twitch.gql_request` in a new one that names the channel.
   It also catches one from the `AvailableDrops` query, logs it at `CALL` level and continues.
+  `Channel._online_delay` catches the wrapped one and ends the online check. It logs the error at `WARNING`,
+  except when it wraps an `ExitRequest`.
 - `Twitch.get_live_streams` wraps a `GQLException` in a new one that names the game slug.
 - `gqldata.merge_data` raises it when the inventory and campaign data have values of different types for one
   key, neither of them null.
@@ -53,7 +55,8 @@ No other code catches `MinerException` by name.
   `Twitch.request` before each try when `GUIManager.close_requested` is set, and by `Twitch.fetch_inventory`
   after each campaign is added to the Inventory tab.
 - Caught by `Twitch.run`, which ends the run loop, and by `utils.task_wrapper`, which ends the task without a
-  log line.
+  log line. `Channel._online_delay` ends the online check without a log line when its `MinerException` wraps
+  one.
 
 **`ReloadRequest`** means a full restart of the client without closing the window.
 
@@ -107,6 +110,7 @@ frame.
 - `except MinerException` also catches `ExitRequest` and `ReloadRequest`, because they are subclasses.
   `Channel.get_stream` turns an `ExitRequest` from its GQL request into a plain `MinerException` this way. It runs
   only in the task that `Channel.check_online` starts with `asyncio.create_task`. Nothing awaits that task, so
-  an exception in it ends the task and does not appear in the Output box.
+  `Channel._online_delay` catches the `MinerException`, and reads its cause to tell a closing window from an
+  error.
 
 **Dependencies.** None.

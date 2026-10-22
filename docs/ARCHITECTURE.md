@@ -120,11 +120,12 @@ critical task takes the same path: `RESTART` raises it from `_run`.
    is at `ALMOST_DONE_SECONDS` (10) or less (`minute_almost_done`), `_watch_loop` sends `CurrentDrop`. With no
    usable response, `DropsCampaign.bump_minutes` adds an estimated minute.
 7. **Stream changes.** `stream-up`, `broadcast-settings-update` or a viewer count for an offline channel calls
-   `Channel.check_online`, which sends `GetStreamInfo` once, after `ONLINE_DELAY` (120 seconds)
-   ([task 002](refinements/tasks/002-online-delay-single-try.md)). `stream-down` sets the channel offline at
-   once. Both end in `on_channel_update`. A playlist request that returns a status of 400 or above, which it
-   does once the stream has ended, also calls `check_online` and makes the next cycle request usher again,
-   in case `stream-down` was missed ([channel.md](modules/channel.md#a-failed-playlist-request)).
+   `Channel.check_online`, which sends `GetStreamInfo` after `ONLINE_DELAY` (120 seconds), and up to twice more,
+   120 seconds apart, while an offline channel has no stream
+   ([channel.md](modules/channel.md#after-a-stream-up-event)). `stream-down` sets the channel offline at once.
+   Both end in `on_channel_update`. A playlist request that returns a status of 400 or above, which it does once
+   the stream has ended, also calls `check_online` and makes the next cycle request usher again, in case
+   `stream-down` was missed ([channel.md](modules/channel.md#a-failed-playlist-request)).
 8. **Claiming.** A `drop-claim` event contains the drop instance ID, and `TimedDrop.claim` sends `ClaimDrop`.
    Then `process_drops` sends `CurrentDrop` until Twitch reports another drop, at most 8 times, and ends the
    current watch cycle after its `CurrentDrop` check ([twitch.md](modules/twitch.md#watch-loop)) when the
@@ -154,7 +155,7 @@ Nothing sends `ClaimCommunityPoints`, `ChannelPointsContext`, `SlugRedirect`, `N
 | `Twitch._watch_loop` | `_run`, once per run | every `WATCH_INTERVAL` (20 seconds); the `CurrentDrop` check 15 seconds into a cycle; `restart_watching` ends a cycle after that check |
 | `Twitch._maintenance_task` | the end of each `fetch_inventory` | sleeps until the earliest of: `refresh_interval` minutes plus up to `REFRESH_JITTER` (60 seconds); the start or end of a campaign or drop that can progress within the hour; one hour after it started, when it moves to `INVENTORY_FETCH` and ends |
 | `Websocket._handle`, one per connection | `WebsocketPool.start` and `WebsocketPool.add_topics` | each pass collects messages until 0.5 seconds pass with no message; a `PING` every 3 minutes; reconnects at once after a connection that stayed open `WS_MIN_UPTIME` (60 seconds), and otherwise after a backoff delay of up to 3 minutes |
-| `Channel._online_delay`, one per channel | `Channel.check_online` | once, `ONLINE_DELAY` (120 seconds) after the event |
+| `Channel._online_delay`, one per channel | `Channel.check_online` | `ONLINE_DELAY` (120 seconds) after the event, and for an offline channel without a stream up to twice more, 120 seconds apart |
 | `CampaignProgress._timer_loop` | `CampaignProgress.start_timer` | once a second, for one minute |
 | a PubSub topic handler | `Websocket._handle_message` | one task per message |
 

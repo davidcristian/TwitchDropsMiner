@@ -14,8 +14,8 @@ from yarl import URL
 
 from streamdata import playback_token, channel_stream, available_campaigns
 from utils import Game, json_minify, isonow
-from exceptions import MinerException, RequestException
-from constants import CALL, GQL_QUERIES, ONLINE_DELAY, URLType, GQLQuery
+from exceptions import ExitRequest, MinerException, RequestException
+from constants import CALL, GQL_QUERIES, ONLINE_DELAY, ONLINE_TRIES, URLType, GQLQuery
 
 if TYPE_CHECKING:
     from twitch import Twitch
@@ -381,18 +381,26 @@ class Channel:
                 )
         return stream
 
-    async def update_stream(self) -> bool:
+    async def update_stream(self, *, tries: int = 1) -> bool:
         """
-        Fetches the current channel stream, and if one exists,
-        updates it's game, title, tags and viewers. Updates channel status in general.
+        Fetches and stores the stream, and returns True when the channel is online.
+        A channel that was offline is fetched up to tries times, ONLINE_DELAY apart, until it has a stream.
         """
         try:
             stream = await self.get_stream()
+            for _ in range(tries - 1):
+                if stream is not None or self._stream is not None:
+                    break
+                # Twitch can send 'stream-up' more than ONLINE_DELAY before the stream data
+                await asyncio.sleep(ONLINE_DELAY.total_seconds())
+                stream = await self.get_stream()
         finally:
-            # An online check can be cancelled until its request returns, and ends
+            # An online check can be cancelled until its last request returns, and ends
             # before on_channel_update displays the new status.
             if self._pending_stream_up is asyncio.current_task():
                 self._pending_stream_up = None
+        if tries > 1 and stream is None and self._stream is None:
+            logger.info(f"{self.name} has no stream after {tries} checks")
         old_stream = self._stream
         self._stream = stream
         self._twitch.on_channel_update(self, old_stream, stream)
@@ -404,7 +412,13 @@ class Channel:
         so just wait a bit and check if it's actually online by then.
         """
         await asyncio.sleep(ONLINE_DELAY.total_seconds())
-        await self.update_stream()
+        try:
+            await self.update_stream(tries=ONLINE_TRIES)
+        except MinerException as exc:
+            # nothing awaits this task, so its error is logged here, unless the window is closing
+            if not isinstance(exc.__cause__, ExitRequest):
+                logger.warning(f"The online check of {self.name} failed", exc_info=True)
+                self.display()
 
     def check_online(self):
         """

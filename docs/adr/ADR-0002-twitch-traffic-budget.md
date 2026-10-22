@@ -95,6 +95,10 @@ matches the maintainer's figure of 2500.
 - A reload stays the most expensive work the app does, and its cost grows with every ACL channel. A new timer
   that runs it breaks the rule. A new periodic check uses decision 4 instead.
 - A retry in `gql_request` enters the limiter again, after a wait from `ExponentialBackoff(maximum=60)`.
+- An online check of a channel sends one `GetStreamInfo` query 120 seconds after the event that starts it,
+  and up to 2 more, 120 seconds apart, while a channel that was offline has no stream, because Twitch can send
+  `stream-up` before the stream data. A channel has one check at a time, so it sends at most 30 an hour
+  ([channel.md](../modules/channel.md#after-a-stream-up-event)).
 - Watching a stream sends requests to Twitch's video servers every `WATCH_INTERVAL` (20 seconds), as the
   README's [How It Works](../../README.md#how-it-works) describes. They are not GQL requests, so the limit does
   not apply to them. The stream's playback token and the `CurrentDrop` check in `_watch_loop` are GQL, and go

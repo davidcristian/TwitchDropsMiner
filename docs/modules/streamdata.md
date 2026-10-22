@@ -70,7 +70,7 @@ until `CHANNELS_CLEANUP` removes the channel and `CHANNELS_FETCH` adds it again.
 
 A live channel read as offline still sends `viewcount` events, and `Twitch.process_stream_state` calls
 `check_online()` for each one ([channel.md](channel.md#after-a-stream-up-event)). A check starts only when none
-is pending, and waits `ONLINE_DELAY` (120 seconds) before its one `GetStreamInfo` query. So while the stream ID
+is pending, and waits `ONLINE_DELAY` (120 seconds) before each of its `GetStreamInfo` queries. So while the stream ID
 stays null, the channel costs at most 30 `GetStreamInfo` queries an hour, the rate of any online check, and no
 `AvailableDrops` query. The bulk check sends no `AvailableDrops` query for it either.
 
