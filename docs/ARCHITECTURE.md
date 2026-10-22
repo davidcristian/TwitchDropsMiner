@@ -43,11 +43,13 @@ replaces the entries of `_drops` and `_campaigns`, and `shutdown` clears both.
 
 ## The state machine
 
-`Twitch._run` loops over `State` from `constants.py`: it handles the current state, then waits on the
-`_state_change` event, which `change_state` sets with `_state`. A handler that ends with `change_state`
-continues at once; `IDLE`, and `CHANNEL_SWITCH` when it watches a channel, clear the event and wait. `_state`
-holds one value, so the next state a handler sets replaces any request made during its `await` calls
-([task 012](refinements/tasks/012-button-requests-lost-during-a-fetch.md)). `EXIT` is never replaced. Before
+`Twitch._run` loops over `State` from `constants.py`: it clears the `_state_change` event, handles the current
+state, then waits on the event, which `change_state` sets with `_state`. A handler that ends with
+`change_state` continues at once; `IDLE`, and `CHANNEL_SWITCH` when it watches a channel, wait. Of the states
+requested during a pass, the handler's own next state included, the first in `STATE_ORDER` runs next: `EXIT`,
+`RESTART`, then the states of a reload from `INVENTORY_FETCH` to `CHANNEL_SWITCH`, then `IDLE`. So a reload
+also runs a later state that a request names, and a reload requested during `INVENTORY_FETCH` is merged into
+it ([ADR-0017](adr/ADR-0017-state-requests.md)). `EXIT` is never replaced. Before
 the loop, `_run` starts the GUI poll task, logs in with `get_auth`, starts the websocket pool without waiting for
 a connection, starts `_watch_loop`, subscribes the user's two PubSub topics and moves to `INVENTORY_FETCH`.
 

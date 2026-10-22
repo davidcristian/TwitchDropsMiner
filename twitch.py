@@ -80,6 +80,18 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("TwitchDrops")
 gql_logger = logging.getLogger("TwitchDrops.gql")
+# Of the states requested during one pass of Twitch._run, change_state keeps the first in this order. A reload
+# goes through its states in this order, so it also runs a later state that a request names.
+STATE_ORDER: Final[tuple[State, ...]] = (
+    State.EXIT,
+    State.RESTART,
+    State.INVENTORY_FETCH,
+    State.GAMES_UPDATE,
+    State.CHANNELS_CLEANUP,
+    State.CHANNELS_FETCH,
+    State.CHANNEL_SWITCH,
+    State.IDLE,
+)
 
 
 def save_cookies(jar: aiohttp.CookieJar) -> None:
@@ -409,8 +421,12 @@ class Twitch:
         return self._auth_state._logged_in.wait()
 
     def change_state(self, state: State) -> None:
-        if self._state is not State.EXIT:
-            # prevent state changing once we switch to exit state
+        """Request the state that _run handles next."""
+        # _run clears the event as it starts each pass, so a set event means that this pass has a request already.
+        # Once the state is EXIT it no longer changes, so a late call cannot restart an app that is closing.
+        if self._state is not State.EXIT and (
+            not self._state_change.is_set() or STATE_ORDER.index(state) < STATE_ORDER.index(self._state)
+        ):
             self._state = state
         self._state_change.set()
 
@@ -606,8 +622,11 @@ class Twitch:
         full_cleanup: bool = False
         watch_restarted: bool = False
         channels: Final[OrderedDict[int, Channel]] = self.channels
+        # a run starts with a reload, so of the requests made before it only EXIT is kept
+        self._state_change.clear()
         self.change_state(State.INVENTORY_FETCH)
         while True:
+            self._state_change.clear()
             if self._state is State.IDLE:
                 if self.settings.dump:
                     self.gui.close()
@@ -615,8 +634,6 @@ class Twitch:
                 self.gui.tray.change_icon("idle")
                 self.gui.status.update(_("gui", "status", "idle"))
                 self.stop_watching()
-                # clear the flag and wait until it's set again
-                self._state_change.clear()
             elif self._state is State.INVENTORY_FETCH:
                 self.gui.tray.change_icon("maint")
                 # ensure the websocket is running
@@ -630,6 +647,9 @@ class Twitch:
                     (self.gui.save, self.settings.save),
                     lambda error: logger.error(_("error", "save_failed").format(error=error)),
                 )
+                if self._state is State.INVENTORY_FETCH:
+                    # a reload requested while this one ran is merged into it, so it sends no second reload
+                    self._state_change.clear()
                 self.change_state(State.GAMES_UPDATE)
             elif self._state is State.GAMES_UPDATE:
                 # claim drops from expired and active campaigns
@@ -893,15 +913,11 @@ class Twitch:
                 if new_watching is not None and new_watching != watching_channel:
                     # if we have a better switch target - do so
                     self.watch(new_watching)
-                    # break the state change chain by clearing the flag
-                    self._state_change.clear()
                 elif watching_channel is not None and self.can_watch(watching_channel):
                     # otherwise, continue watching what we had before
                     self.gui.status.update(
                         _("status", "watching").format(channel=watching_channel.name)
                     )
-                    # break the state change chain by clearing the flag
-                    self._state_change.clear()
                 else:
                     # not watching anything and there isn't anything to watch either
                     if not self._no_channel_printed:

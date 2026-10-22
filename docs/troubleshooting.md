@@ -107,9 +107,7 @@ access. Log in to the network in a browser. If you set a proxy on the Settings t
   the [README](../README.md#notes) explains. Also turn off both options in the Advanced section of the Settings
   tab, because they make the app misbehave.
 - **A change to the lists or to Priority mode has no effect.** The app applies these changes on the next reload,
-  which runs once an hour. Press `Reload` on the Settings tab to apply them now. A press while the status shows
-  `Gathering channels...` is lost, so press it again after that
-  ([task 012](refinements/tasks/012-button-requests-lost-during-a-fetch.md)).
+  which runs once an hour. Press `Reload` on the Settings tab to apply them now.
 
 ## Priority and Exclude lists
 

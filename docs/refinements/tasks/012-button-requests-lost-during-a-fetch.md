@@ -1,9 +1,9 @@
 # A button press during a fetch is replaced by the next state
 
-**Status:** open
+**Status:** done 2026-10-22
 **Area:** twitch (state machine), gui
 **Origin:** Found on 2026-10-18 while the docs were written, [twitch.md](../../modules/twitch.md)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-22
 
 `Twitch.change_state` in `twitch.py` stores one value in `_state` and sets the event that `_run` waits on.
 Three handlers in `Twitch._run` await requests and then end with `change_state(<next state>)`:
@@ -123,3 +123,8 @@ restores the hourly reload and the stream refresh that the schedule in
   of the real `_run` with stubs showed which presses are replaced in each handler.
 - 2026-10-20: `INVENTORY_FETCH` no longer awaits `websocket.start`, which now returns at once, so the table
   leaves it out.
+- 2026-10-22: Done. `change_state` keeps the first of the states requested during one pass of `_run`, the
+  handler's own next state included, in the order `EXIT`, `RESTART`, then the states of a reload in the order
+  they run. A reload requested while `INVENTORY_FETCH` runs is merged into it, which sends the fewest requests
+  ([ADR-0017](../../adr/ADR-0017-state-requests.md)). The full cleanup of a reload still removes the
+  selection of a `Switch` press during the reload ([074](074-reload-removes-the-channel-selection.md)).

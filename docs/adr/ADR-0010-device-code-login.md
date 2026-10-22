@@ -88,8 +88,8 @@ written reason for the flow or for a client.
 - **The README's note on the "New Login" email** says that the app presents itself to Twitch as Chrome. The
   upstream README has said so since 2024-09-15, when the client was already `ANDROID_APP`. Decision 2 gives
   today's.
-- **`Invalidate` starts a new run,** which costs one full reload (ADR-0002). A press during a fetch can have
-  its state replaced ([task 012](../refinements/tasks/012-button-requests-lost-during-a-fetch.md)).
+- **`Invalidate` starts a new run,** which costs one full reload (ADR-0002). A press during a fetch starts it
+  when the fetch ends ([ADR-0017](ADR-0017-state-requests.md)).
 
 ## Alternatives rejected
 
@@ -107,9 +107,9 @@ written reason for the flow or for a client.
   [gui.md](../modules/gui.md#the-window) and [ARCHITECTURE.md](../ARCHITECTURE.md#data-flow).
 - [troubleshooting.md](../troubleshooting.md#logging-in): logging in, logging out and switching accounts.
   [gql-operations.md](../runbooks/gql-operations.md#the-client-id-and-the-user-agent): changing the client ID.
-- [ADR-0002](ADR-0002-twitch-traffic-budget.md), [ADR-0006](ADR-0006-restart-after-fatal-error.md), and
+- [ADR-0002](ADR-0002-twitch-traffic-budget.md), [ADR-0006](ADR-0006-restart-after-fatal-error.md),
+  [ADR-0017](ADR-0017-state-requests.md) (a press during a fetch), and
   [ADR-0009](ADR-0009-watch-method.md) for the watch requests, which send the same user agent.
 - Tasks [010](../refinements/tasks/010-unreachable-password-login.md) (the password login),
-  [011](../refinements/tasks/011-login-token-in-debug-log.md) (the token in debug logs),
-  [012](../refinements/tasks/012-button-requests-lost-during-a-fetch.md) (a press during a fetch) and
+  [011](../refinements/tasks/011-login-token-in-debug-log.md) (the token in debug logs) and
   [014](../refinements/tasks/014-hard-coded-strings.md) (the hard-coded line with the user code).

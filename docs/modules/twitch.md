@@ -20,10 +20,13 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
 - `close()` sets `State.EXIT`, and `GUIManager.close` calls it. `prevent_close()` clears the GUI's close
   request, so the window stays open to show an error. `print(message)` writes to the Output box, and
   `save(force=False)` saves the GUI state and the settings; `main()` calls it at exit.
-- `change_state(state)` stores the next `State` and sets the event `_run` waits on. After `State.EXIT` the
-  state no longer changes, so a late call cannot restart an app that is closing. Only the last call is kept,
-  so a call made while a handler awaits is replaced by the state that handler sets next
-  ([task 012](../refinements/tasks/012-button-requests-lost-during-a-fetch.md)).
+- `change_state(state)` requests the next `State` and sets the event `_run` waits on. Of the states requested
+  during one pass of `_run`, the handler's own next state included, it keeps the first in `STATE_ORDER`:
+  `EXIT`, `RESTART`, then the states of a reload in the order they run, then `IDLE`
+  ([ADR-0017](../adr/ADR-0017-state-requests.md)). So a `Reload` press during a channel fetch runs a reload
+  after it, and a `Switch` press during a reload runs as the reload's own `CHANNEL_SWITCH`. A reload requested
+  while `INVENTORY_FETCH` runs is merged into it. After `State.EXIT` the state no longer changes, so a late
+  call cannot restart an app that is closing.
 - `state_change(state)` returns a function with no arguments that calls `change_state(state)`. The GUI uses it
   as a button command: `Switch` in the channel list (`State.CHANNEL_SWITCH`) and `Reload` on the Settings tab
   (`State.INVENTORY_FETCH`).
