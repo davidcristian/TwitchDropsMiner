@@ -2,19 +2,32 @@
     "english_name": "Polish",
     "status": {
         "terminated": "\nAplikacja została zatrzymana.\nZamknij okno, aby wyjść z aplikacji.",
+        "fatal_error": "Wystąpił błąd krytyczny:\n",
+        "restarting": "Automatyczny restart o {time}...",
+        "restart_longer": "Błąd wystąpił mniej niż godzinę po ostatnim restarcie, więc czas oczekiwania jest dłuższy niż w ustawieniach: {minutes} min.",
         "watching": "Aktualnie oglądany kanał: {channel}",
         "goes_online": "Kanał {channel} jest teraz ONLINE, przełączam kanał...",
         "goes_offline": "Kanał {channel} jest teraz OFFLINE, przełączam kanał...",
         "claimed_drop": "Odebrano drop: {drop}",
         "no_channel": "Brak dostępnych kanałów do oglądania. Czekam na dostępne kanały lub kampanie...",
-        "no_campaign": "Brak dostępnych aktywnych kampanii. Czekam na dostępne kampanie..."
+        "no_campaign": "Brak dostępnych aktywnych kampanii. Czekam na dostępne kampanie...",
+        "logging_level": "Poziom logowania: {level}"
     },
     "login": {
         "unexpected_content": "Otrzymano nieoczekiwaną zawartość, zwykle z powodu przekierowania.\nUpewnij się, że nie jest wymagane dodatkowe logowanie lub potwierdzenie dostępu do Internetu."
     },
     "error": {
         "site_down": "Strona Twitcha jest obecnie niedostępna. Ponów próbę za {seconds} s....",
-        "no_connection": "Nie można połączyć się z Twitchem. Ponów próbę za {seconds} s.... ({url})"
+        "no_connection": "Nie można połączyć się z Twitchem. Ponów próbę za {seconds} s.... ({url})",
+        "save_failed": "Zapis nie powiódł się, ponowna próba przy następnym przeładowaniu: {error}",
+        "file_not_saved": "Nie można zapisać pliku {file}: {error}",
+        "autostart_not_changed": "Nie można zmienić wpisu autostartu: {error}",
+        "cannot_start": "Nie można uruchomić",
+        "folder_not_writable": "Aplikacja nie może zapisywać w folderze, z którego jest uruchomiona i w którym przechowuje swoje pliki:\n\n{error}\n\nPrzenieś aplikację do folderu, w którym możesz zapisywać."
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "Błąd argumentów wiersza poleceń"
     },
     "gui": {
         "output": "Dziennik zdarzeń",
@@ -23,6 +36,7 @@
             "idle": "Bezczynność",
             "exiting": "Zamykanie...",
             "terminated": "Zatrzymano",
+            "restarting": "Restart o {time}",
             "cleanup": "Czyszczenie kanałów...",
             "gathering": "Wyszukiwanie kanałów...",
             "switching": "Zmiana kanałów...",
@@ -50,6 +64,7 @@
             "logging_in": "Logowanie...",
             "required": "Wymagane zalogowanie",
             "request": "Zaloguj się, by kontynuować.",
+            "enter_code": "Wpisz ten kod na stronie aktywacji urządzenia Twitcha: {code}",
             "button": "Zaloguj"
         },
         "websocket": {
@@ -115,11 +130,14 @@
         "settings": {
             "general": {
                 "name": "Ogólne",
+                "language": "Język 🌐 (wymaga restartu): ",
                 "autostart": "Autostart: ",
                 "tray": "Autostart z zasobnika: ",
                 "tray_notifications": "Powiadomienia z zasobnika: ",
                 "dark_mode": "Tryb ciemny: ",
                 "priority_mode": "Tryb priorytetu: ",
+                "refresh_interval": "Szukaj nowych streamów co: ",
+                "restart_delay": "Restart po awarii za: ",
                 "proxy": "Proxy (wymaga restartu):"
             },
             "advanced": {
@@ -134,13 +152,54 @@
                 "ending_soonest": "Kończące się najwcześniej",
                 "low_availability": "Najniższa dostępność"
             },
+            "refresh_intervals": {
+                "disabled": "Nigdy (przeładuj co godzinę)",
+                "minutes": "{minutes} min."
+            },
+            "restart_delays": {
+                "disabled": "Nigdy (bez restartu)",
+                "minutes": "{minutes} min."
+            },
+            "wanted": {
+                "name": "Gry, z których zbierane są dropy",
+                "game": "Gra",
+                "source": "Dopasowane przez",
+                "installed": "zainstalowana",
+                "unlisted": "poza listami",
+                "count": "Liczba gier: {count}, od najwyższego priorytetu.",
+                "empty": "Jeszcze nic nie ustalono - kliknij „Przeładuj” poniżej."
+            },
+            "detect": {
+                "name": "Wykryte gry",
+                "dirs": "Foldery gier:",
+                "add_dir": "Dodaj folder gier Steam lub Epic",
+                "remove_dir": "Usuń wybrany folder",
+                "rescan": "Skanuj ponownie",
+                "scanning": "Skanowanie folderów gier...",
+                "scan_error": "Skanowanie gier: {error}",
+                "not_a_folder": "To nie jest folder: {path}",
+                "no_games": "Nie znaleziono gier Steam ani Epic w: {path}",
+                "failed": "{path}: {reason}",
+                "detected": "Dopasowano {count} z {total} zainstalowanych gier.",
+                "restored": "Gry z ostatniego skanowania: {count}.",
+                "empty": "Jeszcze nic nie wykryto - dodaj folder gier poniżej.",
+                "no_dirs": "Nie dodano folderów."
+            },
             "game_name": "Nazwa gry",
             "priority": "Priorytety",
             "exclude": "Wykluczone",
+            "pattern_matches": "„{pattern}” pasuje do gier ({count}): {games}",
+            "pattern_empty": "„{pattern}” nie pasuje obecnie do żadnej gry z kampanią.",
             "reload": "Przeładuj",
             "reload_text": "Większość zmian wymaga przeładowania, które natychmiastowo je zastosuje: "
         },
         "help": {
+            "about": {
+                "name": "O programie",
+                "repository": "Repozytorium: ",
+                "based_on": "Na podstawie: ",
+                "based_on_text": "TwitchDropsMiner autorstwa DevilXD"
+            },
             "links": {
                 "name": "Pomocne linki",
                 "inventory": "Zobacz swój ekwipunek na Twitchu",

@@ -5,18 +5,19 @@
 **Origin:** found on 2026-10-18 while the docs were written
 **Verified:** 2026-10-23
 
-`default_translation` in `translate.py` has 160 strings. Each of the 20 files in `lang/` other than
-`English.json` lacks between 47 and 60 of them. `English.json` is left out because it is gitignored and every
-run from source writes it again from `default_translation`. The counts come from comparing the nested key
-paths of `default_translation`, read from `translate.py` with the `ast` module, with the key paths of each
-file.
+`default_translation` in `translate.py` has 160 strings. Of the 20 files in `lang/` other than `English.json`,
+ten have every string, which were written as [ADR-0019](../../adr/ADR-0019-strings-without-a-native-speaker.md)
+says. Each of the other ten, the remaining languages, lacks between 47 and 59 of them. `English.json` is left
+out because it is gitignored and every run from source writes it again from `default_translation`. The counts
+come from comparing the nested key paths of `default_translation`, read from `translate.py` with the `ast`
+module, with the key paths of each file.
 
 A missing key shows in English. `Translator.set_language` loads a language with
 `json_load(path, default_translation)`, and `merge_json` in `utils.py` adds every key the file lacks from
 `default_translation`. It also deletes every key that `default_translation` lacks, so a string at the wrong
 path shows in English as well ([023](023-language-file-keys-dropped.md)).
 
-## The 47 keys every language lacks
+## The 47 keys every remaining language lacks
 
 These are the strings of this project's own features:
 
@@ -38,28 +39,26 @@ These are the strings of this project's own features:
 
 ## Older keys some languages lack
 
-- The Invalidate button, `gui.help.invalidate` (2 keys): every language except Español, Polski, 简体中文 and
-  繁體中文.
-- The Advanced frame, `gui.settings.advanced` (5 keys): Dansk, Deutsch, Français, Indonesian, Italiano,
-  Nederlandse, Português, Română, Čeština, Українська, العربية and 日本語.
-- Priority mode, `gui.settings.general.priority_mode` and `gui.settings.priority_modes` (4 keys): Dansk,
-  Deutsch, Indonesian, Italiano, Nederlandse, Português, Română, Čeština, العربية and 日本語.
-- Tray notifications, `gui.settings.general.tray_notifications` (1 key): Deutsch, Nederlandse and Čeština.
-- The inventory filter, `gui.inventory.filter.not_linked` (1 key): Nederlandse.
+- The Invalidate button, `gui.help.invalidate` (2 keys): every remaining language except 简体中文 and 繁體中文.
+- The Advanced frame, `gui.settings.advanced` (5 keys): Português, Română, Čeština, Українська, العربية and
+  日本語.
+- Priority mode, `gui.settings.general.priority_mode` and `gui.settings.priority_modes` (4 keys): Português,
+  Română, Čeština, العربية and 日本語.
+- Tray notifications, `gui.settings.general.tray_notifications` (1 key): Čeština.
 
 ## Missing keys per language
 
-- 60: Nederlandse.
-- 59: Deutsch and Čeština.
-- 58: Dansk, Indonesian, Italiano, Português, Română, العربية and 日本語.
-- 54: Français and Українська.
-- 49: Magyar, Norsk, Türkçe and Русский.
-- 47: Español, Polski, 简体中文 and 繁體中文.
+- 59: Čeština.
+- 58: Português, Română, العربية and 日本語.
+- 54: Українська.
+- 49: Türkçe and Русский.
+- 47: 简体中文 and 繁體中文.
+- 0: Dansk, Deutsch, Español, Français, Indonesian, Italiano, Magyar, Nederlandse, Norsk and Polski.
 
 ## What closes it
 
-A speaker of each language adds the missing keys. The keys at a wrong path, which need no translator, were
-moved or deleted in [023](023-language-file-keys-dropped.md). AGENTS.md says
+The missing strings of each remaining language are written as ADR-0019 says. The keys at a wrong path, which
+need no translator, were moved or deleted in [023](023-language-file-keys-dropped.md). AGENTS.md says
 a new string needs no edit to other languages, so new features keep adding to these counts. Every edit to
 `lang/*.json` must stay valid JSON, which the CI Validate job checks. `scripts/langcheck.py` prints the
 number of missing keys per language at each `just check`.
@@ -88,3 +87,7 @@ Cost: no Twitch requests.
   so Polski lacks 47 strings. The other counts did not change.
 - 2026-10-23: `scripts/langcheck.py` now prints the number of strings each language lacks, without failing.
   It printed the counts above.
+- 2026-10-23: The missing strings of ten languages were written in each language, as ADR-0019 says:
+  Dansk 58, Deutsch 59, Español 47, Français 54, Indonesian 58, Italiano 58, Magyar 49, Nederlandse 60,
+  Norsk 49 and Polski 47. `scripts/langcheck.py` now prints 0 for each of them. The other ten languages still
+  lack 47 to 59 strings.
