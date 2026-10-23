@@ -14,7 +14,8 @@ import aiohttp
 import pytest
 from yarl import URL
 
-import twitch as twitch_module
+import twitch.client as twitch_client
+import twitch.session as twitch_session
 from constants import JsonType
 from fakes import FakeResponse, FakeTwitch
 from twitch import Twitch
@@ -102,9 +103,9 @@ def build_twitch(
 
     cookies is the path at which it reads and saves cookies.jar, and pubsub opens each PubSub connection.
     """
-    monkeypatch.setattr(twitch_module, "COOKIES_PATH", cookies)
+    monkeypatch.setattr(twitch_session, "COOKIES_PATH", cookies)
     # Twitch.__init__ creates the window, which needs a display
-    monkeypatch.setattr(twitch_module, "GUIManager", lambda client: fake.gui)
+    monkeypatch.setattr(twitch_client, "GUIManager", lambda client: fake.gui)
     client = Twitch(fake.settings)
     log_in(client, fake, pubsub)
     return client

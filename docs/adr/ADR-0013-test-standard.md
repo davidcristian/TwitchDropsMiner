@@ -23,7 +23,7 @@ installed none of these packages, so a fix in one of them was checked by a scrip
    - A bug fix adds a test that fails without the fix.
    - A module that needs neither Twitch nor a display has a test of each public function, with its error and
      edge cases: empty input, a missing or malformed file, case and accent differences, and the like.
-   - A module that needs Twitch or a display, such as `twitch.py` or `gui.py`, needs no test of each public
+   - A module that needs Twitch or a display, such as `twitch/` or `gui.py`, needs no test of each public
      function, but a bug fix in it adds a suite test as above. The test passes fakes, such as a fake `Twitch` or
      a session whose requests raise.
      `tests/fakes.py` has a fake `Twitch`, which records each request and returns the responses a test gives it.
@@ -88,7 +88,7 @@ installed none of these packages, so a fix in one of them was checked by a scrip
 
 ## Consequences
 
-- The modules that need Twitch or a display, such as `twitch.py` and `gui.py`, are outside the floor, so
+- The modules that need Twitch or a display, such as `twitch/` and `gui.py`, are outside the floor, so
   nothing reports a fix in them without a test; the reviewer checks it. What a test cannot reach, such as a real
   login or how the window looks, is checked as AGENTS.md says: in the GUI, or with stubbed inputs. The
   [code rules](ADR-0014-code-rules.md) put new logic where a test can reach it.

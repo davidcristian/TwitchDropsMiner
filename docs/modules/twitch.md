@@ -1,10 +1,20 @@
-# `twitch.py`
+# `twitch/`
 
 **Purpose.** `Twitch` is the client object. It logs in, sends every HTTP and GQL request, runs the state machine
 that decides what to mine, and runs the task that sends the watch requests. It keeps the other parts as
 attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `channels` and `inventory`.
-`_AuthState` holds the login session. The module is far over the 300 line cap
+`_AuthState` holds the login session. `client.py` is far over the 300 line cap
 ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
+
+## Files
+
+| File | What it holds |
+| --- | --- |
+| `__init__.py` | Imports `Twitch`. Callers import from `twitch`, never from a file of it |
+| `client.py` | `Twitch`: its attributes, the lifecycle and state methods, `_run`, the watch loop, the maintenance task, the PubSub handlers and the channel discovery |
+| `session.py` | `_AuthState`, `save_cookies`, and `SessionMixin`, a base class of `Twitch` that holds `get_session`, `get_auth` and `wait_until_login`. All the code that reads `COOKIES_PATH` is here, so a test patches it in one file |
+| `requests.py` | `RequestsMixin`, a base class of `Twitch` that holds `request` and `gql_request` |
+| `inventoryfetch.py` | `InventoryFetchMixin`, a base class of `Twitch` that holds `fetch_inventory` and `fetch_campaigns` |
 
 ## Public contract
 

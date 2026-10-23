@@ -32,7 +32,7 @@ in [utils.md](utils.md#json-files).
 
 ## Saves during the run outside the inventory fetch
 
-`save_cookies` in `twitch.py` saves the aiohttp cookie jar at the end of each login and in `Twitch.shutdown`. It
+`save_cookies` in `twitch/session.py` saves the aiohttp cookie jar at the end of each login and in `Twitch.shutdown`. It
 passes `CookieJar.save` to `replace_file`, because `CookieJar.save` truncates the file and writes it in place:
 with aiohttp 3.14.3 on a full disk, a save that needs new space left a cut `cookies.jar` that failed to load, so
 the next run asked for a new login. `save_each` runs it with a `report` that logs the string

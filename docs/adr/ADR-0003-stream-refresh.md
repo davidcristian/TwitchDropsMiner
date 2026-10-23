@@ -5,7 +5,7 @@
 ## Context
 
 The app learns that a tracked channel went live from a PubSub websocket event, handled by
-`process_stream_state` in `twitch.py`. Only channels on the tracked list get these events. A campaign without an
+`process_stream_state` in `twitch/`. Only channels on the tracked list get these events. A campaign without an
 ACL (a list of channels whose streams count toward its drops) gets its channels from one `GameDirectory` query
 in `get_live_streams`. That query returns the channels that are live at that moment.
 

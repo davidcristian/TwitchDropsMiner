@@ -83,14 +83,14 @@ error, to detect installed games and to match list entries by pattern. A pick th
 conflict. Git then stops with:
 
 ```text
-CONFLICT (content): Merge conflict in twitch.py
+CONFLICT (content): Merge conflict in gui.py
 error: could not apply <hash>... <subject>
 ```
 
 1. List this project's own commits on the file, to see which of them the upstream commit conflicts with:
 
    ```bash
-   git log --oneline upstream/master..master twitch.py
+   git log --oneline upstream/master..master gui.py
    ```
 
 2. Edit the file. Keep this project's behavior, and add the upstream commit's change to it. Where the two
@@ -100,13 +100,29 @@ error: could not apply <hash>... <subject>
 3. Mark the file as resolved and finish the pick. The commit keeps the upstream author and message:
 
    ```bash
-   git add twitch.py
+   git add gui.py
    git cherry-pick --continue
    ```
 
 4. If the upstream change does not fit this project's code, run `git cherry-pick --abort`. Then write the fix as
    this project's own commit, in the format in [AGENTS.md](../../AGENTS.md#commits). Name the upstream behavior
    in the message, not the upstream hash.
+
+This project split `twitch.py` and other modules into packages of the same name
+([ADR-0020](../adr/ADR-0020-module-splits.md)). A pick that touches such a module stops with:
+
+```text
+CONFLICT (modify/delete): twitch.py deleted in HEAD and modified in <hash> (<subject>).  Version <hash> (<subject>) of twitch.py left in tree.
+```
+
+Make the upstream change by hand in the file of the package that now holds the function. Then remove the
+upstream copy of the module, mark the file as resolved and finish the pick, as in step 3:
+
+```bash
+git rm twitch.py
+git add twitch/<file>.py
+git cherry-pick --continue
+```
 
 After a resolved conflict in `gui.py`, run the GUI check again, because a wrong resolution in `gui.py` shows
 only at runtime.

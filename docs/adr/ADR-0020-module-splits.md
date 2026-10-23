@@ -58,7 +58,7 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
    collaborating class needs new state and new calls, so a reviewer cannot check either as a move. They are the
    better form for code that needs no `self`, such as the wanted games ranking in `Twitch._run`, or that keeps
    state of its own, as `_AuthState` does. Such a rewrite is a commit of its own, after the split.
-5. **A method over 300 lines is split before its class is.** It cannot move whole into a file of 300 lines. A
+5. **A method over 300 lines is split before it moves.** It cannot move whole into a file of 300 lines. A
    `refactor:` commit of its own cuts it into methods, each a run of consecutive lines of the old body, and
    changes nothing else. The tests that run the method pass unchanged, and for `SettingsPanel.__init__` the
    preview shows the same Settings tab.
@@ -69,10 +69,12 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
    re-indents the mock, which `git diff -w` hides. `git diff -M --stat` shows the moves, and the sorted lines of
    the old file match those of the new files, apart from the lines this decision allows.
 7. **Tests follow the code they test.** A test that patches a module global, such as `random` for
-   `ExponentialBackoff`, patches the file that now reads it (`utils.backoff`), in the split commit. A test of code
-   that left `constants.py` or `gui.py` moves to the test file of the new package, such as
-   `tests/test_twitchapi.py`. A new test file for a file of a package is named `test_<package>_<file>.py`, as the
-   tests of `gamelib/` are.
+   `ExponentialBackoff`, patches the file that now reads it (`utils.backoff`), in the split commit. Such a global is
+   read in one file where the split allows it, so one patch reaches every read: `get_session` moves with
+   `_AuthState`, because both read `COOKIES_PATH`. When the code that a test runs reads the global in two files, the
+   test patches both, as the login test does with `datetime`. A test of code that left `constants.py` or `gui.py`
+   moves to the test file of the new package, such as `tests/test_twitchapi.py`. A new test file for a file of a
+   package is named `test_<package>_<file>.py`, as the tests of `gamelib/` are.
 8. **Docs, checks and packaging change in the same commit.** The package's doc has a table of its files, as
    [gamelib.md](../modules/gamelib.md) has, and keeps the sections of the module's doc. A package that needs
    neither Twitch nor a display is in `source` under `[tool.coverage.run]` in `pyproject.toml`; one that needs
@@ -89,7 +91,7 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
 | `channel.py` | `channel/` | `Stream`; `Channel` with its mixins |
 | `inventory.py` | `inventory/` | `Benefit`; `BaseDrop` and `TimedDrop`; `DropsCampaign` |
 | `translate.py` | `translate/` | the `TypedDict` classes; `default_translation`; `Translator` and `_` |
-| `twitch.py` | `twitch/` | `_AuthState`; `Twitch` with mixins for the requests, the inventory fetch, the PubSub handlers, the channel discovery and the state loop |
+| `twitch.py` | `twitch/` | `_AuthState` with the mixin of the session methods; `Twitch` with mixins for the requests, the inventory fetch, the PubSub handlers, the channel discovery and the state loop |
 | `gui.py` | stays; `ui/` | the generic widgets, the Main tab panels, `TrayIcon`, `InventoryOverview`, `HelpTab`, `SettingsPanel` with its mixins, `GUIManager` with its theme |
 
 ## Consequences

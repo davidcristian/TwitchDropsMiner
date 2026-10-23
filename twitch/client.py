@@ -1,25 +1,22 @@
+"""`Twitch`, the client object: its state, the state machine in `_run`, the watch loop and the PubSub handlers."""
 from __future__ import annotations
 
-import json
 import random
 import traceback
 import asyncio
 import logging
 from time import time
-from copy import deepcopy
 from functools import partial
 from collections import abc, deque, OrderedDict
 from datetime import datetime, timedelta, timezone
-from contextlib import suppress, asynccontextmanager
-from typing import Any, Literal, Final, NoReturn, overload, cast, TYPE_CHECKING
+from contextlib import suppress
+from typing import Final, NoReturn, cast, TYPE_CHECKING
 
 import aiohttp
-from yarl import URL
 
 import gamelib
 from translate import _
-from redact import redact
-from savefiles import save_each, replace_file
+from savefiles import save_each
 from ratelimit import RateLimiter
 from restartdelay import RestartDelay
 from gui import GUIManager
@@ -31,34 +28,19 @@ from exceptions import (
     GQLException,
     ReloadRequest,
     MinerException,
-    RequestInvalid,
     RequestException,
 )
-from gqldata import (
-    get_field,
-    merge_data,
-    current_drop,
-    user_inventory,
-    campaign_details,
-    clear_error_field,
-    campaign_summaries,
-    complete_campaigns,
-)
+from gqldata import current_drop
 from streamdata import channel_streams, channel_campaigns, directory_streams
 from utils import (
-    CHARS_HEX_LOWER,
     chunk,
-    timestamp,
-    create_nonce,
     task_wrapper,
     AwaitableValue,
-    ExponentialBackoff,
 )
 from constants import (
     CALL,
     MAX_INT,
     DUMP_PATH,
-    COOKIES_PATH,
     MAX_CHANNELS,
     WATCH_INTERVAL,
     REFRESH_JITTER,
@@ -68,9 +50,12 @@ from constants import (
 )
 from twitchapi import GQL_QUERIES, ClientType, WebsocketTopic
 
+from .session import SessionMixin, _AuthState, save_cookies
+from .requests import RequestsMixin
+from .inventoryfetch import InventoryFetchMixin
+
 if TYPE_CHECKING:
     from utils import Game
-    from gui import LoginForm
     from channel import Stream
     from settings import Settings
     from inventory import TimedDrop
@@ -79,7 +64,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("TwitchDrops")
-gql_logger = logging.getLogger("TwitchDrops.gql")
 # Of the states requested during one pass of Twitch._run, change_state keeps the first in this order. A reload
 # goes through its states in this order, so it also runs a later state that a request names.
 STATE_ORDER: Final[tuple[State, ...]] = (
@@ -100,217 +84,7 @@ SCAN_ERROR_KEYS: Final[dict[gamelib.ScanErrorKind, str]] = {
 }
 
 
-def save_cookies(jar: aiohttp.CookieJar) -> None:
-    """Save the cookie jar to cookies.jar, or log the OSError of a failed save and keep the old file."""
-    save_each(
-        [partial(replace_file, COOKIES_PATH, jar.save)],
-        lambda error: logger.error(_("error", "file_not_saved").format(file=COOKIES_PATH.name, error=error)),
-    )
-
-
-class _AuthState:
-    def __init__(self, twitch: Twitch):
-        self._twitch: Twitch = twitch
-        self._lock = asyncio.Lock()
-        self._logged_in = asyncio.Event()
-        self.user_id: int
-        self.device_id: str
-        self.session_id: str
-        self.access_token: str
-        self.client_version: str
-
-    def _hasattrs(self, *attrs: str) -> bool:
-        return all(hasattr(self, attr) for attr in attrs)
-
-    def _delattrs(self, *attrs: str) -> None:
-        for attr in attrs:
-            if hasattr(self, attr):
-                delattr(self, attr)
-
-    def invalidate(self, *, delete_cookies: bool = False) -> None:
-        self._delattrs("access_token", "user_id")
-        self._logged_in.clear()
-        self._twitch.gui.help._invalidate_button.config(state="disabled")
-        if delete_cookies:
-            session = self._twitch._session
-            if session is not None:
-                jar = cast(aiohttp.CookieJar, session.cookie_jar)
-                jar.clear()
-                COOKIES_PATH.unlink(missing_ok=True)
-
-    def clear(self) -> None:
-        self._delattrs(
-            "user_id",
-            "device_id",
-            "session_id",
-            "access_token",
-            "client_version",
-        )
-        self._logged_in.clear()
-        self._twitch.gui.help._invalidate_button.config(state="disabled")
-
-    async def _oauth_login(self) -> str:
-        login_form: LoginForm = self._twitch.gui.login
-        client_info: ClientInfo = self._twitch._client_type
-        headers = {
-            "Accept": "application/json",
-            "Accept-Encoding": "gzip",
-            "Accept-Language": "en-US",
-            "Cache-Control": "no-cache",
-            "Client-Id": client_info.CLIENT_ID,
-            "Host": "id.twitch.tv",
-            "Origin": str(client_info.CLIENT_URL),
-            "Pragma": "no-cache",
-            "Referer": str(client_info.CLIENT_URL),
-            "User-Agent": client_info.USER_AGENT,
-            "X-Device-Id": self.device_id,
-        }
-        device_payload = {
-            "client_id": client_info.CLIENT_ID,
-            "scopes": "",  # no scopes needed
-        }
-        while True:
-            # the code is valid for expires_in from its request, so it is requested only after the press
-            await login_form.ask_login()
-            try:
-                now = datetime.now(timezone.utc)
-                async with self._twitch.request(
-                    "POST", "https://id.twitch.tv/oauth2/device", headers=headers, data=device_payload
-                ) as response:
-                    # Twitch sends a 40 character device_code, an 8 letter user_code, an interval
-                    # of 5 seconds and an expires_in of 1800 seconds.
-                    response_json: JsonType = await response.json()
-                    device_code: str = response_json["device_code"]
-                    user_code: str = response_json["user_code"]
-                    interval: int = response_json["interval"]
-                    verification_uri: URL = URL(response_json["verification_uri"])
-                    expires_at = now + timedelta(seconds=response_json["expires_in"])
-
-                # Print the code to the user, open them the activate page so they can type it in
-                await login_form.ask_enter_code(verification_uri, user_code)
-
-                token_payload = {
-                    "client_id": self._twitch._client_type.CLIENT_ID,
-                    "device_code": device_code,
-                    "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
-                }
-                while True:
-                    # sleep first, not like the user is gonna enter the code *that* fast
-                    await asyncio.sleep(interval)
-                    async with self._twitch.request(
-                        "POST",
-                        "https://id.twitch.tv/oauth2/token",
-                        headers=headers,
-                        data=token_payload,
-                        invalidate_after=expires_at,
-                    ) as response:
-                        # 200 means success, 400 means the user haven't entered the code yet
-                        if response.status != 200:
-                            continue
-                        response_json = await response.json()
-                        # the response also has refresh_token, scope and token_type ("bearer")
-                        self.access_token = cast(str, response_json["access_token"])
-                        return self.access_token
-            except RequestInvalid:
-                # the device_code has expired, so the next press requests a new code
-                continue
-
-    def headers(self, *, user_agent: str = '', gql: bool = False) -> JsonType:
-        client_info: ClientInfo = self._twitch._client_type
-        headers = {
-            "Accept": "*/*",
-            "Accept-Encoding": "gzip",
-            "Accept-Language": "en-US",
-            "Pragma": "no-cache",
-            "Cache-Control": "no-cache",
-            "Client-Id": client_info.CLIENT_ID,
-        }
-        if user_agent:
-            headers["User-Agent"] = user_agent
-        if hasattr(self, "session_id"):
-            headers["Client-Session-Id"] = self.session_id
-        # if hasattr(self, "client_version"):
-            # headers["Client-Version"] = self.client_version
-        if hasattr(self, "device_id"):
-            headers["X-Device-Id"] = self.device_id
-        if gql:
-            headers["Origin"] = str(client_info.CLIENT_URL)
-            headers["Referer"] = str(client_info.CLIENT_URL)
-            headers["Authorization"] = f"OAuth {self.access_token}"
-        return headers
-
-    async def validate(self):
-        async with self._lock:
-            await self._validate()
-
-    async def _validate(self):
-        if not hasattr(self, "session_id"):
-            self.session_id = create_nonce(CHARS_HEX_LOWER, 16)
-        if not self._hasattrs("device_id", "access_token", "user_id"):
-            session = await self._twitch.get_session()
-            jar = cast(aiohttp.CookieJar, session.cookie_jar)
-            client_info: ClientInfo = self._twitch._client_type
-        if not self._hasattrs("device_id"):
-            async with self._twitch.request(
-                "GET", client_info.CLIENT_URL, headers=self.headers()
-            ) as response:
-                page_html = await response.text("utf8")
-                assert page_html is not None
-            # doing the request ends up setting the "unique_id" value in the cookie
-            cookie = jar.filter_cookies(client_info.CLIENT_URL)
-            self.device_id = cookie["unique_id"].value
-        if not self._hasattrs("access_token", "user_id"):
-            # looks like we're missing something
-            login_form: LoginForm = self._twitch.gui.login
-            logger.info("Checking login")
-            login_form.update(_("gui", "login", "logging_in"), None)
-            for client_mismatch_attempt in range(2):
-                for invalid_token_attempt in range(2):
-                    cookie = jar.filter_cookies(client_info.CLIENT_URL)
-                    if "auth-token" not in cookie:
-                        self.access_token = await self._oauth_login()
-                        cookie["auth-token"] = self.access_token
-                    elif not hasattr(self, "access_token"):
-                        logger.info("Restoring session from cookie")
-                        self.access_token = cookie["auth-token"].value
-                    # validate the auth token, by obtaining user_id
-                    async with self._twitch.request(
-                        "GET",
-                        "https://id.twitch.tv/oauth2/validate",
-                        headers={"Authorization": f"OAuth {self.access_token}"}
-                    ) as response:
-                        if response.status == 401:
-                            # the access token we have is invalid - clear the cookie and reauth
-                            logger.info("Restored session is invalid")
-                            assert client_info.CLIENT_URL.host is not None
-                            jar.clear_domain(client_info.CLIENT_URL.host)
-                            continue
-                        elif response.status == 200:
-                            validate_response = await response.json()
-                            break
-                else:
-                    raise RuntimeError("Login verification failure (step #2)")
-                # ensure the cookie's client ID matches the currently selected client
-                if validate_response["client_id"] == client_info.CLIENT_ID:
-                    break
-                # otherwise, we need to delete the entire cookie file and clear the jar
-                logger.info("Cookie client ID mismatch")
-                jar.clear()
-                COOKIES_PATH.unlink(missing_ok=True)
-            else:
-                raise RuntimeError("Login verification failure (step #1)")
-            self.user_id = int(validate_response["user_id"])
-            cookie["persistent"] = str(self.user_id)
-            logger.info(f"Login successful, user ID: {self.user_id}")
-            login_form.update(_("gui", "login", "logged_in"), self.user_id)
-            # update our cookie and save it
-            jar.update_cookies(cookie, client_info.CLIENT_URL)
-            save_cookies(jar)
-        self._twitch.gui.help._invalidate_button.config(state="normal")
-        self._logged_in.set()
-
-
-class Twitch:
+class Twitch(SessionMixin, RequestsMixin, InventoryFetchMixin):
     def __init__(self, settings: Settings):
         self.settings: Settings = settings
         # State management
@@ -352,42 +126,6 @@ class Twitch:
         # Maintenance task
         self._mnt_task: asyncio.Task[None] | None = None
 
-    async def get_session(self) -> aiohttp.ClientSession:
-        if (session := self._session) is not None:
-            if session.closed:
-                raise RuntimeError("Session is closed")
-            return session
-        # load in cookies
-        cookie_jar = aiohttp.CookieJar()
-        try:
-            if COOKIES_PATH.exists():
-                cookie_jar.load(COOKIES_PATH)
-        except Exception as exc:
-            # aiohttp reads a file that is not JSON as a pickle, so a broken file raises errors of many types,
-            # and a load that fails halfway can leave some cookies in the jar
-            logger.warning(f"Could not load cookies.jar, so the app logs in again ({type(exc).__name__}: {exc})")
-            cookie_jar.clear()
-        # create timeouts
-        # connection quality mulitiplier determines the magnitude of timeouts
-        connection_quality = self.settings.connection_quality
-        if connection_quality < 1:
-            connection_quality = self.settings.connection_quality = 1
-        elif connection_quality > 6:
-            connection_quality = self.settings.connection_quality = 6
-        timeout = aiohttp.ClientTimeout(
-            sock_connect=5*connection_quality,
-            total=10*connection_quality,
-        )
-        # create session, limited to 50 connections at maximum
-        connector = aiohttp.TCPConnector(limit=50)
-        self._session = aiohttp.ClientSession(
-            timeout=timeout,
-            connector=connector,
-            cookie_jar=cookie_jar,
-            headers={"User-Agent": self._client_type.USER_AGENT},
-        )
-        return self._session
-
     async def shutdown(self) -> None:
         start_time = time()
         self.stop_watching()
@@ -428,9 +166,6 @@ class Twitch:
         # wait at least half a second + whatever it takes to complete the closing
         # this allows aiohttp to safely close the session
         await asyncio.sleep(start_time + 0.5 - time())
-
-    def wait_until_login(self) -> abc.Coroutine[Any, Any, Literal[True]]:
-        return self._auth_state._logged_in.wait()
 
     def change_state(self, state: State) -> None:
         """Request the state that _run handles next."""
@@ -1360,285 +1095,6 @@ class Twitch:
                         {"input": {"id": data["id"]}}
                     )
                 )
-
-    async def get_auth(self) -> _AuthState:
-        await self._auth_state.validate()
-        return self._auth_state
-
-    @asynccontextmanager
-    async def request(
-        self, method: str, url: URL | str, *, invalidate_after: datetime | None = None, **kwargs
-    ) -> abc.AsyncIterator[aiohttp.ClientResponse]:
-        session = await self.get_session()
-        method = method.upper()
-        if self.settings.proxy and "proxy" not in kwargs:
-            kwargs["proxy"] = self.settings.proxy
-        logger.debug(f"Request: ({method=}, url={redact(url)!r}, kwargs={redact(kwargs)!r})")
-        session_timeout = timedelta(seconds=session.timeout.total or 0)
-        backoff = ExponentialBackoff(maximum=3*60)
-        for delay in backoff:
-            if self.gui.close_requested:
-                raise ExitRequest()
-            elif (
-                invalidate_after is not None
-                # account for an expiration that happens during the request
-                and datetime.now(timezone.utc) >= (invalidate_after - session_timeout)
-            ):
-                raise RequestInvalid()
-            try:
-                response: aiohttp.ClientResponse | None = None
-                response = await self.gui.coro_unless_closed(
-                    session.request(method, url, **kwargs)
-                )
-                assert response is not None
-                logger.debug(
-                    f"Response: {response.status}: {response.method} {redact(response.url)} "
-                    f"headers={redact(response.headers)!r}"
-                )
-                if response.status < 500:
-                    # pre-read the response to avoid getting errors outside of the context manager
-                    raw_response = await response.read()  # noqa
-                    yield response
-                    return
-                self.print(_("error", "site_down").format(seconds=round(delay)))
-            except aiohttp.ClientConnectorCertificateError:
-                # for a case where SSL verification fails
-                raise
-            except aiohttp.ClientHttpProxyError as exc:
-                # the text of this error shows the proxy URL with its password
-                exc.request_info = redact(exc.request_info)
-                raise
-            except (
-                aiohttp.ClientConnectionError, asyncio.TimeoutError, aiohttp.ClientPayloadError
-            ):
-                # connection problems, retry
-                if backoff.steps > 1:
-                    # just so that quick retries that sometimes happen, aren't shown
-                    self.print(
-                        _("error", "no_connection").format(seconds=round(delay), url=str(redact(url)))
-                    )
-            finally:
-                if response is not None:
-                    response.release()
-            with suppress(asyncio.TimeoutError):
-                await asyncio.wait_for(self.gui.wait_until_closed(), timeout=delay)
-
-    @overload
-    async def gql_request(self, ops: GQLOperation) -> JsonType:
-        ...
-
-    @overload
-    async def gql_request(self, ops: list[GQLOperation]) -> list[JsonType]:
-        ...
-
-    async def gql_request(
-        self, ops: GQLOperation | list[GQLOperation]
-    ) -> JsonType | list[JsonType]:
-        gql_logger.debug(f"GQL Request: {ops}")
-        backoff = ExponentialBackoff(maximum=60)
-        # Use a flag to retry the request a single time, if a specific set of errors is encountered
-        single_retry: bool = True
-        for delay in backoff:
-            async with self._qgl_limiter:
-                auth_state = await self.get_auth()
-                async with self.request(
-                    "POST",
-                    "https://gql.twitch.tv/gql",
-                    json=ops,
-                    headers=auth_state.headers(user_agent=self._client_type.USER_AGENT, gql=True),
-                ) as response:
-                    response_json: JsonType | list[JsonType] = await response.json()
-            gql_logger.debug(f"GQL Response: {response_json}")
-            orig_response = response_json
-            if isinstance(response_json, list):
-                response_list = response_json
-            else:
-                response_list = [response_json]
-            force_retry: bool = False
-            for response_json in response_list:
-                # GQL error handling
-                if "errors" in response_json:
-                    for error_dict in response_json["errors"]:
-                        if "message" in error_dict:
-                            if (
-                                single_retry
-                                and error_dict["message"] in (
-                                    "service error",
-                                    "PersistedQueryNotFound",
-                                )
-                            ):
-                                logger.error(
-                                    f"Retrying a {error_dict['message']} for "
-                                    f"{response_json['extensions']['operationName']}"
-                                )
-                                single_retry = False
-                                if delay < 5:
-                                    # overwrite the delay if too short
-                                    delay = 5
-                                force_retry = True
-                                break
-                            elif error_dict["message"] == "server error":
-                                if not clear_error_field(
-                                    response_json.get("data"), error_dict.get("path", [])
-                                ):
-                                    logger.error(
-                                        "Server error with no field to clear in "
-                                        f"{get_field(response_json, 'extensions', 'operationName')}"
-                                    )
-                                break
-                            elif (
-                                error_dict["message"] in (
-                                    "service timeout",
-                                    "request cancelled",
-                                    "service unavailable",
-                                    "context deadline exceeded",
-                                )
-                            ):
-                                force_retry = True
-                                break
-                    else:
-                        raise GQLException(response_json['errors'])
-                # Other error handling
-                elif "error" in response_json:
-                    raise GQLException(
-                        f"{response_json['error']}: {response_json['message']}"
-                    )
-                if force_retry:
-                    break
-            else:
-                return orig_response
-            await asyncio.sleep(delay)
-        raise RuntimeError("Retry loop was broken")
-
-    async def fetch_campaigns(
-        self, campaigns_chunk: list[tuple[str, JsonType]]
-    ) -> dict[str, JsonType]:
-        campaign_ids: dict[str, JsonType] = dict(campaigns_chunk)
-        auth_state = await self.get_auth()
-        response_list: list[JsonType] = await self.gql_request(
-            [
-                GQL_QUERIES["CampaignDetails"].with_variables(
-                    {"channelLogin": str(auth_state.user_id), "dropID": cid}
-                )
-                for cid in campaign_ids
-            ]
-        )
-        return merge_data(campaign_ids, campaign_details(list(campaign_ids), response_list))
-
-    async def fetch_inventory(self) -> None:
-        status_update = self.gui.status.update
-        status_update(_("gui", "status", "fetching_inventory"))
-        # fetch in-progress campaigns (inventory)
-        response = await self.gql_request(GQL_QUERIES["Inventory"])
-        inventory: JsonType = user_inventory(response)
-        ongoing_campaigns: list[JsonType] = inventory["dropCampaignsInProgress"]
-        # this contains claimed benefit edge IDs, not drop IDs
-        claimed_benefits: dict[str, datetime] = {
-            b["id"]: timestamp(b["lastAwardedAt"]) for b in inventory["gameEventDrops"]
-        }
-        inventory_data: dict[str, JsonType] = {c["id"]: c for c in ongoing_campaigns}
-        # fetch general available campaigns data (campaigns)
-        response = await self.gql_request(GQL_QUERIES["Campaigns"])
-        available_campaigns: dict[str, JsonType] = campaign_summaries(response)
-        # fetch detailed data for each campaign, in chunks
-        status_update(_("gui", "status", "fetching_campaigns"))
-        fetch_campaigns_tasks: list[asyncio.Task[Any]] = [
-            asyncio.create_task(self.fetch_campaigns(campaigns_chunk))
-            for campaigns_chunk in chunk(available_campaigns.items(), 20)
-        ]
-        try:
-            for coro in asyncio.as_completed(fetch_campaigns_tasks):
-                chunk_campaigns_data = await coro
-                # merge the inventory and campaigns datas together
-                inventory_data = merge_data(inventory_data, chunk_campaigns_data)
-        except Exception:
-            # asyncio.as_completed doesn't cancel tasks on errors
-            for task in fetch_campaigns_tasks:
-                task.cancel()
-            raise
-        inventory_data = complete_campaigns(inventory_data)
-
-        if self.settings.dump:
-            # dump the campaigns data to the dump file
-            with open(DUMP_PATH, 'a', encoding="utf8") as file:
-                # we need to pre-process the inventory dump a little
-                dump_data: JsonType = deepcopy(inventory_data)
-                for campaign_data in dump_data.values():
-                    # replace ACL lists with a simple text description
-                    if (
-                        campaign_data["allow"]
-                        and campaign_data["allow"].get("isEnabled", True)
-                        and campaign_data["allow"]["channels"]
-                    ):
-                        # simply count the channels included in the ACL
-                        campaign_data["allow"]["channels"] = (
-                            f"{len(campaign_data['allow']['channels'])} channels"
-                        )
-                    # replace drop instance IDs, so they don't include user IDs
-                    for drop_data in campaign_data["timeBasedDrops"]:
-                        if "self" in drop_data and drop_data["self"]["dropInstanceID"]:
-                            drop_data["self"]["dropInstanceID"] = "..."
-                json.dump(dump_data, file, indent=4, sort_keys=True)
-                file.write("\n\n")  # add 2x new line spacer
-                json.dump(inventory["gameEventDrops"], file, indent=4, sort_keys=True, default=str)
-
-        # use the merged data to create campaign objects
-        campaigns: list[DropsCampaign] = [
-            DropsCampaign(self, campaign_data, claimed_benefits)
-            for campaign_data in inventory_data.values()
-        ]
-        campaigns.sort(key=lambda c: c.active, reverse=True)
-        campaigns.sort(key=lambda c: c.upcoming and c.starts_at or c.ends_at)
-        campaigns.sort(key=lambda c: c.eligible, reverse=True)
-
-        self._drops.clear()
-        self._campaigns.clear()
-        self.gui.inv.clear()
-        self.inventory.clear()
-        self._mnt_triggers.clear()
-        switch_triggers: set[datetime] = set()
-        next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
-        # add the campaigns to the internal inventory
-        for campaign in campaigns:
-            self._drops.update({drop.id: drop for drop in campaign.drops})
-            if campaign.can_earn_within(next_hour):
-                switch_triggers.update(campaign.time_triggers)
-            self.inventory.append(campaign)
-            self._campaigns[campaign.id] = campaign
-        # concurrently add the campaigns into the GUI
-        # NOTE: this fetches pictures from the CDN, so might be slow without a cache
-        status_update(
-            _("gui", "status", "adding_campaigns").format(counter=f"(0/{len(campaigns)})")
-        )
-        add_campaign_tasks: list[asyncio.Task[None]] = [
-            asyncio.create_task(self.gui.inv.add_campaign(campaign))
-            for campaign in campaigns
-        ]
-        try:
-            for i, coro in enumerate(asyncio.as_completed(add_campaign_tasks), start=1):
-                await coro
-                status_update(
-                    _("gui", "status", "adding_campaigns").format(
-                        counter=f"({i}/{len(campaigns)})"
-                    )
-                )
-                # this is needed here explicitly, because cache reads from disk don't raise this
-                if self.gui.close_requested:
-                    raise ExitRequest()
-        except Exception:
-            # asyncio.as_completed doesn't cancel tasks on errors
-            for task in add_campaign_tasks:
-                task.cancel()
-            raise
-        self._mnt_triggers.extend(sorted(switch_triggers))
-        # trim out all triggers that we're already past
-        now = datetime.now(timezone.utc)
-        while self._mnt_triggers and self._mnt_triggers[0] <= now:
-            self._mnt_triggers.popleft()
-        # NOTE: maintenance task is restarted at the end of each inventory fetch
-        if self._mnt_task is not None and not self._mnt_task.done():
-            self._mnt_task.cancel()
-        self._mnt_task = asyncio.create_task(self._maintenance_task())
 
     def get_active_campaign(self, channel: Channel | None = None) -> DropsCampaign | None:
         if not self.wanted_games:

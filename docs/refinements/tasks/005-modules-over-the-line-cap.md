@@ -14,7 +14,7 @@ new work goes into a new module that they call. This task records where each one
 | Module | Lines | After the split |
 | --- | --- | --- |
 | `gui.py` | 3164 | |
-| `twitch.py` | 1734 | |
+| `twitch.py` | 1734 | `twitch/` so far: `client.py` with 1189 lines, over the cap, and four files of 6 to 292 lines |
 | `translate.py` | 612 | `translate/`, four files of 7 to 284 lines |
 | `channel.py` | 528 | `channel/`, five files of 7 to 166 lines |
 | `inventory.py` | 489 | `inventory/`, four files of 7 to 284 lines |
@@ -112,3 +112,10 @@ Splits cost no Twitch requests.
   classes, `default_translation` and `Translator` have a file each. With its imports, the file of
   `default_translation` has 269 lines, so the dict was not cut. `langcheck.py`, `dashcheck.py` and
   `prosecheck.py` read the English strings from `translate/english.py`. Two modules remain over the cap.
+- 2026-10-23: `twitch.py`, then 1733 lines after the constants split shortened its imports, became the package
+  `twitch/`. `_AuthState`, `save_cookies` and the mixin `SessionMixin` with `get_session`, `get_auth` and
+  `wait_until_login` moved to `session.py`, `request` and `gql_request` to `RequestsMixin` in `requests.py`, and
+  `fetch_campaigns` and `fetch_inventory` to `InventoryFetchMixin` in `inventoryfetch.py`. `get_session` went
+  with `_AuthState`, because both read `COOKIES_PATH`, which the tests patch. `_merge_data` had already become
+  `merge_data` in `gqldata.py`. `Twitch` stays in `client.py` with the PubSub handlers, the channel discovery
+  and `_run`, and the entry in `EXCEPTIONS` is now `twitch/client.py`.

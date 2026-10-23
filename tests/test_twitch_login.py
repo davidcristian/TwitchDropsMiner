@@ -8,7 +8,8 @@ from typing import Any
 import pytest
 from yarl import URL
 
-import twitch as twitch_module
+import twitch.requests as twitch_requests
+import twitch.session as twitch_session
 from twitchapi import ClientType
 from fakes import FakeResponse, FakeTwitch
 from livetwitch import FakeSession, run_with_fast_clock
@@ -79,7 +80,9 @@ class FakeLoginForm:
 
 def log_in(live_twitch, monkeypatch, *waits: float, entered: int) -> tuple[list[str], LoginSession, Any]:
     """Log in from an empty cookie jar, and return the events, the session and the login state."""
-    monkeypatch.setattr(twitch_module, "datetime", LoopClock)
+    # the login sets the expiry of the code, and Twitch.request checks it
+    monkeypatch.setattr(twitch_session, "datetime", LoopClock)
+    monkeypatch.setattr(twitch_requests, "datetime", LoopClock)
     events: list[str] = []
     fake = FakeTwitch()
     client = live_twitch(fake)

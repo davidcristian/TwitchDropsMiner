@@ -2,7 +2,7 @@
 
 **Purpose.** Defines what the app sends to Twitch: the clients it acts as (`ClientType`), the GQL operations with
 their hashes (`GQL_QUERIES`) and the PubSub topics it subscribes to (`WebsocketTopic`). It sends nothing itself:
-`twitch.py`, `channel/` and `inventory/` send the GQL requests, and `websocket/` the PubSub messages. It needs
+`twitch/`, `channel/` and `inventory/` send the GQL requests, and `websocket/` the PubSub messages. It needs
 neither Twitch nor a display, and `tests/test_twitchapi.py` tests it with plain values.
 [gql-operations.md](../runbooks/gql-operations.md) says how to update a hash, the client ID or the user agent.
 
@@ -43,14 +43,14 @@ complete response to null in turn ([ADR-0013](../adr/ADR-0013-test-standard.md))
 | --- | --- | --- | --- |
 | `GetStreamInfo` | `VideoPlayerStreamInfoOverlayChannel` | `channel/` | `channel_streams`, `channel_stream` |
 | `ClaimDrop` | `DropsPage_ClaimDropRewards` | `inventory/` | `claim_succeeded` |
-| `Inventory` | `Inventory` | `twitch.py` | `user_inventory`, `complete_campaigns` |
-| `CurrentDrop` | `DropCurrentSessionContext` | `twitch.py` | `current_drop` |
-| `Campaigns` | `ViewerDropsDashboard` | `twitch.py` | `campaign_summaries`, `complete_campaigns` |
-| `CampaignDetails` | `DropCampaignDetails` | `twitch.py` | `campaign_details`, `complete_campaigns` |
-| `AvailableDrops` | `DropsHighlightService_AvailableDrops` | `channel/`, `twitch.py` | `channel_campaigns`, `available_campaigns` |
+| `Inventory` | `Inventory` | `twitch/` | `user_inventory`, `complete_campaigns` |
+| `CurrentDrop` | `DropCurrentSessionContext` | `twitch/` | `current_drop` |
+| `Campaigns` | `ViewerDropsDashboard` | `twitch/` | `campaign_summaries`, `complete_campaigns` |
+| `CampaignDetails` | `DropCampaignDetails` | `twitch/` | `campaign_details`, `complete_campaigns` |
+| `AvailableDrops` | `DropsHighlightService_AvailableDrops` | `channel/`, `twitch/` | `channel_campaigns`, `available_campaigns` |
 | `PlaybackAccessToken` | `PlaybackAccessToken` | `channel/` | `playback_token` |
-| `GameDirectory` | `DirectoryPage_Game` | `twitch.py` | `directory_streams` |
-| `NotificationsDelete` | `OnsiteNotifications_DeleteNotification` | `twitch.py` | not read |
+| `GameDirectory` | `DirectoryPage_Game` | `twitch/` | `directory_streams` |
+| `NotificationsDelete` | `OnsiteNotifications_DeleteNotification` | `twitch/` | not read |
 
 ### Client identities
 
@@ -66,7 +66,7 @@ body runs at import, so one run uses one user agent from start to end.
 | `SMARTBOX` | `https://android.tv.twitch.tv` | one Android TV box |
 
 `Twitch.__init__` sets `_client_type` to `ClientType.ANDROID_APP`. The `aiohttp` session sends its user agent
-with every request, and `twitch.py` adds its client ID to the login and GQL requests.
+with every request, and `twitch/session.py` adds its client ID to the login and GQL requests.
 [gql-operations.md](../runbooks/gql-operations.md) covers updating them.
 
 ### PubSub topics

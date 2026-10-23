@@ -39,7 +39,7 @@ burst of requests puts that account at risk.
 | Module | What it holds |
 | --- | --- |
 | `main.py` | Entry point: arguments, logging, the single instance lock, the report of a fatal error in the Output box, the exit code |
-| `twitch.py` | `Twitch`: login, HTTP and GQL requests, the `State` machine in `_run`, choosing and watching channels |
+| `twitch/` | `Twitch`: login, HTTP and GQL requests, the `State` machine in `_run`, choosing and watching channels. `client.py` holds `Twitch`, `session.py` holds `_AuthState`, `save_cookies` and the mixin that returns the HTTP session and the login state, `requests.py` the mixin that sends the HTTP and GQL requests, and `inventoryfetch.py` the mixin that fetches the inventory |
 | `inventory/` | `DropsCampaign` and `TimedDrop`: campaign data, drop progress, claiming. `campaign.py` holds `DropsCampaign`, `drop.py` holds `BaseDrop` and `TimedDrop`, and `benefit.py` holds `Benefit` and `BenefitType` |
 | `channel/` | `Channel` and `Stream`: stream state and online checks. `tracked.py` holds `Channel`, `online.py` and `watch.py` its mixins for the online checks and the watch requests, and `stream.py` holds `Stream` |
 | `websocket/` | The PubSub websocket pool and its topics. `pool.py` holds `WebsocketPool`, `connection.py` holds `Websocket`, and `messages.py` its mixin that receives and sends messages |
@@ -138,7 +138,7 @@ The rest is checked by hand, and the report of a change shows the output of each
 1. **Tests assert behavior** ([ADR-0013](docs/adr/ADR-0013-test-standard.md)). A bug fix adds a test that fails
    without it. A module that needs neither Twitch nor a display tests each public function with its error and edge
    cases, with fakes, not mocks, and no test only to reach a line. A known defect is a strict `xfail` test that
-   names its task file. The suite imports the modules that need Twitch or a display too, so a fix in `twitch.py`
+   names its task file. The suite imports the modules that need Twitch or a display too, so a fix in `twitch/`
    or `gui.py` gets a suite test with a fake `Twitch` or session and no Tk window.
 2. A GUI change is run in `python gui.py` or `python main.py`. When the GUI cannot start, the GUI part is reported
    as unverified and the change is not done. [The headless runbook](docs/runbooks/gui-preview-headless.md) runs it

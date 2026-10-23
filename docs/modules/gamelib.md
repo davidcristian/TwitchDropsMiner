@@ -233,7 +233,7 @@ user's side.
 
 | Caller | Calls | When |
 | --- | --- | --- |
-| `Twitch.detect_games` (`twitch.py`) | `scan_directories` through `asyncio.to_thread`, then `match_games` with the game of each campaign in the inventory | In `INVENTORY_FETCH` after `fetch_inventory`, and from `SettingsPanel.rescan_games`: the `Rescan` button and adding or removing a game folder |
+| `Twitch.detect_games` (`twitch/`) | `scan_directories` through `asyncio.to_thread`, then `match_games` with the game of each campaign in the inventory | In `INVENTORY_FETCH` after `fetch_inventory`, and from `SettingsPanel.rescan_games`: the `Rescan` button and adding or removing a game folder |
 | `Twitch._run`, state `GAMES_UPDATE` | `compile_patterns`, `match_rank`, `any_match` | Builds `wanted_games` from the Priority, Exclude and detected lists |
 | `InventoryOverview._update_visibility` (`gui.py`) | `compile_patterns`, `any_match` | Decides whether a campaign is shown under the filters. Without the "Excluded" filter it applies the rule of `GAMES_UPDATE` to the Priority, Exclude and detected lists |
 | `SettingsPanel.set_wanted_games` | `compile_patterns`, `match_rank` | Names the Priority entry that matched each game in the Games Being Mined table |
@@ -256,7 +256,7 @@ next scan.
   ([gui.md](gui.md#log-records-in-the-output-box)).
 - `appimage/AppImageBuilder.yml` copies and compiles `gamelib/` by name ([AGENTS.md](../../AGENTS.md#recipes)).
 - gamelib builds no text that the user sees. `Twitch.detect_games` turns each `ScanError` into a line of the
-  Output box with `_()`, from the key that `SCAN_ERROR_KEYS` in `twitch.py` names for its kind.
+  Output box with `_()`, from the key that `SCAN_ERROR_KEYS` in `twitch/` names for its kind.
 
 **Dependencies.** The standard library only, including `unicodedata`, `difflib` and the `TwitchDrops` logger. No
 repo module.

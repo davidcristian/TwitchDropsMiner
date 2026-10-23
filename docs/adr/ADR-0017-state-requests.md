@@ -15,7 +15,7 @@ lost, and no maintenance task was left to request the next one.
 ## Decision
 
 1. **Of the states requested during one pass of `_run`, `change_state` keeps the first in `STATE_ORDER`**, a
-   tuple in `twitch.py`: `EXIT`, `RESTART`, `INVENTORY_FETCH`, `GAMES_UPDATE`, `CHANNELS_CLEANUP`,
+   tuple in `twitch/`: `EXIT`, `RESTART`, `INVENTORY_FETCH`, `GAMES_UPDATE`, `CHANNELS_CLEANUP`,
    `CHANNELS_FETCH`, `CHANNEL_SWITCH`, `IDLE`. The handler's own next state is one of these requests. `_run`
    clears the `_state_change` event as it starts each pass, so a set event marks a request of the current
    pass. `EXIT` and `RESTART` end the run, so they come first. A reload goes through the other states in this

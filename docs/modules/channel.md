@@ -114,7 +114,7 @@ a time, so one channel still sends at most 30 an hour ([ADR-0002](../adr/ADR-000
 
 ## Bulk check
 
-`Twitch.bulk_check_online(channels)`, in `twitch.py`, checks many channels at once. It sends their `stream_gql`
+`Twitch.bulk_check_online(channels)`, in `twitch/`, checks many channels at once. It sends their `stream_gql`
 operations in batches of 20 per GQL request. With the extra drops check on, it also sends `AvailableDrops` for the
 online channels, again 20 per request. So `n` channels cost `ceil(n / 20)` GQL requests, plus one per 20 online
 channels with the extra check.

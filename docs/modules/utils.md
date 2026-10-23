@@ -75,7 +75,7 @@ it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays
   raised the error would raise it again in `Twitch.shutdown`. The critical tasks are
   `Twitch._watch_loop`, `Twitch._maintenance_task` and `Websocket._handle`. Without `critical` it wraps the
   PubSub handlers `process_stream_state`, `process_stream_update`, `process_drops` and `process_notifications`
-  in `twitch.py`, `Websocket.stop` and, in `gui.py`, `Twitch.detect_games` and `HelpTab._invalidate_token`.
+  in `twitch/`, `Websocket.stop` and, in `gui.py`, `Twitch.detect_games` and `HelpTab._invalidate_token`.
 - **`start_task(coro)`** starts a task that runs `coro`, keeps it in a module level set until it ends and returns
   it. The event loop keeps only a weak reference to a task, so a task that nothing else references can be
   collected before it ends. `SettingsPanel.rescan_games` and `HelpTab.invalidate_token` in `gui.py`, and
@@ -83,7 +83,7 @@ it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays
 - **`AwaitableValue[T]`** is a value that coroutines can wait for: `get()` waits until `set()` is called. It
   also has `has_value()`, `get_with_default(default)` and `clear()`. `Twitch.watching_channel` is one,
   and `Websocket._ws` holds each websocket's connection in one.
-- **`chunk(iterable, length)`** yields lists of `length` items; the last list can be shorter. `twitch.py` puts
+- **`chunk(iterable, length)`** yields lists of `length` items; the last list can be shorter. `twitch/` puts
   20 campaign details, stream checks or available drop checks into one GQL request, and `websocket/connection.py` puts 20
   topics into one `LISTEN` or `UNLISTEN` message.
 
@@ -94,7 +94,7 @@ it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays
 than letters, digits and `_` turned into one `-`, with no `-` at either end). Two games are equal when their IDs
 are. `is_special()` is true for the IDs in `SPECIAL_GAME_IDS` (`509663`, `509672`): for a campaign of that game,
 `can_earn` then accepts a channel whatever game it streams, when the campaign's list of allowed channels is
-empty or includes it (`inventory/`, `twitch.py`). `inventory/`, `channel/`, `twitch.py` and `gui.py` use
+empty or includes it (`inventory/`, `twitch/`). `inventory/`, `channel/`, `twitch/` and `gui.py` use
 `Game`.
 
 ### Other helpers
@@ -104,9 +104,9 @@ empty or includes it (`inventory/`, `twitch.py`). `inventory/`, `channel/`, `twi
 | `resource_path(relative_path)` | `constants._resource_path` ([constants.md](constants.md#working-directory-and-paths)) | `main.py`, `gui.py` |
 | `set_root_icon(root, image_path)` | Sets the window icon and keeps a reference to the image | `main.py`, `gui.py` |
 | `webopen(url)` | Opens `url` in a new browser tab. In a packaged Linux build it restores `LD_LIBRARY_PATH` from `LD_LIBRARY_PATH_ORIG` for the call, because PyInstaller points it at the bundled libraries | `gui.py` |
-| `timestamp(string)` | Parses a Twitch UTC time, with or without fractions of a second | `inventory/`, `twitch.py` |
+| `timestamp(string)` | Parses a Twitch UTC time, with or without fractions of a second | `inventory/`, `twitch/inventoryfetch.py` |
 | `isonow()` | Returns the current UTC time with milliseconds and a `Z` | `channel/stream.py`, in the watch payload that only uncalled methods read |
-| `create_nonce(chars, length)`, `CHARS_ASCII`, `CHARS_HEX_LOWER` | Return a random string | `websocket/messages.py` (30 ASCII characters), `twitch.py` (the 16 character hex session ID) |
+| `create_nonce(chars, length)`, `CHARS_ASCII`, `CHARS_HEX_LOWER` | Return a random string | `websocket/messages.py` (30 ASCII characters), `twitch/session.py` (the 16 character hex session ID) |
 | `format_traceback(exc, **kwargs)` | Returns the traceback of `exc` and of its cause as a string, as `traceback.format_exception` does. `kwargs` such as `chain=False` go to that function | `websocket/messages.py` |
 
 ## Invariants

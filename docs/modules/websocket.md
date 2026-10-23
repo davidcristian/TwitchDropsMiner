@@ -53,7 +53,7 @@ connection's own task.
 | `Channel`, `StreamState` | `video-playback-by-id.<channel ID>` | `process_stream_state` |
 | `Channel`, `StreamUpdate` | `broadcast-settings-update.<channel ID>` | `process_stream_update` |
 
-`_run` in `twitch.py` subscribes the two user topics after the login. `CHANNELS_FETCH` subscribes the two channel
+`_run` in `twitch/` subscribes the two user topics after the login. `CHANNELS_FETCH` subscribes the two channel
 topics of each tracked channel, and the channel cleanup unsubscribes them. The other names in `WEBSOCKET_TOPICS`
 are not subscribed.
 
@@ -104,7 +104,7 @@ each connection's state and topic count.
 
 ## Starting without a connection
 
-`_run` in `twitch.py` calls `start()` before it subscribes the user topics and again at each `INVENTORY_FETCH`,
+`_run` in `twitch/` calls `start()` before it subscribes the user topics and again at each `INVENTORY_FETCH`,
 and goes on at once. So while PubSub cannot be reached, the run still fetches the inventory, claims drops and
 switches channels, and closing the window ends it. With no events, `_watch_loop` reads the drop progress with
 `CurrentDrop` ([twitch.md](twitch.md#watch-loop)), and a finished drop is claimed at the next inventory fetch,

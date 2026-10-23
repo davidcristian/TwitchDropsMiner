@@ -1,6 +1,6 @@
 # `gqldata.py`
 
-**Purpose.** Reads the campaign and drop data of GQL responses for `twitch.py` and `inventory/`. After a
+**Purpose.** Reads the campaign and drop data of GQL responses for `twitch/` and `inventory/`. After a
 `server error`, `Twitch.gql_request` sets the field that the error's `path` names to null
 ([twitch.md](twitch.md#gql-requests)), so each function here leaves out a null item instead of raising. A raise
 inside `Twitch._run` ends the run, and the restart after it begins with a full reload

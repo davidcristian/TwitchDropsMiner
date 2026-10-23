@@ -36,8 +36,8 @@ states which Cortex docs practices this repo adopts, which it does not, and why.
 
 5. **Every module in the [module map](../../AGENTS.md#module-map) has a contract doc in `docs/modules/`.**
    Each gives the purpose, the public contract, the invariants and the dependencies. The `gamelib/` package
-   has one doc, and [constants.md](../modules/constants.md) also covers `version.py`. `gui.py` and `twitch.py`
-   are several times over the 300 line cap
+   has one doc, and [constants.md](../modules/constants.md) also covers `version.py`. `gui.py` and
+   `twitch/client.py` are several times over the 300 line cap
    ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md)), so a contract doc lets a reader check
    a change against what the callers depend on without reading the module.
 

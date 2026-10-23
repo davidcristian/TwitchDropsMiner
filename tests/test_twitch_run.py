@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable
 
-import twitch as twitch_module
+import twitch.client as twitch_client
 from channel import Channel
 from constants import JsonType, State
 from fakes import (
@@ -204,7 +204,7 @@ def test_a_directory_stream_whose_broadcaster_id_a_server_error_set_to_null_leav
 
 
 def test_the_channel_fetch_cancels_the_online_check_of_a_channel_over_the_limit(live_twitch, monkeypatch):
-    monkeypatch.setattr(twitch_module, "MAX_CHANNELS", 1)
+    monkeypatch.setattr(twitch_client, "MAX_CHANNELS", 1)
 
     async def scenario():
         async def restart_during_the_request(op):

@@ -11,7 +11,7 @@ tracked channel uses two PubSub topics (`TOPICS_PER_CHANNEL`) and the websocket 
 the values in `constants.py` (`MAX_WEBSOCKETS` 8, `WS_TOPICS_LIMIT` 50, `BASE_TOPICS` 2) that is
 `(8 * 50 - 2) // 2` = 199 channels.
 
-In the `State.CHANNELS_FETCH` branch of `Twitch._run` in [twitch.py](../../../twitch.py), the channel list is
+In the `State.CHANNELS_FETCH` branch of `Twitch._run` in [twitch/client.py](../../../twitch/client.py), the channel list is
 sorted three times and then cut to its first `MAX_CHANNELS` entries. The sorts are by viewers (descending), by
 `acl_based` (ACL first) and by `Twitch.get_priority`. Python's sort is stable, so the last sort sets the order
 and the earlier ones only order channels that tie in it. `get_priority` returns `MAX_INT` when `channel.game`

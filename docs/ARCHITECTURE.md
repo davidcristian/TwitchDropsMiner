@@ -22,7 +22,7 @@ event loop:
 ```
 main.py
 ├─ Settings             settings.json, with the command line flags read first
-└─ Twitch               twitch.py: the state machine; creates everything below
+└─ Twitch               twitch/: the state machine; creates everything below
    ├─ _AuthState        device ID, access token, user ID and the login flow
    ├─ ClientSession     the one aiohttp session; its cookie jar is saved to cookies.jar
    ├─ _qgl_limiter      the RateLimiter that every GQL request passes through
