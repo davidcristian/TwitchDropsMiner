@@ -10,15 +10,9 @@
         "no_campaign": "Žádné dropy k dispozici, čekání na další dostupné dropy..."
     },
     "login": {
-        "unexpected_content": "Chyba při přesměrování. Nepoužíváte VPN?",
-        "incorrect_login_pass": "Nesprávné přihlašení.",
-        "incorrect_email_code": "Nesprávný E-Mail kód.",
-        "incorrect_twofa_code": "Nesprávný dvoufaktorový token",
-        "email_code_required": "K přihlášení je vyžadován kód který byl zaslán na váš E-Mail.",
-        "twofa_code_required": "K přihlášení je vyžadován dvoufaktorový kód."
+        "unexpected_content": "Chyba při přesměrování. Nepoužíváte VPN?"
     },
     "error": {
-        "captcha": "Vaše připojení bylo zamítnuto službou Twitch, zkuste to znovu za 12 hodin.",
         "site_down": "Služba Twitch je nedostupná，zkuste to znovu za {seconds} sekund...",
         "no_connection": "Nelze se připojit k službe Twitch, zkuste to znovu za {seconds}... ({url})"
     },
@@ -56,9 +50,6 @@
             "logging_in": "Přihlašování...",
             "required": "Potřebujete se nejdříve přihlásit",
             "request": "Pro přístup je potřeba přihlášení",
-            "username": "Uživatelské Jméno",
-            "password": "Heslo",
-            "twofa_code": "2FA Kód",
             "button": "Přihlásit se"
         },
         "websocket": {
@@ -126,7 +117,6 @@
                 "name": "Nastavení",
                 "autostart": "Automatické spuštění: ",
                 "tray": "Automaticky spusti minimalizovaně: ",
-                "priority_only": "Pouze prioritní: ",
                 "dark_mode": "Tmavý režim: ",
                 "proxy": "Proxy:"
             },

@@ -1,6 +1,6 @@
 # Some language files have strings at paths the app does not read
 
-**Status:** open
+**Status:** done 2026-10-23
 **Area:** lang
 **Origin:** Found on 2026-10-18 while the docs were written, [translate.md](../../modules/translate.md)
 **Verified:** 2026-10-23
@@ -83,3 +83,7 @@ Cost: no Twitch requests.
 - 2026-10-19: The removal of the password login added its 10 strings to the keys in every file.
 - 2026-10-23: The removal of the four `login.chrome` strings from `default_translation` added them to the keys
   in the 19 files that have them, 288 keys in all.
+- 2026-10-23: Done. The comparison script printed the same 288 keys. A script that keeps the formatting of
+  each file moved Polski's two strings to `gui.help.invalidate` and deleted the other 286 keys, so every file
+  has 0 keys that the app does not read. `set_language("Polski")` then returned `'Unieważnij'` for
+  `gui.help.invalidate.button`.

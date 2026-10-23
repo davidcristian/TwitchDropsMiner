@@ -38,16 +38,14 @@ These are the strings of this project's own features:
 
 ## Older keys some languages lack
 
-- The Invalidate button, `gui.help.invalidate` (2 keys): every language except Español, 简体中文 and 繁體中文. Polski
-  defines both keys under `gui.invalidate`, a path the app does not read.
+- The Invalidate button, `gui.help.invalidate` (2 keys): every language except Español, Polski, 简体中文 and
+  繁體中文.
 - The Advanced frame, `gui.settings.advanced` (5 keys): Dansk, Deutsch, Français, Indonesian, Italiano,
   Nederlandse, Português, Română, Čeština, Українська, العربية and 日本語.
 - Priority mode, `gui.settings.general.priority_mode` and `gui.settings.priority_modes` (4 keys): Dansk,
-  Deutsch, Indonesian, Italiano, Nederlandse, Português, Română, Čeština, العربية and 日本語. These ten define
-  `gui.settings.general.priority_only` instead, which `default_translation` does not have.
+  Deutsch, Indonesian, Italiano, Nederlandse, Português, Română, Čeština, العربية and 日本語.
 - Tray notifications, `gui.settings.general.tray_notifications` (1 key): Deutsch, Nederlandse and Čeština.
-- The inventory filter, `gui.inventory.filter.not_linked` (1 key): Nederlandse, which defines
-  `gui.inventory.filter.linked` instead.
+- The inventory filter, `gui.inventory.filter.not_linked` (1 key): Nederlandse.
 
 ## Missing keys per language
 
@@ -55,13 +53,13 @@ These are the strings of this project's own features:
 - 59: Deutsch and Čeština.
 - 58: Dansk, Indonesian, Italiano, Português, Română, العربية and 日本語.
 - 54: Français and Українська.
-- 49: Magyar, Norsk, Polski, Türkçe and Русский.
-- 47: Español, 简体中文 and 繁體中文.
+- 49: Magyar, Norsk, Türkçe and Русский.
+- 47: Español, Polski, 简体中文 and 繁體中文.
 
 ## What closes it
 
-A speaker of each language adds the missing keys. Moving or deleting the keys at a wrong path needs no
-translator and is part of [023](023-language-file-keys-dropped.md). AGENTS.md says
+A speaker of each language adds the missing keys. The keys at a wrong path, which need no translator, were
+moved or deleted in [023](023-language-file-keys-dropped.md). AGENTS.md says
 a new string needs no edit to other languages, so new features keep adding to these counts. Every edit to
 `lang/*.json` must stay valid JSON, which the CI Validate job checks. A script that reports the missing keys
 per language fits in the check command of [004](004-single-check-command.md).
@@ -85,3 +83,6 @@ Cost: no Twitch requests.
   `error.autostart_not_changed`, which were added before.
 - 2026-10-23: Counts checked again after six strings that the code wrote in English were added to
   `default_translation`: 160 strings, and Čeština lacks 59 of them.
+- 2026-10-23: Counts checked again after the keys at paths the app does not read left the language files
+  ([023](023-language-file-keys-dropped.md)). Polski's two Invalidate strings moved to `gui.help.invalidate`,
+  so Polski lacks 47 strings. The other counts did not change.
