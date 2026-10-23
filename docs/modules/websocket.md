@@ -83,9 +83,9 @@ raises the `MinerException`.
    removed ones, 20 topics per message, with the access token. It collects incoming messages until 0.5 seconds
    pass with no message, and handles them.
 4. It reconnects when no `PONG` arrives within `PING_TIMEOUT` (10 seconds) of a `PING` sent on the same
-   connection, when Twitch sends `RECONNECT`, when Twitch closes the connection, and after any exception in the
-   loop. The new connection is opened after the wait of step 2 and subscribes every topic of the connection
-   again.
+   connection, when Twitch sends `RECONNECT`, when Twitch closes the connection, when aiohttp returns an error
+   message for it, which is logged with the error's traceback, and after any exception in the loop. The new
+   connection is opened after the wait of step 2 and subscribes every topic of the connection again.
 5. It ends when `stop()` closed the connection, or when the HTTP session is closed. `stop()` waits up to 2
    seconds for the task to end and then cancels it, so a task that waits before a reconnect stops within 2
    seconds.

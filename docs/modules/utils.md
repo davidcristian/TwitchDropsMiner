@@ -93,7 +93,7 @@ empty or includes it (`inventory.py`, `twitch.py`). `inventory.py`, `channel.py`
 | `timestamp(string)` | Parses a Twitch UTC time, with or without fractions of a second | `inventory.py`, `twitch.py` |
 | `isonow()` | Returns the current UTC time with milliseconds and a `Z` | `channel.py`, in the watch payload that only uncalled methods read |
 | `create_nonce(chars, length)`, `CHARS_ASCII`, `CHARS_HEX_LOWER` | Return a random string | `websocket.py` (30 ASCII characters), `twitch.py` (the 16 character hex session ID) |
-| `format_traceback(exc, **kwargs)` | Returns a traceback as a string | `websocket.py` |
+| `format_traceback(exc, **kwargs)` | Returns the traceback of `exc` and of its cause as a string, as `traceback.format_exception` does. `kwargs` such as `chain=False` go to that function | `websocket.py` |
 
 ## Invariants
 

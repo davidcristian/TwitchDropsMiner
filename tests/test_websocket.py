@@ -143,3 +143,16 @@ def test_a_restart_with_fewer_topics_connects_only_the_websockets_that_hold_them
 
     # 3 connections hold the 120 topics of the first run, and 1 the 10 topics of the next
     assert (topics, len(opened)) == ([10], 4)
+
+
+def test_an_error_message_logs_its_error_and_the_connection_reconnects(live_twitch, caplog):
+    caplog.set_level(logging.INFO, logger="TwitchDrops.websocket")
+    error = aiohttp.WSMessage(aiohttp.WSMsgType.ERROR, aiohttp.ClientConnectionError("reset by peer"), None)
+    opened: list[float] = []
+    server = pubsub_server(FakePubSub(error), FakePubSub(), opened=opened)
+
+    run_with_fast_clock(run_pubsub(live_twitch(FakeTwitch(), pubsub=server), 30))
+
+    errors = [record.getMessage() for record in caplog.records if record.levelno >= logging.ERROR]
+    assert errors == ["Websocket[0] error: aiohttp.client_exceptions.ClientConnectionError: reset by peer\n"]
+    assert len(opened) == 2
