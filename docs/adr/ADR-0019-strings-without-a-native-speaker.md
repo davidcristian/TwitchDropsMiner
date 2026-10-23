@@ -17,8 +17,12 @@ of these languages.
    speaker would choose other words.
 2. **Each string follows its file.** It uses the file's own words for the app's terms, such as campaign, drop,
    channel, game, priority, exclude, reload and tray, and the file's form of address, formal or informal. It
-   keeps every format field of the English string, its emoji, and a trailing colon or space. A choice in a
-   drop-down list or a button label stays about as short as the English one.
+   keeps every format field of the English string and its emoji. It keeps a trailing colon or space in the form
+   that the file's own labels write it, such as a full-width colon in 日本語, a space before the colon in
+   Română, no colon in the General frame of 简体中文, and the colon or ellipsis at the start of an العربية
+   string. A string with a number reads correctly for any number, for example through an abbreviation such as
+   `min` or with the number after a colon. A choice in a drop-down list or a button label stays about as short
+   as the English one, so that the window is no wider than with the English string.
 3. **The strings are inserted and nothing else changes.** A script adds each missing key at its path, in the
    order of `default_translation`. It keeps the file's indent, line endings, escaped characters and the order
    of its existing keys, and it changes no existing string.

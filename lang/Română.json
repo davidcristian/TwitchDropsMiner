@@ -2,19 +2,32 @@
     "english_name": "Romanian",
     "status": {
         "terminated": "\nAplicația a fost oprită.\nVă rugăm să închideți aplicația.",
+        "fatal_error": "A apărut o eroare fatală :\n",
+        "restarting": "Repornire automată la {time}...",
+        "restart_longer": "Eroarea a apărut la mai puțin de o oră după ultima repornire, deci așteptarea este mai lungă decât setarea : {minutes} min.",
         "watching": "Se vizionează : {channel}",
         "goes_online": "{channel} intră ONLINE, se schimbă...",
         "goes_offline": "{channel} intră OFFLINE, se schimbă...",
         "claimed_drop": "Drop-ul a fost recuperat : {drop}",
         "no_channel": "Nu există canale disponibile pentru vizionare. În așteptarea unui canal ONLINE...",
-        "no_campaign": "Nu există campanii active pentru a mina drop-uri. În așteptarea unei campanii active..."
+        "no_campaign": "Nu există campanii active pentru a mina drop-uri. În așteptarea unei campanii active...",
+        "logging_level": "Nivel de jurnalizare : {level}"
     },
     "login": {
         "unexpected_content": "Tip de conținut neașteptat returnat, de obicei din cauza unei redirecționări. Trebuie să vă autentificați pentru a accesa Internetul?"
     },
     "error": {
         "site_down": "Twitch nu este disponibil. Vă rugăm să încercați din nou în {seconds} secunde...",
-        "no_connection": "Nu se poate conecta la Twitch. Vă rugăm să încercați din nou în {seconds} secunde... ({url})"
+        "no_connection": "Nu se poate conecta la Twitch. Vă rugăm să încercați din nou în {seconds} secunde... ({url})",
+        "save_failed": "Salvarea a eșuat, se reîncearcă la următoarea reîncărcare : {error}",
+        "file_not_saved": "Nu s-a putut salva {file} : {error}",
+        "autostart_not_changed": "Nu s-a putut modifica intrarea de pornire automată : {error}",
+        "cannot_start": "Nu se poate porni",
+        "folder_not_writable": "Aplicația nu poate scrie în folderul din care rulează, unde își păstrează fișierele :\n\n{error}\n\nMutați aplicația într-un folder în care puteți scrie."
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "Eroare în argumentele liniei de comandă"
     },
     "gui": {
         "output": "Ieșire",
@@ -23,6 +36,7 @@
             "idle": "Inactiv",
             "exiting": "Ieșire...",
             "terminated": "Terminat",
+            "restarting": "Repornire la {time}",
             "cleanup": "Curățarea canalelor...",
             "gathering": "Se caută canale live...",
             "switching": "Colectarea canalelor în curs...",
@@ -50,6 +64,7 @@
             "logging_in": "Se conectează...",
             "required": "Este necesară conectarea",
             "request": "Vă rugăm să vă conectați pentru a continua.",
+            "enter_code": "Introduceți acest cod pe pagina Twitch de activare a dispozitivului : {code}",
             "button": "Conectare"
         },
         "websocket": {
@@ -115,19 +130,76 @@
         "settings": {
             "general": {
                 "name": "General",
+                "language": "Limbă 🌐 (necesită repornire) : ",
                 "autostart": "Pornire automată :",
                 "tray": "Pornire automată în bara de activități :",
                 "tray_notifications": "Notificări în bara de activități :",
                 "dark_mode": "Mod întunecat :",
+                "priority_mode": "Mod de prioritate : ",
+                "refresh_interval": "Verificare fluxuri noi la fiecare : ",
+                "restart_delay": "Repornire după o blocare în : ",
                 "proxy": "Proxy (necesită repornire) :"
+            },
+            "advanced": {
+                "name": "Avansat",
+                "warning": "Avertisment!",
+                "warning_text": "Aceste opțiuni vor face ca minerul să funcționeze incorect.\nDacă aveți probleme, asigurați-vă că toate aceste opțiuni sunt dezactivate.",
+                "enable_badges_emotes": "Activare suport parțial pentru insigne și emoticoane : ",
+                "available_drops_check": "Activare verificare suplimentară a drop-urilor disponibile : "
+            },
+            "priority_modes": {
+                "priority_only": "Doar lista de prioritate",
+                "ending_soonest": "Se termină primele",
+                "low_availability": "Disponibilitate redusă"
+            },
+            "refresh_intervals": {
+                "disabled": "Niciodată (doar orar)",
+                "minutes": "{minutes} min"
+            },
+            "restart_delays": {
+                "disabled": "Niciodată (rămâne oprit)",
+                "minutes": "{minutes} min"
+            },
+            "wanted": {
+                "name": "Jocuri care se minează",
+                "game": "Joc",
+                "source": "Selectat prin",
+                "installed": "instalat",
+                "unlisted": "în nicio listă",
+                "count": "Jocuri care se minează : {count}, întâi cea mai mare prioritate.",
+                "empty": "Nimic stabilit încă - apăsați \"Reîncarcă\" mai jos."
+            },
+            "detect": {
+                "name": "Jocuri detectate",
+                "dirs": "Foldere de jocuri :",
+                "add_dir": "Adăugați un folder de jocuri Steam sau Epic",
+                "remove_dir": "Eliminați folderul selectat",
+                "rescan": "Rescanare",
+                "scanning": "Se scanează folderele de jocuri...",
+                "scan_error": "Scanare jocuri : {error}",
+                "not_a_folder": "Nu este un folder : {path}",
+                "no_games": "Nu s-au găsit jocuri Steam sau Epic în : {path}",
+                "failed": "{path} : {reason}",
+                "detected": "Jocuri instalate potrivite : {count} din {total}.",
+                "restored": "Jocuri din ultima scanare : {count}.",
+                "empty": "Nimic detectat încă - adăugați un folder de jocuri mai jos.",
+                "no_dirs": "Niciun folder adăugat."
             },
             "game_name": "Nume joc",
             "priority": "Prioritate",
             "exclude": "Exclude",
+            "pattern_matches": "\"{pattern}\" se potrivește cu jocuri ({count}) : {games}",
+            "pattern_empty": "\"{pattern}\" nu se potrivește acum cu niciun joc care are o campanie.",
             "reload": "Reîncarcă",
             "reload_text": "Cele mai multe modificări necesită o reîncărcare pentru a se aplica imediat : "
         },
         "help": {
+            "about": {
+                "name": "Despre",
+                "repository": "Depozit : ",
+                "based_on": "Bazat pe : ",
+                "based_on_text": "TwitchDropsMiner de DevilXD"
+            },
             "links": {
                 "name": "Link-uri utile",
                 "inventory": "Vizualizați inventarul Twitch",
@@ -136,7 +208,11 @@
             "how_it_works": "Cum funcționează",
             "how_it_works_text": "Aproximativ la fiecare ~60 de secunde, aplicația trimite un eveniment \"minut vizionat\" către canalul care este vizionat în prezent - ceea ce este suficient pentru a avansa drop-ul. Rețineți că acest lucru ocolește complet necesitatea de a descărca video și audio din fluxul real. Pentru a menține actualizată starea (ONLINE sau OFFLINE) a canalelor, se stabilește o conexiune websocket pentru a primi evenimente despre fluxurile care cresc sau scad sau actualizări despre numărul actual de spectatori.",
             "getting_started": "Ghid introductiv",
-            "getting_started_text": "1. Conectați-vă la aplicație.\n2. Asigurați-vă că contul dvs. Twitch este conectat la orice campanie care vă interesează.\n3. Dacă doriți doar să extrageți totul, debifați \"Doar cu prioritate\" și apăsați \"Reîncarcă\".\n4. Dacă doriți să extrageți mai întâi anumite jocuri, utilizați lista \"Prioritate\" pentru a defini o listă ordonată de jocuri la alegere. Jocurile din partea de sus a listei vor fi încercate să fie extrase mai întâi, înaintea celor de mai jos în listă.\n5. Lăsați opțiunea \"Doar cu prioritate\" bifată pentru a evita jocurile miniere care nu sunt în lista de priorități. Sau nu - depinde de tine.\n6. Utilizați lista \"Exclude\" pentru a spune aplicației ce jocuri nu ar trebui să fie extrase niciodată.\n7. Editarea conținutului oricăreia dintre liste sau modificarea stării opțiunii \"Doar cu prioritate\" necesită apăsarea \"Reîncarcă\" pentru ca modificările să intre în vigoare."
+            "getting_started_text": "1. Conectați-vă la aplicație.\n2. Asigurați-vă că contul dvs. Twitch este conectat la orice campanie care vă interesează.\n3. Dacă doriți doar să extrageți totul, debifați \"Doar cu prioritate\" și apăsați \"Reîncarcă\".\n4. Dacă doriți să extrageți mai întâi anumite jocuri, utilizați lista \"Prioritate\" pentru a defini o listă ordonată de jocuri la alegere. Jocurile din partea de sus a listei vor fi încercate să fie extrase mai întâi, înaintea celor de mai jos în listă.\n5. Lăsați opțiunea \"Doar cu prioritate\" bifată pentru a evita jocurile miniere care nu sunt în lista de priorități. Sau nu - depinde de tine.\n6. Utilizați lista \"Exclude\" pentru a spune aplicației ce jocuri nu ar trebui să fie extrase niciodată.\n7. Editarea conținutului oricăreia dintre liste sau modificarea stării opțiunii \"Doar cu prioritate\" necesită apăsarea \"Reîncarcă\" pentru ca modificările să intre în vigoare.",
+            "invalidate": {
+                "button": "Invalidare",
+                "text": "Invalidați tokenul de autentificare (deconectare) :"
+            }
         }
     }
 }
