@@ -87,7 +87,7 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
 | `websocket.py` | `websocket/` | `Websocket`, the mixin that receives and sends its messages, `WebsocketPool` |
 | `constants.py` | stays; `twitchapi/` | the client types, the GQL operations, the PubSub topics |
 | `channel.py` | `channel/` | `Stream`; `Channel` with its mixins |
-| `inventory.py` | `inventory/` | `Benefit`, `BaseDrop` and `TimedDrop`; `DropsCampaign` |
+| `inventory.py` | `inventory/` | `Benefit`; `BaseDrop` and `TimedDrop`; `DropsCampaign` |
 | `translate.py` | `translate/` | the `TypedDict` classes; `default_translation`; `Translator` and `_` |
 | `twitch.py` | `twitch/` | `_AuthState`; `Twitch` with mixins for the requests, the inventory fetch, the PubSub handlers, the channel discovery and the state loop |
 | `gui.py` | stays; `ui/` | the generic widgets, the Main tab panels, `TrayIcon`, `InventoryOverview`, `HelpTab`, `SettingsPanel` with its mixins, `GUIManager` with its theme |

@@ -8,7 +8,7 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
 
 ## Public contract
 
-### Lifecycle and state, used by `main.py`, `gui.py` and `inventory.py`
+### Lifecycle and state, used by `main.py`, `gui.py` and `inventory/`
 
 - `Twitch(settings)` stores the settings and creates the GUI, the websocket pool and `_AuthState`.
 - `await run()` runs `_run` until the app exits. On `ReloadRequest` it calls `shutdown()` and runs `_run` again.

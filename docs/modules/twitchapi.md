@@ -2,7 +2,7 @@
 
 **Purpose.** Defines what the app sends to Twitch: the clients it acts as (`ClientType`), the GQL operations with
 their hashes (`GQL_QUERIES`) and the PubSub topics it subscribes to (`WebsocketTopic`). It sends nothing itself:
-`twitch.py`, `channel/` and `inventory.py` send the GQL requests, and `websocket/` the PubSub messages. It needs
+`twitch.py`, `channel/` and `inventory/` send the GQL requests, and `websocket/` the PubSub messages. It needs
 neither Twitch nor a display, and `tests/test_twitchapi.py` tests it with plain values.
 [gql-operations.md](../runbooks/gql-operations.md) says how to update a hash, the client ID or the user agent.
 
@@ -42,7 +42,7 @@ complete response to null in turn ([ADR-0013](../adr/ADR-0013-test-standard.md))
 | Key | `operationName` | Used in | Response read by |
 | --- | --- | --- | --- |
 | `GetStreamInfo` | `VideoPlayerStreamInfoOverlayChannel` | `channel/` | `channel_streams`, `channel_stream` |
-| `ClaimDrop` | `DropsPage_ClaimDropRewards` | `inventory.py` | `claim_succeeded` |
+| `ClaimDrop` | `DropsPage_ClaimDropRewards` | `inventory/` | `claim_succeeded` |
 | `Inventory` | `Inventory` | `twitch.py` | `user_inventory`, `complete_campaigns` |
 | `CurrentDrop` | `DropCurrentSessionContext` | `twitch.py` | `current_drop` |
 | `Campaigns` | `ViewerDropsDashboard` | `twitch.py` | `campaign_summaries`, `complete_campaigns` |

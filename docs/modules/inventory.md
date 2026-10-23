@@ -1,9 +1,18 @@
-# `inventory.py`
+# `inventory/`
 
-**Purpose.** The module turns the campaign data from Twitch into objects: `DropsCampaign`, its `TimedDrop`s and
+**Purpose.** The package turns the campaign data from Twitch into objects: `DropsCampaign`, its `TimedDrop`s and
 their `Benefit`s. It decides whether a drop or a campaign can progress, on which channel and when. It keeps the
 watched minutes of each drop and claims finished drops. `Twitch.fetch_inventory` builds new objects on every
-reload ([twitch.md](twitch.md#state-machine)). The only request the module sends is the claim.
+reload ([twitch.md](twitch.md#state-machine)). The only request the package sends is the claim.
+
+## Files
+
+| File | What it holds |
+| --- | --- |
+| `__init__.py` | Imports `DropsCampaign` and `TimedDrop`. Callers import from `inventory`, never from a file of it |
+| `campaign.py` | `DropsCampaign`, and `remove_dimensions`, which removes the size suffix from the box art URL |
+| `drop.py` | `BaseDrop` and `TimedDrop`: a drop's data, its minutes and its claim |
+| `benefit.py` | `Benefit` and `BenefitType` |
 
 ## Public contract
 
@@ -148,7 +157,6 @@ minutes the campaign also displays its `first_drop`.
   within the limits under [Progress](#progress).
 - The only request is `ClaimDrop` through `Twitch.gql_request`. The rules can be called without Twitch, with a
   fake `twitch` object that has `settings`, `gui` and `change_state`, as `tests/test_inventory.py` does.
-- The module is over the 300 line cap ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
 
 **Dependencies.** `channel` (`Channel`), `utils` (`Game`, `timestamp`), `exceptions` (`GQLException`),
 `gqldata` (`claim_succeeded`), `twitchapi` (`GQL_QUERIES`), `constants` (`MAX_EXTRA_MINUTES`, `URLType`, `State`) and

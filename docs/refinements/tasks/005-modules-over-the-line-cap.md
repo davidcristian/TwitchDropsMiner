@@ -17,7 +17,7 @@ new work goes into a new module that they call. This task records where each one
 | `twitch.py` | 1734 | |
 | `translate.py` | 612 | |
 | `channel.py` | 528 | `channel/`, five files of 7 to 166 lines |
-| `inventory.py` | 489 | |
+| `inventory.py` | 489 | `inventory/`, four files of 7 to 284 lines |
 | `constants.py` | 477 | 139, and `twitchapi/`, four files of 16 to 183 lines |
 | `websocket.py` | 414 | `websocket/`, four files of 7 to 252 lines |
 | `utils.py` | 371 | `utils/`, seven files of 32 to 127 lines |
@@ -105,3 +105,6 @@ Splits cost no Twitch requests.
   358 lines by itself, keeps its attributes and properties in `tracked.py`. Its online checks moved to the mixin
   `OnlineMixin` and its watch requests to `WatchMixin`. Both set `__slots__ = ()`, so a `Channel` still has no
   `__dict__`. Four modules remain over the cap.
+- 2026-10-23: `inventory.py` became the package `inventory/`, and its entry left `EXCEPTIONS`. `Benefit` and
+  `BenefitType` have a file of their own, because with them and its imports the file of `BaseDrop` and
+  `TimedDrop` had 308 lines. Three modules remain over the cap.
