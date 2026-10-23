@@ -45,7 +45,7 @@ passes it to `Twitch.task_failed` instead, and `Twitch._run` raises it as a fata
 - `TrayIcon.get_title` raises it when the tray tooltip cannot be shortened to 127 characters
   ([gui.md](gui.md#the-tray-icon)).
 - `Channel.get_spade_url` raises it when it finds no spade URL. Only `Channel._send_watch_spade` calls it, and no
-  code calls that method ([task 022](../refinements/tasks/022-unused-code.md)).
+  code calls that method ([ADR-0009](../adr/ADR-0009-watch-method.md#decision)).
 
 No other code catches `MinerException` by name.
 

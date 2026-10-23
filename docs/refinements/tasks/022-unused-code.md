@@ -1,9 +1,9 @@
 # Code that nothing calls
 
-**Status:** open
+**Status:** done 2026-10-23
 **Area:** channel, inventory, websocket, utils, constants, gui, translate
 **Origin:** Found on 2026-10-18 while the docs were written, [channel.md](../../modules/channel.md)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-23
 
 No code in the repo calls, reads or reaches the code below. The module docs name most of it:
 [channel.md](../../modules/channel.md), [inventory.md](../../modules/inventory.md),
@@ -112,3 +112,7 @@ cycle, so that change states its count, as [AGENTS.md](../../../AGENTS.md#the-on
 - 2026-10-23: Removed the five `GQL_QUERIES` entries.
 - 2026-10-23: Removed the `login.chrome` strings with `ChromeMessages`, and the `language_name` check, which a
   new test of `set_language` shows was never reached. `english_name` stays, with a comment that says why.
+- 2026-10-23: Closed. The Spade and GQL watch methods stay with a comment each, because keeping them sends the
+  same requests as removing them and changes less code ([ADR-0009](../../adr/ADR-0009-watch-method.md#decision)).
+  With them stay `get_spade_url`, `Channel.url`, the `_spade_url` slot, the three payloads, `utils.isonow` and
+  `constants.GQLQuery`.

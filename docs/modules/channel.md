@@ -141,9 +141,10 @@ it, and then enters `CHANNEL_SWITCH`.
 `Twitch.request`, so they use the proxy and the retries but not the GQL rate limiter. After the first cycle of a
 stream, a cycle sends one GET and about 15 HEAD requests to the hosts the playlist names, and no GQL request.
 
-Two other watch methods remain, and nothing calls them: `_send_watch_spade` POSTs a `minute-watched` event to the
+Two other watch methods stay, and nothing calls them: `_send_watch_spade` POSTs a `minute-watched` event to the
 spade URL that `get_spade_url` reads from the channel page, and `_send_watch_gql` sends the same event with the
-`sendSpadeEvents` GQL mutation ([task 022](../refinements/tasks/022-unused-code.md)).
+`sendSpadeEvents` GQL mutation. They are kept in case Twitch stops counting the HEAD requests
+([ADR-0009](../adr/ADR-0009-watch-method.md#decision)).
 
 ### A failed playlist request
 

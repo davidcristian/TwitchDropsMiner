@@ -1,6 +1,6 @@
 # ADR-0009: Watching by playlist HEAD requests
 
-**Status:** Accepted (2026-10-22)
+**Status:** Accepted (2026-10-23)
 
 ## Context
 
@@ -54,9 +54,12 @@ None of the five commits has a message body, so the code comments are the only w
    early.
 
 3. **The Spade and GQL methods stay in `channel.py` with no caller.** No code calls them, or `get_spade_url`,
-   `Stream.spade_payload`, `Stream.gql_payload` and `Stream._watch_payload`, which only they use. The comment
-   `# async def _send_watch_playlist(self) -> bool:` above `send_watch` is the HEAD method's name from
-   2026-04-28 to 2026-10-09. [Task 022](../refinements/tasks/022-unused-code.md) decides whether they stay.
+   `Channel.url`, `Stream.spade_payload`, `Stream.gql_payload` and `Stream._watch_payload`, which only they
+   use. Keeping them sends the same requests as removing them would, and changes less code. If Twitch stops
+   counting the HEAD requests, a switch back starts from a method that exists, and an upstream fix to one of
+   them applies without a conflict ([upstream-fixes.md](../runbooks/upstream-fixes.md)). A comment
+   above each method says why it stays. The comment `# async def _send_watch_playlist(self) -> bool:` above
+   `send_watch` is the HEAD method's name from 2026-04-28 to 2026-10-09.
 
 ## Consequences
 
@@ -115,6 +118,8 @@ check: at most 30 of each an hour, plus 30 `AvailableDrops` with the extra drops
 
 ## Alternatives rejected
 
+- **Removing the Spade and GQL methods.** It sends no fewer requests, a switch back would have to write a
+  method again, and an upstream fix to one of them would conflict when it is brought in.
 - **Going back to Spade or GQL to send fewer requests.** After the first cycle, either one sends one request
   per cycle in place of about 16. The original project switched away from each of them without a written
   reason, and nothing in this repo shows that Twitch still counts their events.
@@ -134,5 +139,5 @@ check: at most 30 of each an hour, plus 30 `AvailableDrops` with the extra drops
   the user agent that every request sends. [How It Works](../../README.md#how-it-works) in the README.
 - [gql-operations.md](../runbooks/gql-operations.md): the `PlaybackAccessToken` and `CurrentDrop` hashes.
   [upstream-fixes.md](../runbooks/upstream-fixes.md): bringing in a change of method from upstream.
-- Tasks [022](../refinements/tasks/022-unused-code.md) (the unused methods) and
+- Tasks [022](../refinements/tasks/022-unused-code.md) (the code that nothing calls, which kept these methods) and
   [013](../refinements/tasks/013-crashed-task-ends-the-app.md) (an exception in the watch loop).

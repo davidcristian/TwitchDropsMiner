@@ -503,6 +503,7 @@ class Channel:
                     return False
         return True
 
+    # No caller. It stays, with get_spade_url and the Stream payloads, in case Twitch stops counting send_watch.
     async def _send_watch_spade(self) -> bool:
         if self._stream is None:
             return False
@@ -516,7 +517,7 @@ class Channel:
         except RequestException:
             return False
 
-    # NOTE: This is currently unused.
+    # No caller. It stays in case Twitch stops counting the HEAD requests of send_watch.
     async def _send_watch_gql(self) -> bool:
         if self._stream is None:
             return False
