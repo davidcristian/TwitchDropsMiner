@@ -1,4 +1,4 @@
-"""Fail on a Python or markdown file over 300 lines, except the modules named here."""
+"""Fail on a Python or markdown file over 300 lines."""
 from __future__ import annotations
 
 import argparse
@@ -9,9 +9,6 @@ from sources import ROOT, Problem, read_texts, repo_files
 
 
 LIMITS = {".py": 300, ".md": 300}
-# Inherited modules over the limit until the splits that the module-split task records are made.
-# An entry fails once its module is under the limit, so the list only shrinks.
-EXCEPTIONS = frozenset()
 
 
 def limit_for(name: str) -> int | None:
@@ -23,18 +20,14 @@ def limit_for(name: str) -> int | None:
 
 
 def cap_problems(lengths: dict[str, int]) -> list[Problem]:
-    """Return the files over their limit, and the exceptions that are no longer needed."""
+    """Return the files over their limit."""
     problems: list[Problem] = []
     for name, length in sorted(lengths.items()):
         limit = limit_for(name)
-        if limit is None or name in EXCEPTIONS:
+        if limit is None:
             continue
         if length > limit:
             problems.append(Problem(name, length, f"{length} lines; the limit is {limit}, so split it"))
-    for name in sorted(EXCEPTIONS):
-        length = lengths.get(name)
-        if length is None or length <= LIMITS[".py"]:
-            problems.append(Problem(name, 1, "listed in EXCEPTIONS in linecap.py but not over the limit"))
     return problems
 
 

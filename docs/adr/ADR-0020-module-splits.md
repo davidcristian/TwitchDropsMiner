@@ -4,7 +4,7 @@
 
 ## Context
 
-AGENTS.md allows 300 lines per module, and `scripts/linecap.py` names the inherited modules over the limit as
+AGENTS.md allows 300 lines per module, and `scripts/linecap.py` named the inherited modules over the limit as
 exceptions ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md)). On 2026-10-23 they were `gui.py`
 (3164 lines), `twitch.py` (1734), `translate.py` (612), `channel.py` (528), `inventory.py` (489), `constants.py`
 (477), `websocket.py` (414) and `utils.py` (371). Split along the points that task 005 gives, they become more
@@ -90,8 +90,8 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
    neither Twitch nor a display is in `source` under `[tool.coverage.run]` in `pyproject.toml`; one that needs
    either is not, as its module was not. Each new package is added to the `cp` and `compileall` lines of
    `appimage/AppImageBuilder.yml`. PyInstaller follows the imports of `main.py`, relative imports included, so
-   `build.spec` needs no hidden import for a package. The module leaves `EXCEPTIONS` in `scripts/linecap.py`,
-   and task 005 records its new line counts.
+   `build.spec` needs no hidden import for a package. The module left `EXCEPTIONS` in `scripts/linecap.py`,
+   which went with the last split, and task 005 records its new line counts.
 
 | Module | Becomes | Its files hold |
 | --- | --- | --- |

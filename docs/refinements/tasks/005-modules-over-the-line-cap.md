@@ -158,3 +158,5 @@ Splits cost no Twitch requests.
   `ui/theme.py`, and the methods that run Tk on the asyncio event loop and close the window, from `running` to
   `close_window`, for `EventLoopMixin` in `ui/eventloop.py`. `gui.py` has 252 lines with `GUIManager` and the
   preview entry, and its entry left `EXCEPTIONS`, which is now empty. Every module is under the cap.
+- 2026-10-23: `EXCEPTIONS`, empty after the last split, left `scripts/linecap.py` with its tests, so the check
+  fails on any Python or markdown file over 300 lines.
