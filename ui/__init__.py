@@ -12,12 +12,15 @@ from .tray import TrayIcon
 from .inventorytab import InventoryOverview
 from .helptab import HelpTab
 from .settingstab import SettingsPanel
+from .eventloop import EventLoopMixin
+from .theme import ThemeMixin
 from .preview import run_preview
 
 __all__ = [
     "CampaignProgress",
     "ChannelList",
     "ConsoleOutput",
+    "EventLoopMixin",
     "HelpTab",
     "InventoryOverview",
     "LinkLabel",
@@ -30,6 +33,7 @@ __all__ = [
     "SelectCombobox",
     "SettingsPanel",
     "StatusBar",
+    "ThemeMixin",
     "TrayIcon",
     "WebsocketStatus",
     "_TKOutputHandler",

@@ -11,9 +11,7 @@ from sources import ROOT, Problem, read_texts, repo_files
 LIMITS = {".py": 300, ".md": 300}
 # Inherited modules over the limit until the splits that the module-split task records are made.
 # An entry fails once its module is under the limit, so the list only shrinks.
-EXCEPTIONS = frozenset({
-    "gui.py",
-})
+EXCEPTIONS = frozenset()
 
 
 def limit_for(name: str) -> int | None:

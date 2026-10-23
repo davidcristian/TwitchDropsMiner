@@ -39,9 +39,11 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
      logging values. The client types, the GQL operations and the PubSub topics go to `twitchapi/`: the
      definitions of what the app sends to Twitch, which the [GQL runbook](../runbooks/gql-operations.md)
      updates.
-   - `gui.py` keeps the preview under `if __name__ == "__main__":` and imports from `ui/` every name that other
-     modules import from `gui`, such as `GUIManager`. The GUI classes go to `ui/`. When `gui.py` would still be
-     over the cap, the preview's mock moves to `ui/` as a function that the `__main__` block calls.
+   - `gui.py` keeps `GUIManager` and the preview under `if __name__ == "__main__":`, and imports from `ui/`
+     every other name that other modules import from `gui`, such as `ChannelList`. The other GUI classes go to
+     `ui/`, and so do the mixins of `GUIManager`. So `gui.py` holds the class that builds the window, and its
+     callers and the tests that patch `Tk` in `gui` keep their imports. When `gui.py` would still be over the
+     cap, the preview's mock moves to `ui/` as a function that the `__main__` block calls.
 3. **Callers keep their imports.** A package's `__init__.py` holds only a docstring, imports and `__all__`. It
    imports every name that another module or a test imports from the old module, so
    `from utils import json_load`, `from twitch import Twitch`, `from gui import GUIManager` and
@@ -100,7 +102,7 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
 | `inventory.py` | `inventory/` | `Benefit`; `BaseDrop` and `TimedDrop`; `DropsCampaign` |
 | `translate.py` | `translate/` | the `TypedDict` classes; `default_translation`; `Translator` and `_` |
 | `twitch.py` | `twitch/` | `_AuthState` with the mixin of the session methods; `Twitch` with mixins for the requests, the inventory fetch, the shutdown with the tasks of a run, the state loop, the channel states, the discovery of games and channels, and the PubSub handlers |
-| `gui.py` | stays; `ui/` | the generic widgets, the Main tab panels, `TrayIcon`, `InventoryOverview` with a mixin, `HelpTab`, the preview's mock, `SettingsPanel` with its mixins, `GUIManager` with its theme |
+| `gui.py` | stays with `GUIManager`; `ui/` | the generic widgets, the Main tab panels, `TrayIcon`, `InventoryOverview` with a mixin, `HelpTab`, the preview's mock, `SettingsPanel` with three mixins, and the mixins of `GUIManager` with its event loop methods and its theme |
 
 ## Consequences
 

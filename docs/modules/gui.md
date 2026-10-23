@@ -3,10 +3,10 @@
 **Purpose.** The tkinter window: four tabs, the tray icon, the light and dark themes, and a preview that opens
 the window with mock data. `Twitch.__init__` creates one `GUIManager`, and the rest of the app changes the
 window only through that object and the parts it exposes as attributes. Every part is in the package `ui/`,
-from which `gui.py` imports it ([ui.md](ui.md)). The file is over the 300 line cap
-in [AGENTS.md](../../AGENTS.md#module-map), so new logic that does not need tkinter goes in a new module
-([task 005](../refinements/tasks/005-modules-over-the-line-cap.md) gives its line count). Before a search and
-replace edit in this file, read the `gui.py` recipe in [AGENTS.md](../../AGENTS.md#recipes).
+from which `gui.py` imports it ([ui.md](ui.md)), and so are the two mixins of `GUIManager`: `EventLoopMixin` in
+`ui/eventloop.py` and `ThemeMixin` in `ui/theme.py`. `gui.py` keeps `GUIManager.__init__`, which builds the
+window, the Windows message handler and the methods that pass a call on to a part, such as `display_drop`.
+Before a search and replace edit in this file, read the `gui.py` recipe in [AGENTS.md](../../AGENTS.md#recipes).
 
 ## The window
 
@@ -33,7 +33,8 @@ Every class in the table is in `ui/`, with the generic widgets, such as `Placeho
 
 ## How the GUI runs with asyncio
 
-The asyncio event loop and Tk run on one thread, so Tk callbacks and coroutines need no locks.
+The asyncio event loop and Tk run on one thread, so Tk callbacks and coroutines need no locks. The methods in
+this section, except `wnd_proc`, are in `EventLoopMixin`.
 
 - `GUIManager.start()` creates the `_poll` task in place of `Tk.mainloop()`. It calls `Tk.dooneevent` with
   `TKINTER_DONT_WAIT` (`1 << 1`) until no Tk event is left, writes the queued log records to the Output box
@@ -76,8 +77,8 @@ The GUI calls back into `Twitch` through `settings`, `change_state`, `state_chan
 
 ## The theme and dark mode
 
-`apply_theme(dark)` runs at the end of `GUIManager.__init__` with the `dark_mode` setting, and again from the
-"Dark mode" checkbox through `SettingsPanel.update_dark_mode`, so a change shows at once.
+`apply_theme(dark)`, in `ThemeMixin`, runs at the end of `GUIManager.__init__` with the `dark_mode` setting,
+and again from the "Dark mode" checkbox through `SettingsPanel.update_dark_mode`, so a change shows at once.
 
 - Dark mode switches ttk to the `clam` theme, except on macOS, because `clam` accepts the color changes. Light
   mode switches back to the theme that was active at start (`_orig_theme_name`).
@@ -132,6 +133,6 @@ so the preview uses the repository folder as its working folder. To run the prev
 - `apply_theme` runs before the window is shown, because it defines the fonts and named styles the widgets use.
   A new plain Tk widget needs its own `configure_theme` call in `apply_theme`.
 
-**Dependencies.** Repo modules: `translate`, `cache`, `colorfonts`, `exceptions`, `scrollarea`, `utils`,
-`constants` and `ui`; `twitch` and `inventory` for type checking only. Third-party: pywin32 (`win32api`,
-`win32con`, `win32gui`) on Windows, and `AppKit` on macOS.
+**Dependencies.** Repo modules: `translate`, `cache`, `colorfonts`, `scrollarea`, `utils`, `constants` and
+`ui`; `twitch` and `inventory` for type checking only. Third-party: pywin32 (`win32api`, `win32con`, `win32gui`)
+on Windows.

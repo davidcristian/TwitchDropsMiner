@@ -2,9 +2,9 @@
 
 **Purpose.** The parts of the tkinter window that `gui.py` builds, and `run_preview`, which `python gui.py`
 calls. `gui.py` stays a file, because that command names it, and its classes move here
-([ADR-0020](../adr/ADR-0020-module-splits.md)). The window as a whole and `GUIManager`, which is still in
-`gui.py`, are in [gui.md](gui.md). Every file here needs a display, so the package is outside the coverage
-floor, as `gui.py` is.
+([ADR-0020](../adr/ADR-0020-module-splits.md)). The window as a whole and `GUIManager`, which stays in
+`gui.py`, are in [gui.md](gui.md), and so are the methods of its two mixins here. Every file here needs a
+display, so the package is outside the coverage floor, as `gui.py` is.
 
 ## Files
 
@@ -26,6 +26,8 @@ floor, as `gui.py` is.
 | `generalsettings.py` | `GeneralSettingsMixin`, a base class of `SettingsPanel` with the General and Advanced sections and the autostart entry, and `proxy_validate` |
 | `gamelists.py` | `GameListsMixin`, a base class of `SettingsPanel` with the Priority and Exclude lists |
 | `detectedgames.py` | `DetectedGamesMixin`, a base class of `SettingsPanel` with the Detected Games section and the game folders |
+| `eventloop.py` | `EventLoopMixin`, a base class of `GUIManager` with `start`, `stop`, `_poll`, `close`, `coro_unless_closed` and the other methods that run Tk on the asyncio event loop and close the window ([gui.md](gui.md#how-the-gui-runs-with-asyncio)) |
+| `theme.py` | `ThemeMixin`, a base class of `GUIManager` with `apply_theme` and `_set_title_bar_color` ([gui.md](gui.md#the-theme-and-dark-mode)) |
 | `preview.py` | `run_preview`, the mock data of the preview |
 
 ## The generic widgets
@@ -178,4 +180,5 @@ that `gui.py` or a file of this package reads as an attribute of `settings` or `
 
 **Dependencies.** Repo modules: `translate`, `cache`, `exceptions`, `gamelib`, `scrollarea`, `traybackend`,
 `autostart`, `folderpicker`, `settings` (`default_settings`, `setting_choices`), `utils` and `constants`; `gui`,
-`channel` and `inventory` for type checking only. Third-party: `pystray`, Pillow and `yarl`.
+`twitch`, `channel` and `inventory` for type checking only. Third-party: `pystray`, Pillow, `yarl`, and `AppKit`
+on macOS.

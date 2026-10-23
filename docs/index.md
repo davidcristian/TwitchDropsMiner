@@ -66,7 +66,7 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [channel.md](modules/channel.md) | `Channel` and `Stream`: online checks, the batched bulk check, the watch requests |
 | [websocket.md](modules/websocket.md) | The PubSub websocket pool, its topics and the 199 channel limit |
 | [gui.md](modules/gui.md) | `GUIManager` and the window it builds, the theme and the `python gui.py` preview |
-| [ui.md](modules/ui.md) | The parts of the window that `gui.py` imports: the generic widgets, the Main tab panels, the tray icon, the Inventory, Settings and Help tabs, and the preview's mock data |
+| [ui.md](modules/ui.md) | The parts of the window that `gui.py` imports: the generic widgets, the Main tab panels, the tray icon, the Inventory, Settings and Help tabs, the two mixins of `GUIManager`, and the preview's mock data |
 | [settings.md](modules/settings.md) | Every `settings.json` key with its type and default, loading and saving |
 | [constants.md](modules/constants.md) | Paths, intervals and limits, `State`, `PriorityMode`, the logging values, and `version.py` |
 | [twitchapi.md](modules/twitchapi.md) | The GQL operations, the client types and the PubSub topics that the app sends to Twitch |

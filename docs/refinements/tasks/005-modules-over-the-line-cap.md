@@ -1,19 +1,19 @@
 # Eight modules are over the line cap
 
-**Status:** open
+**Status:** done 2026-10-23
 **Area:** module layout
 **Origin:** [AGENTS.md](../../../AGENTS.md#module-map)
 **Verified:** 2026-10-23
 
 AGENTS.md sets a limit of 300 lines per module, and `scripts/linecap.py` checks it. Eight modules were over it,
-measured with `wc -l` on 2026-10-23, and linecap.py names those not yet split in `EXCEPTIONS`. An entry there
-fails once its module is under the limit, so a split removes it. AGENTS.md forbids adding a new responsibility to any of them:
-new work goes into a new module that they call. This task records where each one can be split, and
+measured with `wc -l` on 2026-10-23, and linecap.py named those not yet split in `EXCEPTIONS`. An entry there
+failed once its module was under the limit, so a split removed it. AGENTS.md forbade adding a new responsibility to any of them:
+new work went into a new module that they call. This task records where each one was split, and
 [ADR-0020](../../adr/ADR-0020-module-splits.md) sets how a split is made.
 
 | Module | Lines | After the split |
 | --- | --- | --- |
-| `gui.py` | 3164 | 579 so far, over the cap, and `ui/`, seventeen files of 37 to 290 lines |
+| `gui.py` | 3164 | 252, and `ui/`, nineteen files of 41 to 290 lines |
 | `twitch.py` | 1734 | `twitch/`, ten files of 6 to 292 lines |
 | `translate.py` | 612 | `translate/`, four files of 7 to 284 lines |
 | `channel.py` | 528 | `channel/`, five files of 7 to 166 lines |
@@ -154,3 +154,7 @@ Splits cost no Twitch requests.
   `gamelists.py`, and the Detected Games section for `DetectedGamesMixin` in `detectedgames.py`. The `window`
   fixture patches `autostart_entry` in `ui/settingstab.py`, and the tests of the language label patch `_` in
   `ui/generalsettings.py`. `gui.py` has 579 lines and keeps `GUIManager`.
+- 2026-10-23: Done. `apply_theme` and `_set_title_bar_color` left `GUIManager` for the mixin `ThemeMixin` in
+  `ui/theme.py`, and the methods that run Tk on the asyncio event loop and close the window, from `running` to
+  `close_window`, for `EventLoopMixin` in `ui/eventloop.py`. `gui.py` has 252 lines with `GUIManager` and the
+  preview entry, and its entry left `EXCEPTIONS`, which is now empty. Every module is under the cap.

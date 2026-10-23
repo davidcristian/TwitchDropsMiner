@@ -44,7 +44,7 @@ burst of requests puts that account at risk.
 | `channel/` | `Channel` and `Stream`: stream state and online checks. `tracked.py` holds `Channel`, `online.py` and `watch.py` its mixins for the online checks and the watch requests, and `stream.py` holds `Stream` |
 | `websocket/` | The PubSub websocket pool and its topics. `pool.py` holds `WebsocketPool`, `connection.py` holds `Websocket`, and `messages.py` its mixin that receives and sends messages |
 | `gui.py` | `GUIManager`, which builds the window. `python gui.py` opens the window with mock data and no login, and sends no request |
-| `ui/` | The parts of the window that `gui.py` builds and imports. `placeholder.py` holds `PlaceholderEntry` and `PlaceholderCombobox`, `widgets.py` the other generic widgets and `Notebook`, the tabs, `status.py`, `login.py`, `progress.py`, `output.py` and `channellist.py` the panels of the Main tab, `tray.py` the tray icon, `inventorytab.py` and `dropstatus.py` the Inventory tab, `helptab.py` the Help tab, `settingstab.py` the Settings tab with its mixins in `generalsettings.py`, `gamelists.py` and `detectedgames.py`, and `preview.py` the mock data that `python gui.py` opens the window with |
+| `ui/` | The parts of the window that `gui.py` builds and imports. `placeholder.py` holds `PlaceholderEntry` and `PlaceholderCombobox`, `widgets.py` the other generic widgets and `Notebook`, the tabs, `status.py`, `login.py`, `progress.py`, `output.py` and `channellist.py` the panels of the Main tab, `tray.py` the tray icon, `inventorytab.py` and `dropstatus.py` the Inventory tab, `helptab.py` the Help tab, `settingstab.py` the Settings tab with its mixins in `generalsettings.py`, `gamelists.py` and `detectedgames.py`, `eventloop.py` and `theme.py` the mixins of `GUIManager` that run Tk on the asyncio event loop and set the theme, and `preview.py` the mock data that `python gui.py` opens the window with |
 | `settings.py` | `settings.json`: the `SettingsFile` type, its defaults, loading and saving |
 | `constants.py` | Paths, intervals, `State`, `PriorityMode` and the logging values |
 | `twitchapi/` | What the app sends to Twitch: `ClientType` in `clients.py`, the GQL queries with their hashes in `gql.py`, and `WebsocketTopic` in `topics.py` |
@@ -74,10 +74,9 @@ burst of requests puts that account at risk.
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
 | `docs/` | Listed in `docs/index.md`: `ARCHITECTURE.md`, the decisions (`adr/`), one contract doc per module (`modules/`), procedures (`runbooks/`), the deferred work (`refinements/`), and two pages for users, `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
 
-**At most 300 lines per module**, which `scripts/linecap.py` checks. It names the two inherited modules over the
-limit as exceptions until they are split ([task 005](docs/refinements/tasks/005-modules-over-the-line-cap.md)), and
-an exception fails once its module is under the limit. Do not add a new responsibility to a module over the limit:
-put it in a new module and call it from there.
+**At most 300 lines per module**, which `scripts/linecap.py` checks. Every module is under it since the inherited
+modules over it were split ([task 005](docs/refinements/tasks/005-modules-over-the-line-cap.md)). Do not add a new
+responsibility to a module that it would take over the limit: put it in a new module and call it from there.
 
 ## Code rules
 
