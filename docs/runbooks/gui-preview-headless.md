@@ -52,7 +52,7 @@ _tkinter.TclError: no display name and no $DISPLAY environment variable
    - `timeout 30` ends the run, because the preview runs until its window is closed.
 
 `exit=124` is the result to expect: `timeout` ended a preview that ran for 30 seconds without an error. An error
-prints a traceback and gives `exit=1`. For example, a setting missing from the mock at the end of `gui.py` (see
+prints a traceback and gives `exit=1`. For example, a setting missing from the mock in `ui/preview.py` (see
 the recipe in [AGENTS.md](../../AGENTS.md#recipes)) fails with:
 
 ```text

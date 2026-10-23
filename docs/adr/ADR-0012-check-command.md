@@ -53,7 +53,7 @@ lint rules without its formatter or pyright.
      and task file is named and written in its format.
    - `rostercheck.py`: the module map in AGENTS.md lists every top-level module and package, every module has a
      doc in `docs/modules/`, the settings keys agree between `SettingsFile`, `default_settings`, `Settings`, the
-     key table in [settings.md](../modules/settings.md) and the `gui.py` mock, and the scans in AGENTS.md and the
+     key table in [settings.md](../modules/settings.md) and the preview mock, and the scans in AGENTS.md and the
      `justfile` are the scripts in `scripts/`.
 3. **ruff checks the rules ruff 0.6 enabled by default** (`E4`, `E7`, `E9`, `F`), set in `pyproject.toml`. They
    find mistakes such as an unused import or an undefined name.

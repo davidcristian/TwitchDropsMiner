@@ -68,9 +68,11 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
 6. **A split commit moves code and changes no behavior.** It is a `refactor:` commit for one module. The moved
    lines keep their text and order, except imports, the bases of a class that gains mixins, and a name the move
    requires. The new lines are the package's `__init__.py`, a one-line docstring for each new file and mixin,
-   and the annotations and the empty `__slots__` of decision 4. A function that the preview's mock becomes
-   re-indents the mock, which `git diff -w` hides. `git diff -M --stat` shows the moves, and the sorted lines of
-   the old file match those of the new files, apart from the lines this decision allows.
+   and the annotations and the empty `__slots__` of decision 4. The preview's mock becomes the body of
+   `run_preview` in `ui/preview.py` at the indentation it had under `if __name__ == "__main__":`. The function
+   takes `GUIManager` as its argument, and `nonlocal` replaces `global` in it. `git diff -M --stat` shows the
+   moves, and the sorted lines of the old file match those of the new files, apart from the lines this decision
+   allows.
 7. **Tests follow the code they test.** A test that patches a module global, such as `random` for
    `ExponentialBackoff`, patches the file that now reads it (`utils.backoff`), in the split commit. Such a global is
    read in one file where the split allows it, so one patch reaches every read: `get_session` moves with
@@ -95,7 +97,7 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
 | `inventory.py` | `inventory/` | `Benefit`; `BaseDrop` and `TimedDrop`; `DropsCampaign` |
 | `translate.py` | `translate/` | the `TypedDict` classes; `default_translation`; `Translator` and `_` |
 | `twitch.py` | `twitch/` | `_AuthState` with the mixin of the session methods; `Twitch` with mixins for the requests, the inventory fetch, the shutdown with the tasks of a run, the state loop, the channel states, the discovery of games and channels, and the PubSub handlers |
-| `gui.py` | stays; `ui/` | the generic widgets, the Main tab panels, `TrayIcon`, `InventoryOverview`, `HelpTab`, `SettingsPanel` with its mixins, `GUIManager` with its theme |
+| `gui.py` | stays; `ui/` | the generic widgets, the Main tab panels, `TrayIcon`, `InventoryOverview`, `HelpTab`, the preview's mock, `SettingsPanel` with its mixins, `GUIManager` with its theme |
 
 ## Consequences
 

@@ -8,6 +8,7 @@ from .login import LoginForm
 from .progress import CampaignProgress
 from .output import ConsoleOutput, _TKOutputHandler
 from .channellist import ChannelList
+from .preview import run_preview
 
 __all__ = [
     "CampaignProgress",
@@ -24,4 +25,5 @@ __all__ = [
     "StatusBar",
     "WebsocketStatus",
     "_TKOutputHandler",
+    "run_preview",
 ]

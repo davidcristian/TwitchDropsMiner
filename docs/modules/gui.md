@@ -171,26 +171,9 @@ has room for 9 lines in light mode and 7 in dark mode. On macOS in CI the window
 
 ## The preview
 
-`python gui.py` runs the block under `if __name__ == "__main__":`. `constants.py` treats a run of `gui.py` like a
-run of `main.py`, so the preview uses the repository folder as its working folder.
-
-- It builds a mock `Twitch` from `SimpleNamespace`: `settings` with each setting the GUI reads, `change_state`
-  that prints the state number to the Output box, `state_change`, `request` set to `icon_request`, and `close`
-  set to `GUIManager.stop`.
-- Its settings have two Priority entries, one with `*`, one Exclude entry, two game folders and two detected
-  games, one of them excluded. It fills the window with a login status, three games, the Games Being Mined
-  table with `set_wanted_games`, four channels (offline, pending and two online, the pending one marked as
-  watched), one active and linked campaign of a detected game with one drop, and two Output messages. It also
-  calls `tray.notify`, which shows nothing, because no tray icon exists until `minimize()` runs.
-- Over about 90 seconds it moves the drop display through a still display, a countdown, a cleared display, a
-  drop one minute from the end and a finished drop. Closing the window ends the preview.
-- `icon_request` returns the data of `icons/pickaxe.ico` for every request, so the campaign and reward images
-  are the app icon, and the preview sends no request to Twitch or any other server. The campaign image shows
-  the square icon stretched to 108 by 144 pixels. The preview never calls `GUIManager.save`, so it writes the
-  icon to `cache/` but not `cache/mapping.json`, which maps each URL to its file.
-
-A new setting that the GUI reads needs an entry in the mock `settings`, or the preview fails with an
-`AttributeError` ([AGENTS.md](../../AGENTS.md#recipes)). To run the preview without a display, follow
+`python gui.py` runs the block under `if __name__ == "__main__":`, which calls `run_preview` in `ui/preview.py`
+with `GUIManager` ([ui.md](ui.md#the-preview)). `constants.py` treats a run of `gui.py` like a run of `main.py`,
+so the preview uses the repository folder as its working folder. To run the preview without a display, follow
 [gui-preview-headless.md](../runbooks/gui-preview-headless.md).
 
 ## Invariants
@@ -209,9 +192,6 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
   `cached_property` attributes so that no string is read before the language is set.
 - `apply_theme` runs before the window is shown, because it defines the fonts and named styles the widgets use.
   A new plain Tk widget needs its own `configure_theme` call in `apply_theme`.
-- The preview mock provides every setting the GUI reads and every `Twitch` attribute that building the window
-  needs. It has no `detect_games`, `get_auth` or `_client_type`, so "Rescan", the ❌ folder button and a folder
-  chosen with ➕ raise `AttributeError` in the preview.
 
 **Dependencies.** Repo modules: `translate`, `cache`, `colorfonts`, `autostart`, `gamelib`, `exceptions`,
 `folderpicker`, `traybackend`, `scrollarea`, `settings` (`default_settings`, `setting_choices`), `utils`,

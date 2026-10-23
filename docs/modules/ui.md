@@ -1,7 +1,7 @@
 # `ui/`
 
-**Purpose.** The parts of the tkinter window that `gui.py` builds. `gui.py` stays a file, because
-`python gui.py` opens the preview, and its classes move here
+**Purpose.** The parts of the tkinter window that `gui.py` builds, and `run_preview`, which `python gui.py`
+calls. `gui.py` stays a file, because that command names it, and its classes move here
 ([ADR-0020](../adr/ADR-0020-module-splits.md)). The window as a whole, `GUIManager` and the classes that are
 still in `gui.py` are in [gui.md](gui.md). Every file here needs a display, so the package is outside the
 coverage floor, as `gui.py` is.
@@ -18,6 +18,7 @@ coverage floor, as `gui.py` is.
 | `progress.py` | `CampaignProgress` |
 | `output.py` | `ConsoleOutput` and `_TKOutputHandler`, the log handler that writes to it |
 | `channellist.py` | `ChannelList` |
+| `preview.py` | `run_preview`, the mock data of the preview |
 
 ## The generic widgets
 
@@ -66,5 +67,35 @@ record of the event loop thread writes them before itself, so the lines keep the
 queue, rather than `loop.call_soon_threadsafe` as the tray menu uses, needs no running event loop when the window
 is built, and the tests build it without one.
 
-**Dependencies.** Repo modules: `translate`, `utils` (`webopen`) and `constants`; `gui`, `channel` and
-`inventory` for type checking only. Third-party: `yarl`.
+## The preview
+
+`run_preview(manager)` builds the window from `manager`, the class `GUIManager` that `gui.py` passes, around a
+mock `Twitch`, and runs it in a new event loop until the window closes.
+
+- It builds a mock `Twitch` from `SimpleNamespace`: `settings` with each setting the GUI reads, `change_state`
+  that prints the state number to the Output box, `state_change`, `request` set to `icon_request`, and `close`
+  set to `GUIManager.stop`.
+- Its settings have two Priority entries, one with `*`, one Exclude entry, two game folders and two detected
+  games, one of them excluded. It fills the window with a login status, three games, the Games Being Mined
+  table with `set_wanted_games`, four channels (offline, pending and two online, the pending one marked as
+  watched), one active and linked campaign of a detected game with one drop, and two Output messages. It also
+  calls `tray.notify`, which shows nothing, because no tray icon exists until `minimize()` runs.
+- Over about 90 seconds it moves the drop display through a still display, a countdown, a cleared display, a
+  drop one minute from the end and a finished drop. Closing the window ends the preview.
+- `icon_request` returns the data of `icons/pickaxe.ico` for every request, so the campaign and reward images
+  are the app icon, and the preview sends no request to Twitch or any other server. The campaign image shows
+  the square icon stretched to 108 by 144 pixels. The preview never calls `GUIManager.save`, so it writes the
+  icon to `cache/` but not `cache/mapping.json`, which maps each URL to its file.
+
+A new setting that the GUI reads needs an entry in the mock `settings`, or the preview fails with an
+`AttributeError` ([AGENTS.md](../../AGENTS.md#recipes)). `rostercheck.py` fails when the mock lacks a setting
+that `gui.py` or a file of this package reads as an attribute of `settings` or `_settings`.
+
+## Invariants
+
+- The preview mock provides every setting the GUI reads and every `Twitch` attribute that building the window
+  needs. It has no `detect_games`, `get_auth` or `_client_type`, so "Rescan", the ❌ folder button and a folder
+  chosen with ➕ raise `AttributeError` in the preview.
+
+**Dependencies.** Repo modules: `translate`, `utils` (`webopen`, `resource_path`) and `constants`; `gui`,
+`channel` and `inventory` for type checking only. Third-party: `yarl`.

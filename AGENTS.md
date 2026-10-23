@@ -44,7 +44,7 @@ burst of requests puts that account at risk.
 | `channel/` | `Channel` and `Stream`: stream state and online checks. `tracked.py` holds `Channel`, `online.py` and `watch.py` its mixins for the online checks and the watch requests, and `stream.py` holds `Stream` |
 | `websocket/` | The PubSub websocket pool and its topics. `pool.py` holds `WebsocketPool`, `connection.py` holds `Websocket`, and `messages.py` its mixin that receives and sends messages |
 | `gui.py` | `GUIManager`, which builds the window, and its panels and tabs. `python gui.py` opens it with mock data and no login, and sends no request |
-| `ui/` | The parts of the window that `gui.py` builds and imports. `placeholder.py` holds `PlaceholderEntry` and `PlaceholderCombobox`, `widgets.py` the other generic widgets and `Notebook`, the tabs, and `status.py`, `login.py`, `progress.py`, `output.py` and `channellist.py` the panels of the Main tab |
+| `ui/` | The parts of the window that `gui.py` builds and imports. `placeholder.py` holds `PlaceholderEntry` and `PlaceholderCombobox`, `widgets.py` the other generic widgets and `Notebook`, the tabs, `status.py`, `login.py`, `progress.py`, `output.py` and `channellist.py` the panels of the Main tab, and `preview.py` the mock data that `python gui.py` opens the window with |
 | `settings.py` | `settings.json`: the `SettingsFile` type, its defaults, loading and saving |
 | `constants.py` | Paths, intervals, `State`, `PriorityMode` and the logging values |
 | `twitchapi/` | What the app sends to Twitch: `ClientType` in `clients.py`, the GQL queries with their hashes in `gql.py`, and `WebsocketTopic` in `topics.py` |
@@ -94,13 +94,14 @@ rewrites it.
 
 ## Recipes
 
-**A new setting** touches four places, and missing the third is silent:
+**A new setting** touches four places, and missing the third breaks only the preview:
 
 1. `SettingsFile`, `default_settings` and the attribute list on `Settings`, in `settings.py`. A drop-down list
    also gets its values in `setting_choices` there.
 2. The widget in `SettingsPanel`, in `gui.py`.
-3. The `settings=SimpleNamespace(...)` mock under `if __name__ == "__main__":` at the end of `gui.py`. Without it
-   `python gui.py` fails with an `AttributeError`, and nothing else reports it.
+3. The `settings=SimpleNamespace(...)` mock in `run_preview`, in `ui/preview.py`. Without it `python gui.py` fails
+   with an `AttributeError`. `rostercheck.py` reports a setting that the GUI reads as `settings.<name>` and the
+   mock lacks.
 4. The key table in [docs/modules/settings.md](docs/modules/settings.md).
 
 **A string the user sees:**
@@ -128,7 +129,7 @@ gives the reasons. In order, it runs `syntaxcheck.py` (Python 3.10 syntax), `lan
 the format fields of `lang/*.json`, and the count of strings each language lacks), ruff (the rules in
 `pyproject.toml`), `linecap.py` (the line limits), `dashcheck.py` and `prosecheck.py` (the Prose rules a script can
 read), `docscheck.py` (the links between docs, line numbers, the two indexes and the record formats),
-`rostercheck.py` (the module map, the module docs, the settings keys, the `gui.py` mock and this list), and pytest
+`rostercheck.py` (the module map, the module docs, the settings keys, the preview mock and this list), and pytest
 over `tests/`, which fails below 80% branch coverage of the modules `pyproject.toml` lists, and when a thread that
 Python's exit would wait for still runs after the last test. A 3.11+ name such as
 `typing.Self` or `tomllib` fails only when its line runs, so only the Validate job on Python 3.10 finds it, and

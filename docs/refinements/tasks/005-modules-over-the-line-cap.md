@@ -13,7 +13,7 @@ new work goes into a new module that they call. This task records where each one
 
 | Module | Lines | After the split |
 | --- | --- | --- |
-| `gui.py` | 3164 | 2175 so far, over the cap, and `ui/`, eight files of 27 to 260 lines |
+| `gui.py` | 3164 | 1904 so far, over the cap, and `ui/`, nine files of 29 to 290 lines |
 | `twitch.py` | 1734 | `twitch/`, ten files of 6 to 292 lines |
 | `translate.py` | 612 | `translate/`, four files of 7 to 284 lines |
 | `channel.py` | 528 | `channel/`, five files of 7 to 166 lines |
@@ -137,3 +137,7 @@ Splits cost no Twitch requests.
   `status.py`, `LoginForm` for `login.py`, `CampaignProgress` for `progress.py`, `ConsoleOutput` with
   `_TKOutputHandler` for `output.py`, and `ChannelList` for `channellist.py`. Their tests moved to
   `tests/test_ui_*.py`, and the login test patches `_` and `webopen` in `ui/login.py`. `gui.py` has 2175 lines.
+- 2026-10-23: The preview's mock left the `__main__` block of `gui.py` for `run_preview` in `ui/preview.py`,
+  which the block calls with `GUIManager`. Its lines keep their indentation as the body of the function, and its
+  `global` statement became `nonlocal`. `rostercheck.py` now reads the mock there and the settings reads from
+  `gui.py` and every file of `ui/`. `gui.py` has 1904 lines.

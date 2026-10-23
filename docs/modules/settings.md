@@ -4,7 +4,7 @@
 object that the rest of the app reads them from. `Settings` also exposes the command line flags, so callers
 read flags and settings from one object. Loading and saving go through `json_load` and `json_save` in
 `utils/jsonfile.py`. To add a setting, follow the recipe in [AGENTS.md](../../AGENTS.md#recipes): a setting missing from
-the `gui.py` preview mock fails only when `python gui.py` runs.
+the preview mock in `ui/preview.py` fails only when `python gui.py` runs.
 
 ## Public contract
 

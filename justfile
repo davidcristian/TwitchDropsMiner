@@ -42,7 +42,7 @@ check-prosecheck:
 check-docscheck:
     {{python}} scripts/docscheck.py
 
-# The module map, the module docs, the settings key table and the gui.py settings mock match the code.
+# The module map, the module docs, the settings key table and the settings mock of the preview match the code.
 check-rostercheck:
     {{python}} scripts/rostercheck.py
 

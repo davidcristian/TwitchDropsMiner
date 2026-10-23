@@ -17,6 +17,7 @@ AGENTS_MD = """# Rules
 | `main.py` | entry |
 | `settings.py` | settings |
 | `gui.py` | GUI |
+| `ui/` | GUI parts |
 | `version.py` | version |
 | `pkg/` | package |
 | `docs/` | docs |
@@ -46,18 +47,18 @@ class Settings:
     def alter(self) -> None:
         pass
 """
-GUI_PY = """from types import SimpleNamespace
-
-class Panel:
+GUI_PY = """class Panel:
     def __init__(self, manager):
         self._settings = manager._twitch.settings
         self.dark = self._settings.dark_mode
         manager._twitch.settings.alter()
-
-def proxy_of(settings):
+"""
+PROXY_PY = """def proxy_of(settings):
     return settings.proxy
+"""
+PREVIEW_PY = """from types import SimpleNamespace
 
-if __name__ == "__main__":
+def run_preview(manager):
     mock = SimpleNamespace(settings=SimpleNamespace(proxy="", dark_mode=False, alter=lambda: None))
 """
 SETTINGS_MD = """# settings
@@ -81,6 +82,9 @@ def files() -> dict[str, str]:
         "main.py": "",
         "settings.py": SETTINGS_PY,
         "gui.py": GUI_PY,
+        "ui/__init__.py": "",
+        "ui/proxy.py": PROXY_PY,
+        "ui/preview.py": PREVIEW_PY,
         "version.py": "",
         "pkg/__init__.py": "",
         "pkg/inner.py": "",
@@ -88,6 +92,7 @@ def files() -> dict[str, str]:
         "docs/modules/main.md": "",
         "docs/modules/settings.md": SETTINGS_MD,
         "docs/modules/gui.md": "",
+        "docs/modules/ui.md": "",
         "docs/modules/pkg.md": "",
         "justfile": "check:\n    python scripts/scancheck.py\n    python scripts/othercheck.py\n",
         "scripts/scancheck.py": "",
@@ -157,12 +162,14 @@ def test_check_reports_a_package_without_a_doc(tmp_path):
          "docs/modules/settings.md:1: the key table lacks dark_mode"),
         ({"docs/modules/settings.md": SETTINGS_MD.replace("| `proxy` | str |\n", "| `proxy` | str |\n| `old` | x |\n")},
          "docs/modules/settings.md:1: the key table lists old, which SettingsFile lacks"),
-        ({"gui.py": GUI_PY.replace(", dark_mode=False", "")},
-         "gui.py:1: the settings mock lacks dark_mode, which gui.py reads"),
+        ({"ui/preview.py": PREVIEW_PY.replace(", dark_mode=False", "")},
+         "ui/preview.py:1: the settings mock lacks dark_mode, which gui.py reads"),
+        ({"ui/preview.py": PREVIEW_PY.replace('proxy="", ', "")},
+         "ui/preview.py:1: the settings mock lacks proxy, which ui/proxy.py reads"),
     ],
     ids=[
         "default_settings", "an unknown default", "Settings attributes", "the doc key table", "an unknown doc key",
-        "the gui.py mock",
+        "the preview mock", "a read in ui/",
     ],
 )
 def test_check_reports_a_settings_key_missing_from_one_of_the_four_places(tmp_path, change, problem):
@@ -170,13 +177,16 @@ def test_check_reports_a_settings_key_missing_from_one_of_the_four_places(tmp_pa
 
 
 def test_check_reports_a_settings_method_gui_py_calls_but_the_mock_lacks(tmp_path):
-    gui = GUI_PY.replace(", alter=lambda: None", "")
-    assert problems_with(tmp_path, {"gui.py": gui}) == ["gui.py:1: the settings mock lacks alter, which gui.py reads"]
+    preview = PREVIEW_PY.replace(", alter=lambda: None", "")
+    assert problems_with(tmp_path, {"ui/preview.py": preview}) == [
+        "ui/preview.py:1: the settings mock lacks alter, which gui.py reads"
+    ]
 
 
 def test_check_accepts_a_mock_without_a_key_that_gui_py_does_not_read(tmp_path):
-    gui = GUI_PY.replace("        self.dark = self._settings.dark_mode\n", "").replace(", dark_mode=False", "")
-    assert problems_with(tmp_path, {"gui.py": gui}) == []
+    gui = GUI_PY.replace("        self.dark = self._settings.dark_mode\n", "")
+    preview = PREVIEW_PY.replace(", dark_mode=False", "")
+    assert problems_with(tmp_path, {"gui.py": gui, "ui/preview.py": preview}) == []
 
 
 def test_check_reports_a_scan_missing_from_the_justfile_and_from_agents_md(tmp_path):
@@ -269,7 +279,7 @@ def test_default_keys_returns_the_keys_of_the_annotated_dict_or_nothing():
 
 
 def test_mock_and_reads_returns_the_mock_keywords_and_only_the_reads_from_a_settings_object():
-    gui = GUI_PY + "\nclass Row:\n    def draw(self, widget):\n        return self.dark_mode, widget.log\n"
+    gui = GUI_PY + PROXY_PY + PREVIEW_PY + "\nclass Row:\n    def draw(self, widget):\n        return self.dark_mode, widget.log\n"
     mock, reads = rostercheck.mock_and_reads(ast.parse(gui), {"proxy", "dark_mode", "alter", "log"})
     assert mock == ["proxy", "dark_mode", "alter"]
     assert reads == {"proxy", "dark_mode", "alter"}

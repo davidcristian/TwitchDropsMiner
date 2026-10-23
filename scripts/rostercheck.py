@@ -12,6 +12,9 @@ from sources import ROOT, Problem, read_text, repo_files
 
 AGENTS = "AGENTS.md"
 SETTINGS_DOC = "docs/modules/settings.md"
+# The GUI is gui.py and the files of ui/. The preview, which python gui.py runs, holds the settings mock.
+GUI_PACKAGE = "ui/"
+PREVIEW = "ui/preview.py"
 MODULE_DOCS = "docs/modules/"
 # Map entries that are not Python modules, and modules whose contract is in another module's doc, with that doc.
 NOT_MODULES = {"docs/"}
@@ -96,8 +99,14 @@ def default_keys(module: ast.Module) -> list[str]:
     return []
 
 
+def gui_files(files: list[str]) -> list[str]:
+    """Return gui.py and the Python files of ui/, the preview always among them."""
+    package = {name for name in files if name.startswith(GUI_PACKAGE) and name.endswith(".py")}
+    return ["gui.py", *sorted(package | {PREVIEW})]
+
+
 def mock_and_reads(gui: ast.Module, names: set[str]) -> tuple[list[str], set[str]]:
-    """Return the keywords of the settings mock in gui.py, and which of the names gui.py reads from settings."""
+    """Return the keywords of a settings mock in a GUI file, and which of the names the file reads from settings."""
     mock: list[str] = []
     reads: set[str] = set()
     for node in ast.walk(gui):
@@ -112,8 +121,11 @@ def mock_and_reads(gui: ast.Module, names: set[str]) -> tuple[list[str], set[str
     return mock, reads
 
 
-def settings_problems(texts: dict[str, str]) -> list[Problem]:
-    """Return where the settings keys in settings.py, its doc and the gui.py mock differ."""
+def settings_problems(texts: dict[str, str], gui_paths: list[str]) -> list[Problem]:
+    """Return where the settings keys in settings.py, its doc and the preview mock differ.
+
+    gui_paths lists the GUI files. The mock in PREVIEW must have every setting that one of them reads.
+    """
     settings = ast.parse(texts["settings.py"])
     keys = annotated(class_body(settings, "SettingsFile"))
     actual = set(keys)
@@ -124,9 +136,17 @@ def settings_problems(texts: dict[str, str]) -> list[Problem]:
     problems.extend(Problem("settings.py", 1, f"Settings lacks the attribute {key}") for key in sorted(actual - names))
     rows = table_names(texts[SETTINGS_DOC], "The keys")
     problems.extend(compare(SETTINGS_DOC, "the key table", rows, actual, unknown))
-    mock, reads = mock_and_reads(ast.parse(texts["gui.py"]), names)
+    mock: list[str] = []
+    readers: dict[str, str] = {}
+    for path in gui_paths:
+        found, reads = mock_and_reads(ast.parse(texts[path]), names)
+        if path == PREVIEW:
+            mock = found
+        for name in reads:
+            readers.setdefault(name, path)
     problems.extend(
-        Problem("gui.py", 1, f"the settings mock lacks {name}, which gui.py reads") for name in sorted(reads - set(mock))
+        Problem(PREVIEW, 1, f"the settings mock lacks {name}, which {readers[name]} reads")
+        for name in sorted(set(readers) - set(mock))
     )
     return problems
 
@@ -134,12 +154,13 @@ def settings_problems(texts: dict[str, str]) -> list[Problem]:
 def check(root: Path) -> tuple[int, list[Problem]]:
     """Return the number of lists compared and every problem in them."""
     files = repo_files(root)
-    names = (AGENTS, SETTINGS_DOC, "settings.py", "gui.py", "justfile")
+    gui_paths = gui_files(files)
+    names = (AGENTS, SETTINGS_DOC, "settings.py", "justfile", *gui_paths)
     texts = {name: (read_text(root / name) or "") if (root / name).is_file() else "" for name in names}
     mapped = modules(files) | NOT_MODULES
     problems = compare(AGENTS, "the module map", table_names(texts[AGENTS], "Module map"), mapped)
     problems.extend(doc_problems(files, mapped))
-    problems.extend(settings_problems(texts))
+    problems.extend(settings_problems(texts, gui_paths))
     scripts = {name.removeprefix("scripts/") for name in files if re.fullmatch(r"scripts/\w+\.py", name)}
     scans = scripts - NOT_SCANS
     recipes = sorted(set(_SCRIPT.findall(texts["justfile"])))
