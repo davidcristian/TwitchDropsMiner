@@ -2,19 +2,32 @@
     "english_name": "Hungarian",
     "status": {
         "terminated": "\nAz alkalmazás leállt.\nA kilépéshez zárd be az ablakot.",
+        "fatal_error": "Végzetes hiba történt:\n",
+        "restarting": "Automatikus újraindítás ekkor: {time}...",
+        "restart_longer": "A hiba kevesebb mint egy órával az előző újraindítás után jelentkezett, ezért a várakozás hosszabb a beállításnál: {minutes} perc.",
         "watching": "Most nézve: {channel}",
         "goes_online": "{channel} ONLINE lett, átváltás...",
         "goes_offline": "{channel} OFFLINE lett, átváltás...",
         "claimed_drop": "Átvett drop: {drop}",
         "no_channel": "Nincs nézhető csatorna. Várakozás egy ONLINE csatornára...",
-        "no_campaign": "Nincs aktív kampány, amelyből dropokat lehetne bányászni. Várakozás aktív kampányra..."
+        "no_campaign": "Nincs aktív kampány, amelyből dropokat lehetne bányászni. Várakozás aktív kampányra...",
+        "logging_level": "Naplózási szint: {level}"
     },
     "login": {
         "unexpected_content": "Váratlan tartalomtípus érkezett, ez általában átirányítás miatt történik. Nem kell esetleg bejelentkezned az internet eléréséhez?"
     },
     "error": {
         "site_down": "A Twitch nem elérhető, újrapróbálkozás {seconds} másodperc múlva...",
-        "no_connection": "Nem sikerült csatlakozni a Twitchhez, újrapróbálkozás {seconds} másodperc múlva... ({url})"
+        "no_connection": "Nem sikerült csatlakozni a Twitchhez, újrapróbálkozás {seconds} másodperc múlva... ({url})",
+        "save_failed": "A mentés nem sikerült, újrapróbálkozás a következő újratöltéskor: {error}",
+        "file_not_saved": "Nem sikerült menteni a fájlt ({file}): {error}",
+        "autostart_not_changed": "Nem sikerült módosítani az automatikus indítás bejegyzését: {error}",
+        "cannot_start": "Nem indítható",
+        "folder_not_writable": "Az alkalmazás nem tud írni abba a mappába, ahonnan fut, és ahol a fájljait tárolja:\n\n{error}\n\nHelyezd át az alkalmazást egy olyan mappába, amelybe tudsz írni."
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "Hiba a parancssori argumentumokban"
     },
     "gui": {
         "output": "Kimenet",
@@ -23,6 +36,7 @@
             "idle": "Tétlen",
             "exiting": "Kilépés...",
             "terminated": "Leállítva",
+            "restarting": "Újraindítás ekkor: {time}",
             "cleanup": "Csatornalista tisztítása...",
             "gathering": "Csatornák gyűjtése...",
             "switching": "Csatornaváltás...",
@@ -50,6 +64,7 @@
             "logging_in": "Bejelentkezés...",
             "required": "Bejelentkezés szükséges",
             "request": "A folytatáshoz jelentkezz be.",
+            "enter_code": "Add meg ezt a kódot a Twitch eszközaktiválási oldalán: {code}",
             "button": "Bejelentkezés"
         },
         "websocket": {
@@ -115,11 +130,14 @@
         "settings": {
             "general": {
                 "name": "Általános",
+                "language": "Nyelv 🌐 (újraindítást igényel): ",
                 "autostart": "Automatikus indítás: ",
                 "tray": "Indítás a tálcára kicsinyítve: ",
                 "tray_notifications": "Tálcaértesítések: ",
                 "dark_mode": "Sötét mód: ",
                 "priority_mode": "Prioritási mód: ",
+                "refresh_interval": "Új streamek keresése: ",
+                "restart_delay": "Újraindítás összeomlás után: ",
                 "proxy": "Proxy (újraindítást igényel):"
             },
             "advanced": {
@@ -134,13 +152,54 @@
                 "ending_soonest": "A leghamarabb véget érő először",
                 "low_availability": "A legkevésbé elérhető először"
             },
+            "refresh_intervals": {
+                "disabled": "Soha (óránkénti újratöltés)",
+                "minutes": "{minutes} percenként"
+            },
+            "restart_delays": {
+                "disabled": "Soha (leállva marad)",
+                "minutes": "{minutes} perc múlva"
+            },
+            "wanted": {
+                "name": "Bányászott játékok",
+                "game": "Játék",
+                "source": "Egyezés forrása",
+                "installed": "telepítve",
+                "unlisted": "egyik listán sem",
+                "count": "{count} játék bányászása, a legmagasabb prioritású először.",
+                "empty": "Még nincs eredmény - nyomd meg lent az „Újratöltés” gombot."
+            },
+            "detect": {
+                "name": "Észlelt játékok",
+                "dirs": "Játékmappák:",
+                "add_dir": "Steam- vagy Epic-játékmappa hozzáadása",
+                "remove_dir": "A kijelölt mappa eltávolítása",
+                "rescan": "Újrakeresés",
+                "scanning": "Játékmappák átvizsgálása...",
+                "scan_error": "Játékkeresés: {error}",
+                "not_a_folder": "Nem mappa: {path}",
+                "no_games": "Nem található Steam- vagy Epic-játék itt: {path}",
+                "failed": "{path}: {reason}",
+                "detected": "{total} telepített játékból {count} egyezik.",
+                "restored": "{count} játék a legutóbbi keresésből.",
+                "empty": "Még nincs észlelt játék - adj hozzá lent egy játékmappát.",
+                "no_dirs": "Nincs hozzáadott mappa."
+            },
             "game_name": "Játék neve",
             "priority": "Prioritás",
             "exclude": "Kizárás",
+            "pattern_matches": "„{pattern}” {count} játékra illeszkedik: {games}",
+            "pattern_empty": "„{pattern}” jelenleg egyetlen kampánnyal rendelkező játékra sem illeszkedik.",
             "reload": "Újratöltés",
             "reload_text": "A legtöbb módosítás életbe lépéséhez újratöltés szükséges: "
         },
         "help": {
+            "about": {
+                "name": "Névjegy",
+                "repository": "Tároló: ",
+                "based_on": "Alapja: ",
+                "based_on_text": "TwitchDropsMiner, szerző: DevilXD"
+            },
             "links": {
                 "name": "Hasznos hivatkozások",
                 "inventory": "Twitch-készlet megtekintése",
@@ -149,7 +208,11 @@
             "how_it_works": "Hogyan működik",
             "how_it_works_text": "Az alkalmazás néhány másodpercenként úgy tesz, mintha nézne egy adott streamet: lekéri a stream metaadatait – ennyi elég a dropok gyűjtéséhez. Így egyáltalán nem kell letölteni a tényleges videó- és hangfolyamot. A csatornák állapotának (ONLINE vagy OFFLINE) naprakészen tartásához websocket-kapcsolat épül ki, amelyen keresztül az alkalmazás értesül a streamek indulásáról és leállásáról, valamint a nézőszám változásairól.",
             "getting_started": "Első lépések",
-            "getting_started_text": "1. Jelentkezz be az alkalmazásba.\n2. Győződj meg róla, hogy a Twitch-fiókod össze van kapcsolva minden olyan kampánnyal, amelyet bányászni szeretnél.\n3. Ha mindent bányásznál, ami csak lehetséges, állítsd a Prioritási módot bármire a „Csak a prioritási lista” kivételével, majd nyomd meg az „Újratöltés” gombot.\n4. Ha bizonyos játékokat előbb szeretnél bányászni, a „Prioritás” listában állíts össze egy sorrendet a kívánt játékokból. A lista tetején lévő játékokat az alkalmazás előbb próbálja bányászni, mint a lejjebb lévőket.\n5. Hagyd a „Prioritási módot” a „Csak a prioritási lista” beállításon, ha nem szeretnél a listán nem szereplő játékokat bányászni. Vagy mégis – ahogy szeretnéd.\n6. A „Kizárás” listával adhatod meg, mely játékokat ne bányássza soha az alkalmazás.\n7. A listák tartalmának vagy a „Prioritási mód” módosítása után nyomd meg az „Újratöltés” gombot, hogy a változtatások életbe lépjenek."
+            "getting_started_text": "1. Jelentkezz be az alkalmazásba.\n2. Győződj meg róla, hogy a Twitch-fiókod össze van kapcsolva minden olyan kampánnyal, amelyet bányászni szeretnél.\n3. Ha mindent bányásznál, ami csak lehetséges, állítsd a Prioritási módot bármire a „Csak a prioritási lista” kivételével, majd nyomd meg az „Újratöltés” gombot.\n4. Ha bizonyos játékokat előbb szeretnél bányászni, a „Prioritás” listában állíts össze egy sorrendet a kívánt játékokból. A lista tetején lévő játékokat az alkalmazás előbb próbálja bányászni, mint a lejjebb lévőket.\n5. Hagyd a „Prioritási módot” a „Csak a prioritási lista” beállításon, ha nem szeretnél a listán nem szereplő játékokat bányászni. Vagy mégis – ahogy szeretnéd.\n6. A „Kizárás” listával adhatod meg, mely játékokat ne bányássza soha az alkalmazás.\n7. A listák tartalmának vagy a „Prioritási mód” módosítása után nyomd meg az „Újratöltés” gombot, hogy a változtatások életbe lépjenek.",
+            "invalidate": {
+                "button": "Érvénytelenítés",
+                "text": "A hitelesítési token érvénytelenítése (kijelentkezés):"
+            }
         }
     }
 }
