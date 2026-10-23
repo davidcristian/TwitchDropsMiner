@@ -13,7 +13,7 @@ new work goes into a new module that they call. This task records where each one
 
 | Module | Lines | After the split |
 | --- | --- | --- |
-| `gui.py` | 3164 | 1369 so far, over the cap, and `ui/`, thirteen files of 35 to 290 lines |
+| `gui.py` | 3164 | 1390 so far, over the cap, and `ui/`, thirteen files of 35 to 290 lines |
 | `twitch.py` | 1734 | `twitch/`, ten files of 6 to 292 lines |
 | `translate.py` | 612 | `translate/`, four files of 7 to 284 lines |
 | `channel.py` | 528 | `channel/`, five files of 7 to 166 lines |
@@ -145,3 +145,6 @@ Splits cost no Twitch requests.
   and `InventoryOverview` for `inventorytab.py`. With its imports that file would have had 318 lines, so
   `update_progress` and `update_drop` moved to the mixin `DropStatusMixin` in `dropstatus.py`. The tray tests
   patch `pystray` in `ui/tray.py`. `gui.py` has 1369 lines and keeps `SettingsPanel` and `GUIManager`.
+- 2026-10-23: `SettingsPanel.__init__`, which had 383 lines, was cut into a method for each frame of the
+  Settings tab, from `_build_wanted_frame` to `_build_reload_frame`, each with the frame's lines unchanged.
+  `__init__` passes them `center_frame` and keeps 45 lines. `gui.py` has 1390 lines.

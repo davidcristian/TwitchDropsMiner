@@ -183,7 +183,16 @@ class SettingsPanel:
         # the content scrolls in a window smaller than it, so it does not set the minimum window size
         self._area = ScrollArea(master, row=0, fit=True)
         center_frame = self._area.inner
+        self._build_wanted_frame(center_frame)
+        self._build_general_frame(center_frame)
+        self._build_advanced_frame(center_frame)
+        self._build_priority_frame(center_frame)
+        self._build_exclude_frame(center_frame)
+        self._build_detect_frame(center_frame)
+        self._build_reload_frame(center_frame)
 
+    def _build_wanted_frame(self, center_frame: ttk.Frame) -> None:
+        """Build the Games Being Mined table across the top, which `set_wanted_games` fills."""
         # Mining summary section
         # NOTE: spans the full width above the other sections, filling what would
         # otherwise be dead space, and answers "so what is it actually mining?"
@@ -216,6 +225,8 @@ class SettingsPanel:
         )
         self._wanted_label.grid(column=0, row=1, columnspan=2, sticky="w", pady=(2, 0))
 
+    def _build_general_frame(self, center_frame: ttk.Frame) -> None:
+        """Build the General section: the language, the checkboxes, the drop-down lists and the proxy."""
         # General section
         general_frame = ttk.LabelFrame(
             center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "general", "name")
@@ -323,6 +334,8 @@ class SettingsPanel:
         self._proxy.config(validatecommand=partial(proxy_validate, self._proxy, self._settings))
         self._proxy.grid(column=0, row=1)
 
+    def _build_advanced_frame(self, center_frame: ttk.Frame) -> None:
+        """Build the Advanced section: the warning and the two checkboxes under it."""
         # Advanced section
         advanced_frame = ttk.LabelFrame(
             center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "advanced", "name")
@@ -368,6 +381,8 @@ class SettingsPanel:
             ),
         ).grid(column=1, row=irow, sticky="w")
 
+    def _build_priority_frame(self, center_frame: ttk.Frame) -> None:
+        """Build the Priority list with its game name field and its add, move and delete buttons."""
         # Priority section
         priority_frame = ttk.LabelFrame(
             center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "priority")
@@ -430,6 +445,8 @@ class SettingsPanel:
         ).grid(column=1, row=5, sticky="nsew")
         priority_frame.rowconfigure(5, weight=1)
 
+    def _build_exclude_frame(self, center_frame: ttk.Frame) -> None:
+        """Build the Exclude list, in alphabetical order, with its game name field and its add and delete buttons."""
         # Exclude section
         exclude_frame = ttk.LabelFrame(
             center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "exclude")
@@ -459,6 +476,8 @@ class SettingsPanel:
             exclude_frame, text="❌", command=self.exclude_delete, width=3, style="Large.TButton"
         ).grid(column=0, row=2, columnspan=2, sticky="nsew")
 
+    def _build_detect_frame(self, center_frame: ttk.Frame) -> None:
+        """Build the Detected Games list, the game folders with their buttons, and Rescan."""
         # Detected games section
         detect_frame = ttk.LabelFrame(
             center_frame, padding=(4, 0, 4, 4), text=_("gui", "settings", "detect", "name")
@@ -519,6 +538,8 @@ class SettingsPanel:
         self._game_dirs_list.insert("end", *self._settings.game_dirs)
         self._restore_detected()
 
+    def _build_reload_frame(self, center_frame: ttk.Frame) -> None:
+        """Build the row under the sections with the Reload button."""
         # Reload button
         reload_frame = ttk.Frame(center_frame)
         reload_frame.grid(column=0, row=3, columnspan=4, pady=4)
