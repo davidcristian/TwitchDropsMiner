@@ -1,9 +1,9 @@
 # The README platform notes break the prose rules
 
-**Status:** open
+**Status:** done 2026-10-23
 **Area:** README
 **Origin:** found on 2026-10-18 while the docs were written
-**Verified:** 2026-10-18
+**Verified:** 2026-10-23
 
 The README rewrite of 2026-10-18 left three sections in the original project's wording: "Notes about the
 Windows build", "Notes about the Linux build" and "Notes about the macOS build". They contain no banned word
@@ -60,3 +60,11 @@ Cost: no Twitch requests.
 - 2026-10-18: Opened. Found while the docs were written. `git log -p` shows that the README rewrite of the
   same day removed only an issue link from these lines, and the byline removal only renamed the app bundle in
   the macOS notes. Both versions of the `xattr` command leave the bundle name unquoted.
+- 2026-10-23: Closed. The three sections state one fact per sentence, and the `xattr` command quotes the bundle
+  name. "These reports can be safely ignored", the format recommendation, "out of the box", the claim that every
+  feature works as on Windows and "It works really well!" are removed. The file folders, the tray libraries, the
+  autostart entries and FUSE link to [troubleshooting.md](../../troubleshooting.md) instead of repeating it. The
+  old note that a moved app needs Autostart turned off and on again was wrong: the box shows unchecked after the
+  move, and one check writes the new path. The size claim was checked against the `dev-build` release of
+  2026-10-22, whose Windows zip file has 22.6 MB and the x86_64 AppImage and PyInstaller zip files 33.2 and
+  56.5 MB. The Wine note and the glibc version are kept from the original text and were not tried here.

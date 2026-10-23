@@ -56,28 +56,26 @@ Every 20 seconds, the app asks Twitch for the list of the newest video segments 
 
 ### Notes about the Windows build:
 
-- To achieve a portable-executable format, the application is packaged with PyInstaller into an `EXE`. Some antivirus engines (including Windows Defender) might report the packaged executable as a trojan, because PyInstaller has been used by others to package malicious Python code in the past. These reports can be safely ignored. If you absolutely do not trust the executable, you'll have to install Python yourself and run everything from source.
-- The executable uses the `%TEMP%` directory for temporary runtime storage of files, that don't need to be exposed to the user (like compiled code and translation files). For persistent storage, the directory the executable resides in is used instead.
-- The autostart feature is implemented as a registry entry to the current user's (`HKCU`) autostart key. It is only altered when toggling the respective option. If you relocate the app to a different directory, the autostart feature will stop working, until you toggle the option off and back on again
+- The Windows build is one executable file, made with [PyInstaller](https://pyinstaller.org/). Some antivirus engines, Windows Defender among them, report it as a trojan, because other people have used PyInstaller to package malicious Python code. To run the app without the executable, install Python and run the app from source, as [docs/building.md](docs/building.md) explains.
+- At each start, the executable unpacks the files that it needs only while it runs, such as compiled code and the translation files, into a temporary folder in `%TEMP%`. The app keeps its own files, such as `settings.json` and `cookies.jar`, in the folder of the executable ([Where the app keeps its files](docs/troubleshooting.md#where-the-app-keeps-its-files)).
+- The Autostart checkbox on the Settings tab writes a value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, the registry key of the programs that start when the current user logs in. The app changes the value only when you click the Autostart or Autostart into tray checkbox. The value names the path of the executable. After you move the app, see [Autostart](docs/troubleshooting.md#autostart).
 
 ### Notes about the Linux build:
 
-- The Linux app is built and distributed using two distinct portable-executable formats: [AppImage](https://appimage.org/) and [PyInstaller](https://pyinstaller.org/).
-- There are no major differences between the two formats, but if you're looking for a recommendation, use the AppImage.
-- The Linux app should work out of the box on any modern distribution, as long as it has `glibc>=2.35`, plus a working display server.
-- The tray icon uses the AppIndicator library, whose bundled GTK libraries need the system's Wayland client libraries, even on X11. Without them, the tray icon has no menu and shows no notifications, but a left click on it still restores the window ([troubleshooting](docs/troubleshooting.md#the-tray-icon-on-linux)).
-- Every feature of the app is expected to work on Linux just as well as it does on Windows.
-- The Autostart option writes `TwitchDropsMiner.desktop` into `$XDG_CONFIG_HOME/autostart`, or into `~/.config/autostart` when that variable is not set, and creates the folder when it does not exist.
-- The size of the Linux app is significantly larger than the Windows app due to the inclusion of the `gtk3` library (and its dependencies), which is required for proper system tray/notifications support.
-- As an alternative to the native Linux app, you can run the Windows app via [Wine](https://www.winehq.org/) instead. It works really well!
+- The Linux app comes in two formats, each for `x86_64` and `aarch64`: an [AppImage](https://appimage.org/), and one executable file made with [PyInstaller](https://pyinstaller.org/). The AppImage needs FUSE to start, or the `--appimage-extract-and-run` flag ([The app does not start](docs/troubleshooting.md#the-app-does-not-start)).
+- Both are built on Ubuntu 22.04 and need glibc 2.35 or newer. They also need an X11 display. On a Wayland desktop, the window opens through XWayland.
+- Both include GTK 3 and the AppIndicator library, which the tray icon uses for its menu and its notifications. The Windows build needs neither, and its download is smaller.
+- The tray icon has its menu and notifications only when the system has the libraries that GTK 3 needs and a DBus session bus. [The tray icon on Linux](docs/troubleshooting.md#the-tray-icon-on-linux) names them and says what the icon does without them.
+- The Autostart checkbox writes `TwitchDropsMiner.desktop` into the XDG autostart folder ([Autostart](docs/troubleshooting.md#autostart)).
+- The Windows build also runs on Linux under [Wine](https://www.winehq.org/).
 
 ### Notes about the macOS build:
 
-- The macOS version is packaged using PyInstaller into a standalone `.app` bundle, distributed as a ZIP archive.
+- The macOS build is a `.app` bundle made with PyInstaller, in a ZIP archive.
 - The macOS build runs only on Macs with Apple silicon (`arm64`), because CI builds it on an Apple silicon runner. On an Intel Mac, run the app from source as [docs/building.md](docs/building.md) explains.
-- Since this application is not signed with a paid Apple Developer Certificate, **macOS Gatekeeper will block it** on the first run (saying it "The application is damaged and can't be opened").
-  - **To fix this**: Either open the Terminal in the folder the app is in (or navigating with `cd path/to/folder`) and enter `xattr -cr Twitch Drops Miner.app` or just type `xattr -cr ` (make sure to put a space at the end), drag and drop the `Twitch Drops Miner.app` file into the terminal window (this will auto-fill the path) and enter
-- Persistent files (like `cookies.jar`, `settings.json`, `lock.file` and the `cache` folder) are stored inside the application bundle in `Twitch Drops Miner.app/Contents/MacOS` (to access them Right-click the application and select `Show Package Contents`)
+- The app is not signed with an Apple Developer ID certificate, which needs a paid Apple Developer Program membership. So at the first start, macOS Gatekeeper blocks it with the message that it "is damaged and can't be opened".
+- To start it, open Terminal in the folder that holds `Twitch Drops Miner.app`, or go there with `cd path/to/folder`, and run `xattr -cr "Twitch Drops Miner.app"`. In place of the `cd` command, you can type `xattr -cr ` with a space at the end, drag `Twitch Drops Miner.app` into the Terminal window, which adds its path, and press Return. The command removes every extended attribute from the bundle and its files, including the quarantine attribute that macOS adds to downloaded files.
+- The app keeps its files, such as `settings.json` and `cookies.jar`, in `Contents/MacOS` inside the bundle ([Where the app keeps its files](docs/troubleshooting.md#where-the-app-keeps-its-files)). To open that folder, right-click the app in Finder, choose `Show Package Contents` and open `Contents/MacOS`.
 
 ### Advanced Usage:
 
