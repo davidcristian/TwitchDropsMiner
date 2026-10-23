@@ -14,7 +14,7 @@ backoff and a fake clock.
   - 0 after a connection that stayed open for at least `min_uptime` seconds. It also resets the backoff.
   - the next delay of `backoff` after a shorter connection, and after a connect that failed.
 - `Backoff` is the `Protocol` of the backoff: `next()` returns a delay in seconds and `reset()` starts again from
-  the first delay. `ExponentialBackoff` in `utils.py` is one ([utils.md](utils.md)).
+  the first delay. `ExponentialBackoff` in `utils/backoff.py` is one ([utils.md](utils.md)).
 
 ## Invariants
 

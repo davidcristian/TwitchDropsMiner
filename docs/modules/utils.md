@@ -1,11 +1,25 @@
-# `utils.py`
+# `utils/`
 
 **Purpose.** Holds the helpers that several modules share: reading and writing JSON files, the delays between
 retries (`ExponentialBackoff`), running tasks, the `Game` class and small helpers for time, random IDs and the
-browser. None of them sends a request to Twitch by itself. The module is over the 300 line cap in AGENTS.md
-([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md) gives its line count).
-`RateLimiter`, which limits the GQL requests, is in [ratelimit.md](ratelimit.md), and `lock_file`, the single
-instance lock, in [instancelock.md](instancelock.md).
+browser. None of them sends a request to Twitch by itself. `RateLimiter`, which limits the GQL requests, is in
+[ratelimit.md](ratelimit.md), and `lock_file`, the single instance lock, in [instancelock.md](instancelock.md).
+
+## Files
+
+| File | What it holds |
+| --- | --- |
+| `__init__.py` | Imports the public names listed in `__all__`. Callers import from `utils`, never from a file of it |
+| `jsonfile.py` | `json_load`, `json_save`, `merge_json`, `json_minify`, `SERIALIZE_ENV` and the private helpers they call |
+| `backoff.py` | `ExponentialBackoff` |
+| `tasks.py` | `task_wrapper`, `start_task` and `AwaitableValue` |
+| `game.py` | `Game` |
+| `desktop.py` | `set_root_icon`, `webopen` and `resource_path` |
+| `misc.py` | `chunk`, `timestamp`, `isonow`, `create_nonce`, `CHARS_ASCII`, `CHARS_HEX_LOWER` and `format_traceback` |
+
+A test that replaces a global that one of these functions reads, such as `random` for `ExponentialBackoff`,
+replaces it in the file that holds the function (`utils.backoff`), because the function reads the globals of its
+own file ([ADR-0020](../adr/ADR-0020-module-splits.md)).
 
 ## Public contract
 
@@ -102,8 +116,9 @@ empty or includes it (`inventory.py`, `twitch.py`). `inventory.py`, `channel.py`
   written as a plain number and read back as one.
 - A task whose result the caller does not keep is started with `start_task`, not with `asyncio.create_task`.
   `ruff check --select RUF006` lists the `asyncio.create_task` calls whose result is not kept.
-- `utils` imports `tkinter` and Pillow at the top, so even its JSON helpers need both installed. It imports
-  `twitch` only inside `task_wrapper`, which avoids an import cycle.
+- `utils` imports `tkinter` and Pillow at the top of `desktop.py`, and `__init__.py` imports every file, so
+  even its JSON helpers need both installed. `tasks.py` imports `twitch` only inside `task_wrapper`, which avoids
+  an import cycle.
 
 **Dependencies.** `constants`, `exceptions`, and `twitch` inside `task_wrapper`. Third party: `yarl` and Pillow.
 Standard library: `tkinter`, `asyncio`, `json` and others.

@@ -85,7 +85,7 @@ def english_fields(english: dict[str, Any]) -> dict[KeyPath, set[str]]:
 
 
 def unread_keys(data: dict[str, Any], english: dict[str, Any], path: KeyPath = ()) -> Iterator[tuple[KeyPath, str]]:
-    """Yield each key that `merge_json` in utils.py removes or replaces when the app loads data, and why."""
+    """Yield each key that `merge_json` in utils/jsonfile.py removes or replaces when the app loads data, and why."""
     for key, value in data.items():
         key_path = (*path, key)
         if key not in english:

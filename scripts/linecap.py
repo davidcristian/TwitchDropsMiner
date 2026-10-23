@@ -18,7 +18,6 @@ EXCEPTIONS = frozenset({
     "inventory.py",
     "translate.py",
     "twitch.py",
-    "utils.py",
     "websocket.py",
 })
 

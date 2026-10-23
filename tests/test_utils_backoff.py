@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import utils
+import utils.backoff
 from utils import ExponentialBackoff
 
 
@@ -63,14 +63,14 @@ def test_the_backoff_is_its_own_iterator():
 @pytest.mark.parametrize("end, factor", [(0, 0.9), (1, 1.1)])
 def test_a_variance_of_a_tenth_changes_each_delay_by_up_to_ten_percent(monkeypatch, end, factor):
     # the random factor at either end of its range
-    monkeypatch.setattr(utils, "random", SimpleNamespace(uniform=lambda low, high: (low, high)[end]))
+    monkeypatch.setattr(utils.backoff, "random", SimpleNamespace(uniform=lambda low, high: (low, high)[end]))
 
     assert delays(ExponentialBackoff(), 4) == pytest.approx([factor * 2**step for step in range(4)])
 
 
 @pytest.mark.parametrize("end, factor", [(0, 0.5), (1, 2.0)])
 def test_a_variance_tuple_sets_the_ends_of_the_factor(monkeypatch, end, factor):
-    monkeypatch.setattr(utils, "random", SimpleNamespace(uniform=lambda low, high: (low, high)[end]))
+    monkeypatch.setattr(utils.backoff, "random", SimpleNamespace(uniform=lambda low, high: (low, high)[end]))
 
     assert delays(ExponentialBackoff(variance=(0.5, 2.0)), 3) == [factor * 2**step for step in range(3)]
 

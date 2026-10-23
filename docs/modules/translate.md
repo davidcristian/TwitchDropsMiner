@@ -54,7 +54,7 @@ script in the AppImage. `Translator.__init__` lists the `*.json` files in it onc
 A language's name is its file name, such as `Polski` for `lang/Polski.json`.
 
 `set_language` does nothing for the language already loaded. For `"English"` it takes a copy of
-`default_translation` and reads no file. For any other language it calls `json_load` (`utils.py`) with
+`default_translation` and reads no file. For any other language it calls `json_load` (`utils/jsonfile.py`) with
 `default_translation` as the template, which changes the file's data in memory:
 
 - A key that the file does not have gets the English string, so a missing key shows in English.

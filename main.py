@@ -55,7 +55,7 @@ if __name__ == "__main__":
     freeze_support()
     import sys
 
-    # truststore and utils.py need Python 3.10, so the check comes before they are imported
+    # truststore and utils need Python 3.10, so the check comes before they are imported
     if sys.version_info < (3, 10):
         raise RuntimeError("Python 3.10 or higher is required")
 

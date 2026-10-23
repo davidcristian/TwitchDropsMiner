@@ -5,22 +5,22 @@
 **Origin:** [AGENTS.md](../../../AGENTS.md#module-map)
 **Verified:** 2026-10-23
 
-AGENTS.md sets a limit of 300 lines per module, and `scripts/linecap.py` checks it. Eight modules are over it,
-measured with `wc -l` on 2026-10-23, and linecap.py names them in `EXCEPTIONS`. An entry there fails once its
-module is under the limit, so a split removes it. AGENTS.md forbids adding a new responsibility to any of them:
+AGENTS.md sets a limit of 300 lines per module, and `scripts/linecap.py` checks it. Eight modules were over it,
+measured with `wc -l` on 2026-10-23, and linecap.py names those not yet split in `EXCEPTIONS`. An entry there
+fails once its module is under the limit, so a split removes it. AGENTS.md forbids adding a new responsibility to any of them:
 new work goes into a new module that they call. This task records where each one can be split, and
 [ADR-0020](../../adr/ADR-0020-module-splits.md) sets how a split is made.
 
-| Module | Lines |
-| --- | --- |
-| `gui.py` | 3164 |
-| `twitch.py` | 1734 |
-| `translate.py` | 612 |
-| `channel.py` | 528 |
-| `inventory.py` | 489 |
-| `constants.py` | 477 |
-| `websocket.py` | 414 |
-| `utils.py` | 371 |
+| Module | Lines | After the split |
+| --- | --- | --- |
+| `gui.py` | 3164 | |
+| `twitch.py` | 1734 | |
+| `translate.py` | 612 | |
+| `channel.py` | 528 | |
+| `inventory.py` | 489 | |
+| `constants.py` | 477 | |
+| `websocket.py` | 414 | |
+| `utils.py` | 371 | `utils/`, seven files of 32 to 127 lines |
 
 `main.py` (238), `cache.py` (186), `settings.py` (135), `registry.py` (112), `exceptions.py` (71) and every
 module in `gamelib/` (at most 246) are under the cap.
@@ -96,3 +96,4 @@ Splits cost no Twitch requests.
 - 2026-10-23: Measured the modules and the classes again. The scheme for the splits became ADR-0020: a package
   of the same name for each module, except `constants.py` and `gui.py`, mixins for the classes over the limit,
   and commits that only move code.
+- 2026-10-23: `utils.py` became the package `utils/`, and its entry left `EXCEPTIONS`.

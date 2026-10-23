@@ -47,7 +47,7 @@ burst of requests puts that account at risk.
 | `settings.py` | `settings.json`: the `SettingsFile` type, its defaults, loading and saving |
 | `constants.py` | Paths, intervals, `State`, `PriorityMode`, and the GQL queries with their hashes |
 | `translate.py` | The `Translation` types and the English strings. Other languages are in `lang/` |
-| `utils.py` | JSON helpers, `ExponentialBackoff` and task helpers |
+| `utils/` | JSON helpers, `ExponentialBackoff`, task helpers and `Game`. `jsonfile.py`, `backoff.py`, `tasks.py`, `game.py`, `desktop.py` (the window icon and the browser) and `misc.py` hold them, and `__init__.py` imports the public names |
 | `cache.py` | The image cache for game and drop artwork |
 | `registry.py` | Windows registry access, used for starting with Windows |
 | `autostart.py` | The entry that starts the app at login: `autostart_entry` returns the registry value, desktop file or launchd plist of each system, and `autostart_command` the command it runs |
@@ -72,7 +72,7 @@ burst of requests puts that account at risk.
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
 | `docs/` | Listed in `docs/index.md`: `ARCHITECTURE.md`, the decisions (`adr/`), one contract doc per module (`modules/`), procedures (`runbooks/`), the deferred work (`refinements/`), and two pages for users, `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
 
-**At most 300 lines per module**, which `scripts/linecap.py` checks. It names the eight inherited modules over the
+**At most 300 lines per module**, which `scripts/linecap.py` checks. It names the seven inherited modules over the
 limit as exceptions until they are split ([task 005](docs/refinements/tasks/005-modules-over-the-line-cap.md)), and
 an exception fails once its module is under the limit. Do not add a new responsibility to a module over the limit:
 put it in a new module and call it from there.

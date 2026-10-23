@@ -10,7 +10,7 @@ import pytest
 from PIL import Image
 from yarl import URL
 
-import utils
+import utils.desktop
 from utils import set_root_icon, webopen
 
 LD = "LD_LIBRARY_PATH"
@@ -48,7 +48,7 @@ def opened(monkeypatch) -> list[tuple[str, str | None]]:
     """Replace the browser with one that records each URL and the LD_LIBRARY_PATH it starts with."""
     calls: list[tuple[str, str | None]] = []
     browser = SimpleNamespace(open_new_tab=lambda url: calls.append((url, os.environ.get(LD))))
-    monkeypatch.setattr(utils, "webbrowser", browser)
+    monkeypatch.setattr(utils.desktop, "webbrowser", browser)
     monkeypatch.delenv(LD, raising=False)
     monkeypatch.delenv(ORIGINAL, raising=False)
     return calls
@@ -56,7 +56,7 @@ def opened(monkeypatch) -> list[tuple[str, str | None]]:
 
 @pytest.mark.parametrize("packaged, platform", [(False, "linux"), (True, "win32"), (True, "darwin")])
 def test_webopen_opens_the_url_with_the_environment_as_it_is(opened, monkeypatch, packaged, platform):
-    monkeypatch.setattr(utils, "IS_PACKAGED", packaged)
+    monkeypatch.setattr(utils.desktop, "IS_PACKAGED", packaged)
     monkeypatch.setattr(sys, "platform", platform)
     monkeypatch.setenv(LD, "/bundle")
     monkeypatch.setenv(ORIGINAL, "/system")
@@ -73,7 +73,7 @@ def test_webopen_opens_the_url_with_the_environment_as_it_is(opened, monkeypatch
 def test_webopen_in_a_packaged_linux_build_starts_the_browser_with_the_original_library_path(
     opened, monkeypatch, current, original
 ):
-    monkeypatch.setattr(utils, "IS_PACKAGED", True)
+    monkeypatch.setattr(utils.desktop, "IS_PACKAGED", True)
     monkeypatch.setattr(sys, "platform", "linux")
     for name, value in ((LD, current), (ORIGINAL, original)):
         if value is not None:

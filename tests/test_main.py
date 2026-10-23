@@ -14,7 +14,7 @@ from main import Parser, log_file_handler
 
 MAIN = Path(__file__).resolve().parent.parent / "main.py"
 # Runs main.py as a script on a fake Python 3.9, which cannot install truststore and has no typing.ParamSpec
-# for utils.py to import
+# for utils to import
 OLD_PYTHON = """
 import runpy
 import sys

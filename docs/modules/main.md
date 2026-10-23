@@ -11,7 +11,7 @@ from it for type checking only.
    runs the app's executable again, and this call runs the child's work and exits
    ([folderpicker.md](folderpicker.md#the-child-process)).
 2. The version check, which raises `RuntimeError("Python 3.10 or higher is required")` on an older Python. The
-   `__main__` block imports only `sys` before it, because `truststore` and `utils.py`, which imports
+   `__main__` block imports only `sys` before it, because `truststore` and `utils`, which imports
    `typing.ParamSpec`, need 3.10.
 3. `end_with_runtime` ([parentexit.md](parentexit.md)). When an AppImage without FUSE started the app as a child
    of its runtime, the kernel sends the app SIGTERM when the runtime ends. It runs before the slower imports,

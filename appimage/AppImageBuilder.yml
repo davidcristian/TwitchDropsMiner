@@ -28,7 +28,7 @@ script:
 
   # Package the app.
   - mkdir -p "$TARGET_APPDIR"/usr/{src,share/icons/hicolor/128x128/apps}
-  - cp -r "$SOURCE_DIR/../lang" "$SOURCE_DIR/../icons" "$SOURCE_DIR/../gamelib" "$SOURCE_DIR"/../*.py "$TARGET_APPDIR/usr/src"
+  - cp -r "$SOURCE_DIR/../lang" "$SOURCE_DIR/../icons" "$SOURCE_DIR/../gamelib" "$SOURCE_DIR/../utils" "$SOURCE_DIR"/../*.py "$TARGET_APPDIR/usr/src"
   - cp "$SOURCE_DIR/pickaxe.png" "$TARGET_APPDIR/usr/share/icons/hicolor/128x128/apps/io.github.devilxd.twitchdropsminer.png"
 
   # Create a virtual environment with meson, ninja and a pip that has the --build-constraint option, which the pip
@@ -36,7 +36,7 @@ script:
   - python3 -m venv env && ./env/bin/python3 -m pip install -c "$SOURCE_DIR/../constraints.txt" pip meson ninja
   - PATH="$PWD/env/bin:$PATH" python3 -m pip install --prefix=/usr --root="$TARGET_APPDIR" -c "$SOURCE_DIR/../constraints.txt" --build-constraint "$SOURCE_DIR/../constraints.txt" -r "$SOURCE_DIR/../requirements.txt"
   # Generate byte-code files and package them for a slightly faster app startup.
-  - python3 -m compileall "$TARGET_APPDIR/usr/src/"*.py "$TARGET_APPDIR/usr/src/gamelib"
+  - python3 -m compileall "$TARGET_APPDIR/usr/src/"*.py "$TARGET_APPDIR/usr/src/gamelib" "$TARGET_APPDIR/usr/src/utils"
 
   # Recursively remove ELF debug symbols, trimming roughly 10 MB off the AppDir.
   - find "$TARGET_APPDIR" -type f -print0 | xargs -0 file | grep -F 'not stripped' | cut -f1 -d':' | sort -V | xargs -r strip -s -v

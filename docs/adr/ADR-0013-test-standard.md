@@ -101,7 +101,7 @@ installed none of these packages, so a fix in one of them was checked by a scrip
 - The Validate job installs the app's packages except PyGObject, and pywin32 only on Windows
   ([ADR-0012](ADR-0012-check-command.md)), and `tests/conftest.py` sets `PYSTRAY_BACKEND=dummy`, so that
   importing `gui.py` loads no tray backend. A test can import every module except `registry.py`, which needs
-  Windows, and `tests/test_imports.py` imports each module that imports the app's packages. So `utils.py` and
+  Windows, and `tests/test_imports.py` imports each module that imports the app's packages. So `utils/` and
   `settings.py`, which import `tkinter`, Pillow and yarl, are in the coverage list of decision 4.
 - A Linux machine with neither `xvfb-run` nor a display skips the tests of the window, so its result differs
   from that of CI, and the skip reason names `xvfb-run`. The Validate job uses the `xvfb-run` of the runner's

@@ -82,7 +82,7 @@ games, the campaigns whose channels it fetches, and the time triggers.
 
 ## Special games
 
-`Game.is_special()` in `utils.py` returns True for the game IDs in `Game.SPECIAL_GAME_IDS`: 509663 and 509672.
+`Game.is_special()` in `utils/game.py` returns True for the game IDs in `Game.SPECIAL_GAME_IDS`: 509663 and 509672.
 The commits that added them name these games "Special Events" and "IRL". A campaign for a special game skips the
 game check: any channel on its ACL, or any channel when it has no ACL, can progress it, whatever game the channel
 streams. `Twitch.can_watch` accepts such a channel without checking its game or its drops status, but only when

@@ -3,7 +3,7 @@
 **Purpose.** The app's settings: the keys of `settings.json` with their types and defaults, and the `Settings`
 object that the rest of the app reads them from. `Settings` also exposes the command line flags, so callers
 read flags and settings from one object. Loading and saving go through `json_load` and `json_save` in
-`utils.py`. To add a setting, follow the recipe in [AGENTS.md](../../AGENTS.md#recipes): a setting missing from
+`utils/jsonfile.py`. To add a setting, follow the recipe in [AGENTS.md](../../AGENTS.md#recipes): a setting missing from
 the `gui.py` preview mock fails only when `python gui.py` runs.
 
 ## Public contract
@@ -65,7 +65,7 @@ widget and is changed only by the app or by editing the file.
 
 ## Loading `settings.json`
 
-`json_load(SETTINGS_PATH, default_settings)` in `utils.py`:
+`json_load(SETTINGS_PATH, default_settings)` in `utils/jsonfile.py`:
 
 1. When `settings.json.new` exists, it reads that file. When that file is not valid JSON, it deletes it.
 2. Otherwise it reads `settings.json`. When that file is not valid JSON, `json.JSONDecodeError` reaches
