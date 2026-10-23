@@ -2,19 +2,32 @@
     "english_name": "German",
     "status": {
         "terminated": "\nAnwendung gestoppt.\nFenster schließen, um die Anwendung zu beenden",
+        "fatal_error": "Schwerwiegender Fehler aufgetreten:\n",
+        "restarting": "Automatischer Neustart um {time}...",
+        "restart_longer": "Der Fehler trat weniger als eine Stunde nach dem letzten Neustart auf, daher ist die Wartezeit länger als eingestellt: {minutes} Minuten.",
         "watching": "{channel} wird zugesehen",
         "goes_online": "{channel} ist ONLINE gegangen, wechseln...",
         "goes_offline": "{channel} ist OFFLINE gegangen, wechseln...",
         "claimed_drop": "Drop abgeholt: {drop}",
         "no_channel": "Keine teilnehmenden Kanäle online. Warten auf Kanäle...",
-        "no_campaign": "Keine aktiven Kampagnen verfügbar. Warten auf neue Kampagne..."
+        "no_campaign": "Keine aktiven Kampagnen verfügbar. Warten auf neue Kampagne...",
+        "logging_level": "Protokollierungsstufe: {level}"
     },
     "login": {
         "unexpected_content": "Unerwarteter Inhaltstyp zurückgegeben, normalerweise aufgrund einer Weiterleitung.\nIst ein Login für den Internetzugang erforderlich?"
     },
     "error": {
         "site_down": "Twitch ist nicht erreichbar. Erneuter Versuch in {seconds} Sekunden...",
-        "no_connection": "Keine Verbindung zu Twitch möglich. Erneuter Versuch in {seconds} Sekunden... ({url})"
+        "no_connection": "Keine Verbindung zu Twitch möglich. Erneuter Versuch in {seconds} Sekunden... ({url})",
+        "save_failed": "Speichern fehlgeschlagen, erneuter Versuch beim nächsten Neuladen: {error}",
+        "file_not_saved": "{file} konnte nicht gespeichert werden: {error}",
+        "autostart_not_changed": "Der Autostart-Eintrag konnte nicht geändert werden: {error}",
+        "cannot_start": "Start nicht möglich",
+        "folder_not_writable": "Die Anwendung kann nicht in den Ordner schreiben, aus dem sie läuft und in dem sie ihre Dateien speichert:\n\n{error}\n\nVerschiebe die Anwendung in einen Ordner, in den du schreiben kannst."
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "Fehler in den Befehlszeilenargumenten"
     },
     "gui": {
         "output": "Protokoll",
@@ -23,6 +36,7 @@
             "idle": "Im Leerlauf",
             "exiting": "Beenden...",
             "terminated": "Abgebrochen",
+            "restarting": "Neustart um {time}",
             "cleanup": "Kanäle aufräumen..",
             "gathering": "Kanäle sammeln...",
             "switching": "Wechsel des Kanals...",
@@ -50,6 +64,7 @@
             "logging_in": "Anmelden...",
             "required": "Anmeldung erforderlich",
             "request": "Bitte einloggen um fortzufahren.",
+            "enter_code": "Gib diesen Code auf der Twitch-Seite zur Geräteaktivierung ein: {code}",
             "button": "Anmelden"
         },
         "websocket": {
@@ -115,18 +130,76 @@
         "settings": {
             "general": {
                 "name": "Allgemein",
+                "language": "Sprache 🌐 (Erfordert Neustart): ",
                 "autostart": "Autostart: ",
                 "tray": "Autostart ins System Tray: ",
+                "tray_notifications": "Tray-Benachrichtigungen: ",
                 "dark_mode": "Dunkler Modus: ",
+                "priority_mode": "Prioritätsmodus: ",
+                "refresh_interval": "Auf neue Streams prüfen alle: ",
+                "restart_delay": "Neustart nach einem Absturz nach: ",
                 "proxy": "Proxy (Erfordert Neustart):"
+            },
+            "advanced": {
+                "name": "Erweitert",
+                "warning": "Warnung!",
+                "warning_text": "Diese Optionen führen zu Fehlverhalten des Miners.\nFalls Probleme auftreten, stelle sicher, dass alle diese Optionen deaktiviert sind.",
+                "enable_badges_emotes": "Teilweise Unterstützung für Abzeichen und Emotes aktivieren: ",
+                "available_drops_check": "Zusätzliche Prüfung verfügbarer Drops aktivieren: "
+            },
+            "priority_modes": {
+                "priority_only": "Nur Priorität",
+                "ending_soonest": "Endet am frühesten",
+                "low_availability": "Geringe Verfügbarkeit zuerst"
+            },
+            "refresh_intervals": {
+                "disabled": "Nie (stündlich neu laden)",
+                "minutes": "{minutes} Min."
+            },
+            "restart_delays": {
+                "disabled": "Nie (gestoppt bleiben)",
+                "minutes": "{minutes} Min."
+            },
+            "wanted": {
+                "name": "Spiele in Bearbeitung",
+                "game": "Spiel",
+                "source": "Zugeordnet durch",
+                "installed": "installiert",
+                "unlisted": "auf keiner Liste",
+                "count": "{count} Spiel(e) in Bearbeitung, höchste Priorität zuerst.",
+                "empty": "Noch nichts ermittelt - drücke unten \"Neu laden\"."
+            },
+            "detect": {
+                "name": "Erkannte Spiele",
+                "dirs": "Spieleordner:",
+                "add_dir": "Steam- oder Epic-Spieleordner hinzufügen",
+                "remove_dir": "Ausgewählten Ordner entfernen",
+                "rescan": "Erneut suchen",
+                "scanning": "Spieleordner werden durchsucht...",
+                "scan_error": "Spielesuche: {error}",
+                "not_a_folder": "Kein Ordner: {path}",
+                "no_games": "Keine Steam- oder Epic-Spiele gefunden in: {path}",
+                "failed": "{path}: {reason}",
+                "detected": "{count} von {total} installierten Spielen zugeordnet.",
+                "restored": "{count} Spiele aus der letzten Suche.",
+                "empty": "Noch nichts erkannt - füge unten einen Spieleordner hinzu.",
+                "no_dirs": "Keine Ordner hinzugefügt."
             },
             "game_name": "Spiel",
             "priority": "Priorität",
             "exclude": "Ausschließen",
+            "pattern_matches": "\"{pattern}\" passt auf {count} Spiel(e): {games}",
+            "pattern_empty": "\"{pattern}\" passt derzeit auf kein Spiel mit einer Kampagne.",
             "reload": "Neu laden",
             "reload_text": "Die meisten Änderungen erfordern ein neu laden, um sofort wirksam zu werden: "
         },
         "help": {
+            "about": {
+                "name": "Über",
+                "repository": "Repository: ",
+                "based_on": "Basiert auf: ",
+                "based_on_text": "TwitchDropsMiner von DevilXD"
+            },
             "links": {
                 "name": "Hilfreiche Links",
                 "inventory": "Twitch Inventar ansehen",
@@ -135,7 +208,11 @@
             "how_it_works": "So funktioniert's",
             "how_it_works_text": "Alle ~60 Sekunden sendet die Anwendung ein \"Minute zugesehen\" Ereignis an den Kanal, dem gerade zugesehen wird.\nDies reicht aus, um den Drop voranzutreiben. Auf diese Weise ist es nicht nötig den Stream herunterzuladen und spart Bandbreite.\nUm den Online- oder Offline-Status der Kanäle aktuell zu halten, wird eine Websocket-Verbindung eingerichtet,\ndie die Kanäle auf ihren Status überprüft.",
             "getting_started": "Erste Schritte",
-            "getting_started_text": "• In der Anwendung anmelden.\n• Stelle sicher, dass das Twitch-Konto mit allen Kampagnen verknüpft ist, an denen Interesse besteht.\n• Sollen alle Drops bearbeitet werden, entferne den Haken bei \"Nur Priorität\" und drücke \"Neu laden\".\n• Sollen nur bestimmte Spiele in betracht gezogen werden, verwende die \"Priorität\" Liste um die Wahl nach Spielen einzugrenzen.\n• Die Liste priorisiert von oben nach unten.\n• Die Option \"Nur Priorität\" verhindert, dass Spiele, die nicht auf der Prioritätenliste stehen, bearbeitet werden.\n• Mit der Liste \"Ausschließen\", ist es möglich Spiele zu filtern, die niemals in betracht gezogen werden sollen.\n• Wenn Listen oder Optionen angepasst wurden, muss \"Neu laden\" gedrückt werden, damit die Änderungen übernommen werden."
+            "getting_started_text": "• In der Anwendung anmelden.\n• Stelle sicher, dass das Twitch-Konto mit allen Kampagnen verknüpft ist, an denen Interesse besteht.\n• Sollen alle Drops bearbeitet werden, entferne den Haken bei \"Nur Priorität\" und drücke \"Neu laden\".\n• Sollen nur bestimmte Spiele in betracht gezogen werden, verwende die \"Priorität\" Liste um die Wahl nach Spielen einzugrenzen.\n• Die Liste priorisiert von oben nach unten.\n• Die Option \"Nur Priorität\" verhindert, dass Spiele, die nicht auf der Prioritätenliste stehen, bearbeitet werden.\n• Mit der Liste \"Ausschließen\", ist es möglich Spiele zu filtern, die niemals in betracht gezogen werden sollen.\n• Wenn Listen oder Optionen angepasst wurden, muss \"Neu laden\" gedrückt werden, damit die Änderungen übernommen werden.",
+            "invalidate": {
+                "button": "Ungültig machen",
+                "text": "Authentifizierungstoken ungültig machen (abmelden):"
+            }
         }
     }
 }
