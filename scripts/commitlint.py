@@ -11,7 +11,7 @@ from typing import NamedTuple
 
 import bannedwords
 from linerefs import FILE
-from sources import DASHES, FENCES, ROOT
+from sources import DASHES, FENCES, ROOT, write_utf8
 
 
 MAX_SUBJECT = 72
@@ -251,4 +251,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    write_utf8()
     sys.exit(main())

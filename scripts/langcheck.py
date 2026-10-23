@@ -11,7 +11,7 @@ from pathlib import Path
 from string import Formatter
 from typing import Any, NamedTuple
 
-from sources import BOM, ROOT, UI_TEXT, Problem, read_text, repo_files
+from sources import BOM, ROOT, UI_TEXT, Problem, read_text, repo_files, write_utf8
 
 
 ENGLISH = "default_translation"
@@ -211,4 +211,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    write_utf8()
     sys.exit(main())

@@ -10,7 +10,7 @@ from pathlib import Path
 import bannedwords
 from sources import (
     BOM, PYTHON_SUFFIXES, ROOT, Line, Problem, comment_runs, docstrings, is_prose_file, prose_runs, read_texts,
-    repo_files,
+    repo_files, write_utf8,
 )
 
 
@@ -78,4 +78,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    write_utf8()
     sys.exit(main())

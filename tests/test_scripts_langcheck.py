@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import subprocess
+import sys
+
 import pytest
 
 import langcheck
@@ -231,3 +234,14 @@ def test_main_prints_the_strings_each_file_lacks_and_returns_0_when_that_is_all(
         "langcheck: lang/B.json lacks 0 strings, which show in English\n"
         "langcheck: 2 files, 0 problems\n"
     )
+
+
+def test_the_script_prints_a_file_name_that_the_code_page_of_its_output_lacks(tmp_path, monkeypatch):
+    root = make_repo(tmp_path, {"translate/english.py": TRANSLATE, "lang/Română.json": "{}"})
+    # Python on Windows writes a pipe in the ANSI code page, such as cp1252, which has no ă
+    monkeypatch.setenv("PYTHONIOENCODING", "cp1252")
+    result = subprocess.run([sys.executable, langcheck.__file__, "--root", str(root)], capture_output=True)
+    assert (result.returncode, result.stdout.decode("utf-8").splitlines()) == (0, [
+        "langcheck: lang/Română.json lacks 1 strings, which show in English",
+        "langcheck: 1 files, 0 problems",
+    ])

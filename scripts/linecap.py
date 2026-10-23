@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from sources import ROOT, Problem, read_texts, repo_files
+from sources import ROOT, Problem, read_texts, repo_files, write_utf8
 
 
 LIMITS = {".py": 300, ".md": 300}
@@ -50,4 +50,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    write_utf8()
     sys.exit(main())

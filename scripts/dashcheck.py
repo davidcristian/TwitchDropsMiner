@@ -8,7 +8,9 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from bannedwords import mask_run, runs
-from sources import DASHES, PYTHON_SUFFIXES, ROOT, Line, Problem, is_prose_file, prose_runs, read_texts, repo_files
+from sources import (
+    DASHES, PYTHON_SUFFIXES, ROOT, Line, Problem, is_prose_file, prose_runs, read_texts, repo_files, write_utf8,
+)
 
 
 # A double hyphen with whitespace or a line break on both sides, so not a flag such as --root or part of ---.
@@ -70,4 +72,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    write_utf8()
     sys.exit(main())

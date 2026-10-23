@@ -6,7 +6,7 @@ import ast
 import sys
 from pathlib import Path
 
-from sources import BOM, ROOT, PYTHON_SUFFIXES, Problem, read_text, repo_files
+from sources import BOM, ROOT, PYTHON_SUFFIXES, Problem, read_text, repo_files, write_utf8
 
 
 # ast.parse rejects most syntax newer than this, such as except*, but not the nested f-string quotes of 3.12
@@ -77,4 +77,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    write_utf8()
     sys.exit(main())

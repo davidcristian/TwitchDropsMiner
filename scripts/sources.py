@@ -6,6 +6,7 @@ import inspect
 import io
 import re
 import subprocess
+import sys
 import tokenize
 from collections.abc import Iterable
 from pathlib import Path
@@ -55,6 +56,12 @@ class Docstring(NamedTuple):
 
     line: int
     text: str
+
+
+def write_utf8() -> None:
+    """Make print write UTF-8, where Windows writes a pipe or a file in a code page that lacks most letters."""
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8")
 
 
 def repo_files(root: Path) -> list[str]:

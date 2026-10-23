@@ -7,7 +7,7 @@ import re
 import sys
 from pathlib import Path
 
-from sources import ROOT, Problem, read_text, repo_files
+from sources import ROOT, Problem, read_text, repo_files, write_utf8
 
 
 AGENTS = "AGENTS.md"
@@ -186,4 +186,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    write_utf8()
     sys.exit(main())

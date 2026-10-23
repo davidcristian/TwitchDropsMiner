@@ -10,7 +10,7 @@ from pathlib import Path
 
 import bannedwords
 from linerefs import line_number_problems
-from sources import ROOT, Line, Problem, markdown_lines, read_texts, repo_files
+from sources import ROOT, Line, Problem, markdown_lines, read_texts, repo_files, write_utf8
 
 
 DOCS_INDEX = "docs/index.md"
@@ -270,4 +270,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    write_utf8()
     sys.exit(main())

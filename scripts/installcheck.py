@@ -12,7 +12,7 @@ from importlib import metadata
 from pathlib import Path
 from typing import NamedTuple
 
-from sources import ROOT
+from sources import ROOT, write_utf8
 
 
 _LINE = re.compile(r"(?P<name>[A-Za-z0-9][A-Za-z0-9._-]*)\s*==\s*(?P<version>[^\s;]+)\s*(?:;\s*(?P<marker>.+))?")
@@ -152,4 +152,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    write_utf8()
     sys.exit(main())
