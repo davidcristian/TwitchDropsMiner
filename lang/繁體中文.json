@@ -2,19 +2,32 @@
     "english_name": "Traditional Chinese",
     "status": {
         "terminated": "\n應用程式已終止，請關閉視窗以離開應用程式。",
+        "fatal_error": "發生嚴重錯誤：\n",
+        "restarting": "將於 {time} 自動重新啟動…",
+        "restart_longer": "錯誤發生在上次重新啟動後不到一小時，因此等待時間比設定值更長：{minutes} 分鐘。",
         "watching": "正在觀看：{channel}",
         "goes_online": "{channel} 頻道已開始實況，正在跳轉…",
         "goes_offline": "{channel} 頻道已結束實況，正在跳轉…",
         "claimed_drop": "已領取掉寶：{drop}",
         "no_channel": "沒有可觀看的頻道，正在等待一個正在實況的頻道…",
-        "no_campaign": "沒有可用於掉寶的活動，正在等待一個有效的掉寶活動…"
+        "no_campaign": "沒有可用於掉寶的活動，正在等待一個有效的掉寶活動…",
+        "logging_level": "日誌等級：{level}"
     },
     "login": {
         "unexpected_content": "回傳的內容類型有誤，通常是由於被重新導向導致。您是否需要先設定 VPN 或登入到目前的網路？"
     },
     "error": {
         "site_down": "Twitch 網頁目前無法開啟，將在 {seconds} 秒後重試…",
-        "no_connection": "無法連接到 Twitch，將在 {seconds} 秒後重試… ({url})"
+        "no_connection": "無法連接到 Twitch，將在 {seconds} 秒後重試… ({url})",
+        "save_failed": "儲存失敗，將在下次重新載入時重試：{error}",
+        "file_not_saved": "無法儲存 {file}：{error}",
+        "autostart_not_changed": "無法變更開機自動啟動項目：{error}",
+        "cannot_start": "無法啟動",
+        "folder_not_writable": "應用程式無法寫入其執行所在的資料夾，應用程式的檔案存放在該資料夾中：\n\n{error}\n\n請將應用程式移至您有寫入權限的資料夾。"
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "命令列參數錯誤"
     },
     "gui": {
         "output": "輸出日誌",
@@ -23,6 +36,7 @@
             "idle": "已完成獲取",
             "exiting": "正在退出…",
             "terminated": "已終止運行",
+            "restarting": "將於 {time} 重新啟動",
             "cleanup": "正在清除頻道…",
             "gathering": "正在搜索實況頻道…",
             "switching": "正在切換實況頻道…",
@@ -50,6 +64,7 @@
             "logging_in": "正在登入…",
             "required": "需要登入",
             "request": "請先登入以繼續。",
+            "enter_code": "請在 Twitch 的裝置啟用頁面輸入此代碼：{code}",
             "button": "登入"
         },
         "websocket": {
@@ -115,11 +130,14 @@
         "settings": {
             "general": {
                 "name": "基本設定",
+                "language": "語言 \ud83c\udf10（需要重新啟動）：",
                 "autostart": "開機時自動啟動：",
                 "tray": "開機時以最小化自動啟動：",
                 "tray_notifications": "啟用系統列通知：",
                 "dark_mode": "深色模式：",
                 "priority_mode": "掉寶模式：",
+                "refresh_interval": "檢查新實況的間隔：",
+                "restart_delay": "當機後自動重新啟動：",
                 "proxy": "代理伺服器（需要重新啟動）："
             },
             "advanced": {
@@ -134,13 +152,54 @@
                 "ending_soonest": "優先觀看即將結束的掉寶活動",
                 "low_availability": "優先觀看可用頻道較少的掉寶活動"
             },
+            "refresh_intervals": {
+                "disabled": "永不（僅每小時重新載入）",
+                "minutes": "{minutes} 分鐘"
+            },
+            "restart_delays": {
+                "disabled": "永不（保持停止）",
+                "minutes": "{minutes} 分鐘"
+            },
+            "wanted": {
+                "name": "正在獲取掉寶的遊戲",
+                "game": "遊戲",
+                "source": "匹配依據",
+                "installed": "已安裝",
+                "unlisted": "不在任何列表中",
+                "count": "正在獲取 {count} 個遊戲的掉寶，依優先順序由高到低。",
+                "empty": "尚無結果，請按下方的「重新載入」。"
+            },
+            "detect": {
+                "name": "偵測到的遊戲",
+                "dirs": "遊戲資料夾：",
+                "add_dir": "新增 Steam 或 Epic 遊戲資料夾",
+                "remove_dir": "移除所選資料夾",
+                "rescan": "重新掃描",
+                "scanning": "正在掃描遊戲資料夾…",
+                "scan_error": "遊戲掃描：{error}",
+                "not_a_folder": "不是資料夾：{path}",
+                "no_games": "找不到 Steam 或 Epic 遊戲：{path}",
+                "failed": "{path}：{reason}",
+                "detected": "已匹配 {total} 個已安裝遊戲中的 {count} 個。",
+                "restored": "上次掃描的 {count} 個遊戲。",
+                "empty": "尚未偵測到遊戲，請在下方新增遊戲資料夾。",
+                "no_dirs": "尚未新增資料夾。"
+            },
             "game_name": "遊戲名稱",
             "priority": "優先掉寶遊戲",
             "exclude": "排除掉寶遊戲",
+            "pattern_matches": "「{pattern}」符合 {count} 個遊戲：{games}",
+            "pattern_empty": "「{pattern}」目前不符合任何有掉寶活動的遊戲。",
             "reload": "重新載入",
             "reload_text": "大多數設置變更後需要重新載入才能立即生效："
         },
         "help": {
+            "about": {
+                "name": "關於",
+                "repository": "儲存庫：",
+                "based_on": "基於：",
+                "based_on_text": "DevilXD 的 TwitchDropsMiner"
+            },
             "links": {
                 "name": "幫助",
                 "inventory": "查看 Twitch 庫存",
