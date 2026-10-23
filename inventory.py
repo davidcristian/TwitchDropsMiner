@@ -150,12 +150,6 @@ class BaseDrop:
     def update_claim(self, claim_id: str):
         self.claim_id = claim_id
 
-    async def generate_claim(self) -> None:
-        # A claim ID has the form UserID#CampaignID#DropID, so it is built from known IDs.
-        # Setting it makes can_claim True even when the drop's progress is not finished.
-        auth_state = await self.campaign._twitch.get_auth()
-        self.claim_id = f"{auth_state.user_id}#{self.campaign.id}#{self.id}"
-
     def rewards_text(self, delim: str = ", ") -> str:
         return delim.join(benefit.name for benefit in self.benefits)
 
@@ -453,9 +447,6 @@ class DropsCampaign:
                 )
             )
         )
-
-    def get_drop(self, drop_id: str) -> TimedDrop | None:
-        return self.timed_drops.get(drop_id)
 
     def preconditions_chain(self) -> set[str]:
         return set(

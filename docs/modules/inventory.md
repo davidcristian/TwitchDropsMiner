@@ -39,8 +39,7 @@ below holds a value of its type, except those that [gqldata.md](gqldata.md#other
 - `time_triggers` is the set of start and end times of the campaign and its drops. The maintenance task ends
   its sleep at these times ([twitch.md](twitch.md#maintenance-task)).
 - `can_earn(channel=None, ignore_channel_status=False)`, `can_earn_within(stamp)` and `bump_minutes(channel)` are
-  described below. `get_drop(drop_id)` returns a drop or None, and nothing calls it
-  ([task 022](../refinements/tasks/022-unused-code.md)).
+  described below.
 
 ### `TimedDrop`
 
@@ -140,8 +139,6 @@ minutes the campaign also displays its `first_drop`.
 - Without `self` data, a drop counts as claimed when at least one of its benefits is in `claimed_benefits` and
   every such award time is between the drop's `starts_at` and `ends_at`. A null `self`, or one whose
   `isClaimed` is null, counts as none.
-- `generate_claim()` builds a claim ID as `<user ID>#<campaign ID>#<drop ID>`. Nothing calls it
-  ([task 022](../refinements/tasks/022-unused-code.md)).
 
 ## Invariants
 

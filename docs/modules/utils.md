@@ -67,7 +67,7 @@ it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays
   collected before it ends. `SettingsPanel.rescan_games` and `HelpTab.invalidate_token` in `gui.py`, and
   `Websocket.stop_nowait` and `Websocket._handle_message` in `websocket.py`, start their tasks with it.
 - **`AwaitableValue[T]`** is a value that coroutines can wait for: `get()` waits until `set()` is called. It
-  also has `has_value()`, `wait()`, `get_with_default(default)` and `clear()`. `Twitch.watching_channel` is one,
+  also has `has_value()`, `get_with_default(default)` and `clear()`. `Twitch.watching_channel` is one,
   and `Websocket._ws` holds each websocket's connection in one.
 - **`chunk(iterable, length)`** yields lists of `length` items; the last list can be shorter. `twitch.py` puts
   20 campaign details, stream checks or available drop checks into one GQL request, and `websocket.py` puts 20
@@ -94,9 +94,6 @@ empty or includes it (`inventory.py`, `twitch.py`). `inventory.py`, `channel.py`
 | `isonow()` | Returns the current UTC time with milliseconds and a `Z` | `channel.py`, in the watch payload that only uncalled methods read |
 | `create_nonce(chars, length)`, `CHARS_ASCII`, `CHARS_HEX_LOWER` | Return a random string | `websocket.py` (30 ASCII characters), `twitch.py` (the 16 character hex session ID) |
 | `format_traceback(exc, **kwargs)` | Returns a traceback as a string | `websocket.py` |
-
-`first_to_complete`, `deduplicate`, `invalidate_cache` and `CHARS_HEX_UPPER` have no caller
-([task 022](../refinements/tasks/022-unused-code.md)).
 
 ## Invariants
 

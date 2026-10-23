@@ -5,7 +5,7 @@ import asyncio
 import logging
 from time import time, monotonic
 from contextlib import suppress
-from typing import Any, Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import aiohttp
 
@@ -64,10 +64,6 @@ class Websocket:
         self._submitted: set[WebsocketTopic] = set()
         # notify GUI
         self.set_status(_("gui", "websocket", "disconnected"))
-
-    @property
-    def connected(self) -> bool:
-        return self._ws.has_value()
 
     def set_status(self, status: str | None = None, refresh_topics: bool = False):
         self._twitch.gui.websockets.update(
@@ -354,9 +350,6 @@ class WebsocketPool:
     @property
     def running(self) -> bool:
         return self._running.is_set()
-
-    def wait_until_connected(self) -> abc.Coroutine[Any, Any, Literal[True]]:
-        return self._running.wait()
 
     def start(self) -> None:
         """Start every connection without waiting for it to connect."""

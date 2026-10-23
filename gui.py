@@ -16,7 +16,7 @@ from tkinter.font import Font, nametofont
 from functools import partial, cached_property
 from datetime import datetime, timedelta, timezone
 from tkinter import Tk, ttk, StringVar, DoubleVar, IntVar
-from typing import Any, Union, Tuple, TypedDict, NoReturn, Generic, TYPE_CHECKING
+from typing import Any, Union, Tuple, TypedDict, NoReturn, TYPE_CHECKING
 
 from yarl import URL
 from PIL.ImageTk import PhotoImage
@@ -388,41 +388,6 @@ class LinkLabel(ttk.Label):
             kwargs["padding"] = (0, 2, 0, 2)
         super().__init__(*args, **kwargs)
         self.bind("<ButtonRelease-1>", lambda e: webopen(self._link))
-
-
-class SelectMenu(tk.Menubutton, Generic[_T]):
-    def __init__(
-        self,
-        master: tk.Misc,
-        *args: Any,
-        tearoff: bool = False,
-        options: dict[str, _T],
-        command: abc.Callable[[_T], Any] | None = None,
-        default: str | None = None,
-        relief: tk._Relief = "solid",
-        background: str = "white",
-        **kwargs: Any,
-    ):
-        width = max((len(k) for k in options.keys()), default=20)
-        super().__init__(
-            master, *args, background=background, relief=relief, width=width, **kwargs
-        )
-        self._menu_options: dict[str, _T] = options
-        self._command = command
-        self.menu = tk.Menu(self, tearoff=tearoff)
-        self.config(menu=self.menu)
-        for name in options.keys():
-            self.menu.add_command(label=name, command=partial(self._select, name))
-        if default is not None and default in self._menu_options:
-            self.config(text=default)
-
-    def _select(self, option: str) -> None:
-        self.config(text=option)
-        if self._command is not None:
-            self._command(self._menu_options[option])
-
-    def get(self) -> _T:
-        return self._menu_options[self.cget("text")]
 
 
 class SelectCombobox(ttk.Combobox):

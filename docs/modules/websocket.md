@@ -23,15 +23,12 @@ this module.
   when `MAX_WEBSOCKETS` connections are full.
 - `remove_topics(topics)` unsubscribes topics, given as strings. While the remaining topics fit in one connection
   fewer, it stops the last connection and moves its topics to the others.
-- `wait_until_connected()` returns a coroutine that ends when the pool is running. Nothing calls it
-  ([task 022](../refinements/tasks/022-unused-code.md)).
 
 ### `Websocket(pool, index)`
 
 One connection. `topics` maps a topic string to its `WebsocketTopic`. `start_nowait()`, `stop(*, remove=False)`,
 `stop_nowait(*, remove=False)`, `request_reconnect()` and `send(message)` are used by the pool and by the
-connection's own task. Nothing reads the `connected` property
-([task 022](../refinements/tasks/022-unused-code.md)).
+connection's own task.
 
 ### Topics
 

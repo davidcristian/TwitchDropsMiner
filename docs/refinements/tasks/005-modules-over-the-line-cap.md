@@ -31,7 +31,7 @@ Line counts are of the class or block today.
 
 - **`gui.py`**
   - The generic widgets `PlaceholderEntry`, `PlaceholderCombobox`, `PaddedListbox`, `MouseOverLabel`,
-    `LinkLabel`, `SelectMenu` and `SelectCombobox`, about 330 lines together.
+    `LinkLabel` and `SelectCombobox`, about 300 lines together.
   - The Main tab panels: `StatusBar`, `WebsocketStatus`, `LoginForm`, `CampaignProgress` (163),
     `ConsoleOutput` and `ChannelList` (239).
   - `TrayIcon` (126), `InventoryOverview` (284) and `HelpTab` (103), one module each.
@@ -59,7 +59,7 @@ Line counts are of the class or block today.
 - **`channel.py`**: `Stream` (131) and `Channel` (344). `Channel` stays over the cap after that split.
 - **`utils.py`**: four groups. The JSON helpers (`json_load`, `json_save`, `merge_json` and the private
   helpers they call), `ExponentialBackoff`, `Game`, and the task helpers such as `task_wrapper` and
-  `first_to_complete`.
+  `start_task`.
 - **`websocket.py`**: `Websocket` (304) and `WebsocketPool` (71).
 
 A split changes imports in other modules, and `gui.py` edits follow the AGENTS.md recipe for repeated lines. A
@@ -91,3 +91,5 @@ Splits cost no Twitch requests.
   Inventory tab moved to the new module `scrollarea.py`, which both tabs use.
 - 2026-10-23: Measured `gui.py` and `SettingsPanel` again after the autostart entry moved to the new module
   `autostart.py`.
+- 2026-10-23: Measured the generic widgets of `gui.py` again after `SelectMenu`, which nothing used, was
+  removed. `first_to_complete` left `utils.py` for the same reason.

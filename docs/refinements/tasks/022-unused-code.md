@@ -107,3 +107,5 @@ cycle, so that change states its count, as [AGENTS.md](../../../AGENTS.md#the-on
   `ast` scan of the tracked `.py` files confirmed that nothing references any of it.
 - 2026-10-20: `WebsocketPool.start` no longer waits for a connection, so `Websocket.start` and
   `Websocket.wait_until_connected` were removed. `AwaitableValue.wait` lost its one caller and is now listed here.
+- 2026-10-23: Removed the five items in `utils.py`, `generate_claim`, `get_drop`, `Websocket.connected`,
+  `WebsocketPool.wait_until_connected` and `SelectMenu`.

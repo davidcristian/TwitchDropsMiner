@@ -73,8 +73,7 @@ and keeps it as an attribute. The labels in quotes are the English strings from 
   completes.
 
 The helper widgets at the top of the file (`PlaceholderEntry`, `PlaceholderCombobox`, `PaddedListbox`,
-`MouseOverLabel`, `LinkLabel`, `SelectCombobox`) are used only inside `gui.py`. `SelectMenu` is defined and not
-used ([task 022](../refinements/tasks/022-unused-code.md)).
+`MouseOverLabel`, `LinkLabel`, `SelectCombobox`) are used only inside `gui.py`.
 
 ## How the GUI runs with asyncio
 
