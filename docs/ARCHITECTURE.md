@@ -29,7 +29,7 @@ main.py
    ├─ _restart_delay    the RestartDelay that sets the wait before each restart after a fatal error
    ├─ GUIManager        gui.py: the Tk root, the four tabs, TrayIcon, ChannelList, SettingsPanel
    │  └─ ImageCache     cache.py: game and reward images in cache/
-   ├─ WebsocketPool     websocket.py: up to 8 Websocket connections to Twitch PubSub
+   ├─ WebsocketPool     websocket/: up to 8 Websocket connections to Twitch PubSub
    ├─ inventory         DropsCampaign list; each campaign holds its TimedDrop objects and ACL channels
    ├─ _drops            every TimedDrop by ID, to match PubSub drop events
    ├─ _campaigns        every DropsCampaign of the latest reload by ID, for the AvailableDrops check

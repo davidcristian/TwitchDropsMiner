@@ -19,7 +19,7 @@ new work goes into a new module that they call. This task records where each one
 | `channel.py` | 528 | |
 | `inventory.py` | 489 | |
 | `constants.py` | 477 | |
-| `websocket.py` | 414 | |
+| `websocket.py` | 414 | `websocket/`, four files of 7 to 252 lines |
 | `utils.py` | 371 | `utils/`, seven files of 32 to 127 lines |
 
 `main.py` (238), `cache.py` (186), `settings.py` (135), `registry.py` (112), `exceptions.py` (71) and every
@@ -97,3 +97,5 @@ Splits cost no Twitch requests.
   of the same name for each module, except `constants.py` and `gui.py`, mixins for the classes over the limit,
   and commits that only move code.
 - 2026-10-23: `utils.py` became the package `utils/`, and its entry left `EXCEPTIONS`.
+- 2026-10-23: `websocket.py` became the package `websocket/`, and its entry left `EXCEPTIONS`. The message
+  methods of `Websocket`, which had 300 lines by itself, moved to the mixin `MessagesMixin`.

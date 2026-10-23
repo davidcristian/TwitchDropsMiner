@@ -34,7 +34,7 @@ lint rules without its formatter or pyright.
      never shows. The scan prints how many English strings each file lacks and does not fail on them, because a
      new string may be missing in other languages, which show it in English. It reads `default_translation`
      from `translate.py` with `ast`, so that it needs only the standard library, as the other scans do.
-   - `linecap.py`: at most 300 lines per Python or markdown file. The seven inherited modules over 300 are named
+   - `linecap.py`: at most 300 lines per Python or markdown file. The six inherited modules over 300 are named
      in `EXCEPTIONS`, and an entry fails once its module is under the limit, so the list only shrinks as
      [task 005](../refinements/tasks/005-modules-over-the-line-cap.md) splits them.
    - `dashcheck.py`: no em dash, en dash or other Unicode dash in any text file, and no spaced `--` in prose:

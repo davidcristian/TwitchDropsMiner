@@ -42,7 +42,7 @@ burst of requests puts that account at risk.
 | `twitch.py` | `Twitch`: login, HTTP and GQL requests, the `State` machine in `_run`, choosing and watching channels |
 | `inventory.py` | `DropsCampaign` and `TimedDrop`: campaign data, drop progress, claiming |
 | `channel.py` | `Channel` and `Stream`: stream state and online checks |
-| `websocket.py` | The PubSub websocket pool and its topics |
+| `websocket/` | The PubSub websocket pool and its topics. `pool.py` holds `WebsocketPool`, `connection.py` holds `Websocket`, and `messages.py` its mixin that receives and sends messages |
 | `gui.py` | The whole GUI. `python gui.py` opens it with mock data and no login, and sends no request |
 | `settings.py` | `settings.json`: the `SettingsFile` type, its defaults, loading and saving |
 | `constants.py` | Paths, intervals, `State`, `PriorityMode`, and the GQL queries with their hashes |
@@ -72,7 +72,7 @@ burst of requests puts that account at risk.
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
 | `docs/` | Listed in `docs/index.md`: `ARCHITECTURE.md`, the decisions (`adr/`), one contract doc per module (`modules/`), procedures (`runbooks/`), the deferred work (`refinements/`), and two pages for users, `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
 
-**At most 300 lines per module**, which `scripts/linecap.py` checks. It names the seven inherited modules over the
+**At most 300 lines per module**, which `scripts/linecap.py` checks. It names the six inherited modules over the
 limit as exceptions until they are split ([task 005](docs/refinements/tasks/005-modules-over-the-line-cap.md)), and
 an exception fails once its module is under the limit. Do not add a new responsibility to a module over the limit:
 put it in a new module and call it from there.

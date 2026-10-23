@@ -1,10 +1,19 @@
-# `websocket.py`
+# `websocket/`
 
-**Purpose.** The module keeps the websocket connections to Twitch PubSub (`wss://pubsub-edge.twitch.tv/v1`), the
+**Purpose.** The package keeps the websocket connections to Twitch PubSub (`wss://pubsub-edge.twitch.tv/v1`), the
 Twitch service that sends events: drop progress, drop claims, notifications, and the stream state and settings
 changes of the tracked channels. `WebsocketPool` distributes the subscribed topics over up to 8 connections. Each
 `Websocket` keeps one connection, subscribes its topics, sends pings and reconnects. No GQL request goes through
-this module.
+this package.
+
+## Files
+
+| File | What it holds |
+| --- | --- |
+| `__init__.py` | Imports `Websocket` and `WebsocketPool`. Callers import from `websocket`, never from a file of it |
+| `pool.py` | `WebsocketPool` |
+| `connection.py` | `Websocket`: its connect and reconnect loop, the pings and the topic subscriptions |
+| `messages.py` | `MessagesMixin`, a base class of `Websocket` that holds its methods that receive, read and send messages: `_gather_recv`, `_handle_recv`, `_handle_message` and `send` |
 
 ## Public contract
 
@@ -136,7 +145,6 @@ warning and skipped, and the rest of its batch is handled. The handlers and what
 - `stop(clear_topics=True)` empties `websockets`, because the next `start` connects every `Websocket` in it. So
   after a restart, `add_topics` creates and connects only the connections that the new topics fill, as on the
   first run. A run with 120 topics and a next run with 10 open 3 connections and then 1.
-- The module is over the 300 line cap ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
 
 **Dependencies.** `utils` (`ExponentialBackoff`, `AwaitableValue`, `start_task`, `task_wrapper`, `chunk`,
 `create_nonce`, `json_minify`, `format_traceback`, `CHARS_ASCII`), `exceptions` (`MinerException`,

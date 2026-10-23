@@ -48,7 +48,7 @@ whole file with the newest contents, and `json_load` reads it in place of `path`
 | `cache.py` | `cache/mapping.json` | `merge=False`; catches `json.JSONDecodeError` ([cache.md](cache.md)) |
 | `translate.py` | `lang/*.json` | merged with `default_translation`. `save_template`, which `main.py` calls in a run from source, saves `lang/English.json` |
 
-`json_minify` is called by `websocket.py` for every message it sends, and by `channel.py` for the spade and GQL
+`json_minify` is called by `websocket/messages.py` for every message it sends, and by `channel.py` for the spade and GQL
 watch payloads, which only uncalled methods read ([channel.md](channel.md#watching)).
 
 ### Request pacing
@@ -62,7 +62,7 @@ it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays
 | --- | --- | --- |
 | `Twitch.request` | 180 | a status of 500 or above and connection errors |
 | `Twitch.gql_request` | 60 | `service error` and `PersistedQueryNotFound` once, after at least 5 seconds; `service timeout`, `request cancelled`, `service unavailable` and `context deadline exceeded` each time |
-| `Websocket._backoff_connect` in `websocket.py`, through `ReconnectDelay` | 180 | connection errors and connections that ended within `WS_MIN_UPTIME`; `reset()` after a connection that stayed open that long |
+| `Websocket._backoff_connect` in `websocket/connection.py`, through `ReconnectDelay` | 180 | connection errors and connections that ended within `WS_MIN_UPTIME`; `reset()` after a connection that stayed open that long |
 
 ### Tasks
 
@@ -79,12 +79,12 @@ it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays
 - **`start_task(coro)`** starts a task that runs `coro`, keeps it in a module level set until it ends and returns
   it. The event loop keeps only a weak reference to a task, so a task that nothing else references can be
   collected before it ends. `SettingsPanel.rescan_games` and `HelpTab.invalidate_token` in `gui.py`, and
-  `Websocket.stop_nowait` and `Websocket._handle_message` in `websocket.py`, start their tasks with it.
+  `Websocket.stop_nowait` and `Websocket._handle_message` in `websocket/`, start their tasks with it.
 - **`AwaitableValue[T]`** is a value that coroutines can wait for: `get()` waits until `set()` is called. It
   also has `has_value()`, `get_with_default(default)` and `clear()`. `Twitch.watching_channel` is one,
   and `Websocket._ws` holds each websocket's connection in one.
 - **`chunk(iterable, length)`** yields lists of `length` items; the last list can be shorter. `twitch.py` puts
-  20 campaign details, stream checks or available drop checks into one GQL request, and `websocket.py` puts 20
+  20 campaign details, stream checks or available drop checks into one GQL request, and `websocket/connection.py` puts 20
   topics into one `LISTEN` or `UNLISTEN` message.
 
 ### `Game`
@@ -106,8 +106,8 @@ empty or includes it (`inventory.py`, `twitch.py`). `inventory.py`, `channel.py`
 | `webopen(url)` | Opens `url` in a new browser tab. In a packaged Linux build it restores `LD_LIBRARY_PATH` from `LD_LIBRARY_PATH_ORIG` for the call, because PyInstaller points it at the bundled libraries | `gui.py` |
 | `timestamp(string)` | Parses a Twitch UTC time, with or without fractions of a second | `inventory.py`, `twitch.py` |
 | `isonow()` | Returns the current UTC time with milliseconds and a `Z` | `channel.py`, in the watch payload that only uncalled methods read |
-| `create_nonce(chars, length)`, `CHARS_ASCII`, `CHARS_HEX_LOWER` | Return a random string | `websocket.py` (30 ASCII characters), `twitch.py` (the 16 character hex session ID) |
-| `format_traceback(exc, **kwargs)` | Returns the traceback of `exc` and of its cause as a string, as `traceback.format_exception` does. `kwargs` such as `chain=False` go to that function | `websocket.py` |
+| `create_nonce(chars, length)`, `CHARS_ASCII`, `CHARS_HEX_LOWER` | Return a random string | `websocket/messages.py` (30 ASCII characters), `twitch.py` (the 16 character hex session ID) |
+| `format_traceback(exc, **kwargs)` | Returns the traceback of `exc` and of its cause as a string, as `traceback.format_exception` does. `kwargs` such as `chain=False` go to that function | `websocket/messages.py` |
 
 ## Invariants
 

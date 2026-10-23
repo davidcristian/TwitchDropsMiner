@@ -1,7 +1,7 @@
 # `reconnect.py`
 
 **Purpose.** `ReconnectDelay` returns the time a PubSub websocket waits before it connects again.
-`Websocket._backoff_connect` in `websocket.py` makes the connections and calls `ReconnectDelay` for each wait
+`Websocket._backoff_connect` in `websocket/connection.py` makes the connections and calls `ReconnectDelay` for each wait
 ([websocket.md](websocket.md#connection-and-reconnect)). The module has no I/O, so a test runs it with a fake
 backoff and a fake clock.
 

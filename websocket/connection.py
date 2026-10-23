@@ -1,6 +1,6 @@
+"""One PubSub websocket connection: connecting, reconnecting, pings and the subscribed topics."""
 from __future__ import annotations
 
-import json
 import asyncio
 import logging
 from time import time, monotonic
@@ -10,36 +10,33 @@ from typing import TYPE_CHECKING
 import aiohttp
 
 from translate import _
-from redact import redact
 from reconnect import ReconnectDelay
-from exceptions import MinerException, WebsocketClosed
-from constants import PING_INTERVAL, PING_TIMEOUT, MAX_WEBSOCKETS, WS_TOPICS_LIMIT, WS_MIN_UPTIME
+from exceptions import WebsocketClosed
+from constants import PING_INTERVAL, PING_TIMEOUT, WS_TOPICS_LIMIT, WS_MIN_UPTIME
 from utils import (
-    CHARS_ASCII,
     chunk,
     start_task,
     task_wrapper,
-    create_nonce,
-    json_minify,
-    format_traceback,
     AwaitableValue,
     ExponentialBackoff,
 )
+
+from .messages import MessagesMixin
 
 if TYPE_CHECKING:
     from collections import abc
 
     from twitch import Twitch
     from gui import WebsocketStatus
-    from constants import JsonType, WebsocketTopic
+    from constants import WebsocketTopic
+    from .pool import WebsocketPool
 
 
-WSMsgType = aiohttp.WSMsgType
 logger = logging.getLogger("TwitchDrops")
 ws_logger = logging.getLogger("TwitchDrops.websocket")
 
 
-class Websocket:
+class Websocket(MessagesMixin):
     def __init__(self, pool: WebsocketPool, index: int):
         self._pool: WebsocketPool = pool
         self._twitch: Twitch = pool._twitch
@@ -235,81 +232,6 @@ class Websocket:
                 )
             self._submitted.update(added)
 
-    async def _gather_recv(self, messages: list[JsonType], timeout: float = 0.5):
-        """
-        Gather incoming messages over the timeout specified.
-        Note that there's no return value - this modifies `messages` in-place.
-        """
-        ws = self._ws.get_with_default(None)
-        assert ws is not None
-        while True:
-            try:
-                raw_message: aiohttp.WSMessage = await ws.receive(timeout=timeout)
-            except aiohttp.ClientConnectionError:
-                raise WebsocketClosed(received=False)
-            if raw_message.type is WSMsgType.TEXT:
-                try:
-                    message: JsonType = json.loads(raw_message.data)
-                except ValueError as exc:
-                    ws_logger.warning(f"Websocket[{self._idx}] skipped a message that is not JSON: {exc}")
-                    continue
-                # logged once parsed, because redact reads the keys of a dict, not of JSON text
-                ws_logger.debug(f"Websocket[{self._idx}] received: {redact(message)}")
-                messages.append(message)
-                continue
-            ws_logger.debug(f"Websocket[{self._idx}] received: {raw_message}")
-            if raw_message.type is WSMsgType.CLOSE:
-                raise WebsocketClosed(received=True)
-            elif raw_message.type is WSMsgType.CLOSED:
-                raise WebsocketClosed(received=False)
-            elif raw_message.type is WSMsgType.CLOSING:
-                pass  # skip these
-            elif raw_message.type is WSMsgType.ERROR:
-                ws_logger.error(
-                    f"Websocket[{self._idx}] error: {format_traceback(raw_message.data)}"
-                )
-                raise WebsocketClosed()
-            else:
-                ws_logger.error(f"Websocket[{self._idx}] error: Unknown message: {raw_message}")
-
-    def _handle_message(self, message):
-        # request the assigned topic to process the response
-        topic = self.topics.get(message["data"]["topic"])
-        if topic is not None:
-            # use a task to not block the websocket
-            start_task(topic(json.loads(message["data"]["message"])))
-
-    async def _handle_recv(self):
-        """
-        Handle receiving messages from the websocket.
-        """
-        # listen over 0.5s for incoming messages
-        messages: list[JsonType] = []
-        with suppress(asyncio.TimeoutError):
-            await self._gather_recv(messages, timeout=0.5)
-        # process them
-        for message in messages:
-            try:
-                msg_type = message["type"]
-                if msg_type == "MESSAGE":
-                    self._handle_message(message)
-                elif msg_type == "PONG":
-                    # move the timestamp to something much later
-                    self._max_pong = self._next_ping
-                elif msg_type == "RESPONSE":
-                    # no special handling for these (for now)
-                    pass
-                elif msg_type == "RECONNECT":
-                    # We've received a reconnect request
-                    ws_logger.warning(f"Websocket[{self._idx}] requested reconnect.")
-                    self.request_reconnect()
-                else:
-                    ws_logger.warning(f"Websocket[{self._idx}] received unknown payload: {redact(message)}")
-            except (KeyError, TypeError, ValueError) as exc:
-                ws_logger.warning(
-                    f"Websocket[{self._idx}] skipped a malformed message ({exc!r}): {redact(message)}"
-                )
-
     def add_topics(self, topics_set: set[WebsocketTopic]):
         changed: bool = False
         while topics_set and len(self.topics) < WS_TOPICS_LIMIT:
@@ -328,87 +250,3 @@ class Websocket:
         for topic in existing:
             del self.topics[topic]
         self._topics_changed.set()
-
-    async def send(self, message: JsonType):
-        ws = self._ws.get_with_default(None)
-        assert ws is not None
-        if message["type"] != "PING":
-            message["nonce"] = create_nonce(CHARS_ASCII, 30)
-        try:
-            await ws.send_json(message, dumps=json_minify)
-        except aiohttp.ClientConnectionError:
-            raise WebsocketClosed(received=False)
-        ws_logger.debug(f"Websocket[{self._idx}] sent: {redact(message)}")
-
-
-class WebsocketPool:
-    def __init__(self, twitch: Twitch):
-        self._twitch: Twitch = twitch
-        self._running = asyncio.Event()
-        self.websockets: list[Websocket] = []
-
-    @property
-    def running(self) -> bool:
-        return self._running.is_set()
-
-    def start(self) -> None:
-        """Start every connection without waiting for it to connect."""
-        self._running.set()
-        for ws in self.websockets:
-            ws.start_nowait()
-
-    async def stop(self, *, clear_topics: bool = False):
-        self._running.clear()
-        await asyncio.gather(*(ws.stop(remove=clear_topics) for ws in self.websockets))
-        if clear_topics:
-            # the next start would connect each kept connection again, also one that the next topics leave empty
-            self.websockets.clear()
-
-    def add_topics(self, topics: abc.Iterable[WebsocketTopic]):
-        # ensure no topics end up duplicated
-        topics_set = set(topics)
-        if not topics_set:
-            # nothing to add
-            return
-        topics_set.difference_update(*(ws.topics.values() for ws in self.websockets))
-        if not topics_set:
-            # none left to add
-            return
-        for ws_idx in range(MAX_WEBSOCKETS):
-            if ws_idx < len(self.websockets):
-                # just read it back
-                ws = self.websockets[ws_idx]
-            else:
-                # create new
-                ws = Websocket(self, ws_idx)
-                if self.running:
-                    ws.start_nowait()
-                self.websockets.append(ws)
-            # ask websocket to take any topics it can - this modifies the set in-place
-            ws.add_topics(topics_set)
-            # see if there's any leftover topics for the next websocket connection
-            if not topics_set:
-                return
-        # if we're here, there were leftover topics after filling up all websockets
-        raise MinerException("Maximum topics limit has been reached")
-
-    def remove_topics(self, topics: abc.Iterable[str]):
-        topics_set = set(topics)
-        if not topics_set:
-            # nothing to remove
-            return
-        for ws in self.websockets:
-            ws.remove_topics(topics_set)
-        # count up all the topics - if we happen to have more websockets connected than needed,
-        # stop the last one and recycle topics from it - repeat until we have enough
-        recycled_topics: list[WebsocketTopic] = []
-        while True:
-            count = sum(len(ws.topics) for ws in self.websockets)
-            if count <= (len(self.websockets) - 1) * WS_TOPICS_LIMIT:
-                ws = self.websockets.pop()
-                recycled_topics.extend(ws.topics.values())
-                ws.stop_nowait(remove=True)
-            else:
-                break
-        if recycled_topics:
-            self.add_topics(recycled_topics)
