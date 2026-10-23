@@ -28,19 +28,6 @@ and keeps it as an attribute. The labels in quotes are the English strings from 
 | `settings` | `SettingsPanel` | Settings | The settings widgets, the lists and the "Reload" button |
 | `help` | `HelpTab` | Help | About, links, help text and the "Invalidate" button |
 
-- **`ChannelList`** has the columns Channel, Status, Game, 🎁 (drops enabled), Viewers and 📋 (the channel is on a
-  campaign's list of allowed channels). "Switch" sends `State.CHANNEL_SWITCH`. `Twitch` then reads
-  `get_selection()` and watches the selected channel when `Twitch.can_watch` allows it, also after a reload
-  ([ADR-0017](../adr/ADR-0017-state-requests.md)). `display(channel,
-  add=True)` adds a row, or updates the row with the same `iid` and stores the new object for it, so
-  `get_selection()` returns the object that `Twitch.channels` holds and not an older one with the same `id`.
-- **`ConsoleOutput.print`** deletes the oldest lines past `MAX_LINES` (5000). A line costs about 0.4 KB, so the
-  box stays near 2 MB of memory in a run of any length. With `--log`, `log.txt` keeps every log line.
-- **`ConsoleOutput`** requests `LINES` (10) lines of height. Its row is the only row of the Main tab that
-  changes height with the window, and a window at its minimum height shows `MIN_LINES` (4) lines.
-- **`CampaignProgress`** counts down the current minute in its own `_timer_loop` task, one step per second.
-  `minute_almost_done()` returns `True` when no countdown runs or `ALMOST_DONE_SECONDS` (10) or fewer are left;
-  `Twitch._watch_loop` calls it to decide whether to send the `CurrentDrop` GQL query.
 - **`InventoryOverview.add_campaign`** is a coroutine, because it awaits `ImageCache.get` for the campaign and
   reward images ([cache.md](cache.md)). `clear()`, which `Twitch.fetch_inventory` calls at each reload, removes
   the campaigns and calls `ImageCache.retry_failed`, so that each failed image download is tried once more
@@ -73,8 +60,8 @@ and keeps it as an attribute. The labels in quotes are the English strings from 
   `cookies.jar` when Twitch returns 200, and sets `State.RESTART`. The button stays disabled until a login
   completes.
 
-The generic widgets, such as `PlaceholderEntry`, `PaddedListbox` and `Notebook`, are in `ui/`
-([ui.md](ui.md#the-generic-widgets)).
+The classes from `StatusBar` to `ChannelList` in the table are in `ui/`, with the generic widgets, such as
+`PlaceholderEntry`, `PaddedListbox` and `Notebook` ([ui.md](ui.md)).
 
 ## How the GUI runs with asyncio
 
@@ -82,7 +69,7 @@ The asyncio event loop and Tk run on one thread, so Tk callbacks and coroutines 
 
 - `GUIManager.start()` creates the `_poll` task in place of `Tk.mainloop()`. It calls `Tk.dooneevent` with
   `TKINTER_DONT_WAIT` (`1 << 1`) until no Tk event is left, writes the queued log records to the Output box
-  ([below](#log-records-in-the-output-box)), then sleeps 0.05 seconds. With that flag Tcl returns at once on an
+  ([ui.md](ui.md#log-records-in-the-output-box)), then sleeps 0.05 seconds. With that flag Tcl returns at once on an
   empty queue, which stops Tk from blocking inside an X11 or Wayland call during a large redraw.
 - `Twitch._run` calls `start()` at the beginning of each run. `stop()` cancels the poll task and the progress
   timer; [main.py](main.md) calls it after the window is closed.
@@ -101,16 +88,6 @@ The asyncio event loop and Tk run on one thread, so Tk callbacks and coroutines 
   request through it.
 - `prevent_close()` clears the close request, so the window stays open to show a fatal error.
 - `close_window()` stops the tray icon, removes the log handler and destroys the Tk root.
-
-### Log records in the Output box
-
-`GUIManager.__init__` adds a `_TKOutputHandler` with `OUTPUT_FORMATTER` to the `TwitchDrops` logger, so every log
-record at the level set by `-v` also appears in the Output box. The handler writes a record of the event loop
-thread at once. A record that another thread logs, such as a `DEBUG` record of the game scan thread at `-vvvv`,
-waits in a `queue.SimpleQueue` of the handler. `_poll` writes the queued records on each pass, and a record of the
-event loop thread writes them before itself, so the lines keep the order of the log calls. A queue, rather than
-`loop.call_soon_threadsafe` as the tray menu uses, needs no running event loop when the window is built, and the
-tests build it without one.
 
 ## Public contract
 
@@ -238,5 +215,5 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
 
 **Dependencies.** Repo modules: `translate`, `cache`, `colorfonts`, `autostart`, `gamelib`, `exceptions`,
 `folderpicker`, `traybackend`, `scrollarea`, `settings` (`default_settings`, `setting_choices`), `utils`,
-`constants` and `ui`; `twitch`, `channel` and `inventory` for type checking only. Third-party: `pystray`,
+`constants` and `ui`; `twitch` and `inventory` for type checking only. Third-party: `pystray`,
 Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on Windows, and `AppKit` on macOS.

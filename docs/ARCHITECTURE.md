@@ -17,7 +17,7 @@ event loop:
   its menu items pass their calls to the loop with `loop.call_soon_threadsafe`. `Twitch.detect_games` runs
   `gamelib.scan_directories` with `asyncio.to_thread`, because reading game folders blocks. A log record of
   either thread waits in a queue until the event loop thread writes it to the Output box
-  ([gui.md](modules/gui.md#log-records-in-the-output-box)).
+  ([ui.md](modules/ui.md#log-records-in-the-output-box)).
 
 ```
 main.py
@@ -27,7 +27,7 @@ main.py
    ├─ ClientSession     the one aiohttp session; its cookie jar is saved to cookies.jar
    ├─ _qgl_limiter      the RateLimiter that every GQL request passes through
    ├─ _restart_delay    the RestartDelay that sets the wait before each restart after a fatal error
-   ├─ GUIManager        gui.py: the Tk root, the four tabs, TrayIcon, ChannelList, SettingsPanel
+   ├─ GUIManager        gui.py: the Tk root, the four tabs, TrayIcon, SettingsPanel; ui/: ChannelList
    │  └─ ImageCache     cache.py: game and reward images in cache/
    ├─ WebsocketPool     websocket/: up to 8 Websocket connections to Twitch PubSub
    ├─ inventory         DropsCampaign list; each campaign holds its TimedDrop objects and ACL channels

@@ -1,20 +1,16 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import time
 import tkinter as tk
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from tkinter import ttk
 
 import pytest
 
-from channel import Channel
 from fakedialog import FakeDialogs
 from fakes import GAME, FakeTwitch, campaign_data, drop_data
 from folderpicker import FolderPicker
-from gqldata import complete_campaigns
 import gui as gui_module
 from gui import GUIManager
 from inventory import DropsCampaign
@@ -57,11 +53,6 @@ async def until(condition) -> None:
     while not condition():
         assert time.monotonic() < deadline
         await asyncio.sleep(0.01)
-
-
-def output_texts(gui: GUIManager) -> list[str]:
-    """Return the lines of the Output box without their time stamps."""
-    return [line.partition(": ")[2] for line in gui.output._text.get("1.0", "end-1c").splitlines()]
 
 
 def folder_dialog_run(window, answer: str | None) -> tuple[ScanningTwitch, GUIManager, FakeDialogs, dict]:
@@ -157,17 +148,6 @@ def test_the_window_leaves_color_fonts_out_before_tk_starts_when_libxft_is_older
     assert events == ["rules", "Tk"]
 
 
-def test_a_channel_added_again_is_the_object_that_the_selection_returns(window):
-    fake = FakeTwitch()
-    channels = window(fake).channels
-    old, new = Channel(fake, id=1, login="c1"), Channel(fake, id=1, login="c1")
-    channels.display(old, add=True)
-    channels.display(new, add=True)
-    channels.set_selection(new)
-
-    assert channels.get_selection() is new
-
-
 def test_a_cancelled_caller_cancels_the_request_it_waits_for(window):
     gui = window(FakeTwitch())
 
@@ -191,44 +171,6 @@ def test_a_cancelled_caller_cancels_the_request_it_waits_for(window):
     assert asyncio.run(scenario()) == []
 
 
-def test_the_output_box_keeps_the_last_5000_lines(window):
-    gui = window(FakeTwitch())
-    for number in range(5003):
-        gui.print(f"line {number}")
-
-    lines = gui.output._text.get("1.0", "end-1c").splitlines()
-    assert len(lines) == 5000
-    assert [line.rpartition(": ")[2] for line in (lines[0], lines[-1])] == ["line 3", "line 5002"]
-
-
-def test_a_record_logged_on_another_thread_reaches_the_output_box(window, caplog):
-    gui = window(FakeTwitch())
-    caplog.set_level(logging.DEBUG, logger="TwitchDrops")
-    logger = logging.getLogger("TwitchDrops")
-
-    async def scenario() -> None:
-        gui.start()
-        # Twitch.detect_games runs the game scan in a thread in this way, and gamelib logs at DEBUG there
-        await asyncio.to_thread(logger.debug, "Game library: malformed manifest")
-        # longer than the wait of GUIManager._poll between its passes, so it makes at least one more
-        await asyncio.sleep(0.2)
-        gui.stop()
-
-    asyncio.run(scenario())
-
-    assert output_texts(gui)[-1] == "DEBUG: Game library: malformed manifest"
-
-
-def test_a_record_from_another_thread_is_shown_before_a_later_record_of_the_window_thread(window):
-    gui = window(FakeTwitch())
-    logger = logging.getLogger("TwitchDrops")
-    with ThreadPoolExecutor(max_workers=1) as other:
-        other.submit(logger.error, "first").result()
-    logger.error("second")
-
-    assert output_texts(gui)[-2:] == ["ERROR: first", "ERROR: second"]
-
-
 def test_the_tray_title_keeps_the_line_break_after_a_shortened_game_name(window):
     fake = FakeTwitch()
     campaign = DropsCampaign(fake, campaign_data([drop_data("d1")], game={**GAME, "name": "N" * 100}), {})
@@ -237,16 +179,6 @@ def test_the_tray_title_keeps_the_line_break_after_a_shortened_game_name(window)
 
     # a tray title has at most 127 characters, so the game name is cut to fit
     assert title.split("\n") == ["Twitch Drops Miner", "N" * 84 + "...", "Reward d1 0.0% (0/1)"]
-
-
-def test_the_main_tab_shows_no_text_for_a_campaign_name_that_a_server_error_set_to_null(window):
-    fake = FakeTwitch()
-    data = complete_campaigns({"c1": {**campaign_data([drop_data("d1")]), "name": None}})["c1"]
-    gui = window(fake)
-
-    gui.display_drop(DropsCampaign(fake, data, {}).timed_drops["d1"], countdown=False)
-
-    assert gui.progress._vars["campaign"]["name"].get() == ""
 
 
 @pytest.mark.skipif(tk.TkVersion >= 9, reason="Tk 9 sends a wheel turn on X11 as <MouseWheel>")

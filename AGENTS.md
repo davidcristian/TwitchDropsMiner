@@ -44,7 +44,7 @@ burst of requests puts that account at risk.
 | `channel/` | `Channel` and `Stream`: stream state and online checks. `tracked.py` holds `Channel`, `online.py` and `watch.py` its mixins for the online checks and the watch requests, and `stream.py` holds `Stream` |
 | `websocket/` | The PubSub websocket pool and its topics. `pool.py` holds `WebsocketPool`, `connection.py` holds `Websocket`, and `messages.py` its mixin that receives and sends messages |
 | `gui.py` | `GUIManager`, which builds the window, and its panels and tabs. `python gui.py` opens it with mock data and no login, and sends no request |
-| `ui/` | The parts of the window that `gui.py` builds and imports. `placeholder.py` holds `PlaceholderEntry` and `PlaceholderCombobox`, and `widgets.py` the other generic widgets and `Notebook`, the tabs |
+| `ui/` | The parts of the window that `gui.py` builds and imports. `placeholder.py` holds `PlaceholderEntry` and `PlaceholderCombobox`, `widgets.py` the other generic widgets and `Notebook`, the tabs, and `status.py`, `login.py`, `progress.py`, `output.py` and `channellist.py` the panels of the Main tab |
 | `settings.py` | `settings.json`: the `SettingsFile` type, its defaults, loading and saving |
 | `constants.py` | Paths, intervals, `State`, `PriorityMode` and the logging values |
 | `twitchapi/` | What the app sends to Twitch: `ClientType` in `clients.py`, the GQL queries with their hashes in `gql.py`, and `WebsocketTopic` in `topics.py` |

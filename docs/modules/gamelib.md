@@ -252,8 +252,8 @@ next scan.
   missed game can be added to the Priority list by hand ([ADR-0004](../adr/ADR-0004-installed-game-detection.md)).
 - Patterns and matching use the same `normalize`, so a list entry and a detected name compare the same way.
 - The scan reads the file system and blocks, so callers in the event loop run it in a thread. A `DEBUG` record
-  that it logs there reaches the Output box through the queue of `_TKOutputHandler` in `gui.py`
-  ([gui.md](gui.md#log-records-in-the-output-box)).
+  that it logs there reaches the Output box through the queue of `_TKOutputHandler` in `ui/output.py`
+  ([ui.md](ui.md#log-records-in-the-output-box)).
 - `appimage/AppImageBuilder.yml` copies and compiles `gamelib/` by name ([AGENTS.md](../../AGENTS.md#recipes)).
 - gamelib builds no text that the user sees. `Twitch.detect_games` turns each `ScanError` into a line of the
   Output box with `_()`, from the key that `SCAN_ERROR_KEYS` in `twitch/` names for its kind.

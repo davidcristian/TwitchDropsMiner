@@ -80,7 +80,7 @@ The scan thread and the two `DEBUG` records came with installed game detection o
 - 2026-10-22: Done. The claim still held: with the real window under Xvfb, a log call on another thread raised
   `RuntimeError: main thread is not in main loop` after one second. `_TKOutputHandler` now queues a record of
   another thread, and the event loop thread writes it in `GUIManager._poll` or before its own next record
-  ([gui.md](../../modules/gui.md#log-records-in-the-output-box)). A queue needs no running event loop when the
+  ([ui.md](../../modules/ui.md#log-records-in-the-output-box)). A queue needs no running event loop when the
   window is built, which `loop.call_soon_threadsafe` needs, and the tests build it without one. The third
   option, an `emit` that catches its own errors, was left out, because no Tk call on another thread is left to
   fail. The game scan thread is the only one that logs to `TwitchDrops`: pystray logs to its own logger, and the

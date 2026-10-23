@@ -83,7 +83,7 @@ are also in [troubleshooting.md](../troubleshooting.md#command-line-flags).
 - `TwitchDrops.gql` and `TwitchDrops.websocket` are set to DEBUG by their debug flag, to INFO at `-vvvv` or more
   so that the raw requests and messages stay hidden, and otherwise to NOTSET, which uses the `TwitchDrops` level.
 - `GUIManager` adds the handler that writes each record to the Output box from the event loop thread, also a
-  record that another thread logs ([gui.md](gui.md#log-records-in-the-output-box)).
+  record that another thread logs ([ui.md](ui.md#log-records-in-the-output-box)).
 
 ## The run and the exit
 
