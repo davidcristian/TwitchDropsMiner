@@ -2,19 +2,32 @@
     "english_name": "Portuguese",
     "status": {
         "terminated": "\nAplicação Finalizada.\nFeche a janela para sair do programa.",
+        "fatal_error": "Ocorreu um erro fatal:\n",
+        "restarting": "Reiniciando automaticamente às {time}...",
+        "restart_longer": "O erro ocorreu menos de uma hora após o último reinício, então a espera é maior que a configurada: {minutes} minutos.",
         "watching": "Assistindo o: {channel}",
         "goes_online": "{channel} esta ONLINE, Mudando...",
         "goes_offline": "{channel} ficou OFFLINE, Mudando...",
         "claimed_drop": "Coletou o drop: {drop}",
         "no_channel": "Sem canal disponivel para assisitir. Esperando por um canal ONLINE...",
-        "no_campaign": "Sem campanhas ativas no momento para minerar. Esperando por uma campanha ativa..."
+        "no_campaign": "Sem campanhas ativas no momento para minerar. Esperando por uma campanha ativa...",
+        "logging_level": "Nível de registro: {level}"
     },
     "login": {
         "unexpected_content": "Ocorreu um erro inesperado, geralmente causado por redirecionamento de internet. Você precisa se autenticar para ter acesso à internet?"
     },
     "error": {
         "site_down": "Twitch está fora do ar, tentando novamente em {seconds} segundos...",
-        "no_connection": "Sem conexão com a TWITCH, reconectando em {seconds} segundos... ({url})"
+        "no_connection": "Sem conexão com a TWITCH, reconectando em {seconds} segundos... ({url})",
+        "save_failed": "Falha ao salvar, nova tentativa no próximo recarregamento: {error}",
+        "file_not_saved": "Não foi possível salvar {file}: {error}",
+        "autostart_not_changed": "Não foi possível alterar a entrada de auto-início: {error}",
+        "cannot_start": "Não é possível iniciar",
+        "folder_not_writable": "O app não consegue gravar na pasta de onde é executado, onde guarda os seus arquivos:\n\n{error}\n\nMova o app para uma pasta onde você possa gravar."
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "Erro nos argumentos da linha de comando"
     },
     "gui": {
         "output": "Saída",
@@ -23,6 +36,7 @@
             "idle": "Em espera",
             "exiting": "Saindo",
             "terminated": "Finalizado",
+            "restarting": "Reiniciando às {time}",
             "cleanup": "Limpando os Canais...",
             "gathering": "Coletando Canais...",
             "switching": "Mudando o canal...",
@@ -50,6 +64,7 @@
             "logging_in": "Entrando...",
             "required": "Login necessário",
             "request": "Por favor, entre para continuar.",
+            "enter_code": "Digite este código na página de ativação de dispositivo da Twitch: {code}",
             "button": "Entrar"
         },
         "websocket": {
@@ -115,19 +130,76 @@
         "settings": {
             "general": {
                 "name": "Geral",
+                "language": "Idioma \ud83c\udf10 (requer o reinício do app): ",
                 "autostart": "Auto-início: ",
                 "tray": "Auto-iniciar na área de notificação: ",
                 "tray_notifications": "Notificações: ",
                 "dark_mode": "Modo escuro: ",
+                "priority_mode": "Modo de prioridade: ",
+                "refresh_interval": "Verificar novas streams a cada: ",
+                "restart_delay": "Reiniciar após uma falha em: ",
                 "proxy": "Proxy (requer o reinício do app):"
+            },
+            "advanced": {
+                "name": "Avançado",
+                "warning": "Aviso!",
+                "warning_text": "Estas opções farão o minerador funcionar de forma incorreta.\nSe tiver algum problema, verifique se todas estas opções estão desativadas.",
+                "enable_badges_emotes": "Ativar suporte parcial a emblemas e emotes: ",
+                "available_drops_check": "Ativar verificação extra de drops disponíveis: "
+            },
+            "priority_modes": {
+                "priority_only": "Apenas lista de prioridade",
+                "ending_soonest": "Fim mais próximo",
+                "low_availability": "Menor disponibilidade"
+            },
+            "refresh_intervals": {
+                "disabled": "Nunca (recarga horária)",
+                "minutes": "{minutes} min"
+            },
+            "restart_delays": {
+                "disabled": "Nunca (ficar parado)",
+                "minutes": "{minutes} min"
+            },
+            "wanted": {
+                "name": "Jogos sendo minerados",
+                "game": "Jogo",
+                "source": "Selecionado por",
+                "installed": "instalado",
+                "unlisted": "em nenhuma lista",
+                "count": "Minerando {count} jogo(s), maior prioridade primeiro.",
+                "empty": "Nada definido ainda - clique em \"Recarregar\" abaixo."
+            },
+            "detect": {
+                "name": "Jogos detectados",
+                "dirs": "Pastas de jogos:",
+                "add_dir": "Adicionar uma pasta de jogos Steam ou Epic",
+                "remove_dir": "Remover a pasta selecionada",
+                "rescan": "Escanear novamente",
+                "scanning": "Escaneando pastas de jogos...",
+                "scan_error": "Escaneamento de jogos: {error}",
+                "not_a_folder": "Não é uma pasta: {path}",
+                "no_games": "Nenhum jogo Steam ou Epic encontrado em: {path}",
+                "failed": "{path}: {reason}",
+                "detected": "{count} de {total} jogos instalados reconhecidos.",
+                "restored": "{count} jogos do último escaneamento.",
+                "empty": "Nada detectado ainda - adicione uma pasta de jogos abaixo.",
+                "no_dirs": "Nenhuma pasta adicionada."
             },
             "game_name": "Nome do jogo",
             "priority": "Prioridade",
             "exclude": "Excluir",
+            "pattern_matches": "\"{pattern}\" corresponde a {count} jogo(s): {games}",
+            "pattern_empty": "\"{pattern}\" não corresponde a nenhum jogo com campanha no momento.",
             "reload": "Recarregar",
             "reload_text": "A maioria das mudanças requer o reinício do app para serem efetivadas: "
         },
         "help": {
+            "about": {
+                "name": "Sobre",
+                "repository": "Repositório: ",
+                "based_on": "Baseado em: ",
+                "based_on_text": "TwitchDropsMiner por DevilXD"
+            },
             "links": {
                 "name": "Links Uteis",
                 "inventory": "Ver inventario da Twitch",
@@ -136,7 +208,11 @@
             "how_it_works": "Como funciona",
             "how_it_works_text": "A cada 60 segundos, o app envia um event \"minute watched\" ao canal que está sendo assistido no momento - Isso é o suficiente para avançar o progresso dos drops. Note que esse modo evita a necessidade de baixar o áudio e vídeo da stream, como é feito tradicionalmente quando se utiliza um navegador web. Para manter atualizado o status do canal (ONLINE ou OFFLINE), é estabelecida uma conexão websocket, que recebe diversos eventos relacionados a stream atual, como: se ela está ligada ou desligada, ou número total de espectadores.",
             "getting_started": "Iniciando",
-            "getting_started_text": "1. Autentique-se no app com a sua conta da Twitch.\n2. Certifique-se que todas campanhas estão conectadas com as contas dos respectivos aplicativos.\n3. Se quiser coletar tudo, desmarque \"Apenas com Prioridade\" e clique em \"Recarregar\".\n4. Se quiser coletar apenas de certos jogos, use a lista \"Prioridade\" para configurar a lista de jogos que você quer coletar. A lista segue a ordem que é apresentada, do primeiro ao último, sendo assim, a coleta continuará para os jogos seguintes assim que o jogo anterior esteja completo.\n5. Mantenha a opção \"Priority only\" ativa, para evitar que a coleta ocorra em jogos que não estão na lista de prioridades. Ou não - você quem manda.\n6. Use a lista \"Excluir\" para jogos que NUNCA devam ser coletados.\n7. Qualquer mudança feita nas listas requer que você clique no botão \"Recarregar\" para que as mudanças tenham efeito."
+            "getting_started_text": "1. Autentique-se no app com a sua conta da Twitch.\n2. Certifique-se que todas campanhas estão conectadas com as contas dos respectivos aplicativos.\n3. Se quiser coletar tudo, desmarque \"Apenas com Prioridade\" e clique em \"Recarregar\".\n4. Se quiser coletar apenas de certos jogos, use a lista \"Prioridade\" para configurar a lista de jogos que você quer coletar. A lista segue a ordem que é apresentada, do primeiro ao último, sendo assim, a coleta continuará para os jogos seguintes assim que o jogo anterior esteja completo.\n5. Mantenha a opção \"Priority only\" ativa, para evitar que a coleta ocorra em jogos que não estão na lista de prioridades. Ou não - você quem manda.\n6. Use a lista \"Excluir\" para jogos que NUNCA devam ser coletados.\n7. Qualquer mudança feita nas listas requer que você clique no botão \"Recarregar\" para que as mudanças tenham efeito.",
+            "invalidate": {
+                "button": "Invalidar",
+                "text": "Invalidar o token de autenticação (sair):"
+            }
         }
     }
 }
