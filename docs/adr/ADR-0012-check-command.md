@@ -28,9 +28,12 @@ lint rules without its formatter or pyright.
    - `syntaxcheck.py`: every Python file parses with `ast.parse(feature_version=(3, 10))`, and has no starred
      item in a subscript (`a[*b]`) or starred `*args` annotation, which that call accepts on Python 3.11 and
      later. Run on Python 3.12, it does not find nested f-string quotes, which the Validate job on 3.10 finds.
-   - `langcheck.py`: every `lang/*.json` file is a JSON object, and no string in it has a `str.format` field
-     that the English string at the same keys lacks. It reads `default_translation` from `translate.py` with
-     `ast`, so that it needs only the standard library, as the other scans do.
+   - `langcheck.py`: every `lang/*.json` file is a JSON object, has no key that the app does not read, and has
+     no string with a `str.format` field that the English string at the same keys lacks. A key the app does not
+     read is one that `merge_json` in `utils.py` removes or replaces when the app loads the file, so its text
+     never shows. The scan prints how many English strings each file lacks and does not fail on them, because a
+     new string may be missing in other languages, which show it in English. It reads `default_translation`
+     from `translate.py` with `ast`, so that it needs only the standard library, as the other scans do.
    - `linecap.py`: at most 300 lines per Python or markdown file. The eight inherited modules over 300 are named
      in `EXCEPTIONS`, and an entry fails once its module is under the limit, so the list only shrinks as
      [task 005](../refinements/tasks/005-modules-over-the-line-cap.md) splits them.

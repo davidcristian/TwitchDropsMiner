@@ -6,12 +6,12 @@ import langcheck
 from gitrepo import make_repo
 from sources import Problem
 
-ENGLISH = {("error", "no_connection"): {"seconds", "url"}, ("gui", "idle"): set()}
+ENGLISH = {"error": {"no_connection": "Retrying in {seconds} s ({url})"}, "gui": {"idle": "Idle"}}
 TRANSLATE = 'default_translation: Translation = {"error": {"no_connection": "Retrying in {seconds} s ({url})"}}\n'
 
 
-def test_lang_problems_returns_nothing_for_a_json_object():
-    assert langcheck.lang_problems("lang/Polski.json", '{"gui": {"tab": "Karta"}}', ENGLISH) == []
+def test_lang_problems_returns_nothing_for_a_json_object_with_english_keys():
+    assert langcheck.lang_problems("lang/Polski.json", '{"gui": {"idle": "Bezczynny"}}', ENGLISH) == []
 
 
 def test_lang_problems_reports_invalid_json_at_the_line_of_the_error():
@@ -72,9 +72,13 @@ def test_lang_problems_accepts_a_lone_brace_in_a_string_whose_english_has_no_fie
     assert langcheck.lang_problems("lang/x.json", '{"gui": {"idle": "{ idle"}}', ENGLISH) == []
 
 
-def test_lang_problems_skips_a_key_and_a_value_type_english_does_not_have():
+def test_lang_problems_checks_no_field_of_a_key_or_a_value_type_english_does_not_have():
     text = '{"error": {"other": "{x}", "no_connection": 5}, "gui": {"idle": {"nested": "{x}"}}}'
-    assert langcheck.lang_problems("lang/x.json", text, ENGLISH) == []
+    assert [problem.message for problem in langcheck.lang_problems("lang/x.json", text, ENGLISH)] == [
+        "error.other is a key that the app does not read",
+        "error.no_connection is a number where English has a string, so the app does not read it",
+        "gui.idle is an object where English has a string, so the app does not read it",
+    ]
 
 
 @pytest.mark.parametrize(
@@ -99,20 +103,23 @@ def test_format_fields_raises_value_error_where_str_format_does(template):
         langcheck.format_fields(template)
 
 
-def test_english_fields_reads_the_annotated_dict_literal_and_its_joined_strings():
+def test_english_strings_reads_the_annotated_dict_literal_and_its_joined_strings():
     source = (
         "﻿other: dict = {'a': '{x}'}\n"
         "default_translation: Translation = {\n"
-        "    'status': {'watching': 'Watching: {channel}', 'idle': ('Idle, ' 'waiting {n}'), 'count': 3},\n"
+        "    'status': {'watching': 'Watching: {channel}', 'idle': ('Idle, ' 'waiting {n}')},\n"
         "    'name': 'English',\n"
-        "    'broken': '{',\n"
         "}\n"
     )
-    assert langcheck.english_fields(source) == {
-        ("status", "watching"): {"channel"},
-        ("status", "idle"): {"n"},
-        ("name",): set(),
+    assert langcheck.english_strings(source) == {
+        "status": {"watching": "Watching: {channel}", "idle": "Idle, waiting {n}"},
+        "name": "English",
     }
+
+
+def test_english_fields_gives_each_string_its_fields_and_leaves_out_one_str_format_cannot_read():
+    english = {"status": {"watching": "Watching: {channel}", "count": 3}, "name": "English", "broken": "{"}
+    assert langcheck.english_fields(english) == {("status", "watching"): {"channel"}, ("name",): set()}
 
 
 @pytest.mark.parametrize(
@@ -126,8 +133,8 @@ def test_english_fields_reads_the_annotated_dict_literal_and_its_joined_strings(
         "default_translation: Translation = {\n",
     ],
 )
-def test_english_fields_returns_none_without_an_annotated_dict_literal(source):
-    assert langcheck.english_fields(source) is None
+def test_english_strings_returns_none_without_an_annotated_dict_literal(source):
+    assert langcheck.english_strings(source) is None
 
 
 def test_key_lines_gives_a_name_repeated_at_two_depths_the_line_of_each():
@@ -160,7 +167,7 @@ def test_check_reads_only_the_json_files_in_lang(tmp_path):
         "lang/README.md": "not json",
         "settings.json": "not json",
     })
-    assert langcheck.check(root) == (2, [Problem("lang/Bad.json", 1, "is not a JSON object")])
+    assert langcheck.check(root) == (2, [Problem("lang/Bad.json", 1, "is not a JSON object")], {"lang/Good.json": 1})
 
 
 def test_check_compares_the_fields_with_default_translation_in_translate_py(tmp_path):
@@ -170,7 +177,9 @@ def test_check_compares_the_fields_with_default_translation_in_translate_py(tmp_
         "lang/Polski.json": '{"error": {"no_connection": "{seconds} s ({url})"}}',
     })
     message = "error.no_connection has the field {detik}, which the English string lacks"
-    assert langcheck.check(root) == (2, [Problem("lang/Indonesian.json", 1, message)])
+    assert langcheck.check(root) == (
+        2, [Problem("lang/Indonesian.json", 1, message)], {"lang/Indonesian.json": 0, "lang/Polski.json": 0}
+    )
 
 
 @pytest.mark.parametrize("translate", [None, "default_translation = {}\n", b"\xff\xfe"])
@@ -182,28 +191,39 @@ def test_check_reports_a_translate_py_without_default_translation_and_checks_the
     assert langcheck.check(root) == (2, [
         Problem("translate.py", 1, "has no default_translation dict literal to read the English strings from"),
         Problem("lang/Bad.json", 1, "is not a JSON object"),
-    ])
+    ], {})
 
 
 def test_check_counts_and_reports_a_language_file_that_is_not_utf8(tmp_path):
     root = make_repo(tmp_path, {"translate.py": TRANSLATE, "lang/Latin.json": '{"a": "café"}'.encode("latin-1")})
-    assert langcheck.check(root) == (1, [Problem("lang/Latin.json", 1, "is not UTF-8 text")])
+    assert langcheck.check(root) == (1, [Problem("lang/Latin.json", 1, "is not UTF-8 text")], {})
 
 
 def test_check_skips_a_language_file_that_git_ignores(tmp_path):
     root = make_repo(tmp_path, {
         "translate.py": TRANSLATE, ".gitignore": "lang/English.json\n", "lang/English.json": "["
     })
-    assert langcheck.check(root) == (0, [])
+    assert langcheck.check(root) == (0, [], {})
 
 
 def test_main_prints_each_problem_and_a_summary_and_returns_1(tmp_path, capsys):
-    root = make_repo(tmp_path, {"translate.py": TRANSLATE, "lang/Bad.json": "[]"})
+    root = make_repo(tmp_path, {"translate.py": TRANSLATE, "lang/Bad.json": "[]", "lang/Old.json": '{"old": "x"}'})
     assert langcheck.main(["--root", str(root)]) == 1
-    assert capsys.readouterr().out == "lang/Bad.json:1: is not a JSON object\nlangcheck: 1 files, 1 problems\n"
+    assert capsys.readouterr().out == (
+        "lang/Bad.json:1: is not a JSON object\n"
+        "lang/Old.json:1: old is a key that the app does not read\n"
+        "langcheck: lang/Old.json lacks 1 strings, which show in English\n"
+        "langcheck: 2 files, 2 problems\n"
+    )
 
 
-def test_main_returns_0_when_every_language_file_is_an_object(tmp_path, capsys):
-    root = make_repo(tmp_path, {"translate.py": TRANSLATE, "lang/A.json": "{}", "lang/B.json": '{"x": 1}'})
+def test_main_prints_the_strings_each_file_lacks_and_returns_0_when_that_is_all(tmp_path, capsys):
+    root = make_repo(tmp_path, {
+        "translate.py": TRANSLATE, "lang/A.json": "{}", "lang/B.json": '{"error": {"no_connection": "{url}"}}'
+    })
     assert langcheck.main(["--root", str(root)]) == 0
-    assert capsys.readouterr().out == "langcheck: 2 files, 0 problems\n"
+    assert capsys.readouterr().out == (
+        "langcheck: lang/A.json lacks 1 strings, which show in English\n"
+        "langcheck: lang/B.json lacks 0 strings, which show in English\n"
+        "langcheck: 2 files, 0 problems\n"
+    )

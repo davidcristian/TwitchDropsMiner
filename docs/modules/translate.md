@@ -58,13 +58,13 @@ A language's name is its file name, such as `Polski` for `lang/Polski.json`.
 `default_translation` as the template, which changes the file's data in memory:
 
 - A key that the file does not have gets the English string, so a missing key shows in English.
-- A key that `default_translation` does not have is removed
-  ([task 023](../refinements/tasks/023-language-file-keys-dropped.md)).
+- A key that `default_translation` does not have is removed.
 - A value whose type differs from the English one, such as a string where a section is expected, is replaced
   by the English value.
 
-The merge removes `language_name` from a file as an unknown key, so a file cannot change the name of its
-language.
+`scripts/langcheck.py` fails on a key that the merge removes or replaces, so that no translated text is lost
+this way. The merge removes `language_name` from a file as an unknown key, so a file cannot change the name of
+its language.
 
 A file that is not valid JSON makes `set_language` raise `json.JSONDecodeError`. It is a `ValueError`, so
 `main()` catches it and the app stays in English without a message. `scripts/langcheck.py`, which
@@ -117,7 +117,8 @@ The window and the Output box show text from `_()`, except this, which stays Eng
   where the English string has a field, because the code formats only those strings. It does not check a format
   spec such as `:>3`, which `str.format` reads with the value.
 - Other languages need no edit for a new key, because the merge fills it in English
-  ([task 008](../refinements/tasks/008-translations-for-new-strings.md)).
+  ([task 008](../refinements/tasks/008-translations-for-new-strings.md)). `scripts/langcheck.py` prints how many
+  strings each language lacks, and does not fail on them.
 
 **Dependencies.** Repo modules: `exceptions` (`MinerException`), `utils` (`json_load`, `json_save`) and
 `constants` (`LANG_PATH`, `DEFAULT_LANG`). No third-party package.

@@ -87,3 +87,5 @@ Cost: no Twitch requests.
   each file moved Polski's two strings to `gui.help.invalidate` and deleted the other 286 keys, so every file
   has 0 keys that the app does not read. `set_language("Polski")` then returned `'Unieważnij'` for
   `gui.help.invalidate.button`.
+- 2026-10-23: `scripts/langcheck.py` now fails on a key that the app does not read, so `just check` finds
+  such a key in a new translation.

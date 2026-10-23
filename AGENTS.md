@@ -121,12 +121,13 @@ the top-level `*.py` files; without it the AppImage fails at startup with a `Mod
 
 **`just check` is the single command, and it must pass.** The pre-commit hook and the Validate job in CI run it.
 [docs/building.md](docs/building.md#run-the-checks) sets it up, and [ADR-0012](docs/adr/ADR-0012-check-command.md)
-gives the reasons. In order, it runs `syntaxcheck.py` (Python 3.10 syntax), `langcheck.py` (the JSON and the format
-fields of `lang/*.json`), ruff (the rules in `pyproject.toml`), `linecap.py` (the line limits), `dashcheck.py` and
-`prosecheck.py` (the Prose rules a script can read), `docscheck.py` (the links between docs, line numbers, the two
-indexes and the record formats), `rostercheck.py` (the module map, the module docs, the settings keys, the `gui.py`
-mock and this list), and pytest over `tests/`, which fails below 80% branch coverage of the modules `pyproject.toml`
-lists, and when a thread that Python's exit would wait for still runs after the last test. A 3.11+ name such as
+gives the reasons. In order, it runs `syntaxcheck.py` (Python 3.10 syntax), `langcheck.py` (the JSON, the keys and
+the format fields of `lang/*.json`, and the count of strings each language lacks), ruff (the rules in
+`pyproject.toml`), `linecap.py` (the line limits), `dashcheck.py` and `prosecheck.py` (the Prose rules a script can
+read), `docscheck.py` (the links between docs, line numbers, the two indexes and the record formats),
+`rostercheck.py` (the module map, the module docs, the settings keys, the `gui.py` mock and this list), and pytest
+over `tests/`, which fails below 80% branch coverage of the modules `pyproject.toml` lists, and when a thread that
+Python's exit would wait for still runs after the last test. A 3.11+ name such as
 `typing.Self` or `tomllib` fails only when its line runs, so only the Validate job on Python 3.10 finds it, and
 only where a test imports or calls it: avoid them.
 

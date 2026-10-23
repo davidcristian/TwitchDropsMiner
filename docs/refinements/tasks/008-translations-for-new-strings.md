@@ -61,8 +61,8 @@ These are the strings of this project's own features:
 A speaker of each language adds the missing keys. The keys at a wrong path, which need no translator, were
 moved or deleted in [023](023-language-file-keys-dropped.md). AGENTS.md says
 a new string needs no edit to other languages, so new features keep adding to these counts. Every edit to
-`lang/*.json` must stay valid JSON, which the CI Validate job checks. A script that reports the missing keys
-per language fits in the check command of [004](004-single-check-command.md).
+`lang/*.json` must stay valid JSON, which the CI Validate job checks. `scripts/langcheck.py` prints the
+number of missing keys per language at each `just check`.
 
 Cost: no Twitch requests.
 
@@ -86,3 +86,5 @@ Cost: no Twitch requests.
 - 2026-10-23: Counts checked again after the keys at paths the app does not read left the language files
   ([023](023-language-file-keys-dropped.md)). Polski's two Invalidate strings moved to `gui.help.invalidate`,
   so Polski lacks 47 strings. The other counts did not change.
+- 2026-10-23: `scripts/langcheck.py` now prints the number of strings each language lacks, without failing.
+  It printed the counts above.

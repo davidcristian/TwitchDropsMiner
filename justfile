@@ -16,7 +16,8 @@ check: check-syntax check-lang check-ruff check-linecap check-dashcheck check-pr
 check-syntax:
     {{python}} scripts/syntaxcheck.py
 
-# Every lang/*.json file is a JSON object, and its strings have no format field that the English string lacks.
+# Every lang/*.json file is a JSON object with no key the app does not read, and its strings have no format field
+# that the English string lacks. It prints how many strings each file lacks.
 check-lang:
     {{python}} scripts/langcheck.py
 
