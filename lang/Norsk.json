@@ -2,19 +2,32 @@
   "english_name": "Norwegian",
   "status": {
     "terminated": "\nApplikasjonen er avsluttet.\nLukk vinduet for å gå ut av applikasjonen.",
+    "fatal_error": "Det oppstod en alvorlig feil:\n",
+    "restarting": "Starter på nytt automatisk kl. {time}...",
+    "restart_longer": "Feilen kom mindre enn en time etter forrige omstart, så ventetiden er lengre enn innstillingen: {minutes} minutter.",
     "watching": "Ser på: {channel}",
     "goes_online": "{channel} går ONLINE, bytter...",
     "goes_offline": "{channel} går OFFLINE, bytter...",
     "claimed_drop": "Hentet belønning: {drop}",
     "no_channel": "Ingen tilgjengelige kanaler å se på. Venter på en ONLINE kanal...",
-    "no_campaign": "Ingen aktive kampanjer å få belønninger fra. Venter på en aktiv kampanje..."
+    "no_campaign": "Ingen aktive kampanjer å få belønninger fra. Venter på en aktiv kampanje...",
+    "logging_level": "Loggnivå: {level}"
   },
   "login": {
     "unexpected_content": "Uventet innholdstype returnert, vanligvis på grunn av omdirigering. Trenger du å logge inn for internettilgang?"
   },
   "error": {
     "site_down": "Twitch er nede, prøver igjen om {seconds} sekunder...",
-    "no_connection": "Kan ikke koble til Twitch, prøver igjen om {seconds} sekunder... ({url})"
+    "no_connection": "Kan ikke koble til Twitch, prøver igjen om {seconds} sekunder... ({url})",
+    "save_failed": "Lagring mislyktes, prøver igjen ved neste innlasting: {error}",
+    "file_not_saved": "Kunne ikke lagre {file}: {error}",
+    "autostart_not_changed": "Kunne ikke endre autostart-oppføringen: {error}",
+    "cannot_start": "Kan ikke starte",
+    "folder_not_writable": "Applikasjonen kan ikke skrive til mappen den kjører fra, der den lagrer filene sine:\n\n{error}\n\nFlytt applikasjonen til en mappe du kan skrive til."
+  },
+  "arguments": {
+    "title": "Twitch Drops Miner",
+    "error_title": "Feil i kommandolinjeargumentene"
   },
   "gui": {
     "output": "Utdata",
@@ -23,6 +36,7 @@
       "idle": "Inaktiv",
       "exiting": "Avslutter...",
       "terminated": "Avsluttet",
+      "restarting": "Starter på nytt kl. {time}",
       "cleanup": "Rydder opp i kanaler...",
       "gathering": "Samler kanaler...",
       "switching": "Bytter kanal...",
@@ -50,6 +64,7 @@
       "logging_in": "Logger inn...",
       "required": "Innlogging påkrevd",
       "request": "Vennligst logg inn for å fortsette.",
+      "enter_code": "Skriv inn denne koden på Twitchs side for enhetsaktivering: {code}",
       "button": "Logg inn"
     },
     "websocket": {
@@ -115,11 +130,14 @@
     "settings": {
       "general": {
         "name": "Generelt",
+        "language": "Språk 🌐 (krever omstart): ",
         "autostart": "Autostart: ",
         "tray": "Autostart til systemkurv: ",
         "tray_notifications": "Systemkurv-varsler: ",
         "dark_mode": "Mørk modus: ",
         "priority_mode": "Prioritetsmodus: ",
+        "refresh_interval": "Se etter nye strømmer hvert: ",
+        "restart_delay": "Start på nytt etter krasj etter: ",
         "proxy": "Proxy (krever omstart):"
       },
       "advanced": {
@@ -134,13 +152,54 @@
         "ending_soonest": "Slutter snarest",
         "low_availability": "Lav tilgjengelighet først"
       },
+      "refresh_intervals": {
+        "disabled": "Aldri (last inn hver time)",
+        "minutes": "{minutes} min"
+      },
+      "restart_delays": {
+        "disabled": "Aldri (forbli stoppet)",
+        "minutes": "{minutes} min"
+      },
+      "wanted": {
+        "name": "Spill som utvinnes",
+        "game": "Spill",
+        "source": "Valgt av",
+        "installed": "installert",
+        "unlisted": "ikke på noen liste",
+        "count": "Utvinner {count} spill, høyeste prioritet først.",
+        "empty": "Ingenting beregnet ennå - trykk på \"Last inn på nytt\" nedenfor."
+      },
+      "detect": {
+        "name": "Oppdagede spill",
+        "dirs": "Spillmapper:",
+        "add_dir": "Legg til en Steam- eller Epic-spillmappe",
+        "remove_dir": "Fjern den valgte mappen",
+        "rescan": "Søk på nytt",
+        "scanning": "Søker gjennom spillmapper...",
+        "scan_error": "Spillsøk: {error}",
+        "not_a_folder": "Ikke en mappe: {path}",
+        "no_games": "Fant ingen Steam- eller Epic-spill i: {path}",
+        "failed": "{path}: {reason}",
+        "detected": "{count} av {total} installerte spill gjenkjent.",
+        "restored": "{count} spill fra forrige søk.",
+        "empty": "Ingenting oppdaget ennå - legg til en spillmappe nedenfor.",
+        "no_dirs": "Ingen mapper lagt til."
+      },
       "game_name": "Spillnavn",
       "priority": "Prioritet",
       "exclude": "Ekskluder",
+      "pattern_matches": "\"{pattern}\" samsvarer med {count} spill: {games}",
+      "pattern_empty": "\"{pattern}\" samsvarer ikke med noe spill med en kampanje akkurat nå.",
       "reload": "Last inn på nytt",
       "reload_text": "De fleste endringer krever en ny innlasting for å tre i kraft umiddelbart: "
     },
     "help": {
+      "about": {
+        "name": "Om",
+        "repository": "Kodelager: ",
+        "based_on": "Basert på: ",
+        "based_on_text": "TwitchDropsMiner av DevilXD"
+      },
       "links": {
         "name": "Nyttige lenker",
         "inventory": "Se Twitch-inventar",
@@ -149,7 +208,11 @@
       "how_it_works": "Slik fungerer det",
       "how_it_works_text": "Hvert par sekunder later applikasjonen som den ser på en bestemt strøm ved å hente strømmetadata - dette er nok til å øke fremdriften på drops. Merk at dette fullstendig unngår behovet for å laste ned selve video- og lydstrømmen. For å holde statusen (ONLINE eller OFFLINE) til kanalene oppdatert, opprettes det en websocket-tilkobling som mottar hendelser om strømmer som går opp eller ned, eller oppdateringer angående gjeldende antall seere.",
       "getting_started": "Kom i gang",
-      "getting_started_text": "1. Logg inn i applikasjonen.\n2. Sørg for at Twitch-kontoen din er koblet til alle kampanjer du er interessert i å utvinne.\n3. Hvis du er interessert i å utvinne alt mulig, endre \"Prioritetsmodus\" til noe annet enn \"Kun prioritetsliste\" og trykk på \"Last inn på nytt\".\n4. Hvis du vil utvinne spesifikke spill først, bruk \"Prioritet\"-listen til å sette opp en ordnet liste over spill etter eget valg. Spill fra toppen av listen vil bli forsøkt utvunnet først, før de lenger ned på listen.\n5. Behold \"Prioritetsmodus\" satt til \"Kun prioritetsliste\" for å unngå å utvinne spill som ikke er på prioritetslisten. Eller ikke - det er opp til deg.\n6. Bruk \"Ekskluder\"-listen for å fortelle applikasjonen hvilke spill som aldri skal utvinnes.\n7. Endring av innholdet i en av listene, eller endring av \"Prioritetsmodus\", krever at du trykker på \"Last inn på nytt\" for at endringene skal tre i kraft."
+      "getting_started_text": "1. Logg inn i applikasjonen.\n2. Sørg for at Twitch-kontoen din er koblet til alle kampanjer du er interessert i å utvinne.\n3. Hvis du er interessert i å utvinne alt mulig, endre \"Prioritetsmodus\" til noe annet enn \"Kun prioritetsliste\" og trykk på \"Last inn på nytt\".\n4. Hvis du vil utvinne spesifikke spill først, bruk \"Prioritet\"-listen til å sette opp en ordnet liste over spill etter eget valg. Spill fra toppen av listen vil bli forsøkt utvunnet først, før de lenger ned på listen.\n5. Behold \"Prioritetsmodus\" satt til \"Kun prioritetsliste\" for å unngå å utvinne spill som ikke er på prioritetslisten. Eller ikke - det er opp til deg.\n6. Bruk \"Ekskluder\"-listen for å fortelle applikasjonen hvilke spill som aldri skal utvinnes.\n7. Endring av innholdet i en av listene, eller endring av \"Prioritetsmodus\", krever at du trykker på \"Last inn på nytt\" for at endringene skal tre i kraft.",
+      "invalidate": {
+        "button": "Ugyldiggjør",
+        "text": "Ugyldiggjør autentiseringstokenet (logg ut):"
+      }
     }
   }
 }
