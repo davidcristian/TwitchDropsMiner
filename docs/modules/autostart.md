@@ -1,7 +1,7 @@
 # `autostart.py`
 
 **Purpose.** The entry that starts the app when the user logs in: the command it runs, and where Windows, Linux
-and macOS keep it. `SettingsPanel` in `gui.py` shows the `Autostart:` and `Autostart into tray:` checkboxes and
+and macOS keep it. `SettingsPanel` in `ui/` shows the `Autostart:` and `Autostart into tray:` checkboxes and
 calls this module; macOS shows only the first. The module takes the platform, the environment and the home folder
 as arguments, so `tests/test_autostart.py` runs the Linux and macOS entries on real files in a temporary folder
 on any system.
@@ -63,7 +63,7 @@ the error, which the Output box shows, and sets the checkbox from `contains` aga
 ## Invariants
 
 - No test writes the real autostart entry. The `window` fixture in `tests/conftest.py` replaces
-  `autostart_entry` in `gui.py` with the `DesktopFile` of a temporary `XDG_CONFIG_HOME` on every system.
+  `autostart_entry` in `ui/settingstab.py` with the `DesktopFile` of a temporary `XDG_CONFIG_HOME` on every system.
 - `RegistryValue` is the only class that uses `registry`, which the module imports only on Windows, so its
   methods run only there. The tests do not cover them on Linux or macOS.
 - A change to `AUTOSTART_NAME`, `AUTOSTART_KEY`, `LAUNCH_AGENT_LABEL` or the folders leaves existing entries in

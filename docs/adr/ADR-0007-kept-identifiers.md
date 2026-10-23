@@ -26,7 +26,7 @@ autostart entry only by its name, so a rename has effects on machines that alrea
    - **macOS:** the LaunchAgent `~/Library/LaunchAgents/com.devilxd.twitchdropsminer.plist`, whose `Label` is
      `com.devilxd.twitchdropsminer` (`LAUNCH_AGENT_LABEL`).
 
-   `SettingsPanel._query_autostart` in `gui.py` looks for the entry under this name only, and
+   `SettingsPanel._query_autostart` in `ui/generalsettings.py` looks for the entry under this name only, and
    `SettingsPanel.update_autostart` writes and deletes it under this name only. With a new name, the app would not find or remove an entry that an older build
    wrote.
 

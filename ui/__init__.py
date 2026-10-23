@@ -11,6 +11,7 @@ from .channellist import ChannelList
 from .tray import TrayIcon
 from .inventorytab import InventoryOverview
 from .helptab import HelpTab
+from .settingstab import SettingsPanel
 from .preview import run_preview
 
 __all__ = [
@@ -27,6 +28,7 @@ __all__ = [
     "PlaceholderCombobox",
     "PlaceholderEntry",
     "SelectCombobox",
+    "SettingsPanel",
     "StatusBar",
     "TrayIcon",
     "WebsocketStatus",

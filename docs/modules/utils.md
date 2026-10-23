@@ -75,11 +75,11 @@ it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays
   raised the error would raise it again in `Twitch.shutdown`. The critical tasks are
   `Twitch._watch_loop`, `Twitch._maintenance_task` and `Websocket._handle`. Without `critical` it wraps the
   PubSub handlers `process_stream_state`, `process_stream_update`, `process_drops` and `process_notifications`
-  in `twitch/`, `Websocket.stop`, `Twitch.detect_games` in `gui.py` and `HelpTab._invalidate_token` in
+  in `twitch/`, `Websocket.stop`, `Twitch.detect_games` in `ui/detectedgames.py` and `HelpTab._invalidate_token` in
   `ui/helptab.py`.
 - **`start_task(coro)`** starts a task that runs `coro`, keeps it in a module level set until it ends and returns
   it. The event loop keeps only a weak reference to a task, so a task that nothing else references can be
-  collected before it ends. `SettingsPanel.rescan_games` in `gui.py`, `HelpTab.invalidate_token` in
+  collected before it ends. `SettingsPanel.rescan_games` in `ui/detectedgames.py`, `HelpTab.invalidate_token` in
   `ui/helptab.py`, and `Websocket.stop_nowait` and `Websocket._handle_message` in `websocket/`, start their
   tasks with it.
 - **`AwaitableValue[T]`** is a value that coroutines can wait for: `get()` waits until `set()` is called. It
@@ -96,8 +96,8 @@ it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays
 than letters, digits and `_` turned into one `-`, with no `-` at either end). Two games are equal when their IDs
 are. `is_special()` is true for the IDs in `SPECIAL_GAME_IDS` (`509663`, `509672`): for a campaign of that game,
 `can_earn` then accepts a channel whatever game it streams, when the campaign's list of allowed channels is
-empty or includes it (`inventory/`, `twitch/`). `inventory/`, `channel/`, `twitch/` and `gui.py` use
-`Game`.
+empty or includes it (`inventory/`, `twitch/`). `inventory/`, `channel/`, `twitch/`, `gui.py` and
+`ui/` use `Game`.
 
 ### Other helpers
 

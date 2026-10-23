@@ -13,7 +13,7 @@ new work goes into a new module that they call. This task records where each one
 
 | Module | Lines | After the split |
 | --- | --- | --- |
-| `gui.py` | 3164 | 1390 so far, over the cap, and `ui/`, thirteen files of 35 to 290 lines |
+| `gui.py` | 3164 | 579 so far, over the cap, and `ui/`, seventeen files of 37 to 290 lines |
 | `twitch.py` | 1734 | `twitch/`, ten files of 6 to 292 lines |
 | `translate.py` | 612 | `translate/`, four files of 7 to 284 lines |
 | `channel.py` | 528 | `channel/`, five files of 7 to 166 lines |
@@ -148,3 +148,9 @@ Splits cost no Twitch requests.
 - 2026-10-23: `SettingsPanel.__init__`, which had 383 lines, was cut into a method for each frame of the
   Settings tab, from `_build_wanted_frame` to `_build_reload_frame`, each with the frame's lines unchanged.
   `__init__` passes them `center_frame` and keeps 45 lines. `gui.py` has 1390 lines.
+- 2026-10-23: `SettingsPanel` left `gui.py` for `ui/settingstab.py` with `_SettingsVars`, and its sections for
+  three mixins: the General and Advanced sections with the autostart methods and `proxy_validate` for
+  `GeneralSettingsMixin` in `generalsettings.py`, the Priority and Exclude lists for `GameListsMixin` in
+  `gamelists.py`, and the Detected Games section for `DetectedGamesMixin` in `detectedgames.py`. The `window`
+  fixture patches `autostart_entry` in `ui/settingstab.py`, and the tests of the language label patch `_` in
+  `ui/generalsettings.py`. `gui.py` has 579 lines and keeps `GUIManager`.

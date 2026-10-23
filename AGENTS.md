@@ -43,8 +43,8 @@ burst of requests puts that account at risk.
 | `inventory/` | `DropsCampaign` and `TimedDrop`: campaign data, drop progress, claiming. `campaign.py` holds `DropsCampaign`, `drop.py` holds `BaseDrop` and `TimedDrop`, and `benefit.py` holds `Benefit` and `BenefitType` |
 | `channel/` | `Channel` and `Stream`: stream state and online checks. `tracked.py` holds `Channel`, `online.py` and `watch.py` its mixins for the online checks and the watch requests, and `stream.py` holds `Stream` |
 | `websocket/` | The PubSub websocket pool and its topics. `pool.py` holds `WebsocketPool`, `connection.py` holds `Websocket`, and `messages.py` its mixin that receives and sends messages |
-| `gui.py` | `GUIManager`, which builds the window, and `SettingsPanel`, the Settings tab. `python gui.py` opens the window with mock data and no login, and sends no request |
-| `ui/` | The parts of the window that `gui.py` builds and imports. `placeholder.py` holds `PlaceholderEntry` and `PlaceholderCombobox`, `widgets.py` the other generic widgets and `Notebook`, the tabs, `status.py`, `login.py`, `progress.py`, `output.py` and `channellist.py` the panels of the Main tab, `tray.py` the tray icon, `inventorytab.py` and `dropstatus.py` the Inventory tab, `helptab.py` the Help tab, and `preview.py` the mock data that `python gui.py` opens the window with |
+| `gui.py` | `GUIManager`, which builds the window. `python gui.py` opens the window with mock data and no login, and sends no request |
+| `ui/` | The parts of the window that `gui.py` builds and imports. `placeholder.py` holds `PlaceholderEntry` and `PlaceholderCombobox`, `widgets.py` the other generic widgets and `Notebook`, the tabs, `status.py`, `login.py`, `progress.py`, `output.py` and `channellist.py` the panels of the Main tab, `tray.py` the tray icon, `inventorytab.py` and `dropstatus.py` the Inventory tab, `helptab.py` the Help tab, `settingstab.py` the Settings tab with its mixins in `generalsettings.py`, `gamelists.py` and `detectedgames.py`, and `preview.py` the mock data that `python gui.py` opens the window with |
 | `settings.py` | `settings.json`: the `SettingsFile` type, its defaults, loading and saving |
 | `constants.py` | Paths, intervals, `State`, `PriorityMode` and the logging values |
 | `twitchapi/` | What the app sends to Twitch: `ClientType` in `clients.py`, the GQL queries with their hashes in `gql.py`, and `WebsocketTopic` in `topics.py` |
@@ -98,7 +98,9 @@ rewrites it.
 
 1. `SettingsFile`, `default_settings` and the attribute list on `Settings`, in `settings.py`. A drop-down list
    also gets its values in `setting_choices` there.
-2. The widget in `SettingsPanel`, in `gui.py`.
+2. The widget in the section of the Settings tab that shows it, such as the General section in
+   `ui/generalsettings.py`. A Tk variable for it goes in `_SettingsVars` and `SettingsPanel.__init__`, in
+   `ui/settingstab.py`.
 3. The `settings=SimpleNamespace(...)` mock in `run_preview`, in `ui/preview.py`. Without it `python gui.py` fails
    with an `AttributeError`. `rostercheck.py` reports a setting that the GUI reads as `settings.<name>` and the
    mock lacks.
@@ -112,9 +114,10 @@ rewrites it.
 3. Leave `lang/English.json` alone: it is gitignored, and every run from source rewrites it.
 4. Other languages need no edit, because a missing key falls back to English.
 
-**An edit to `gui.py`:** many of its classes share identical lines, such as their `__init__` signature. Before a
-search and replace edit, check that the search text occurs once in the file: a replacement on a repeated line puts
-the code in the wrong class, which shows only at runtime.
+**An edit to `gui.py` or a file of `ui/`:** many GUI classes and methods share identical lines, such as their
+`__init__` signature or the options of a `PaddedListbox`. Before a search and replace edit, check that the search
+text occurs once in the file: a replacement on a repeated line puts the code in the wrong class or method, which
+shows only at runtime.
 
 **A new module** gets a row in the module map and a doc in `docs/modules/`. When it needs neither Twitch nor a
 display, add it to `source` under `[tool.coverage.run]` in `pyproject.toml`. A new package (a folder of modules,

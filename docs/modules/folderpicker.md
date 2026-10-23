@@ -5,7 +5,7 @@ returns only when it closes, and the app runs Tk and asyncio on one thread
 ([gui.md](gui.md#how-the-gui-runs-with-asyncio)). In the app's own process the dialog would stop every task
 while it is open, so the miner would send no watch request or PubSub ping and the countdown would stop. This
 module shows the dialog in a child process and checks for its answer between other tasks.
-`SettingsPanel.game_dir_add` in `gui.py` uses it. Of the app's modules it imports only `colorfonts`, which
+`SettingsPanel.game_dir_add` in `ui/detectedgames.py` uses it. Of the app's modules it imports only `colorfonts`, which
 imports none, so the child process loads only these two and the standard library. `tests/test_folderpicker.py`
 runs `FolderPicker` with fake dialogs and `ChildDialog` with real child processes that run the fake functions in
 `tests/fakedialog.py`.

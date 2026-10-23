@@ -66,7 +66,8 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
    gains no attribute, which `Twitch.shutdown` would have to clear. `Twitch._run` was cut this way: its loop
    calls a method for each state from `INVENTORY_FETCH` to `CHANNEL_SWITCH`, such as `_run_games_update`.
    `SettingsPanel.__init__` calls a method for each frame of the Settings tab, such as `_build_general_frame`,
-   with `center_frame`, the frame that holds them all.
+   with `center_frame`, the frame that holds them all. Such a method sets the attributes of the widgets it
+   builds, and it moves with the methods that those widgets call to the mixin of its section.
 6. **A split commit moves code and changes no behavior.** It is a `refactor:` commit for one module. The moved
    lines keep their text and order, except imports, the bases of a class that gains mixins, and a name the move
    requires. The new lines are the package's `__init__.py`, a one-line docstring for each new file and mixin,

@@ -2,9 +2,9 @@
 
 **Purpose.** The parts of the tkinter window that `gui.py` builds, and `run_preview`, which `python gui.py`
 calls. `gui.py` stays a file, because that command names it, and its classes move here
-([ADR-0020](../adr/ADR-0020-module-splits.md)). The window as a whole, `GUIManager` and `SettingsPanel`, which
-are still in `gui.py`, are in [gui.md](gui.md). Every file here needs a display, so the package is outside the
-coverage floor, as `gui.py` is.
+([ADR-0020](../adr/ADR-0020-module-splits.md)). The window as a whole and `GUIManager`, which is still in
+`gui.py`, are in [gui.md](gui.md). Every file here needs a display, so the package is outside the coverage
+floor, as `gui.py` is.
 
 ## Files
 
@@ -22,6 +22,10 @@ coverage floor, as `gui.py` is.
 | `inventorytab.py` | `InventoryOverview`, the Inventory tab, without the two methods of its mixin |
 | `dropstatus.py` | `DropStatusMixin`, a base class of `InventoryOverview` that holds `update_progress` and `update_drop`, which write the status line under each drop |
 | `helptab.py` | `HelpTab` |
+| `settingstab.py` | `SettingsPanel`, the Settings tab, with the Games Being Mined table and the Reload row, and `_SettingsVars`, the Tk variables of its widgets |
+| `generalsettings.py` | `GeneralSettingsMixin`, a base class of `SettingsPanel` with the General and Advanced sections and the autostart entry, and `proxy_validate` |
+| `gamelists.py` | `GameListsMixin`, a base class of `SettingsPanel` with the Priority and Exclude lists |
+| `detectedgames.py` | `DetectedGamesMixin`, a base class of `SettingsPanel` with the Detected Games section and the game folders |
 | `preview.py` | `run_preview`, the mock data of the preview |
 
 ## The generic widgets
@@ -86,6 +90,33 @@ is built, and the tests build it without one.
   `cookies.jar` when Twitch returns 200, and sets `State.RESTART`. The button stays disabled until a login
   completes.
 
+## The Settings tab
+
+`SettingsPanel.__init__` creates the Tk variables and the `ScrollArea`, then calls a method for each frame, from
+`_build_wanted_frame` to `_build_reload_frame`. A frame method sets the attributes of the widgets it builds.
+`SettingsPanel` keeps the methods of the Games Being Mined table and the Reload row, and each mixin holds the
+frame methods of its sections with the methods that their widgets call.
+
+- **`SettingsPanel`** has the sections "Games Being Mined" (filled by `set_wanted_games`), "General", "Advanced",
+  "Priority", "Exclude" and "Detected Games", side by side in a `ScrollArea` with `fit`. In a window as large
+  as the sections, the tab shows them centered and no scroll bar. In a smaller window, such as on a screen 1366
+  pixels wide, a scroll bar shows for each axis that needs one. The layouts with Detected Games below the other
+  sections are narrower but taller than a screen 768 pixels high
+  ([task 044](../refinements/tasks/044-window-wider-than-small-screens.md)), so the tab scrolls instead. It
+  writes each change to `Settings` at once ([settings.md](settings.md)). "Reload" sets
+  `State.INVENTORY_FETCH` through `Twitch.state_change`, a full reload
+  ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)). "Rescan" and the folder buttons start
+  `Twitch.detect_games` ([ADR-0004](../adr/ADR-0004-installed-game-detection.md)). The ➕ folder button opens
+  the folder dialog in a child process through `FolderPicker` ([folderpicker.md](folderpicker.md)), and stays
+  disabled while the dialog is open. Adding a list entry with `*` or `?` prints the games it matches
+  ([ADR-0005](../adr/ADR-0005-list-patterns.md)). The "Autostart" checkbox
+  writes or removes the entry that `autostart_entry` returns for the system ([autostart.md](autostart.md)): the
+  Windows `Run` registry value, a Linux `.desktop` file in the XDG autostart folder or a macOS `LaunchAgents`
+  plist, named after `AUTOSTART_NAME` (`TwitchDropsMiner`). `_query_autostart` finds the entry by these names,
+  so a rename leaves the old entry in place ([ADR-0007](../adr/ADR-0007-kept-identifiers.md)). When the write or
+  removal raises `OSError`, `update_autostart` logs "Could not change the autostart entry:" with the error, and
+  sets the checkbox from `_query_autostart` again.
+
 ## The tray icon
 
 `TrayIcon` wraps a `pystray.Icon` named `twitch_miner`. `tray.py` imports pystray through `import_pystray`, which
@@ -146,5 +177,5 @@ that `gui.py` or a file of this package reads as an attribute of `settings` or `
   chosen with ➕ raise `AttributeError` in the preview.
 
 **Dependencies.** Repo modules: `translate`, `cache`, `exceptions`, `gamelib`, `scrollarea`, `traybackend`,
-`utils` and `constants`; `gui`, `channel`, `inventory` and `settings` for type checking only. Third-party:
-`pystray`, Pillow and `yarl`.
+`autostart`, `folderpicker`, `settings` (`default_settings`, `setting_choices`), `utils` and `constants`; `gui`,
+`channel` and `inventory` for type checking only. Third-party: `pystray`, Pillow and `yarl`.

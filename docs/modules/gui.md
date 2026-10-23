@@ -2,8 +2,8 @@
 
 **Purpose.** The tkinter window: four tabs, the tray icon, the light and dark themes, and a preview that opens
 the window with mock data. `Twitch.__init__` creates one `GUIManager`, and the rest of the app changes the
-window only through that object and the parts it exposes as attributes. Every part but `SettingsPanel` is in
-the package `ui/`, from which `gui.py` imports it ([ui.md](ui.md)). The file is far over the 300 line cap
+window only through that object and the parts it exposes as attributes. Every part is in the package `ui/`,
+from which `gui.py` imports it ([ui.md](ui.md)). The file is over the 300 line cap
 in [AGENTS.md](../../AGENTS.md#module-map), so new logic that does not need tkinter goes in a new module
 ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md) gives its line count). Before a search and
 replace edit in this file, read the `gui.py` recipe in [AGENTS.md](../../AGENTS.md#recipes).
@@ -28,28 +28,8 @@ and keeps it as an attribute. The labels in quotes are the English strings from 
 | `settings` | `SettingsPanel` | Settings | The settings widgets, the lists and the "Reload" button |
 | `help` | `HelpTab` | Help | About, links, help text and the "Invalidate" button |
 
-- **`SettingsPanel`** has the sections "Games Being Mined" (filled by `set_wanted_games`), "General", "Advanced",
-  "Priority", "Exclude" and "Detected Games", side by side in a `ScrollArea` with `fit`. In a window as large
-  as the sections, the tab shows them centered and no scroll bar. In a smaller window, such as on a screen 1366
-  pixels wide, a scroll bar shows for each axis that needs one. The layouts with Detected Games below the other
-  sections are narrower but taller than a screen 768 pixels high
-  ([task 044](../refinements/tasks/044-window-wider-than-small-screens.md)), so the tab scrolls instead. It
-  writes each change to `Settings` at once ([settings.md](settings.md)). "Reload" sets
-  `State.INVENTORY_FETCH` through `Twitch.state_change`, a full reload
-  ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)). "Rescan" and the folder buttons start
-  `Twitch.detect_games` ([ADR-0004](../adr/ADR-0004-installed-game-detection.md)). The ➕ folder button opens
-  the folder dialog in a child process through `FolderPicker` ([folderpicker.md](folderpicker.md)), and stays
-  disabled while the dialog is open. Adding a list entry with `*` or `?` prints the games it matches
-  ([ADR-0005](../adr/ADR-0005-list-patterns.md)). The "Autostart" checkbox
-  writes or removes the entry that `autostart_entry` returns for the system ([autostart.md](autostart.md)): the
-  Windows `Run` registry value, a Linux `.desktop` file in the XDG autostart folder or a macOS `LaunchAgents`
-  plist, named after `AUTOSTART_NAME` (`TwitchDropsMiner`). `_query_autostart` finds the entry by these names,
-  so a rename leaves the old entry in place ([ADR-0007](../adr/ADR-0007-kept-identifiers.md)). When the write or
-  removal raises `OSError`, `update_autostart` logs "Could not change the autostart entry:" with the error, and
-  sets the checkbox from `_query_autostart` again.
-
-Every class in the table except `SettingsPanel` is in `ui/`, with the generic widgets, such as
-`PlaceholderEntry` and `PaddedListbox` ([ui.md](ui.md)).
+Every class in the table is in `ui/`, with the generic widgets, such as `PlaceholderEntry` and
+`PaddedListbox` ([ui.md](ui.md)), which also describes the Inventory, Settings and Help tabs.
 
 ## How the GUI runs with asyncio
 
@@ -152,7 +132,6 @@ so the preview uses the repository folder as its working folder. To run the prev
 - `apply_theme` runs before the window is shown, because it defines the fonts and named styles the widgets use.
   A new plain Tk widget needs its own `configure_theme` call in `apply_theme`.
 
-**Dependencies.** Repo modules: `translate`, `cache`, `colorfonts`, `autostart`, `gamelib`, `exceptions`,
-`folderpicker`, `scrollarea`, `settings` (`default_settings`, `setting_choices`), `utils`, `constants` and
-`ui`; `twitch` and `inventory` for type checking only. Third-party: `yarl`, pywin32 (`win32api`, `win32con`,
-`win32gui`) on Windows, and `AppKit` on macOS.
+**Dependencies.** Repo modules: `translate`, `cache`, `colorfonts`, `exceptions`, `scrollarea`, `utils`,
+`constants` and `ui`; `twitch` and `inventory` for type checking only. Third-party: pywin32 (`win32api`,
+`win32con`, `win32gui`) on Windows, and `AppKit` on macOS.
