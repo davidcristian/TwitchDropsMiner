@@ -3,7 +3,7 @@
 **Status:** open
 **Area:** ci, repo checks
 **Origin:** Found on 2026-10-21: the Validate job in `.github/workflows/ci.yml` has one runner and one Python
-**Verified:** 2026-10-22
+**Verified:** 2026-10-23
 
 The Validate job in `.github/workflows/ci.yml` runs `just check` four times
 ([ADR-0012](../../adr/ADR-0012-check-command.md)): on `ubuntu-latest` with `PYTHON_VERSION` (3.10) and with
@@ -108,3 +108,11 @@ None of this sends a Twitch request.
   Python 3.10 on Windows, so the 10 millisecond wait of a `start_task` test ended before the done callbacks of
   the task ran. That test now waits for the callbacks. The title was "The Windows and macOS checks in CI have
   never run and are not required". The task stays open until a Windows and a macOS run pass.
+- 2026-10-23: After the next push, the macOS entry passed, with 2010 passed, 20 skipped and 1 xfailed (the
+  window size result of task 072) and 98.04% branch coverage. The Windows entry stopped in `langcheck.py`,
+  which could not write the name of `Română.json` in cp1252, the code page that Python on Windows uses for a
+  pipe. The check scripts now write UTF-8. Under Wine with the same Python, the suite then failed an autostart
+  test of the Settings tab, which expected `python` where a source run on Windows starts with `pythonw`, and
+  now expects the Python of the system it runs on. The Ubuntu entry on Python 3.14 failed a game scan test:
+  `Path.is_dir` of 3.14 returns `False` for a path inside a folder the user may not open, so the scan now
+  checks paths with functions of its own. The task stays open until a Windows run passes.
