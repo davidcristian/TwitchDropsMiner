@@ -30,7 +30,7 @@ if sys.platform == "win32":
 if sys.platform == "darwin":
     import AppKit
 
-from translate import _
+from translate import _, default_translation
 from cache import ImageCache
 from colorfonts import LoadedFontLibraries, skip_color_fonts
 from autostart import AutostartEntry, autostart_command, autostart_entry, source_python
@@ -547,7 +547,7 @@ class LoginForm:
 
     async def ask_enter_code(self, page_url: URL, user_code: str) -> None:
         """Show the code to enter, then open the activation page in the browser."""
-        self._manager.print(f"Enter this code on the Twitch's device activation page: {user_code}")
+        self._manager.print(_("gui", "login", "enter_code").format(code=user_code))
         await asyncio.sleep(4)
         webopen(page_url)
 
@@ -1650,7 +1650,11 @@ class SettingsPanel:
         # language frame
         language_frame = ttk.Frame(general_center)
         language_frame.grid(column=0, row=0)
-        ttk.Label(language_frame, text="Language 🌐 (requires restart): ").grid(column=0, row=0)
+        language_text: str = _("gui", "settings", "general", "language")
+        if language_text != default_translation["gui"]["settings"]["general"]["language"]:
+            # a user who picked a language they cannot read still finds the setting by its English name
+            language_text = f"Language / {language_text}"
+        ttk.Label(language_frame, text=language_text).grid(column=0, row=0)
         SelectCombobox(
             language_frame,
             values=list(_.languages),
@@ -2452,7 +2456,7 @@ class GUIManager:
         logger = logging.getLogger("TwitchDrops")
         logger.addHandler(self._handler)
         if (logging_level := logger.getEffectiveLevel()) < logging.ERROR:
-            self.print(f"Logging level: {logging.getLevelName(logging_level)}")
+            self.print(_("status", "logging_level").format(level=logging.getLevelName(logging_level)))
         # gracefully handle Windows shutdown closing the application
         if sys.platform == "win32":
             # NOTE: this root.update() is required for the below to work - don't remove

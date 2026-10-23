@@ -222,9 +222,9 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
 - A Tk callback returns quickly and starts a task for slow work. The window and the miner share one thread, so a
   slow callback stops both. A Tk dialog that waits for the user, such as `filedialog.askdirectory`, does not
   return until it closes, so the folder dialog runs in a child process ([folderpicker.md](folderpicker.md)).
-- Widget text comes from `_()`, except for the hard-coded strings that
-  [task 014](../refinements/tasks/014-hard-coded-strings.md) lists, such as the "Language" label. Widgets read
-  it when they are built, so a language change needs a restart. `SettingsPanel` reads its choice names in
+- Widget text comes from `_()`, except the names and addresses that
+  [translate.md](translate.md#text-that-stays-english) lists. Widgets read it when they are built, so a
+  language change needs a restart. `SettingsPanel` reads its choice names in
   `cached_property` attributes so that no string is read before the language is set.
 - `apply_theme` runs before the window is shown, because it defines the fonts and named styles the widgets use.
   A new plain Tk widget needs its own `configure_theme` call in `apply_theme`.

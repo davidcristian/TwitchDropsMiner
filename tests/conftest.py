@@ -108,6 +108,24 @@ def window(display, monkeypatch, tmp_path):
 
 
 @pytest.fixture
+def other_language(monkeypatch, tmp_path):
+    """Return a function that loads a language file with the given strings into a new `Translator`."""
+    import translate
+
+    folder = tmp_path / "lang"
+    folder.mkdir()
+    monkeypatch.setattr(translate, "LANG_PATH", folder)
+
+    def load(strings: dict) -> translate.Translator:
+        (folder / "Test.json").write_text(json.dumps(strings), encoding="utf-8")
+        translator = translate.Translator()
+        translator.set_language("Test")
+        return translator
+
+    return load
+
+
+@pytest.fixture
 def launcher_folders(tmp_path, monkeypatch):
     home = tmp_path / "home"
     home.mkdir()

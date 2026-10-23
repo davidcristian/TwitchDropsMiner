@@ -84,14 +84,31 @@ Importing `translate` writes no file, so that a test can import it and the modul
 pytest, `LANG_PATH` is in the folder of pytest itself, which has no `lang` folder. The GUI preview,
 `python gui.py`, does not write the file either.
 
+## Text that stays English
+
+The window and the Output box show text from `_()`, except this, which stays English:
+
+- What `main.py` shows before it calls `_.set_language`: the "Settings error" dialog, argparse's output and the
+  titles of its dialog ([main.md](main.md#command-line-flags)), and the error for a Python older than 3.10.
+- Names and addresses: the product name `Twitch Drops Miner`, the links on the Help tab, and the proxy
+  placeholder `http://username:password@address:port`, which shows the form of a proxy URL.
+- The `Name` and `Description` lines of the Linux autostart entry, which the desktop reads
+  ([autostart.md](autostart.md)).
+- The word `Language` before a translated "Language" label ([Invariants](#invariants)).
+- Log records. `_TKOutputHandler` writes each record of the `TwitchDrops` loggers at the chosen level to the
+  Output box, so the `error` and `exception` calls show there at the default level, such as
+  `Drop claim has potentially failed! Drop ID: {id}`. They are diagnostics, the same text that `log.txt` gets
+  with `--log`. A log call for a problem that the user solves, such as a failed save, passes its text through
+  `_()`.
+
 ## Invariants
 
 - No module calls `_()` at import time. The language is set in `main()` after all imports, so a string read
   earlier would always be English. `SettingsPanel` reads its choice names in `cached_property` attributes for
   this reason ([gui.md](gui.md)).
 - Widgets read their text when they are built, so a language change needs a restart. The "Language" label in
-  `gui.py` says so, and is itself hard-coded English
-  ([task 014](../refinements/tasks/014-hard-coded-strings.md)).
+  the Settings tab says so. When its text differs from the English string, `SettingsPanel` puts the English word
+  before it, as in `Language / Język`, so a user who picked a language they cannot read still finds the setting.
 - A key added to a `TypedDict` is added to `default_translation` too. A key missing there raises
   `MinerException` when it is read, in every language.
 - A translated template uses only the named fields of the English one. `str.format` raises `KeyError` for a

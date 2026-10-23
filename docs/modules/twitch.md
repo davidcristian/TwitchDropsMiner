@@ -234,7 +234,8 @@ campaigns' games with `gamelib.match_games` and stores the matched names in `set
 list enters `State.GAMES_UPDATE`, with no reload. It runs on every `INVENTORY_FETCH`, from the `Rescan` button
 and after a game folder is added or removed. A call during a scan returns at once. The thread scans a copy of
 `game_dirs`, and when a folder is added or removed during the scan, the result is dropped and the folders are
-scanned again. A scan error is printed once while it persists ([gamelib.md](gamelib.md)).
+scanned again. Each scan error is printed once while it persists, as the translated text of its kind
+([gamelib.md](gamelib.md)).
 
 ## Websocket handlers
 

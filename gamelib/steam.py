@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from .common import LocalGame, Platform, ScanResult, read_text
+from .common import LocalGame, Platform, ScanError, ScanErrorKind, ScanResult, read_text
 
 
 # Steam entries that are tooling rather than games, and would only ever produce
@@ -86,7 +86,7 @@ def _find_steamapps(directory: Path) -> Path | None:
 def _steam_library_index(steamapps: Path, result: ScanResult) -> list[Path]:
     """
     Read Steam's own library index, so that libraries on other drives are picked
-    up from a single added directory. A library that cannot be checked gets an error line in result.
+    up from a single added directory. A library that cannot be checked gets an error in result.
     """
     libraries: list[Path] = [steamapps]
     for index_path in (
@@ -103,7 +103,7 @@ def _steam_library_index(steamapps: Path, result: ScanResult) -> list[Path]:
             try:
                 found = library.is_dir()
             except OSError as exc:
-                error = f"{library}: {exc}"
+                error = ScanError(ScanErrorKind.FAILED, str(library), str(exc))
                 if error not in result.errors:
                     result.errors.append(error)
                 continue

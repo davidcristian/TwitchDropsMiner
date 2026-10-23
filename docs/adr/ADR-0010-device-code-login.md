@@ -114,4 +114,4 @@ written reason for the flow or for a client.
   [ADR-0009](ADR-0009-watch-method.md) for the watch requests, which send the same user agent.
 - Tasks [010](../refinements/tasks/010-unreachable-password-login.md) (the password login),
   [011](../refinements/tasks/011-login-token-in-debug-log.md) (the token in debug logs) and
-  [014](../refinements/tasks/014-hard-coded-strings.md) (the hard-coded line with the user code).
+  [014](../refinements/tasks/014-hard-coded-strings.md) (the translation of the line with the user code).

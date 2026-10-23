@@ -3,8 +3,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import sys
 import traceback
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import aiohttp
 import pytest
@@ -17,6 +19,7 @@ from fakes import GAME, USHER_LIST, FakeResponse, FakeTwitch, campaign_data, dro
 from inventory import DropsCampaign
 from livetwitch import run_with_fast_clock
 from redact import HIDDEN
+import twitch as twitch_module
 from twitch import Twitch
 
 SECRET = "s3cret-token"
@@ -105,6 +108,38 @@ def test_a_folder_removed_during_a_scan_has_no_detected_games(live_twitch, tmp_p
     asyncio.run(scenario())
 
     assert fake.settings.detected_games == []
+
+
+@pytest.mark.usefixtures("launcher_folders")
+def test_each_scan_error_is_printed_once_in_the_language_of_the_app(live_twitch, monkeypatch, tmp_path, other_language):
+    detect = {"scan_error": "Suche: {error}", "not_a_folder": "Kein Ordner: {path}", "no_games": "Leer: {path}"}
+    monkeypatch.setattr(twitch_module, "_", other_language({"gui": {"settings": {"detect": detect}}}))
+    (tmp_path / "empty").mkdir()
+    fake = FakeTwitch()
+    fake.settings.game_dirs = [str(tmp_path / "missing"), str(tmp_path / "empty")]
+    twitch = live_twitch(fake)
+
+    async def scenario():
+        await twitch.detect_games()
+        await twitch.detect_games()
+
+    asyncio.run(scenario())
+
+    assert fake.printed == [f"Suche: Kein Ordner: {tmp_path / 'missing'}", f"Suche: Leer: {tmp_path / 'empty'}"]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows forms a home folder for any user name")
+def test_a_scan_error_raised_by_a_check_of_a_folder_is_printed_with_its_reason(live_twitch, monkeypatch, other_language):
+    detect = {"scan_error": "Suche: {error}", "failed": "{reason} ({path})"}
+    monkeypatch.setattr(twitch_module, "_", other_language({"gui": {"settings": {"detect": detect}}}))
+    fake = FakeTwitch()
+    fake.settings.game_dirs = ["~tdm-no-such-user/Games"]
+
+    asyncio.run(live_twitch(fake).detect_games())
+
+    with pytest.raises(RuntimeError) as raised:
+        Path("~tdm-no-such-user/Games").expanduser()
+    assert fake.printed == [f"Suche: {raised.value} (~tdm-no-such-user/Games)"]
 
 
 def test_a_proxy_error_raised_by_a_request_hides_the_proxy_password(live_twitch):

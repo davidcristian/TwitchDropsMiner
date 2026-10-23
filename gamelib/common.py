@@ -55,12 +55,27 @@ class GameMatch:
     local_count: int = 1  # how many local games matched game_name; local is the strongest of them
 
 
+class ScanErrorKind(Enum):
+    """Why a folder gave no games: it is not a folder, holds no Steam or Epic install, or a check raised."""
+    NOT_A_FOLDER = auto()
+    NO_GAMES = auto()
+    FAILED = auto()
+
+
+@dataclass(frozen=True)
+class ScanError:
+    """A problem with one folder: its kind, the folder, and for `FAILED` the text of the error raised."""
+    kind: ScanErrorKind
+    path: str
+    reason: str = ""
+
+
 @dataclass
 class ScanResult:
     games: list[LocalGame] = field(default_factory=list)
     # library paths discovered through a launcher's own index, for reporting
     libraries: list[Path] = field(default_factory=list)
-    errors: list[str] = field(default_factory=list)
+    errors: list[ScanError] = field(default_factory=list)
 
 
 def read_text(path: Path) -> str | None:

@@ -6,9 +6,10 @@ from gamelib.common import read_text
 
 DOCUMENTED_NAMES = {
     "EDITION_WORDS", "FUZZY_MIN_LENGTH", "FUZZY_THRESHOLD", "GameMatch", "LauncherIndexes", "LocalGame", "MatchKind",
-    "Platform", "ROMAN_NUMERALS", "STEAM_TOOL_APPIDS", "STEAM_TOOL_PREFIXES", "ScanResult", "any_match",
-    "compile_pattern", "compile_patterns", "has_wildcard", "launcher_indexes", "match_games", "match_rank",
-    "matches", "matching_names", "normalize", "scan_directories", "scan_epic", "scan_steam",
+    "Platform", "ROMAN_NUMERALS", "STEAM_TOOL_APPIDS", "STEAM_TOOL_PREFIXES", "ScanError", "ScanErrorKind",
+    "ScanResult", "any_match", "compile_pattern", "compile_patterns", "has_wildcard", "launcher_indexes",
+    "match_games", "match_rank", "matches", "matching_names", "normalize", "scan_directories", "scan_epic",
+    "scan_steam",
 }
 
 

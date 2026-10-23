@@ -93,6 +93,12 @@ STATE_ORDER: Final[tuple[State, ...]] = (
     State.CHANNEL_SWITCH,
     State.IDLE,
 )
+# The translation key, in gui.settings.detect, of the text of each kind of scan error
+SCAN_ERROR_KEYS: Final[dict[gamelib.ScanErrorKind, str]] = {
+    gamelib.ScanErrorKind.NOT_A_FOLDER: "not_a_folder",
+    gamelib.ScanErrorKind.NO_GAMES: "no_games",
+    gamelib.ScanErrorKind.FAILED: "failed",
+}
 
 
 def save_cookies(jar: aiohttp.CookieJar) -> None:
@@ -322,7 +328,7 @@ class Twitch:
         self._no_channel_printed: bool = False
         # NOTE: the game folder scan re-runs on every reload, so remember which problems
         # we've already reported - a folder on an unplugged drive would print hourly otherwise
-        self._scan_errors_printed: set[str] = set()
+        self._scan_errors_printed: set[gamelib.ScanError] = set()
         # the Rescan button can be pressed while a scan is already running
         self._scanning_games: bool = False
         # the error of a failed critical task, which _run raises as its own
@@ -512,7 +518,12 @@ class Twitch:
             return
         for error in result.errors:
             if error not in self._scan_errors_printed:
-                self.print(_("gui", "settings", "detect", "scan_error").format(error=error))
+                text: str = _("gui", "settings", "detect", SCAN_ERROR_KEYS[error.kind])
+                self.print(
+                    _("gui", "settings", "detect", "scan_error").format(
+                        error=text.format(path=error.path, reason=error.reason)
+                    )
+                )
         # only keep the problems that are still current, so a folder that breaks again later
         # gets reported again instead of staying silent
         self._scan_errors_printed = set(result.errors)

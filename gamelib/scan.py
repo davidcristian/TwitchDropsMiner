@@ -6,7 +6,7 @@ from collections import abc
 
 from .epic import scan_epic
 from .steam import scan_steam
-from .common import LocalGame, Platform, ScanResult
+from .common import LocalGame, Platform, ScanError, ScanErrorKind, ScanResult
 
 
 def scan_directories(directories: abc.Iterable[Path | str]) -> ScanResult:
@@ -19,14 +19,14 @@ def scan_directories(directories: abc.Iterable[Path | str]) -> ScanResult:
             directory = Path(raw_directory).expanduser()
         except RuntimeError as exc:
             # expanduser raises it for ~name when no user has that name
-            result.errors.append(f"{raw_directory}: {exc}")
+            result.errors.append(ScanError(ScanErrorKind.FAILED, str(raw_directory), str(exc)))
             continue
         try:
             if not directory.is_dir():
-                result.errors.append(f"Not a directory: {directory}")
+                result.errors.append(ScanError(ScanErrorKind.NOT_A_FOLDER, str(directory)))
                 continue
         except OSError as exc:
-            result.errors.append(f"{directory}: {exc}")
+            result.errors.append(ScanError(ScanErrorKind.FAILED, str(directory), str(exc)))
             continue
         try:
             recognized = scan_steam(directory, result)
@@ -35,10 +35,10 @@ def scan_directories(directories: abc.Iterable[Path | str]) -> ScanResult:
                 recognized = True
         except OSError as exc:
             # Path.is_dir and Path.is_file raise it for a path inside a folder the user may not open
-            result.errors.append(f"{directory}: {exc}")
+            result.errors.append(ScanError(ScanErrorKind.FAILED, str(directory), str(exc)))
             continue
         if not recognized:
-            result.errors.append(f"No Steam or Epic games found in: {directory}")
+            result.errors.append(ScanError(ScanErrorKind.NO_GAMES, str(directory)))
     # de-duplicate, keeping the first occurrence of each name per platform
     seen: set[tuple[str, Platform]] = set()
     unique: list[LocalGame] = []

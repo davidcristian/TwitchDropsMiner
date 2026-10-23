@@ -5,8 +5,8 @@
 **Origin:** found on 2026-10-18 while the docs were written
 **Verified:** 2026-10-23
 
-`default_translation` in `translate.py` has 154 strings. Each of the 20 files in `lang/` other than
-`English.json` lacks between 41 and 54 of them. `English.json` is left out because it is gitignored and every
+`default_translation` in `translate.py` has 160 strings. Each of the 20 files in `lang/` other than
+`English.json` lacks between 47 and 60 of them. `English.json` is left out because it is gitignored and every
 run from source writes it again from `default_translation`. The counts come from comparing the nested key
 paths of `default_translation`, read from `translate.py` with the `ast` module, with the key paths of each
 file.
@@ -16,7 +16,7 @@ A missing key shows in English. `Translator.set_language` loads a language with
 `default_translation`. It also deletes every key that `default_translation` lacks, so a string at the wrong
 path shows in English as well ([023](023-language-file-keys-dropped.md)).
 
-## The 41 keys every language lacks
+## The 47 keys every language lacks
 
 These are the strings of this project's own features:
 
@@ -32,6 +32,9 @@ These are the strings of this project's own features:
 - The titles of the box that shows the command line output, `arguments.title` and `arguments.error_title`:
   2 keys.
 - A failed change of the autostart entry, `error.autostart_not_changed`: 1 key.
+- Text that the code wrote in English before: `gui.login.enter_code`, `status.logging_level`,
+  `gui.settings.general.language`, and the scan errors `not_a_folder`, `no_games` and `failed` in
+  `gui.settings.detect`: 6 keys.
 
 ## Older keys some languages lack
 
@@ -48,12 +51,12 @@ These are the strings of this project's own features:
 
 ## Missing keys per language
 
-- 54: Nederlandse.
-- 53: Deutsch and Čeština.
-- 52: Dansk, Indonesian, Italiano, Português, Română, العربية and 日本語.
-- 48: Français and Українська.
-- 43: Magyar, Norsk, Polski, Türkçe and Русский.
-- 41: Español, 简体中文 and 繁體中文.
+- 60: Nederlandse.
+- 59: Deutsch and Čeština.
+- 58: Dansk, Indonesian, Italiano, Português, Română, العربية and 日本語.
+- 54: Français and Українська.
+- 49: Magyar, Norsk, Polski, Türkçe and Русский.
+- 47: Español, 简体中文 and 繁體中文.
 
 ## What closes it
 
@@ -80,3 +83,5 @@ Cost: no Twitch requests.
 - 2026-10-23: Counts checked again after the four `login.chrome` strings left `default_translation`: 154
   strings, and Čeština lacks 53 of them. The counts include `arguments.title`, `arguments.error_title` and
   `error.autostart_not_changed`, which were added before.
+- 2026-10-23: Counts checked again after six strings that the code wrote in English were added to
+  `default_translation`: 160 strings, and Čeština lacks 59 of them.

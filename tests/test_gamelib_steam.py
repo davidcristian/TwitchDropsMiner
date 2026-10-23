@@ -1,6 +1,6 @@
 import pytest
 
-from gamelib import LocalGame, Platform, ScanResult, scan_steam
+from gamelib import LocalGame, Platform, ScanErrorKind, ScanResult, scan_steam
 
 DOCUMENTED_TOOL_APPIDS = (228980, 1070560, 1391110, 1628350, 1493710, 2180100, 2805730)
 
@@ -137,8 +137,10 @@ def test_scan_steam_reads_the_other_libraries_when_one_cannot_be_opened(tmp_path
     assert found
     assert names(result) == ["Portal 2", "Dota 2"]
     assert result.libraries == [steamapps, other]
-    assert len(result.errors) == 1
-    assert result.errors[0].startswith(f"{locked / 'steamapps'}: ")
+    assert [(error.kind, error.path) for error in result.errors] == [
+        (ScanErrorKind.FAILED, str(locked / "steamapps"))
+    ]
+    assert result.errors[0].reason
 
 
 def test_scan_steam_reports_a_library_it_cannot_open_once_for_two_scans(tmp_path, steam_manifest, unopenable):

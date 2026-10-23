@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from gamelib import Platform, ScanResult, scan_directories
+from gamelib import Platform, ScanError, ScanErrorKind, ScanResult, scan_directories
 
 pytestmark = pytest.mark.usefixtures("launcher_folders")
 
@@ -22,7 +22,9 @@ def test_scan_directories_reports_a_path_that_is_not_a_folder(tmp_path):
     file = tmp_path / "file.txt"
     file.write_text("text", encoding="utf-8")
     result = scan_directories([missing, file])
-    assert result.errors == [f"Not a directory: {missing}", f"Not a directory: {file}"]
+    assert result.errors == [
+        ScanError(ScanErrorKind.NOT_A_FOLDER, str(missing)), ScanError(ScanErrorKind.NOT_A_FOLDER, str(file))
+    ]
     assert result.games == []
 
 
@@ -30,7 +32,7 @@ def test_scan_directories_reports_a_folder_without_games(tmp_path):
     empty = tmp_path / "empty"
     empty.mkdir()
     result = scan_directories([empty])
-    assert result.errors == [f"No Steam or Epic games found in: {empty}"]
+    assert result.errors == [ScanError(ScanErrorKind.NO_GAMES, str(empty))]
 
 
 def test_scan_directories_reports_a_folder_it_cannot_check(tmp_path, unreadable):
@@ -38,8 +40,8 @@ def test_scan_directories_reports_a_folder_it_cannot_check(tmp_path, unreadable)
     locked.mkdir()
     unreadable(locked)
     result = scan_directories([locked / "Games"])
-    assert len(result.errors) == 1
-    assert str(locked / "Games") in result.errors[0]
+    assert [(error.kind, error.path) for error in result.errors] == [(ScanErrorKind.FAILED, str(locked / "Games"))]
+    assert result.errors[0].reason
 
 
 def test_scan_directories_scans_the_other_folders_after_one_it_cannot_open(tmp_path, steam_manifest, unopenable):
@@ -49,8 +51,8 @@ def test_scan_directories_scans_the_other_folders_after_one_it_cannot_open(tmp_p
     unopenable(locked)
     result = scan_directories([locked, tmp_path / "Steam"])
     assert names(result) == ["Portal 2"]
-    assert len(result.errors) == 1
-    assert result.errors[0].startswith(f"{locked}: ")
+    assert [(error.kind, error.path) for error in result.errors] == [(ScanErrorKind.FAILED, str(locked))]
+    assert result.errors[0].reason
 
 
 def test_scan_directories_keeps_the_games_found_in_a_folder_before_an_error(
@@ -63,8 +65,8 @@ def test_scan_directories_keeps_the_games_found_in_a_folder_before_an_error(
     unopenable(epic)
     result = scan_directories([steam])
     assert names(result) == ["Portal 2"]
-    assert len(result.errors) == 1
-    assert result.errors[0].startswith(f"{steam}: ")
+    assert [(error.kind, error.path) for error in result.errors] == [(ScanErrorKind.FAILED, str(steam))]
+    assert result.errors[0].reason
 
 
 def test_scan_directories_recognizes_every_folder_when_the_home_folder_has_a_legendary_index(
@@ -161,5 +163,5 @@ def test_scan_directories_reads_the_launcher_folder_once_for_several_folders(
 @pytest.mark.skipif(sys.platform == "win32", reason="Windows forms a home folder for any user name")
 def test_scan_directories_names_the_folder_of_an_unknown_user_as_written(tmp_path):
     result = scan_directories(["~tdm-no-such-user/Games"])
-    assert len(result.errors) == 1
-    assert result.errors[0].startswith("~tdm-no-such-user/Games: ")
+    assert [(error.kind, error.path) for error in result.errors] == [(ScanErrorKind.FAILED, "~tdm-no-such-user/Games")]
+    assert result.errors[0].reason

@@ -49,8 +49,8 @@ widget and is changed only by the app or by editing the file.
 | `detected_games` | `list[str]` | `[]` | "Detected Games" list, filled by the app | `Twitch._run` in `State.GAMES_UPDATE`, the Settings tab, and the inventory filter |
 | `connection_quality` | `int` | `1` | none | `Twitch.get_session`, which multiplies the HTTP timeouts by it |
 
-- The "Language" label is hard-coded English in `gui.py`, not a translation key
-  ([task 014](../refinements/tasks/014-hard-coded-strings.md)).
+- In another language, the "Language" label starts with the English word, as in `Language / Język`, so a user
+  who picked a language they cannot read still finds the setting ([translate.md](translate.md#invariants)).
 - "Autostart into tray" and "Tray notifications" are not shown on macOS. The "Autostart" checkbox next to them is
   not a setting: `SettingsPanel` reads and writes the operating system's autostart entry instead.
 - The "Proxy" label says that a change needs a restart. `Twitch.request` uses a change at once. Each websocket

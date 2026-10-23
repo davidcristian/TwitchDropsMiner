@@ -1,9 +1,9 @@
 # Some text the app shows is written in the code and is not translated
 
-**Status:** open
+**Status:** done 2026-10-23
 **Area:** gui, gamelib, translate
 **Origin:** Found on 2026-10-18 while the docs were written, [translate.md](../../modules/translate.md#invariants)
-**Verified:** 2026-10-18
+**Verified:** 2026-10-23
 
 [AGENTS.md](../../../AGENTS.md#recipes) says text that the GUI or the console shows comes from `_()`. These
 strings are written in English in the code, so a user who picked another language sees them in English:
@@ -79,3 +79,11 @@ project; the scan errors with installed game detection on 2026-08-24.
 
 - 2026-10-18: Opened while the docs were written, from a search of the modules for text shown without `_()` and
   `git log -S` for the commit that added each string.
+- 2026-10-23: Done. The four rows of the table were still in the code. The newer modules (`autostart.py`,
+  `colorfonts.py`, `traybackend.py`, `restartdelay.py`, `folderpicker.py`) show no other text outside `_()`:
+  their messages are log records. Six keys now hold the login code line, the logging level line, the language
+  label and the three kinds of scan error, and `ScanResult.errors` holds `ScanError` values that
+  `Twitch.detect_games` turns into text. A translated language label starts with the English word `Language`.
+  The English login line no longer has "the" before "Twitch's". The 15 `error` and `exception` calls with
+  English text and the proxy placeholder stay English, as
+  [translate.md](../../modules/translate.md#text-that-stays-english) records.

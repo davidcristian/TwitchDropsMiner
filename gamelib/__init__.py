@@ -4,7 +4,7 @@ from __future__ import annotations
 from .scan import scan_directories
 from .epic import LauncherIndexes, launcher_indexes, scan_epic
 from .steam import STEAM_TOOL_APPIDS, STEAM_TOOL_PREFIXES, scan_steam
-from .common import GameMatch, LocalGame, MatchKind, Platform, ScanResult
+from .common import GameMatch, LocalGame, MatchKind, Platform, ScanError, ScanErrorKind, ScanResult
 from .matching import (
     EDITION_WORDS,
     ROMAN_NUMERALS,
@@ -35,6 +35,8 @@ __all__ = [
     "ROMAN_NUMERALS",
     "STEAM_TOOL_APPIDS",
     "STEAM_TOOL_PREFIXES",
+    "ScanError",
+    "ScanErrorKind",
     "ScanResult",
     "any_match",
     "compile_pattern",

@@ -24,6 +24,7 @@ class StatusMessages(TypedDict):
     claimed_drop: str
     no_channel: str
     no_campaign: str
+    logging_level: str
 
 
 class LoginMessages(TypedDict):
@@ -80,6 +81,7 @@ class GUILoginForm(TypedDict):
     logged_in: str
     logged_out: str
     request: str
+    enter_code: str
     required: str
     button: str
 
@@ -156,6 +158,7 @@ class GUIInventory(TypedDict):
 
 class GUISettingsGeneral(TypedDict):
     name: str
+    language: str
     autostart: str
     tray: str
     tray_notifications: str
@@ -208,6 +211,9 @@ class GUISettingsDetect(TypedDict):
     rescan: str
     scanning: str
     scan_error: str
+    not_a_folder: str
+    no_games: str
+    failed: str
     detected: str
     restored: str
     empty: str
@@ -300,6 +306,7 @@ default_translation: Translation = {
         "claimed_drop": "Claimed drop: {drop}",
         "no_channel": "No available channels to watch. Waiting for an ONLINE channel...",
         "no_campaign": "No active campaigns to mine drops for. Waiting for an active campaign...",
+        "logging_level": "Logging level: {level}",
     },
     "login": {
         "unexpected_content": (
@@ -358,6 +365,7 @@ default_translation: Translation = {
             "logging_in": "Logging in...",
             "required": "Login required",
             "request": "Please log in to continue.",
+            "enter_code": "Enter this code on Twitch's device activation page: {code}",
             "button": "Login",
         },
         "websocket": {
@@ -423,6 +431,7 @@ default_translation: Translation = {
         "settings": {
             "general": {
                 "name": "General",
+                "language": "Language 🌐 (requires restart): ",
                 "autostart": "Autostart: ",
                 "tray": "Autostart into tray: ",
                 "tray_notifications": "Tray notifications: ",
@@ -473,6 +482,9 @@ default_translation: Translation = {
                 "rescan": "Rescan",
                 "scanning": "Scanning game folders...",
                 "scan_error": "Game scan: {error}",
+                "not_a_folder": "Not a directory: {path}",
+                "no_games": "No Steam or Epic games found in: {path}",
+                "failed": "{path}: {reason}",
                 "detected": "{count} of {total} installed games matched.",
                 "restored": "{count} games from the last scan.",
                 "empty": "Nothing detected yet - add a game folder below.",
