@@ -45,3 +45,6 @@ Twitch requests: none.
   `tests/test_imports.py` imports `utils` and `settings`. Their logic still has no tests.
 - 2026-10-21: `tests/test_utils.py` tests `start_task`, which a fix added to `utils.py`. The candidates above
   still have no tests.
+- 2026-10-23: `utils.py` imports without a display or Twitch, so it joined the coverage list, and
+  `tests/test_utils*.py` test each of its public functions. A test of `format_traceback` showed that it raised
+  `ValueError` for every exception, which a fix with that test repaired.
