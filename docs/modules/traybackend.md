@@ -66,6 +66,16 @@ waits, and the icon thread runs the change and passes back its error, if any. So
 the icon thread uses the icon's connection. A new connection for each message needs no lock and nothing to close
 at exit, and the app sends a few such messages a minute at most.
 
+pystray's `stop` does nothing before the icon thread marks the icon ready, so a stop right after the start left
+the icon thread running until the app ended. A stop after that mark and before the setup thread showed the icon
+destroyed the window first, and the setup thread then waited forever for the answer to its show. Neither is a
+daemon thread, so Python's exit waited for them and the app did not end, for example after a SIGTERM right after
+`Minimize to Tray` or a start with `--tray`
+([task 077](../refinements/tasks/077-x11-tray-icon-stop-right-after-start-keeps-the-app-open.md)). The subclass
+keeps a stop that comes before the mark, and the icon thread then runs pystray's `_stop` in place of its main
+loop. When the main loop ends, each change that still waits returns, and a later change returns at once. Each
+waiting change has its own answer, so an answer cannot reach the change of another thread.
+
 ## Public contract
 
 - `import_pystray(load, environ, platform, bus_error)` returns the pystray module that `load` returns. `gui.py`
@@ -87,12 +97,19 @@ at exit, and the app sends a few such messages a minute at most.
     `_hide`, `_update_icon`, `_update_title` and `_stop`. For each method it sets an attribute of the same name.
     In the icon thread, that attribute calls the method. In another thread, it sends the icon window a client
     message with `_send_message`, of an atom named after the method, such as `_PYSTRAY__SHOW` for `_show`. It then
-    waits until the icon thread has run the method, and raises the `Exception` that the method raised. pystray's
+    waits until the icon thread has run the method, and raises the `Exception` that the method raised. Each call
+    waits for its own answer, and the icon thread answers the calls of one method in their order. A call that
+    `_send_message` raises for is removed and raises. pystray's
     `_run` sets `_thread` only after it lets the setup thread go on, so until then every thread counts as another
     thread, and its message waits until the icon thread reads it. The handler of client messages that it sets runs
     the method of such an atom and ignores any other message. It does not flush the icon's connection from the
     calling thread, as pystray's does: the new connection sends the message, and the icon thread sends its own
     requests when it reads its next event.
+  - `stop` calls pystray's once `_running` is True. Before that it notes the stop and returns. `_mark_ready`
+    sets `_running` under the lock that `stop` reads it under, then calls pystray's, which lets the setup thread go
+    on. `_mainloop` runs pystray's `_stop` in the icon thread when a stop was noted, and pystray's main loop
+    otherwise. When either ends, it answers each call that still waits, with no error, and each later call from
+    another thread returns at once without a message.
   - `_send_message` calls pystray's in the icon thread. In another thread, it opens a new connection of the
     class of `_display`, sends the message on it with pystray's `_send_message`, then calls `sync`, without which
     Xvfb dropped the message, and closes it.
@@ -100,14 +117,16 @@ at exit, and the app sends a few such messages a minute at most.
     keeping the others.
   - `_show` calls pystray's `_show`, which sends the dock request, only while `_systray_manager` is None.
 
-  These names, and `_window`, `_display`, `_thread`, `_message_handlers`, `_net_system_tray_sx` and
+  These names, and `_window`, `_display`, `_thread`, `_running`, `_message_handlers`, `_net_system_tray_sx` and
   `_systray_manager` that the subclass reads, are private to pystray, and `constraints.txt` keeps them stable by
   setting the pystray and python-xlib versions exactly. Suite tests run a real X11 icon under Xvfb: one sends it a
   click, one takes the tray selection after the icon has started and waits for the dock request, one counts the
   requests on the icon's connection at a title change from another thread, and one records the thread of each use
-  of the icon's connection from the start of the icon to its stop. One in `tests/test_gui_tray.py` minimizes and
-  restores the window twice with a tray that keeps each icon window that is not destroyed on the screen, and counts
-  the dock requests. A pystray release that renames one of these names fails `just check`.
+  of the icon's connection from the start of the icon to its stop. One stops a real icon at four moments of its
+  start and checks that both of pystray's threads end. Those in `tests/test_gui_tray.py` minimize and restore the
+  window twice with a tray that keeps each icon window that is not destroyed on the screen, and count the dock
+  requests, and restore or stop right after a minimize. A pystray release that renames one of these names fails
+  `just check`.
 - `hides_by_stopping(icon)` returns True when a class in the method resolution order of the icon's type comes
   from `pystray._xorg`, as the subclass of `icon_class` and pystray's own xorg `Icon` do, and False for the icon
   of any other backend.
@@ -135,6 +154,8 @@ at exit, and the app sends a few such messages a minute at most.
 - Once an X11 icon has started, only its icon thread uses its connection: no other thread sends a request on
   it, flushes it or reads from it. The thread that creates the icon uses it before the icon thread starts, and
   pystray closes it when the icon is freed, after the icon thread has ended.
+- A stop of an X11 icon at any moment, also before its thread starts, ends its icon thread and pystray's setup
+  thread, so Python's exit does not wait for them.
 - The X11 backend has no menu and shows no notifications. Its icon needs a tray that supports the XEmbed system
   tray protocol. A left click on it runs "Show", which restores the window and stops the icon, so no X11 icon
   exists while the window is open.

@@ -9,7 +9,7 @@ import pytest
 from fakes import FakeTwitch
 import gui as gui_module
 from traybackend import XORG_MODULE
-from xorgicon import FakeTray, wait_until_shown
+from xorgicon import FakeTray
 
 
 class FakeIcon:
@@ -28,10 +28,10 @@ class FakeIcon:
         ("pystray._gtk", True, True, False, False),
         ("pystray._win32", True, True, False, False),
         (XORG_MODULE, True, False, True, True),
-        (XORG_MODULE, False, True, False, False),
+        (XORG_MODULE, False, False, False, True),
     ],
 )
-def test_restoring_the_window_stops_a_shown_x11_tray_icon_and_hides_the_icon_of_another_backend(
+def test_restoring_the_window_stops_an_x11_tray_icon_and_hides_the_icon_of_another_backend(
     window, module, shown, kept, visible, stopped
 ):
     gui = window(FakeTwitch())
@@ -73,9 +73,6 @@ def test_restoring_the_window_removes_the_x11_tray_icon_from_the_tray_and_minimi
                 tray.run_until(lambda: tray.icon is None)
                 rounds.append((window_id, gui.tray.icon is None, tray.exists(window_id)))
         finally:
-            # a stop before pystray's setup thread shows the icon leaves that thread waiting forever
-            if gui.tray.icon is not None:
-                wait_until_shown(gui.tray.icon)
             gui.tray.stop()
             tray.close()
         return rounds
@@ -85,3 +82,34 @@ def test_restoring_the_window_removes_the_x11_tray_icon_from_the_tray_and_minimi
     assert first[0] != second[0]
     assert first[1:] == second[1:] == (True, False)
     assert tray.dock_requests == 2
+
+
+@pytest.mark.parametrize("action", ["restore", "stop"])
+def test_a_restore_or_a_stop_right_after_a_minimize_ends_both_threads_of_the_x11_tray_icon(window, monkeypatch, action):
+    # A stop is what GUIManager.close_window does, as after a SIGTERM.
+    if sys.platform != "linux":
+        pytest.skip("pystray uses its xorg backend on Linux")
+    import pystray
+    import pystray._xorg
+
+    xorg = SimpleNamespace(Icon=pystray._xorg.Icon, Menu=pystray.Menu, MenuItem=pystray.MenuItem)
+    monkeypatch.setattr(gui_module, "pystray", xorg)
+    gui = window(FakeTwitch())
+
+    async def minimize_and_stop():
+        gui.tray.minimize()
+        icon = gui.tray.icon
+        getattr(gui.tray, action)()
+        # the executor runs the icon thread, and its shutdown waits for that thread to end
+        await asyncio.wait_for(asyncio.get_running_loop().shutdown_default_executor(), 10)
+        return icon
+
+    # asyncio.run would wait 300 seconds for an icon thread that runs on, and close does not
+    loop = asyncio.new_event_loop()
+    try:
+        icon = loop.run_until_complete(minimize_and_stop())
+    finally:
+        loop.close()
+
+    icon._setup_thread.join(5)
+    assert (gui.tray.icon, icon._setup_thread.is_alive()) == (None, False)

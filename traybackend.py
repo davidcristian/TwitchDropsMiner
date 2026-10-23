@@ -5,7 +5,7 @@ import logging
 import queue
 import threading
 import traceback
-from collections import abc
+from collections import abc, deque
 from functools import partial
 from types import ModuleType, SimpleNamespace
 from typing import Protocol
@@ -97,13 +97,18 @@ def icon_class(base: type) -> type:
         # pystray runs these methods in the icon thread: another thread sends the icon window a client message and
         # waits. pystray's own dispatch also flushes the icon's connection from that thread, which once never returned.
         def _rewrite_implementation(self, *methods: abc.Callable[[], None]) -> None:
-            self._results: queue.SimpleQueue[Exception | None] = queue.SimpleQueue()
+            self._calls_lock = threading.Lock()
+            self._ended = False
+            self._stop_early = False
+            # the answer queue of each waiting call, per atom, in the order of the calls
+            self._calls: dict[int, deque[queue.SimpleQueue[Exception | None]]] = {}
             actions: dict[int, abc.Callable[[], None]] = {}
             for method in methods:
                 atom = self._display.intern_atom(f"_PYSTRAY_{method.__name__.upper()}")
                 actions[atom] = method
+                self._calls[atom] = deque()
                 setattr(self, method.__name__, partial(self._dispatch, method, atom))
-            self._message_handlers[CLIENT_MESSAGE] = lambda event: self._run_action(actions.get(event.client_type))
+            self._message_handlers[CLIENT_MESSAGE] = lambda event: self._run_action(actions, event.client_type)
 
         # pystray's _run lets the setup thread go on before it sets _thread, so a change can come before it
         def _in_icon_thread(self) -> bool:
@@ -114,20 +119,67 @@ def icon_class(base: type) -> type:
             if self._in_icon_thread():
                 method()
                 return
-            self._send_message(self._window, atom)
-            if (error := self._results.get()) is not None:
+            answer: queue.SimpleQueue[Exception | None] = queue.SimpleQueue()
+            with self._calls_lock:
+                # the icon thread has ended, so the change would wait forever
+                if self._ended:
+                    return
+                self._calls[atom].append(answer)
+            try:
+                self._send_message(self._window, atom)
+            except BaseException:
+                with self._calls_lock:
+                    if answer in self._calls[atom]:
+                        self._calls[atom].remove(answer)
+                raise
+            if (error := answer.get()) is not None:
                 raise error
 
-        def _run_action(self, method: abc.Callable[[], None] | None) -> None:
-            if method is None:
+        def _run_action(self, actions: dict[int, abc.Callable[[], None]], atom: int) -> None:
+            if (method := actions.get(atom)) is None:
                 return
+            with self._calls_lock:
+                answer = self._calls[atom].popleft() if self._calls[atom] else None
             # the icon thread keeps handling events, and the waiting thread raises the error
             try:
                 method()
             except Exception as error:
-                self._results.put(error)
+                result: Exception | None = error
             else:
-                self._results.put(None)
+                result = None
+            if answer is not None:
+                answer.put(result)
+
+        # pystray's stop does nothing before _mark_ready, and the icon thread would then run until the app ends
+        def stop(self) -> None:
+            with self._calls_lock:
+                if not self._running:
+                    self._stop_early = True
+                    return
+            super().stop()
+
+        def _mark_ready(self) -> None:
+            with self._calls_lock:
+                self._running = True
+            super()._mark_ready()
+
+        def _mainloop(self) -> None:
+            try:
+                if self._stop_early:
+                    # pystray's _stop, run here in the icon thread
+                    self._stop()
+                else:
+                    super()._mainloop()
+            finally:
+                # A change whose message came after the window was destroyed gets no answer, as when the setup thread
+                # shows the icon after a stop, so every waiting change returns now.
+                with self._calls_lock:
+                    self._ended = True
+                    waiting = [answer for calls in self._calls.values() for answer in calls]
+                    for calls in self._calls.values():
+                        calls.clear()
+                for answer in waiting:
+                    answer.put(None)
 
         # python-xlib 0.33 can leave a thread that waits for a reply waiting forever when another thread sends a
         # request on the same connection, so a message from another thread goes through a new connection.

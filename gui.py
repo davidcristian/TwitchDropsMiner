@@ -1181,11 +1181,10 @@ class TrayIcon:
 
     def restore(self):
         if self.icon is not None:
-            if not hides_by_stopping(self.icon):
-                self.icon.visible = False
-            elif self.icon.visible:
-                # pystray's setup thread shows a new icon, and a stop before that can leave the thread waiting forever
+            if hides_by_stopping(self.icon):
                 self.stop()
+            else:
+                self.icon.visible = False
         self._manager._root.deiconify()
 
     def notify(

@@ -81,9 +81,9 @@ installed none of these packages, so a fix in one of them was checked by a scrip
    `tests/threadcheck.py`, which `tests/conftest.py` loads, gives such a thread 5 seconds (`GRACE`) after the last
    test to end. Then it prints the name and stack of each one that still runs, sets the exit status to 1 and
    ends the process with `os._exit`. A test that starts a thread or a tray icon stops it in a `finally` block,
-   so a failed assertion does not leave it waiting. For this `tests/xorgicon.py` has `stop_icon`, which waits for
-   pystray's setup thread to show a real icon before it stops the icon, and `release_caller`, which answers the
-   change that a thread waits for on a fake X11 icon.
+   so a failed assertion does not leave it waiting. For this `tests/xorgicon.py` has `stop_icon`, which stops a
+   real icon and waits for its thread, and `release_caller`, which answers the change that a thread waits for on
+   a fake X11 icon.
 
 ## Consequences
 

@@ -12,7 +12,10 @@ from traybackend import CLIENT_MESSAGE, XORG_MODULE, icon_class
 
 # ExposureMask and StructureNotifyMask, which pystray 0.19.5 selects on its xorg icon window
 XORG_EVENTS = (1 << 15) | (1 << 17)
-ATOMS = {"MANAGER": 1, "_NET_SYSTEM_TRAY_S0": 2, "_NET_WM_CM_S0": 3, "_PYSTRAY__SHOW": 4, "_PYSTRAY__UPDATE_ICON": 5}
+ATOMS = {
+    "MANAGER": 1, "_NET_SYSTEM_TRAY_S0": 2, "_NET_WM_CM_S0": 3, "_PYSTRAY__SHOW": 4, "_PYSTRAY__UPDATE_ICON": 5,
+    "_PYSTRAY__STOP": 6,
+}
 
 
 class FakeWindow:
@@ -28,8 +31,13 @@ class FakeWindow:
 
 class FakeDisplay:
     opened: list[FakeDisplay] = []
+    # the number of the next connections that the X server refuses
+    refusals = 0
 
     def __init__(self) -> None:
+        if FakeDisplay.refusals:
+            FakeDisplay.refusals -= 1
+            raise ConnectionRefusedError("the X server refused the connection")
         self.flushes = 0
         self.messages: list[tuple[str, int, tuple[int, ...]]] = []
         self.synced = 0
@@ -60,13 +68,14 @@ class FakeXorgIcon:
         self._systray_manager = systray_manager
         self._net_system_tray_sx = ATOMS["_NET_SYSTEM_TRAY_S0"]
         self._thread = threading.current_thread()
+        self._running = False
         self.calls: list[str] = []
         self.error: Exception | None = None
         self._message_handlers = {CLIENT_MESSAGE: lambda event: self.calls.append(f"pystray {event.client_type}")}
         self._window = self._create_window()
         # pystray's __init__ passes the methods that must run in the icon thread to _rewrite_implementation
         if dispatched:
-            self._rewrite_implementation(self._show, self._update_icon)
+            self._rewrite_implementation(self._show, self._update_icon, self._stop)
 
     def _create_window(self) -> FakeWindow:
         return FakeWindow()
@@ -81,6 +90,21 @@ class FakeXorgIcon:
 
     def _send_message(self, window: str, client_type: int, *data: int) -> None:
         self._display.messages.append((window, client_type, data))
+
+    # pystray's _run marks the icon ready, which lets the setup thread go on, and then runs the main loop
+    def _mark_ready(self) -> None:
+        self._running = True
+
+    def _mainloop(self) -> None:
+        self.calls.append("main loop")
+
+    def stop(self) -> None:
+        if self._running:
+            self._stop()
+            self._running = False
+
+    def _stop(self) -> None:
+        self.calls.append("stop")
 
 
 FakeXorgIcon.__module__ = XORG_MODULE
@@ -152,9 +176,6 @@ def start_icon(name: str, prepare=lambda icon: None):
 
 def stop_icon(icon, thread: threading.Thread) -> None:
     """Stop a real icon that a thread runs, and wait for the thread to end."""
-    # A stop before pystray marks the icon running does nothing, so its thread runs on. A stop before the setup
-    # thread shows the icon leaves that thread waiting forever.
-    wait_until_shown(icon)
     icon.stop()
     thread.join(5)
 
