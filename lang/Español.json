@@ -2,19 +2,32 @@
     "english_name": "Spanish",
     "status": {
         "terminated": "\nLa aplicación se ha detenido.\nPor favor, cierre la aplicación.",
+        "fatal_error": "Se produjo un error fatal:\n",
+        "restarting": "Reiniciando automáticamente a las {time}...",
+        "restart_longer": "El error ocurrió menos de una hora después del último reinicio, por lo que la espera es más larga que el ajuste: {minutes} minutos.",
         "watching": "Mirando el canal: {channel}",
         "goes_online": "El canal {channel} se ha conectado, cambiando...",
         "goes_offline": "El canal {channel} se ha desconectado, cambiando...",
         "claimed_drop": "Drop reclamado: {drop}",
         "no_channel": "No se ha encontrado un canal en vivo para mirar. \nEsperando un canal en vivo...",
-        "no_campaign": "No se ha encontrado una campaña activa. \nEsperando una nueva campaña..."
+        "no_campaign": "No se ha encontrado una campaña activa. \nEsperando una nueva campaña...",
+        "logging_level": "Nivel de registro: {level}"
     },
     "login": {
         "unexpected_content": "Se produjo un error inesperado, \ngeneralmente debido a una redirección.\n¿Necesitas un VPN o iniciar sesión para acceder a internet?"
     },
     "error": {
         "site_down": "Twitch no está disponible. \nIntente de nuevo en {seconds} segundos...",
-        "no_connection": "No se ha podido conectar a Twitch. \nIntente de nuevo en {seconds} segundos... ({url})"
+        "no_connection": "No se ha podido conectar a Twitch. \nIntente de nuevo en {seconds} segundos... ({url})",
+        "save_failed": "Error al guardar, se intentará de nuevo en la próxima recarga: {error}",
+        "file_not_saved": "No se pudo guardar {file}: {error}",
+        "autostart_not_changed": "No se pudo cambiar la entrada de inicio automático: {error}",
+        "cannot_start": "No se puede iniciar",
+        "folder_not_writable": "La aplicación no puede escribir en la carpeta desde la que se ejecuta, donde guarda sus archivos:\n\n{error}\n\nMueva la aplicación a una carpeta en la que pueda escribir."
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "Error en los argumentos de la línea de comandos"
     },
     "gui": {
         "output": "Registros",
@@ -23,6 +36,7 @@
             "idle": "En espera...",
             "exiting": "Saliendo...",
             "terminated": "Aplicación suspendida.",
+            "restarting": "Reiniciando a las {time}",
             "cleanup": "Limpiando canales...",
             "gathering": "Buscando canales en vivo...",
             "switching": "Cambiando de canal...",
@@ -50,6 +64,7 @@
             "logging_in": "Iniciando sesión...",
             "required": "Se requiere inicio de sesión",
             "request": "Por favor, inicie sesión para continuar.",
+            "enter_code": "Introduzca este código en la página de activación de dispositivos de Twitch: {code}",
             "button": "Iniciar sesión"
         },
         "websocket": {
@@ -115,11 +130,14 @@
         "settings": {
             "general": {
                 "name": "Ajustes generales",
+                "language": "Idioma 🌐 (requiere reinicio): ",
                 "autostart": "Ejecutar al iniciar el sistema: ",
                 "tray": "Ejecutar en la bandeja del sistema: ",
                 "tray_notifications": "Mostrar notificaciones: ",
                 "dark_mode": "Modo oscuro: ",
                 "priority_mode": "Modo de prioridad: ",
+                "refresh_interval": "Buscar nuevas transmisiones cada: ",
+                "restart_delay": "Reiniciar tras un fallo después de: ",
                 "proxy": "Proxy (requiere reinicio):"
             },
             "advanced": {
@@ -134,13 +152,54 @@
                 "ending_soonest": "Terminando pronto",
                 "low_availability": "Poca disponibilidad primero"
             },
+            "refresh_intervals": {
+                "disabled": "Nunca (solo recarga horaria)",
+                "minutes": "{minutes} min"
+            },
+            "restart_delays": {
+                "disabled": "Nunca (permanecer detenido)",
+                "minutes": "{minutes} min"
+            },
+            "wanted": {
+                "name": "Juegos que se están minando",
+                "game": "Juego",
+                "source": "Seleccionado por",
+                "installed": "instalado",
+                "unlisted": "en ninguna lista",
+                "count": "Minando {count} juego(s), de mayor a menor prioridad.",
+                "empty": "Nada calculado todavía - presione \"Recargar\" abajo."
+            },
+            "detect": {
+                "name": "Juegos detectados",
+                "dirs": "Carpetas de juegos:",
+                "add_dir": "Agregar una carpeta de juegos de Steam o Epic",
+                "remove_dir": "Quitar la carpeta seleccionada",
+                "rescan": "Volver a buscar",
+                "scanning": "Buscando en las carpetas de juegos...",
+                "scan_error": "Búsqueda de juegos: {error}",
+                "not_a_folder": "No es una carpeta: {path}",
+                "no_games": "No se encontraron juegos de Steam o Epic en: {path}",
+                "failed": "{path}: {reason}",
+                "detected": "{count} de {total} juegos instalados reconocidos.",
+                "restored": "{count} juegos de la última búsqueda.",
+                "empty": "Nada detectado todavía - agregue una carpeta de juegos abajo.",
+                "no_dirs": "No se agregaron carpetas."
+            },
             "game_name": "Nombre del juego",
             "priority": "Lista de juegos preferidos",
             "exclude": "Lista de juegos excluidos",
+            "pattern_matches": "\"{pattern}\" coincide con {count} juego(s): {games}",
+            "pattern_empty": "\"{pattern}\" no coincide ahora con ningún juego que tenga una campaña.",
             "reload": "Recargar",
             "reload_text": "La mayoría de los cambios requieren recargar o reiniciar la aplicación para que sean aplicados: "
         },
         "help": {
+            "about": {
+                "name": "Acerca de",
+                "repository": "Repositorio: ",
+                "based_on": "Basado en: ",
+                "based_on_text": "TwitchDropsMiner de DevilXD"
+            },
             "links": {
                 "name": "Enlaces útiles",
                 "inventory": "Ver inventario de Twitch",
