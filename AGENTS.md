@@ -47,7 +47,7 @@ burst of requests puts that account at risk.
 | `settings.py` | `settings.json`: the `SettingsFile` type, its defaults, loading and saving |
 | `constants.py` | Paths, intervals, `State`, `PriorityMode` and the logging values |
 | `twitchapi/` | What the app sends to Twitch: `ClientType` in `clients.py`, the GQL queries with their hashes in `gql.py`, and `WebsocketTopic` in `topics.py` |
-| `translate.py` | The `Translation` types and the English strings. Other languages are in `lang/` |
+| `translate/` | The `Translation` types and the English strings. Other languages are in `lang/`. `translation.py` holds the `Translation` types, `english.py` holds the English strings in `default_translation`, and `translator.py` holds `Translator`, its instance `_` and `save_template` |
 | `utils/` | JSON helpers, `ExponentialBackoff`, task helpers and `Game`. `jsonfile.py`, `backoff.py`, `tasks.py`, `game.py`, `desktop.py` (the window icon and the browser) and `misc.py` hold them, and `__init__.py` imports the public names |
 | `cache.py` | The image cache for game and drop artwork |
 | `registry.py` | Windows registry access, used for starting with Windows |
@@ -73,7 +73,7 @@ burst of requests puts that account at risk.
 | `gamelib/` | Finds installed games and matches names ignoring case and accents. `steam.py` and `epic.py` read the Steam, Epic, Legendary and Heroic install indexes, `scan.py` runs both, `matching.py` pairs installed games with Twitch games, `patterns.py` matches list entries with `*` and `?`, `common.py` holds the shared types. `__init__.py` re-exports the public names |
 | `docs/` | Listed in `docs/index.md`: `ARCHITECTURE.md`, the decisions (`adr/`), one contract doc per module (`modules/`), procedures (`runbooks/`), the deferred work (`refinements/`), and two pages for users, `building.md` (running from source, building, packaging) and `troubleshooting.md` (common problems, command line flags) |
 
-**At most 300 lines per module**, which `scripts/linecap.py` checks. It names the three inherited modules over the
+**At most 300 lines per module**, which `scripts/linecap.py` checks. It names the two inherited modules over the
 limit as exceptions until they are split ([task 005](docs/refinements/tasks/005-modules-over-the-line-cap.md)), and
 an exception fails once its module is under the limit. Do not add a new responsibility to a module over the limit:
 put it in a new module and call it from there.
@@ -104,7 +104,8 @@ rewrites it.
 
 **A string the user sees:**
 
-1. Add a key to the matching `TypedDict` and to `default_translation`, both in `translate.py`.
+1. Add a key to the matching `TypedDict` in `translate/translation.py` and to `default_translation` in
+   `translate/english.py`.
 2. Read it with `_("section", "key")`. Never hard-code text that the GUI or the console shows.
 3. Leave `lang/English.json` alone: it is gitignored, and every run from source rewrites it.
 4. Other languages need no edit, because a missing key falls back to English.

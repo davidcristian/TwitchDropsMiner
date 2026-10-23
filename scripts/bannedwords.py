@@ -107,7 +107,7 @@ def mask_run(run: Sequence[Line]) -> list[str]:
     joined = mask("\n".join(text for _, text in run))
     masked: list[str] = []
     start = 0
-    # A string of translate.py is one line that can hold line breaks, so the lines are cut by length.
+    # A string of translate/english.py is one line that can hold line breaks, so the lines are cut by length.
     for _, text in run:
         masked.append(joined[start:start + len(text)])
         start += len(text) + 1

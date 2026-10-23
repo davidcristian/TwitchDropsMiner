@@ -55,7 +55,7 @@ autostart entry only by its name, so a rename has effects on machines that alrea
   it is `SettingsPanel._query_autostart`, which reads the entry when the window is built. The app cannot do the
   same for a new AppImage id (decision 2).
 - `git grep -i devilxd` outside `lang/`, `LICENSE*`, `AGENTS.md` and `docs/` finds only these identifiers, the
-  About box credit with its English string in `translate.py`, and the README's credits, links and mentions of
+  About box credit with its English string in `translate/english.py`, and the README's credits, links and mentions of
   the original project.
 
 ## Alternatives rejected

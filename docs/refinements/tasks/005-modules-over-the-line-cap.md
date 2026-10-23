@@ -15,7 +15,7 @@ new work goes into a new module that they call. This task records where each one
 | --- | --- | --- |
 | `gui.py` | 3164 | |
 | `twitch.py` | 1734 | |
-| `translate.py` | 612 | |
+| `translate.py` | 612 | `translate/`, four files of 7 to 284 lines |
 | `channel.py` | 528 | `channel/`, five files of 7 to 166 lines |
 | `inventory.py` | 489 | `inventory/`, four files of 7 to 284 lines |
 | `constants.py` | 477 | 139, and `twitchapi/`, four files of 16 to 183 lines |
@@ -108,3 +108,7 @@ Splits cost no Twitch requests.
 - 2026-10-23: `inventory.py` became the package `inventory/`, and its entry left `EXCEPTIONS`. `Benefit` and
   `BenefitType` have a file of their own, because with them and its imports the file of `BaseDrop` and
   `TimedDrop` had 308 lines. Three modules remain over the cap.
+- 2026-10-23: `translate.py` became the package `translate/`, and its entry left `EXCEPTIONS`. The `TypedDict`
+  classes, `default_translation` and `Translator` have a file each. With its imports, the file of
+  `default_translation` has 269 lines, so the dict was not cut. `langcheck.py`, `dashcheck.py` and
+  `prosecheck.py` read the English strings from `translate/english.py`. Two modules remain over the cap.

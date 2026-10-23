@@ -212,9 +212,9 @@ def test_python_prose_returns_the_comments_and_docstrings_but_not_the_strings():
     assert python_prose("module.py", source) == [[(2, "Comment.")], [(1, "Doc.")]]
 
 
-def test_python_prose_reads_the_strings_of_translate_py_as_prose():
+def test_python_prose_reads_the_strings_of_translate_english_py_as_prose():
     source = '"""Doc."""\nX = {"key": "Shown text"}\n'
-    assert python_prose("translate.py", source) == [[(1, "Doc.")], [(2, "Shown text")], [(2, "key")]]
+    assert python_prose("translate/english.py", source) == [[(1, "Doc.")], [(2, "Shown text")], [(2, "key")]]
 
 
 def test_python_prose_numbers_each_line_of_a_docstring():

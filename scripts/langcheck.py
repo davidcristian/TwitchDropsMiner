@@ -57,7 +57,7 @@ def format_fields(template: str) -> set[str]:
 
 
 def english_strings(source: str) -> dict[str, Any] | None:
-    """Return the default_translation dict literal of a translate.py source, or None when it has none."""
+    """Return the default_translation dict literal of a translate/english.py source, or None when it has none."""
     try:
         module = ast.parse(source.removeprefix(BOM))
     except SyntaxError:

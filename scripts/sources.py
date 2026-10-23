@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 NOT_PROSE = ("LICENSE", "LICENSE.MIT", "lang/")
 PYTHON_SUFFIXES = (".py", ".spec")
 # The English text the app shows is written as string literals in this file.
-UI_TEXT = "translate.py"
+UI_TEXT = "translate/english.py"
 FENCES = ("```", "~~~")
 _FENCE = re.compile(r"(`{3,}|~{3,})(.*)")
 _QUOTE = re.compile(r"(?: {0,3}> ?)+")

@@ -110,11 +110,11 @@ def window(display, monkeypatch, tmp_path):
 @pytest.fixture
 def other_language(monkeypatch, tmp_path):
     """Return a function that loads a language file with the given strings into a new `Translator`."""
-    import translate
+    import translate.translator
 
     folder = tmp_path / "lang"
     folder.mkdir()
-    monkeypatch.setattr(translate, "LANG_PATH", folder)
+    monkeypatch.setattr(translate.translator, "LANG_PATH", folder)
 
     def load(strings: dict) -> translate.Translator:
         (folder / "Test.json").write_text(json.dumps(strings), encoding="utf-8")

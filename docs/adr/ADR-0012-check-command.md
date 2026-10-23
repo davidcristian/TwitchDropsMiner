@@ -33,8 +33,8 @@ lint rules without its formatter or pyright.
      read is one that `merge_json` in `utils/jsonfile.py` removes or replaces when the app loads the file, so its text
      never shows. The scan prints how many English strings each file lacks and does not fail on them, because a
      new string may be missing in other languages, which show it in English. It reads `default_translation`
-     from `translate.py` with `ast`, so that it needs only the standard library, as the other scans do.
-   - `linecap.py`: at most 300 lines per Python or markdown file. The three inherited modules over 300 are named
+     from `translate/english.py` with `ast`, so that it needs only the standard library, as the other scans do.
+   - `linecap.py`: at most 300 lines per Python or markdown file. The two inherited modules over 300 are named
      in `EXCEPTIONS`, and an entry fails once its module is under the limit, so the list only shrinks as
      [task 005](../refinements/tasks/005-modules-over-the-line-cap.md) splits them.
    - `dashcheck.py`: no em dash, en dash or other Unicode dash in any text file, and no spaced `--` in prose:
@@ -44,7 +44,7 @@ lint rules without its formatter or pyright.
      a comment such as `n - 1` uses it as a minus sign, and inherited comments and English strings that use it
      as a dash keep it, so that upstream fixes still apply. The reader checks it.
    - `prosecheck.py`: no word of the banned table in AGENTS.md in docs, comments, docstrings, the strings of
-     `translate.py` or the other text files, and no comment block or docstring over three lines. It reads the
+     `translate/english.py` or the other text files, and no comment block or docstring over three lines. It reads the
      table from AGENTS.md, so the list is written in one place. It reads a block quote without its `>`
      markers, so a phrase split across two quoted lines is found.
    - `docscheck.py`: every relative link between markdown files resolves to a file in the repo, with its

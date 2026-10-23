@@ -161,7 +161,7 @@ def test_key_lines_decodes_an_escaped_key_and_keeps_the_last_of_a_repeated_one()
 
 def test_check_reads_only_the_json_files_in_lang(tmp_path):
     root = make_repo(tmp_path, {
-        "translate.py": TRANSLATE,
+        "translate/english.py": TRANSLATE,
         "lang/Good.json": "{}",
         "lang/Bad.json": "[1]",
         "lang/README.md": "not json",
@@ -170,9 +170,9 @@ def test_check_reads_only_the_json_files_in_lang(tmp_path):
     assert langcheck.check(root) == (2, [Problem("lang/Bad.json", 1, "is not a JSON object")], {"lang/Good.json": 1})
 
 
-def test_check_compares_the_fields_with_default_translation_in_translate_py(tmp_path):
+def test_check_compares_the_fields_with_default_translation_in_translate_english_py(tmp_path):
     root = make_repo(tmp_path, {
-        "translate.py": TRANSLATE,
+        "translate/english.py": TRANSLATE,
         "lang/Indonesian.json": '{"error": {"no_connection": "{detik} detik ({url})"}}',
         "lang/Polski.json": '{"error": {"no_connection": "{seconds} s ({url})"}}',
     })
@@ -183,31 +183,35 @@ def test_check_compares_the_fields_with_default_translation_in_translate_py(tmp_
 
 
 @pytest.mark.parametrize("translate", [None, "default_translation = {}\n", b"\xff\xfe"])
-def test_check_reports_a_translate_py_without_default_translation_and_checks_the_json(tmp_path, translate):
+def test_check_reports_an_english_py_without_default_translation_and_checks_the_json(tmp_path, translate):
     files: dict[str, str | bytes] = {"lang/Bad.json": "[1]", "lang/Good.json": '{"a": "{x}"}'}
     if translate is not None:
-        files["translate.py"] = translate
+        files["translate/english.py"] = translate
     root = make_repo(tmp_path, files)
     assert langcheck.check(root) == (2, [
-        Problem("translate.py", 1, "has no default_translation dict literal to read the English strings from"),
+        Problem("translate/english.py", 1, "has no default_translation dict literal to read the English strings from"),
         Problem("lang/Bad.json", 1, "is not a JSON object"),
     ], {})
 
 
 def test_check_counts_and_reports_a_language_file_that_is_not_utf8(tmp_path):
-    root = make_repo(tmp_path, {"translate.py": TRANSLATE, "lang/Latin.json": '{"a": "café"}'.encode("latin-1")})
+    root = make_repo(tmp_path, {
+        "translate/english.py": TRANSLATE, "lang/Latin.json": '{"a": "café"}'.encode("latin-1")
+    })
     assert langcheck.check(root) == (1, [Problem("lang/Latin.json", 1, "is not UTF-8 text")], {})
 
 
 def test_check_skips_a_language_file_that_git_ignores(tmp_path):
     root = make_repo(tmp_path, {
-        "translate.py": TRANSLATE, ".gitignore": "lang/English.json\n", "lang/English.json": "["
+        "translate/english.py": TRANSLATE, ".gitignore": "lang/English.json\n", "lang/English.json": "["
     })
     assert langcheck.check(root) == (0, [], {})
 
 
 def test_main_prints_each_problem_and_a_summary_and_returns_1(tmp_path, capsys):
-    root = make_repo(tmp_path, {"translate.py": TRANSLATE, "lang/Bad.json": "[]", "lang/Old.json": '{"old": "x"}'})
+    root = make_repo(tmp_path, {
+        "translate/english.py": TRANSLATE, "lang/Bad.json": "[]", "lang/Old.json": '{"old": "x"}'
+    })
     assert langcheck.main(["--root", str(root)]) == 1
     assert capsys.readouterr().out == (
         "lang/Bad.json:1: is not a JSON object\n"
@@ -219,7 +223,7 @@ def test_main_prints_each_problem_and_a_summary_and_returns_1(tmp_path, capsys):
 
 def test_main_prints_the_strings_each_file_lacks_and_returns_0_when_that_is_all(tmp_path, capsys):
     root = make_repo(tmp_path, {
-        "translate.py": TRANSLATE, "lang/A.json": "{}", "lang/B.json": '{"error": {"no_connection": "{url}"}}'
+        "translate/english.py": TRANSLATE, "lang/A.json": "{}", "lang/B.json": '{"error": {"no_connection": "{url}"}}'
     })
     assert langcheck.main(["--root", str(root)]) == 0
     assert capsys.readouterr().out == (

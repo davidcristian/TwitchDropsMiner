@@ -4,7 +4,7 @@
 
 ## Context
 
-`default_translation` in `translate.py` has 160 strings. Each of the 20 language files in `lang/` other than
+`default_translation` in `translate/english.py` has 160 strings. Each of the 20 language files in `lang/` other than
 `English.json` lacked 47 to 60 of them, most of them the strings of this project's own features. A missing
 string shows in English ([translate.md](../modules/translate.md#how-the-language-files-are-found-and-loaded)),
 so the Settings tab of every language showed part of its text in English. The project has no translator for any

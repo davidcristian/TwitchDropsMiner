@@ -1,9 +1,18 @@
-# `translate.py`
+# `translate/`
 
-**Purpose.** The strings the app shows to the user. It holds the `Translation` types that name each string,
-the English strings in `default_translation`, and `_`, the one `Translator` instance that returns a string in
-the current language. Other languages are JSON files in `lang/`. To add a string, follow the recipe in
+**Purpose.** The strings the app shows to the user. The package holds the `Translation` types that name each
+string, the English strings in `default_translation`, and `_`, the one `Translator` instance that returns a
+string in the current language. Other languages are JSON files in `lang/`. To add a string, follow the recipe in
 [AGENTS.md](../../AGENTS.md#recipes).
+
+## Files
+
+| File | What it holds |
+| --- | --- |
+| `__init__.py` | Imports `_`, `Translator`, `default_translation` and `save_template`. Callers import from `translate`, never from a file of it |
+| `translation.py` | `Translation` and the `TypedDict` classes in it |
+| `english.py` | `default_translation`. `scripts/langcheck.py` reads it with `ast`, and `scripts/dashcheck.py` and `scripts/prosecheck.py` check its strings as prose |
+| `translator.py` | `Translator`, its instance `_`, and `save_template`. A test that changes `LANG_PATH` patches this file |
 
 ## Public contract
 

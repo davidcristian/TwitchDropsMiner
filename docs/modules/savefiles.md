@@ -23,7 +23,7 @@ imports no other module of the app, so a test runs it with fakes.
   the error passes up and the change stays pending. `Settings` creates one, whose `write` calls `json_save`, and
   calls `mark()` on each assignment and each `alter()` ([settings.md](settings.md)).
 
-`Twitch._run` passes a `report` that logs the string `error.save_failed` from `translate.py` at `ERROR` level,
+`Twitch._run` passes a `report` that logs the string `error.save_failed` from `translate/` at `ERROR` level,
 with the error's text. That level shows in the Output box with no `-v` flag, and in `log.txt` with `--log`, so
 the line is translated, and the app prints no second line for it. A file that fails keeps its changes in
 memory, and the next inventory fetch writes it again: `Settings.save` clears its pending change only after a

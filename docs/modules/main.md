@@ -53,7 +53,7 @@ argparse's output in a `StringIO` and shows it in a message box when argparse ex
 `--help` and `--version`, it calls `boxes.showinfo` with `title`. For any other status, such as 2 for an unknown
 flag, it calls `boxes.showerror` with `error_title`. `boxes` is a `MessageBoxes`, an object with those two
 methods: `tkinter.messagebox` in the app, a fake in a test. The app passes the strings `arguments.title`
-("Twitch Drops Miner") and `arguments.error_title` ("Argument Parser Error") from `translate.py`. They show in
+("Twitch Drops Miner") and `arguments.error_title` ("Argument Parser Error") from `translate/`. They show in
 English, because the language is set after the settings load, which need the parsed flags. The flags for users
 are also in [troubleshooting.md](../troubleshooting.md#command-line-flags).
 

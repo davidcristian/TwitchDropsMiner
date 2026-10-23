@@ -46,7 +46,7 @@ whole file with the newest contents, and `json_load` reads it in place of `path`
 | --- | --- | --- |
 | `settings.py` | `settings.json` | merged with `default_settings`, then `Settings` removes the items that are not strings from its lists and sets ([settings.md](settings.md#loading-settingsjson)) |
 | `cache.py` | `cache/mapping.json` | `merge=False`; catches `json.JSONDecodeError` ([cache.md](cache.md)) |
-| `translate.py` | `lang/*.json` | merged with `default_translation`. `save_template`, which `main.py` calls in a run from source, saves `lang/English.json` |
+| `translate/` | `lang/*.json` | merged with `default_translation`. `save_template`, which `main.py` calls in a run from source, saves `lang/English.json` |
 
 `json_minify` is called by `websocket/messages.py` for every message it sends, and by `channel/stream.py` for the spade and GQL
 watch payloads, which only uncalled methods read ([channel.md](channel.md#watching)).

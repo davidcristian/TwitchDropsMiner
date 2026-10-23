@@ -69,9 +69,9 @@ def test_word_problems_reads_python_comments_and_docstrings_but_not_code_or_stri
     ]
 
 
-def test_word_problems_reads_the_strings_of_translate_py():
+def test_word_problems_reads_the_strings_of_translate_english_py():
     source = f'TEXT = {{"key": "The {SEAM} is shown"}}\n'
-    assert prosecheck.word_problems("translate.py", source, TABLE) == [banned("translate.py", 1, SEAM)]
+    assert prosecheck.word_problems("translate/english.py", source, TABLE) == [banned("translate/english.py", 1, SEAM)]
 
 
 def test_block_problems_accepts_a_comment_block_and_a_docstring_of_three_lines():

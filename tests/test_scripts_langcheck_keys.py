@@ -80,7 +80,7 @@ def test_parse_language_returns_the_data_or_the_problem():
 
 def test_check_fails_on_a_key_the_app_does_not_read_and_counts_the_missing_strings(tmp_path):
     root = make_repo(tmp_path, {
-        "translate.py": TRANSLATE,
+        "translate/english.py": TRANSLATE,
         "lang/Polski.json": '{\n  "gui": {\n    "invalidate": "x"\n  },\n  "name": "Polski"\n}\n',
         "lang/Dansk.json": '{"status": {"idle": "x", "watching": "{channel}"}, "name": "Dansk"}',
         "lang/Bad.json": "{",
