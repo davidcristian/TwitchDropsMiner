@@ -27,7 +27,7 @@ main.py
    ├─ ClientSession     the one aiohttp session; its cookie jar is saved to cookies.jar
    ├─ _qgl_limiter      the RateLimiter that every GQL request passes through
    ├─ _restart_delay    the RestartDelay that sets the wait before each restart after a fatal error
-   ├─ GUIManager        gui.py: the Tk root, the four tabs, TrayIcon, SettingsPanel; ui/: ChannelList
+   ├─ GUIManager        gui.py: the Tk root and SettingsPanel; ui/: the other tabs, TrayIcon, ChannelList
    │  └─ ImageCache     cache.py: game and reward images in cache/
    ├─ WebsocketPool     websocket/: up to 8 Websocket connections to Twitch PubSub
    ├─ inventory         DropsCampaign list; each campaign holds its TimedDrop objects and ACL channels

@@ -13,7 +13,7 @@ import pytest
 from gitrepo import isolate_git
 from threadcheck import pytest_sessionfinish, pytest_unconfigure  # noqa: F401
 
-# pystray picks its tray backend when gui.py imports it. The others need GTK or a display, which CI does not have.
+# pystray picks its tray backend when ui/tray.py imports it. The others need GTK or a display, which CI does not have.
 os.environ["PYSTRAY_BACKEND"] = "dummy"
 REPO = Path(__file__).resolve().parent.parent
 

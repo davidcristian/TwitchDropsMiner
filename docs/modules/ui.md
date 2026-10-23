@@ -2,8 +2,8 @@
 
 **Purpose.** The parts of the tkinter window that `gui.py` builds, and `run_preview`, which `python gui.py`
 calls. `gui.py` stays a file, because that command names it, and its classes move here
-([ADR-0020](../adr/ADR-0020-module-splits.md)). The window as a whole, `GUIManager` and the classes that are
-still in `gui.py` are in [gui.md](gui.md). Every file here needs a display, so the package is outside the
+([ADR-0020](../adr/ADR-0020-module-splits.md)). The window as a whole, `GUIManager` and `SettingsPanel`, which
+are still in `gui.py`, are in [gui.md](gui.md). Every file here needs a display, so the package is outside the
 coverage floor, as `gui.py` is.
 
 ## Files
@@ -18,6 +18,10 @@ coverage floor, as `gui.py` is.
 | `progress.py` | `CampaignProgress` |
 | `output.py` | `ConsoleOutput` and `_TKOutputHandler`, the log handler that writes to it |
 | `channellist.py` | `ChannelList` |
+| `tray.py` | `TrayIcon` |
+| `inventorytab.py` | `InventoryOverview`, the Inventory tab, without the two methods of its mixin |
+| `dropstatus.py` | `DropStatusMixin`, a base class of `InventoryOverview` that holds `update_progress` and `update_drop`, which write the status line under each drop |
+| `helptab.py` | `HelpTab` |
 | `preview.py` | `run_preview`, the mock data of the preview |
 
 ## The generic widgets
@@ -67,6 +71,50 @@ record of the event loop thread writes them before itself, so the lines keep the
 queue, rather than `loop.call_soon_threadsafe` as the tray menu uses, needs no running event loop when the window
 is built, and the tests build it without one.
 
+## The Inventory and Help tabs
+
+- **`InventoryOverview.add_campaign`** is a coroutine, because it awaits `ImageCache.get` for the campaign and
+  reward images ([cache.md](cache.md)). `clear()`, which `Twitch.fetch_inventory` calls at each reload, removes
+  the campaigns and calls `ImageCache.retry_failed`, so that each failed image download is tried once more
+  ([cache.md](cache.md#failed-downloads)). The filters are "Not linked", "Upcoming", "Expired", "Excluded" and
+  "Finished". Without "Excluded", the tab shows only a campaign whose game `State.GAMES_UPDATE` may mine: the game
+  matches no Exclude entry and, under "Priority list only", it matches a Priority entry or is in `detected_games`.
+  `refresh()` applies the filters again, and it runs each time the Inventory tab is opened. The campaigns are in
+  a `ScrollArea` with both scroll bars always shown. The mouse wheel scrolls it, and Shift scrolls sideways
+  ([scrollarea.md](scrollarea.md)).
+- **`HelpTab`** "Invalidate" posts the access token to `https://id.twitch.tv/oauth2/revoke`, deletes
+  `cookies.jar` when Twitch returns 200, and sets `State.RESTART`. The button stays disabled until a login
+  completes.
+
+## The tray icon
+
+`TrayIcon` wraps a `pystray.Icon` named `twitch_miner`. `tray.py` imports pystray through `import_pystray`, which
+chooses the tray backend, and creates the icon from `icon_class(pystray.Icon)`, which makes the icon of the X11
+backend receive clicks ([traybackend.md](traybackend.md)).
+
+- The icon is created on the first `minimize()`, not at start. `pystray.Icon.run` blocks, so it runs in a thread
+  of the default executor (`loop.run_in_executor`). The menu items "Show" (the default action) and "Quit" call
+  back through `loop.call_soon_threadsafe`, so their handlers run on the event loop thread.
+- `minimize()` hides the window and shows the icon. `restore()` hides the icon and shows the window. With
+  `--tray`, `GUIManager.__init__` calls `minimize()` once the window is built.
+- With the X11 backend, `restore()` stops the icon instead of hiding it, because `hides_by_stopping` returns True
+  for it ([traybackend.md](traybackend.md)), and the next `minimize()` creates a new icon. While the window is
+  open, no icon exists: `change_icon` only stores the state, `update_title` and `notify` do nothing, and the new
+  icon takes the stored state and the title of the drop on the Main tab. `restore()` stops the icon also before
+  pystray has shown it, and `close_window` stops it as the app ends. A stop at any moment ends both of pystray's
+  threads ([traybackend.md](traybackend.md)).
+- On macOS, `minimize()` does nothing, the button is hidden and `--tray` is ignored.
+- `change_icon(state)` takes `pickaxe`, `active`, `idle`, `error` or `maint`, the files in `icons/`, and raises
+  `ValueError` for any other name. It stores the state when no icon exists yet.
+- `update_title(drop)` sets the tooltip to three lines: the app name, the game, and the rewards with the progress
+  and claimed count. `get_title` shortens the rewards, then the game name, to fit 127 characters, and raises
+  `MinerException` when that is not enough.
+- `notify(message, title)` shows a notification for 10 seconds when `tray_notifications` is on and the icon
+  exists. `BaseDrop.claim` calls it after a claim with the title "Mined Drop".
+
+The Linux tray needs AppIndicator support; [troubleshooting.md](../troubleshooting.md#the-tray-icon-on-linux)
+lists the problems.
+
 ## The preview
 
 `run_preview(manager)` builds the window from `manager`, the class `GUIManager` that `gui.py` passes, around a
@@ -97,5 +145,6 @@ that `gui.py` or a file of this package reads as an attribute of `settings` or `
   needs. It has no `detect_games`, `get_auth` or `_client_type`, so "Rescan", the ❌ folder button and a folder
   chosen with ➕ raise `AttributeError` in the preview.
 
-**Dependencies.** Repo modules: `translate`, `utils` (`webopen`, `resource_path`) and `constants`; `gui`,
-`channel` and `inventory` for type checking only. Third-party: `yarl`.
+**Dependencies.** Repo modules: `translate`, `cache`, `exceptions`, `gamelib`, `scrollarea`, `traybackend`,
+`utils` and `constants`; `gui`, `channel`, `inventory` and `settings` for type checking only. Third-party:
+`pystray`, Pillow and `yarl`.

@@ -6,8 +6,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from fakes import FakeTwitch
-import gui as gui_module
+import ui.tray as ui_tray
+from fakes import GAME, FakeTwitch, campaign_data, drop_data
+from inventory import DropsCampaign
 from traybackend import XORG_MODULE
 from xorgicon import FakeTray
 
@@ -53,7 +54,7 @@ def test_restoring_the_window_removes_the_x11_tray_icon_from_the_tray_and_minimi
     import pystray._xorg
 
     xorg = SimpleNamespace(Icon=pystray._xorg.Icon, Menu=pystray.Menu, MenuItem=pystray.MenuItem)
-    monkeypatch.setattr(gui_module, "pystray", xorg)
+    monkeypatch.setattr(ui_tray, "pystray", xorg)
     gui = window(FakeTwitch())
     tray = FakeTray()
     docked = ("in the tray", "viewable")
@@ -93,7 +94,7 @@ def test_a_restore_or_a_stop_right_after_a_minimize_ends_both_threads_of_the_x11
     import pystray._xorg
 
     xorg = SimpleNamespace(Icon=pystray._xorg.Icon, Menu=pystray.Menu, MenuItem=pystray.MenuItem)
-    monkeypatch.setattr(gui_module, "pystray", xorg)
+    monkeypatch.setattr(ui_tray, "pystray", xorg)
     gui = window(FakeTwitch())
 
     async def minimize_and_stop():
@@ -113,3 +114,13 @@ def test_a_restore_or_a_stop_right_after_a_minimize_ends_both_threads_of_the_x11
 
     icon._setup_thread.join(5)
     assert (gui.tray.icon, icon._setup_thread.is_alive()) == (None, False)
+
+
+def test_the_tray_title_keeps_the_line_break_after_a_shortened_game_name(window):
+    fake = FakeTwitch()
+    campaign = DropsCampaign(fake, campaign_data([drop_data("d1")], game={**GAME, "name": "N" * 100}), {})
+
+    title = window(fake).tray.get_title(campaign.timed_drops["d1"])
+
+    # a tray title has at most 127 characters, so the game name is cut to fit
+    assert title.split("\n") == ["Twitch Drops Miner", "N" * 84 + "...", "Reward d1 0.0% (0/1)"]

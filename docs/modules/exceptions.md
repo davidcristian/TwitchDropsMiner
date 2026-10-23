@@ -43,7 +43,7 @@ passes it to `Twitch.task_failed` instead, and `Twitch._run` raises it as a fata
 - `Translator.__call__` raises it for a key path that the current translation does not have
   ([translate.md](translate.md)).
 - `TrayIcon.get_title` raises it when the tray tooltip cannot be shortened to 127 characters
-  ([gui.md](gui.md#the-tray-icon)).
+  ([ui.md](ui.md#the-tray-icon)).
 - `Channel.get_spade_url` raises it when it finds no spade URL. Only `Channel._send_watch_spade` calls it, and no
   code calls that method ([ADR-0009](../adr/ADR-0009-watch-method.md#decision)).
 

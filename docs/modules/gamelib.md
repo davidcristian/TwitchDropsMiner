@@ -235,7 +235,7 @@ user's side.
 | --- | --- | --- |
 | `Twitch.detect_games` (`twitch/`) | `scan_directories` through `asyncio.to_thread`, then `match_games` with the game of each campaign in the inventory | In `INVENTORY_FETCH` after `fetch_inventory`, and from `SettingsPanel.rescan_games`: the `Rescan` button and adding or removing a game folder |
 | `Twitch._run`, state `GAMES_UPDATE` | `compile_patterns`, `match_rank`, `any_match` | Builds `wanted_games` from the Priority, Exclude and detected lists |
-| `InventoryOverview._update_visibility` (`gui.py`) | `compile_patterns`, `any_match` | Decides whether a campaign is shown under the filters. Without the "Excluded" filter it applies the rule of `GAMES_UPDATE` to the Priority, Exclude and detected lists |
+| `InventoryOverview._update_visibility` (`ui/inventorytab.py`) | `compile_patterns`, `any_match` | Decides whether a campaign is shown under the filters. Without the "Excluded" filter it applies the rule of `GAMES_UPDATE` to the Priority, Exclude and detected lists |
 | `SettingsPanel.set_wanted_games` | `compile_patterns`, `match_rank` | Names the Priority entry that matched each game in the Games Being Mined table |
 | `SettingsPanel.set_detected` | `GameMatch`, `MatchKind` | Fills the Detected Games list |
 | `SettingsPanel._report_pattern` | `has_wildcard`, `compile_pattern`, `matching_names` | After `priority_add` or `exclude_add`, prints the games a wildcard entry covers |

@@ -1,6 +1,6 @@
 # `traybackend.py`
 
-**Purpose.** Imports pystray, the tray icon library, for `gui.py`. pystray chooses its tray backend when it is
+**Purpose.** Imports pystray, the tray icon library, for `ui/tray.py`. pystray chooses its tray backend when it is
 imported. Outside Windows and macOS it tries the AppIndicator backend, then GTK, then X11 (`xorg`), but it moves
 on only after an `ImportError`. A GTK library that fails to load makes PyGObject raise `AssertionError` or
 `ValueError` instead, so a plain `import pystray` fails and the app stops before its window opens. In the Linux
@@ -31,7 +31,7 @@ window to show or hide it. stalonetray, trayer and xfce4-panel hide the icon whe
 ([task 069](../refinements/tasks/069-tint2-shows-hidden-x11-tray-icon.md)).
 
 So the app stops the X11 icon to hide it: `hides_by_stopping` returns True for it, and `TrayIcon.restore` in
-`gui.py` then stops the icon instead of hiding it ([gui.md](gui.md#the-tray-icon)). pystray's `_stop` destroys the
+`ui/tray.py` then stops the icon instead of hiding it ([ui.md](ui.md#the-tray-icon)). pystray's `_stop` destroys the
 icon window, and each of these four trays removes a destroyed window. The next `Minimize to Tray` creates a new
 icon, with its own window and X connection. pystray closes the connection of a stopped icon when Python's garbage
 collector frees the icon. In 40 rounds of `Minimize to Tray` and a left click from source, at most 11
@@ -78,8 +78,8 @@ waiting change has its own answer, so an answer cannot reach the change of anoth
 
 ## Public contract
 
-- `import_pystray(load, environ, platform, bus_error)` returns the pystray module that `load` returns. `gui.py`
-  passes `load_pystray`, `os.environ`, `sys.platform` and `session_bus_error`.
+- `import_pystray(load, environ, platform, bus_error)` returns the pystray module that `load` returns.
+  `ui/tray.py` passes `load_pystray`, `os.environ`, `sys.platform` and `session_bus_error`.
   - On `win32` and `darwin`, and when `environ` sets `PYSTRAY_BACKEND` to a name, it calls `load` once, so
     pystray makes its own choice and an error propagates. It does not call `bus_error`.
   - Otherwise it calls `bus_error` once. When that returns a reason, it logs a warning and tries `xorg` alone.
@@ -88,7 +88,7 @@ waiting change has its own answer, so an answer cannot reach the change of anoth
     first two logs a warning and tries the next. An error from `xorg`, and any other error, propagates.
   - Before it returns or raises, it sets `PYSTRAY_BACKEND` back to its earlier value, or removes it.
 - `icon_class(base)` returns `base`, the `Icon` class of the loaded pystray, unless its module is `pystray._xorg`.
-  Then it returns a subclass, which `gui.py` creates its icon from:
+  Then it returns a subclass, which `ui/tray.py` creates its icon from:
   - `__init__` calls pystray's, selects `StructureNotifyMask` on the root window and wraps pystray's handler of
     client messages. A `MANAGER` message that names `_NET_SYSTEM_TRAY_S0` while `_systray_manager` is None
     calls `_update_icon`, which docks the icon and draws it. Any other client message goes to the handler that
@@ -123,7 +123,7 @@ waiting change has its own answer, so an answer cannot reach the change of anoth
   click, one takes the tray selection after the icon has started and waits for the dock request, one counts the
   requests on the icon's connection at a title change from another thread, and one records the thread of each use
   of the icon's connection from the start of the icon to its stop. One stops a real icon at four moments of its
-  start and checks that both of pystray's threads end. Those in `tests/test_gui_tray.py` minimize and restore the
+  start and checks that both of pystray's threads end. Those in `tests/test_ui_tray.py` minimize and restore the
   window twice with a tray that keeps each icon window that is not destroyed on the screen, and count the dock
   requests, and restore or stop right after a minimize. A pystray release that renames one of these names fails
   `just check`.
@@ -148,7 +148,7 @@ waiting change has its own answer, so an answer cannot reach the change of anoth
 - Where the AppIndicator backend loads, pystray is imported once and nothing is logged.
 - A failed import leaves no `pystray` module in `sys.modules`, so the next `load` runs pystray's backend choice
   again. Modules that loaded before the error, such as `gi`, stay loaded.
-- `gui.py` imports this module before `main.py` sets up logging, so Python prints the warning to standard error,
+- `ui/tray.py` imports this module before `main.py` sets up logging, so Python prints the warning to standard error,
   and neither `log.txt` nor the Output box shows it. PyGObject prints its own warning before it, which names the
   library that failed to load.
 - Once an X11 icon has started, only its icon thread uses its connection: no other thread sends a request on

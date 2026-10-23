@@ -8,12 +8,17 @@ from .login import LoginForm
 from .progress import CampaignProgress
 from .output import ConsoleOutput, _TKOutputHandler
 from .channellist import ChannelList
+from .tray import TrayIcon
+from .inventorytab import InventoryOverview
+from .helptab import HelpTab
 from .preview import run_preview
 
 __all__ = [
     "CampaignProgress",
     "ChannelList",
     "ConsoleOutput",
+    "HelpTab",
+    "InventoryOverview",
     "LinkLabel",
     "LoginForm",
     "MouseOverLabel",
@@ -23,6 +28,7 @@ __all__ = [
     "PlaceholderEntry",
     "SelectCombobox",
     "StatusBar",
+    "TrayIcon",
     "WebsocketStatus",
     "_TKOutputHandler",
     "run_preview",

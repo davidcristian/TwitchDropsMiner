@@ -2,8 +2,8 @@
 
 **Purpose.** The tkinter window: four tabs, the tray icon, the light and dark themes, and a preview that opens
 the window with mock data. `Twitch.__init__` creates one `GUIManager`, and the rest of the app changes the
-window only through that object and the parts it exposes as attributes. Some of those parts are in the package
-`ui/`, from which `gui.py` imports them ([ui.md](ui.md)). The file is far over the 300 line cap
+window only through that object and the parts it exposes as attributes. Every part but `SettingsPanel` is in
+the package `ui/`, from which `gui.py` imports it ([ui.md](ui.md)). The file is far over the 300 line cap
 in [AGENTS.md](../../AGENTS.md#module-map), so new logic that does not need tkinter goes in a new module
 ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md) gives its line count). Before a search and
 replace edit in this file, read the `gui.py` recipe in [AGENTS.md](../../AGENTS.md#recipes).
@@ -28,15 +28,6 @@ and keeps it as an attribute. The labels in quotes are the English strings from 
 | `settings` | `SettingsPanel` | Settings | The settings widgets, the lists and the "Reload" button |
 | `help` | `HelpTab` | Help | About, links, help text and the "Invalidate" button |
 
-- **`InventoryOverview.add_campaign`** is a coroutine, because it awaits `ImageCache.get` for the campaign and
-  reward images ([cache.md](cache.md)). `clear()`, which `Twitch.fetch_inventory` calls at each reload, removes
-  the campaigns and calls `ImageCache.retry_failed`, so that each failed image download is tried once more
-  ([cache.md](cache.md#failed-downloads)). The filters are "Not linked", "Upcoming", "Expired", "Excluded" and
-  "Finished". Without "Excluded", the tab shows only a campaign whose game `State.GAMES_UPDATE` may mine: the game
-  matches no Exclude entry and, under "Priority list only", it matches a Priority entry or is in `detected_games`.
-  `refresh()` applies the filters again, and it runs each time the Inventory tab is opened. The campaigns are in
-  a `ScrollArea` with both scroll bars always shown. The mouse wheel scrolls it, and Shift scrolls sideways
-  ([scrollarea.md](scrollarea.md)).
 - **`SettingsPanel`** has the sections "Games Being Mined" (filled by `set_wanted_games`), "General", "Advanced",
   "Priority", "Exclude" and "Detected Games", side by side in a `ScrollArea` with `fit`. In a window as large
   as the sections, the tab shows them centered and no scroll bar. In a smaller window, such as on a screen 1366
@@ -56,12 +47,9 @@ and keeps it as an attribute. The labels in quotes are the English strings from 
   so a rename leaves the old entry in place ([ADR-0007](../adr/ADR-0007-kept-identifiers.md)). When the write or
   removal raises `OSError`, `update_autostart` logs "Could not change the autostart entry:" with the error, and
   sets the checkbox from `_query_autostart` again.
-- **`HelpTab`** "Invalidate" posts the access token to `https://id.twitch.tv/oauth2/revoke`, deletes
-  `cookies.jar` when Twitch returns 200, and sets `State.RESTART`. The button stays disabled until a login
-  completes.
 
-The classes from `StatusBar` to `ChannelList` in the table are in `ui/`, with the generic widgets, such as
-`PlaceholderEntry`, `PaddedListbox` and `Notebook` ([ui.md](ui.md)).
+Every class in the table except `SettingsPanel` is in `ui/`, with the generic widgets, such as
+`PlaceholderEntry` and `PaddedListbox` ([ui.md](ui.md)).
 
 ## How the GUI runs with asyncio
 
@@ -69,8 +57,8 @@ The asyncio event loop and Tk run on one thread, so Tk callbacks and coroutines 
 
 - `GUIManager.start()` creates the `_poll` task in place of `Tk.mainloop()`. It calls `Tk.dooneevent` with
   `TKINTER_DONT_WAIT` (`1 << 1`) until no Tk event is left, writes the queued log records to the Output box
-  ([ui.md](ui.md#log-records-in-the-output-box)), then sleeps 0.05 seconds. With that flag Tcl returns at once on an
-  empty queue, which stops Tk from blocking inside an X11 or Wayland call during a large redraw.
+  ([ui.md](ui.md#log-records-in-the-output-box)), then sleeps 0.05 seconds. With that flag Tcl returns at once
+  on an empty queue, which stops Tk from blocking inside an X11 or Wayland call during a large redraw.
 - `Twitch._run` calls `start()` at the beginning of each run. `stop()` cancels the poll task and the progress
   timer; [main.py](main.md) calls it after the window is closed.
 - A Tk callback that needs async work starts a task: `HelpTab.invalidate_token`,
@@ -105,35 +93,6 @@ Other modules use these names. Everything else in the file is internal to the GU
 The GUI calls back into `Twitch` through `settings`, `change_state`, `state_change`, `close`, `detect_games`,
 `get_auth`, `request` and `_client_type`. `save()` saves the image cache; `Twitch.save` calls it together with
 `Settings.save`. `grab_attention(sound=True)` restores the window from the tray, focuses it and rings the bell.
-
-## The tray icon
-
-`TrayIcon` wraps a `pystray.Icon` named `twitch_miner`. `gui.py` imports pystray through `import_pystray`, which
-chooses the tray backend, and creates the icon from `icon_class(pystray.Icon)`, which makes the icon of the X11
-backend receive clicks ([traybackend.md](traybackend.md)).
-
-- The icon is created on the first `minimize()`, not at start. `pystray.Icon.run` blocks, so it runs in a thread
-  of the default executor (`loop.run_in_executor`). The menu items "Show" (the default action) and "Quit" call
-  back through `loop.call_soon_threadsafe`, so their handlers run on the event loop thread.
-- `minimize()` hides the window and shows the icon. `restore()` hides the icon and shows the window. With
-  `--tray`, `GUIManager.__init__` calls `minimize()` once the window is built.
-- With the X11 backend, `restore()` stops the icon instead of hiding it, because `hides_by_stopping` returns True
-  for it ([traybackend.md](traybackend.md)), and the next `minimize()` creates a new icon. While the window is
-  open, no icon exists: `change_icon` only stores the state, `update_title` and `notify` do nothing, and the new
-  icon takes the stored state and the title of the drop on the Main tab. `restore()` stops the icon also before
-  pystray has shown it, and `close_window` stops it as the app ends. A stop at any moment ends both of pystray's
-  threads ([traybackend.md](traybackend.md)).
-- On macOS, `minimize()` does nothing, the button is hidden and `--tray` is ignored.
-- `change_icon(state)` takes `pickaxe`, `active`, `idle`, `error` or `maint`, the files in `icons/`, and raises
-  `ValueError` for any other name. It stores the state when no icon exists yet.
-- `update_title(drop)` sets the tooltip to three lines: the app name, the game, and the rewards with the progress
-  and claimed count. `get_title` shortens the rewards, then the game name, to fit 127 characters, and raises
-  `MinerException` when that is not enough.
-- `notify(message, title)` shows a notification for 10 seconds when `tray_notifications` is on and the icon
-  exists. `BaseDrop.claim` calls it after a claim with the title "Mined Drop".
-
-The Linux tray needs AppIndicator support; [troubleshooting.md](../troubleshooting.md#the-tray-icon-on-linux)
-lists the problems.
 
 ## The theme and dark mode
 
@@ -194,6 +153,6 @@ so the preview uses the repository folder as its working folder. To run the prev
   A new plain Tk widget needs its own `configure_theme` call in `apply_theme`.
 
 **Dependencies.** Repo modules: `translate`, `cache`, `colorfonts`, `autostart`, `gamelib`, `exceptions`,
-`folderpicker`, `traybackend`, `scrollarea`, `settings` (`default_settings`, `setting_choices`), `utils`,
-`constants` and `ui`; `twitch` and `inventory` for type checking only. Third-party: `pystray`,
-Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on Windows, and `AppKit` on macOS.
+`folderpicker`, `scrollarea`, `settings` (`default_settings`, `setting_choices`), `utils`, `constants` and
+`ui`; `twitch` and `inventory` for type checking only. Third-party: `yarl`, pywin32 (`win32api`, `win32con`,
+`win32gui`) on Windows, and `AppKit` on macOS.

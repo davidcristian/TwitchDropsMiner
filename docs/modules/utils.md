@@ -75,11 +75,13 @@ it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays
   raised the error would raise it again in `Twitch.shutdown`. The critical tasks are
   `Twitch._watch_loop`, `Twitch._maintenance_task` and `Websocket._handle`. Without `critical` it wraps the
   PubSub handlers `process_stream_state`, `process_stream_update`, `process_drops` and `process_notifications`
-  in `twitch/`, `Websocket.stop` and, in `gui.py`, `Twitch.detect_games` and `HelpTab._invalidate_token`.
+  in `twitch/`, `Websocket.stop`, `Twitch.detect_games` in `gui.py` and `HelpTab._invalidate_token` in
+  `ui/helptab.py`.
 - **`start_task(coro)`** starts a task that runs `coro`, keeps it in a module level set until it ends and returns
   it. The event loop keeps only a weak reference to a task, so a task that nothing else references can be
-  collected before it ends. `SettingsPanel.rescan_games` and `HelpTab.invalidate_token` in `gui.py`, and
-  `Websocket.stop_nowait` and `Websocket._handle_message` in `websocket/`, start their tasks with it.
+  collected before it ends. `SettingsPanel.rescan_games` in `gui.py`, `HelpTab.invalidate_token` in
+  `ui/helptab.py`, and `Websocket.stop_nowait` and `Websocket._handle_message` in `websocket/`, start their
+  tasks with it.
 - **`AwaitableValue[T]`** is a value that coroutines can wait for: `get()` waits until `set()` is called. It
   also has `has_value()`, `get_with_default(default)` and `clear()`. `Twitch.watching_channel` is one,
   and `Websocket._ws` holds each websocket's connection in one.
@@ -101,7 +103,7 @@ empty or includes it (`inventory/`, `twitch/`). `inventory/`, `channel/`, `twitc
 
 | Helper | What it does | Caller |
 | --- | --- | --- |
-| `resource_path(relative_path)` | `constants._resource_path` ([constants.md](constants.md#working-directory-and-paths)) | `main.py`, `gui.py` |
+| `resource_path(relative_path)` | `constants._resource_path` ([constants.md](constants.md#working-directory-and-paths)) | `main.py`, `gui.py`, `ui/tray.py`, `ui/preview.py` |
 | `set_root_icon(root, image_path)` | Sets the window icon and keeps a reference to the image | `main.py`, `gui.py` |
 | `webopen(url)` | Opens `url` in a new browser tab. In a packaged Linux build it restores `LD_LIBRARY_PATH` from `LD_LIBRARY_PATH_ORIG` for the call, because PyInstaller points it at the bundled libraries | `ui/login.py`, `ui/widgets.py` |
 | `timestamp(string)` | Parses a Twitch UTC time, with or without fractions of a second | `inventory/`, `twitch/inventoryfetch.py` |

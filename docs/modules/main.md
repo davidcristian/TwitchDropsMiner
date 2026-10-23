@@ -62,7 +62,7 @@ are also in [troubleshooting.md](../troubleshooting.md#command-line-flags).
 | `-h`, `--help` | | Added by argparse. Shows the usage and exits with code 0. |
 | `--version` | | Shows `v` and `version.__version__`, and exits with code 0. |
 | `-v` | `logging_level` | Counted. `LOGGING_LEVELS[min(count, 4)]`: 0 is ERROR, 1 WARNING, 2 INFO, 3 `CALL`, 4 DEBUG. |
-| `--tray` | `tray` | Starts with the window hidden in the tray ([gui.md](gui.md#the-tray-icon)). Ignored on macOS. |
+| `--tray` | `tray` | Starts with the window hidden in the tray ([ui.md](ui.md#the-tray-icon)). Ignored on macOS. |
 | `--log` | `log` | Also writes the `TwitchDrops` log to `log.txt` (`LOG_PATH`) with `FILE_FORMATTER`. The token and other secrets in it show as `<hidden>` ([redact.md](redact.md)). |
 | `--dump` | `dump` | `Twitch.run` empties `dump.dat`, `Twitch.fetch_inventory` appends the campaign data to it, and the app closes when `Twitch._run` next reaches `State.IDLE` or `State.CHANNEL_SWITCH`. |
 | `--debug-ws` | `debug_ws` | Hidden from the help. Sets the `TwitchDrops.websocket` logger to DEBUG. |
