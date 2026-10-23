@@ -2,19 +2,32 @@
     "english_name": "Simplified Chinese",
     "status": {
         "terminated": "\n应用已停止运行，请关闭此窗口以退出。",
+        "fatal_error": "遇到致命错误：\n",
+        "restarting": "将在{time}自动重启...",
+        "restart_longer": "错误发生在上次重启后不到一小时，因此等待时间比设置的更长：{minutes}分钟。",
         "watching": "正在观看：{channel}",
         "goes_online": "“{channel}”频道已上线, 正在切换...",
         "goes_offline": "“{channel}”频道已离线, 正在切换...",
         "claimed_drop": "已领取掉宝：“{drop}”",
         "no_channel": "没有可观看的频道，正在等待直播频道上线...",
-        "no_campaign": "没有可用于掉宝的活动，正在等待掉宝活动开放..."
+        "no_campaign": "没有可用于掉宝的活动，正在等待掉宝活动开放...",
+        "logging_level": "日志级别：{level}"
     },
     "login": {
         "unexpected_content": "返回的内容类型异常，这通常是由于网页被重定向。\n您是否需要先设置VPN或登录到当前网络？"
     },
     "error": {
         "site_down": "无法连接到Twitch，将在{seconds}秒后重试...",
-        "no_connection": "无法连接到Twitch，将在{seconds}秒后重试，请确保您已经登录到当前网络。若您的网络无法直连Twitch，请在教程指导下开启VPN及添加代理。({url})"
+        "no_connection": "无法连接到Twitch，将在{seconds}秒后重试，请确保您已经登录到当前网络。若您的网络无法直连Twitch，请在教程指导下开启VPN及添加代理。({url})",
+        "save_failed": "保存失败，将在下次刷新时重试：{error}",
+        "file_not_saved": "无法保存{file}：{error}",
+        "autostart_not_changed": "无法更改开机自启项：{error}",
+        "cannot_start": "无法启动",
+        "folder_not_writable": "应用无法写入其运行所在的文件夹，应用的文件存放在该文件夹中：\n\n{error}\n\n请将应用移动到您有写入权限的文件夹。"
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "命令行参数错误"
     },
     "gui": {
         "output": "运行日志",
@@ -23,6 +36,7 @@
             "idle": "已完成获取",
             "exiting": "退出中...",
             "terminated": "应用已停止运行",
+            "restarting": "将在{time}重启",
             "cleanup": "清除直播频道中...",
             "gathering": "搜索直播频道中...",
             "switching": "切换直播频道中...",
@@ -50,6 +64,7 @@
             "logging_in": "登录中...",
             "required": "请先登录",
             "request": "您需要先登录才能挖掘掉宝。",
+            "enter_code": "请在Twitch设备激活页面输入此代码：{code}",
             "button": "登录"
         },
         "websocket": {
@@ -115,11 +130,14 @@
         "settings": {
             "general": {
                 "name": "常规设置",
+                "language": "语言 🌐（需要重启）：",
                 "autostart": "开机自启",
                 "tray": "开机自启并最小化",
                 "tray_notifications": "启用托盘通知",
                 "dark_mode": "夜间模式",
                 "priority_mode": "掉宝挖掘模式",
+                "refresh_interval": "新直播检查间隔",
+                "restart_delay": "崩溃后重启等待",
                 "proxy": "代理地址（需要重启）："
             },
             "advanced": {
@@ -134,13 +152,54 @@
                 "ending_soonest": "优先挖掘即将结束的掉宝",
                 "low_availability": "优先挖掘频道少的掉宝      "
             },
+            "refresh_intervals": {
+                "disabled": "从不（仅每小时刷新）",
+                "minutes": "{minutes}分钟"
+            },
+            "restart_delays": {
+                "disabled": "从不（保持停止）",
+                "minutes": "{minutes}分钟"
+            },
+            "wanted": {
+                "name": "正在挖掘的游戏",
+                "game": "游戏",
+                "source": "匹配依据",
+                "installed": "已安装",
+                "unlisted": "不在任何列表中",
+                "count": "正在挖掘{count}个游戏，按优先级从高到低。",
+                "empty": "暂无结果，请点击下方的“刷新”。"
+            },
+            "detect": {
+                "name": "检测到的游戏",
+                "dirs": "游戏文件夹：",
+                "add_dir": "添加Steam或Epic游戏文件夹",
+                "remove_dir": "移除所选文件夹",
+                "rescan": "重新扫描",
+                "scanning": "正在扫描游戏文件夹...",
+                "scan_error": "游戏扫描：{error}",
+                "not_a_folder": "不是文件夹：{path}",
+                "no_games": "未找到Steam或Epic游戏：{path}",
+                "failed": "{path}：{reason}",
+                "detected": "已匹配{total}个已安装游戏中的{count}个。",
+                "restored": "来自上次扫描的{count}个游戏。",
+                "empty": "尚未检测到游戏，请在下方添加游戏文件夹。",
+                "no_dirs": "未添加文件夹。"
+            },
             "game_name": "游戏名称",
             "priority": "优先列表-优先挖掘以下游戏的掉宝",
             "exclude": "排除列表-永不挖掘以下游戏的掉宝",
+            "pattern_matches": "“{pattern}”匹配{count}个游戏：{games}",
+            "pattern_empty": "“{pattern}”目前不匹配任何有掉宝活动的游戏。",
             "reload": "刷新",
             "reload_text": "大多数设置改动需要刷新或重启软件后才能生效："
         },
         "help": {
+            "about": {
+                "name": "关于",
+                "repository": "代码仓库：",
+                "based_on": "基于：",
+                "based_on_text": "DevilXD的TwitchDropsMiner"
+            },
             "links": {
                 "name": "帮助",
                 "inventory": "查看Twitch库存",
