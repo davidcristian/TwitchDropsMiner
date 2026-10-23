@@ -197,16 +197,19 @@ has room for 9 lines in light mode and 7 in dark mode. On macOS in CI the window
 run of `main.py`, so the preview uses the repository folder as its working folder.
 
 - It builds a mock `Twitch` from `SimpleNamespace`: `settings` with each setting the GUI reads, `change_state`
-  that prints the state number to the Output box, `state_change`, `request` set to `aiohttp.request`, and
-  `close` set to `GUIManager.stop`.
-- It fills the window with a login status, three games, four channels (offline, pending and two online, the
-  pending one marked as watched), one campaign with one drop and two Output messages. It also calls
-  `tray.notify`, which shows nothing, because no tray icon exists until `minimize()` runs.
+  that prints the state number to the Output box, `state_change`, `request` set to `icon_request`, and `close`
+  set to `GUIManager.stop`.
+- Its settings have two Priority entries, one with `*`, one Exclude entry, two game folders and two detected
+  games, one of them excluded. It fills the window with a login status, three games, the Games Being Mined
+  table with `set_wanted_games`, four channels (offline, pending and two online, the pending one marked as
+  watched), one active and linked campaign of a detected game with one drop, and two Output messages. It also
+  calls `tray.notify`, which shows nothing, because no tray icon exists until `minimize()` runs.
 - Over about 90 seconds it moves the drop display through a still display, a countdown, a cleared display, a
   drop one minute from the end and a finished drop. Closing the window ends the preview.
-- `ImageCache` downloads two images from `static-cdn.jtvnw.net` on every run. The preview never calls
-  `GUIManager.save`, so it writes the image files to `cache/` but not `cache/mapping.json`, which maps each URL
-  to its file. The preview sends no GQL request.
+- `icon_request` returns the data of `icons/pickaxe.ico` for every request, so the campaign and reward images
+  are the app icon, and the preview sends no request to Twitch or any other server. The campaign image shows
+  the square icon stretched to 108 by 144 pixels. The preview never calls `GUIManager.save`, so it writes the
+  icon to `cache/` but not `cache/mapping.json`, which maps each URL to its file.
 
 A new setting that the GUI reads needs an entry in the mock `settings`, or the preview fails with an
 `AttributeError` ([AGENTS.md](../../AGENTS.md#recipes)). To run the preview without a display, follow
@@ -235,5 +238,4 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
 **Dependencies.** Repo modules: `translate`, `cache`, `colorfonts`, `autostart`, `gamelib`, `exceptions`,
 `folderpicker`, `traybackend`, `scrollarea`, `settings` (`default_settings`, `setting_choices`), `utils` and
 `constants`; `twitch`, `channel` and `inventory` for type checking only. Third-party: `pystray`,
-Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on Windows, `AppKit` on macOS, and `aiohttp` in the
-preview.
+Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on Windows, and `AppKit` on macOS.

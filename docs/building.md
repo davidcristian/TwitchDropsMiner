@@ -52,11 +52,11 @@ The command line flags, such as `-vvv --log`, are listed in
 env/bin/python gui.py
 ```
 
-This opens the window with mock data, so a GUI change can be checked without logging in. It sends no GQL
-request, but it downloads two images for the mock campaign from Twitch's image server, `static-cdn.jtvnw.net`,
-and saves them in `cache/`. On Windows, use `env\scripts\python gui.py`. A new setting also needs an entry in
-the mock at the end of `gui.py`; see the recipe in [AGENTS.md](../AGENTS.md#recipes). To run it without a
-display, see [runbooks/gui-preview-headless.md](runbooks/gui-preview-headless.md).
+This opens the window with mock data, so a GUI change can be checked without logging in. It sends no
+request: the images of the mock campaign are the app icon, which it saves in `cache/`. On Windows, use
+`env\scripts\python gui.py`. A new setting also needs an entry in the mock at the end of `gui.py`; see the
+recipe in [AGENTS.md](../AGENTS.md#recipes). To run it without a display, see
+[runbooks/gui-preview-headless.md](runbooks/gui-preview-headless.md).
 
 ## Run the checks
 

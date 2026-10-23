@@ -2891,8 +2891,8 @@ class GUIManager:
 
 if __name__ == "__main__":
     # Everything below is for debug purposes only
-    import aiohttp
     from types import SimpleNamespace
+    from contextlib import asynccontextmanager
 
     class StrNamespace(SimpleNamespace):
         __hash__ = object.__hash__  # type: ignore
@@ -2967,9 +2967,9 @@ if __name__ == "__main__":
                 id="campaign",
                 game=create_game(0, game_name),
                 expired=False,
-                active=False,
-                upcoming=True,
-                eligible=False,
+                active=True,
+                upcoming=False,
+                eligible=True,
                 finished=False,
                 link_url="https://google.com",
                 image_url=campaign_image_url,
@@ -3002,12 +3002,20 @@ if __name__ == "__main__":
         mock.campaign.drops = mock.campaign.timed_drops.values()
         return mock
 
+    async def read_icon() -> bytes:
+        return resource_path("icons/pickaxe.ico").read_bytes()
+
+    @asynccontextmanager
+    async def icon_request(method: str, url: str):
+        # every image of the mock is the app icon, so the preview sends no request
+        yield SimpleNamespace(status=200, read=read_icon)
+
     async def main(exit_event: asyncio.Event):
         # Initialize GUI debug
         mock = SimpleNamespace(
             settings=SimpleNamespace(
                 tray=False,
-                priority=[],
+                priority=["Best Game", "My Game*"],
                 proxy=URL(),
                 dark_mode=False,
                 alter=lambda: None,
@@ -3016,8 +3024,8 @@ if __name__ == "__main__":
                 exclude={"Lit Game"},
                 refresh_interval=5,
                 restart_delay=10,
-                game_dirs=[],
-                detected_games=[],
+                game_dirs=["/home/user/.local/share/Steam", "/home/user/Games/Heroic"],
+                detected_games=["Cleaning Masters", "Lit Game"],
                 tray_notifications=True,
                 enable_badges_emotes=False,
                 available_drops_check=False,
@@ -3027,7 +3035,7 @@ if __name__ == "__main__":
         )
         mock.change_state = lambda state: mock.gui.print(f"State change: {state.value}")
         mock.state_change = lambda state: partial(mock.change_state, state)
-        mock.request = aiohttp.request
+        mock.request = icon_request
         # _.set_language("Русский")
         gui = GUIManager(mock)  # type: ignore
         mock.gui = gui
@@ -3043,6 +3051,11 @@ if __name__ == "__main__":
             create_game(123456, "Best Game"),
             create_game(654321, "My Game Very Long Name"),
         ]))
+        gui.settings.set_wanted_games([
+            create_game(123456, "Best Game"),
+            create_game(654321, "My Game Very Long Name"),
+            create_game(0, "Cleaning Masters"),
+        ])
         # Channel list
         gui.channels.display(
             create_channel(

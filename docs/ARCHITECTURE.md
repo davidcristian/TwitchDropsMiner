@@ -215,6 +215,7 @@ docs/                  index.md, ARCHITECTURE.md, building.md, troubleshooting.m
 docs/adr/, modules/    decision records (format in adr/README.md); one contract page per Python module
 docs/runbooks/         step by step procedures
 docs/refinements/      the backlog: index.md and one file per task in tasks/
+docs/assets/           the pictures of the four tabs in README.md
 
 settings.json          the settings
 cookies.jar            the login session (the rule is /*.jar)

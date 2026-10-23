@@ -1,9 +1,9 @@
 # The README pictures show the original app
 
-**Status:** open
+**Status:** done 2026-10-23
 **Area:** README
 **Origin:** found on 2026-10-18 while the docs were written
-**Verified:** 2026-10-18
+**Verified:** 2026-10-23
 
 The [Pictures](../../../README.md#pictures) section of README.md shows three images, Main, Inventory and
 Settings, hosted under `user-images.githubusercontent.com/4180725/`. The original project added them on
@@ -48,3 +48,11 @@ Cost: no GQL requests, and the two image requests of each preview run.
 
 - 2026-10-18: Opened. Found while the docs were written, after comparing the Settings tab in `gui.py` with the code
   of the date the pictures were added.
+- 2026-10-23: Closed. `docs/assets/` holds `main.png`, `inventory.png`, `settings.png` and `help.png`, linked
+  from README.md and taken with the steps in
+  [gui-preview-headless.md](../../runbooks/gui-preview-headless.md#take-the-readme-pictures), with the network
+  blocked. Each is 1600 by 900 pixels with 256 colors, 18 to 35 KB. The mock's settings now name two Priority
+  entries, two game folders and two detected games, and it calls `set_wanted_games`. Its campaign is active and
+  linked, and its game is detected, so the Inventory tab shows it. Its `request` returns `icons/pickaxe.ico`
+  for each image, so the preview sends no request. The alternative, blank artwork, shows the white squares of a
+  failed download.

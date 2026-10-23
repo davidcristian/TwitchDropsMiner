@@ -115,10 +115,77 @@ EOF
 It prints one `saved` line per tab: 0 is Main, 1 is Inventory, 2 is Settings and 3 is Help. Then `timeout` ends
 the run with exit status 124. Open the PNG files in an image viewer, or with the file reading tool of an agent.
 
+## Take the README pictures
+
+The [Pictures](../../README.md#pictures) section of the README shows `main.png`, `inventory.png`, `settings.png`
+and `help.png` from `docs/assets/`. They show the preview's mock data, in English and the light theme, in a
+window of 1600 by 900 pixels, a common screen size. In the preview on Linux the Settings tab needs a window 1543
+pixels wide to show every section without a scroll bar, and at 1280 pixels its Detected Games section is cut
+off. This snippet works like the one above, but it waits 30 seconds, when the Main tab shows a drop one minute
+from the end, and sets the window size first. It saves each picture with 256 colors into `docs/assets/`. That
+makes each file 2 to 4 times smaller and changes only the edge pixels of text, by at most 30 of 255 levels in
+a color channel:
+
+```bash
+PYSTRAY_BACKEND=dummy xvfb-run -a -s "-screen 0 1600x900x24" timeout 70 env/bin/python - docs/assets <<'EOF'
+import os, sys, runpy
+from tkinter import ttk
+from PIL import Image, ImageGrab
+
+out = sys.argv[1]
+names = ["main", "inventory", "settings", "help"]
+notebook_init = ttk.Notebook.__init__
+
+def distance(a, b):
+    return sum((x - y) ** 2 for x, y in zip(a, b))
+
+def save_small(image, path):
+    # 256 colors: the 64 most frequent, then each far from the others, weighted by its count, so red text stays red
+    counts = sorted(image.getcolors(1 << 24), reverse=True)
+    weight = {color: count for count, color in counts}
+    palette = [color for _, color in counts[:64]]
+    nearest = {c: min(distance(c, p) for p in palette) for c in weight}
+    while len(palette) < min(256, len(weight)):
+        pick = max(weight, key=lambda c: nearest[c] * weight[c] ** 0.5)
+        palette.append(pick)
+        nearest = {c: min(d, distance(c, pick)) for c, d in nearest.items()}
+    index = {c: min(range(len(palette)), key=lambda i: distance(c, palette[i])) for c in weight}
+    small = Image.new("P", image.size)
+    small.putpalette([channel for color in palette for channel in color])
+    small.putdata([index[pixel] for pixel in image.get_flattened_data()])
+    small.save(path, optimize=True)
+
+def show(nb, i):
+    nb.select(i)
+    nb.after(2000, grab, nb, i)
+
+def grab(nb, i):
+    top = nb.winfo_toplevel()
+    x, y = top.winfo_rootx(), top.winfo_rooty()
+    box = (x, y, x + top.winfo_width(), y + top.winfo_height())
+    save_small(ImageGrab.grab(bbox=box, xdisplay=os.environ["DISPLAY"]).convert("RGB"), f"{out}/{names[i]}.png")
+    print(f"saved {out}/{names[i]}.png", flush=True)
+    if i + 1 < len(names):
+        show(nb, i + 1)
+
+def start(nb):
+    nb.winfo_toplevel().geometry("1600x900+0+0")
+    nb.after(1500, show, nb, 0)
+
+def patched_init(self, *args, **kwargs):
+    notebook_init(self, *args, **kwargs)
+    self.after(30000, start, self)
+
+ttk.Notebook.__init__ = patched_init
+runpy.run_path("gui.py", run_name="__main__")
+EOF
+```
+
+Open each picture before you commit it, and check that it shows no real account, user ID or folder.
+
 ## Check the result
 
 - The run of the preview prints `exit=124` and no traceback.
-- The screenshots show the changed widget as intended. The Inventory tab shows no campaign in the preview, also
-  without any change, so an empty Inventory tab is not a failure.
-- The report for check 3 lists the commands and their output. The runs change no file that git tracks; they
-  save two downloaded images into the ignored `cache/` folder.
+- The screenshots show the changed widget as intended.
+- The report for check 3 lists the commands and their output. The runs change no file that git tracks, except
+  the README pictures; they save the app icon, the only image of the mock, into the ignored `cache/` folder.

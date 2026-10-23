@@ -43,7 +43,7 @@ burst of requests puts that account at risk.
 | `inventory.py` | `DropsCampaign` and `TimedDrop`: campaign data, drop progress, claiming |
 | `channel.py` | `Channel` and `Stream`: stream state and online checks |
 | `websocket.py` | The PubSub websocket pool and its topics |
-| `gui.py` | The whole GUI. `python gui.py` opens it with mock data and no login; it downloads only the mock's images |
+| `gui.py` | The whole GUI. `python gui.py` opens it with mock data and no login, and sends no request |
 | `settings.py` | `settings.json`: the `SettingsFile` type, its defaults, loading and saving |
 | `constants.py` | Paths, intervals, `State`, `PriorityMode`, and the GQL queries with their hashes |
 | `translate.py` | The `Translation` types and the English strings. Other languages are in `lang/` |

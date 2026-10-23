@@ -33,9 +33,12 @@ Every 20 seconds, the app asks Twitch for the list of the newest video segments 
 
 ### Pictures:
 
-![Main](https://user-images.githubusercontent.com/4180725/164298155-c0880ad7-6423-4419-8d73-f3c053730a1b.png)
-![Inventory](https://user-images.githubusercontent.com/4180725/164298315-81cae0d2-24a4-4822-a056-154fd763c284.png)
-![Settings](https://user-images.githubusercontent.com/4180725/164298391-b13ad40d-3881-436c-8d4c-34e2bbe33a78.png)
+The pictures show the window on Linux, filled with the sample data of the [GUI preview](docs/building.md#preview-the-gui), so they show no real account.
+
+![The Main tab](docs/assets/main.png)
+![The Inventory tab](docs/assets/inventory.png)
+![The Settings tab](docs/assets/settings.png)
+![The Help tab](docs/assets/help.png)
 
 ### Notes:
 
