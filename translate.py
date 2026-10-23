@@ -26,15 +26,7 @@ class StatusMessages(TypedDict):
     no_campaign: str
 
 
-class ChromeMessages(TypedDict):
-    startup: str
-    login_to_complete: str
-    no_token: str
-    closed_window: str
-
-
 class LoginMessages(TypedDict):
-    chrome: ChromeMessages
     unexpected_content: str
 
 
@@ -283,6 +275,7 @@ class GUIMessages(TypedDict):
 
 class Translation(TypedDict):
     language_name: NotRequired[str]
+    # No code reads it. It names the language of a file in English, for a reader who cannot read the file name.
     english_name: str
     status: StatusMessages
     login: LoginMessages
@@ -313,16 +306,6 @@ default_translation: Translation = {
             "Unexpected content type returned, usually due to being redirected. "
             "Do you need to login for internet access?"
         ),
-        "chrome": {
-            "startup": "Opening Chrome...",
-            "login_to_complete": (
-                "Complete the login procedure manually by pressing the Login button again."
-            ),
-            "no_token": "No authorization token could be found.",
-            "closed_window": (
-                "The Chrome window was closed before the login procedure could be completed."
-            ),
-        },
     },
     "error": {
         "site_down": "Twitch is down, retrying in {seconds} seconds...",
@@ -592,8 +575,6 @@ class Translator:
             self._translation = json_load(
                 LANG_PATH.joinpath(f"{language}.json"), default_translation
             )
-            if "language_name" in self._translation:
-                raise ValueError("Translations cannot define 'language_name'")
         self._translation["language_name"] = language
 
     def __call__(self, *path: str) -> str:

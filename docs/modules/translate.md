@@ -14,9 +14,9 @@ the current language. Other languages are JSON files in `lang/`. To add a string
 | Key | Type | What it holds |
 | --- | --- | --- |
 | `language_name` | `NotRequired[str]` | Set by `Translator` to the name of the loaded language; a file cannot set it |
-| `english_name` | `str` | The language's name in English; no code reads it ([task 022](../refinements/tasks/022-unused-code.md)) |
+| `english_name` | `str` | The language's name in English. No code reads it. It stays to tell a reader which language a file such as `العربية.json` holds |
 | `status` | `StatusMessages` | Lines printed to the Output box, such as `watching` and `claimed_drop` |
-| `login` | `LoginMessages` | `unexpected_content`, and `chrome` (`ChromeMessages`), which no code reads ([task 022](../refinements/tasks/022-unused-code.md)) |
+| `login` | `LoginMessages` | `unexpected_content` |
 | `error` | `ErrorMessages` | `no_connection`, `site_down`, `save_failed`, `file_not_saved`, `cannot_start`, `folder_not_writable` |
 | `arguments` | `ArgumentMessages` | `title` and `error_title`, the titles of the message box that shows the command line output ([main.md](main.md#command-line-flags)) |
 | `gui` | `GUIMessages` | The window's text, one nested type per part |
@@ -63,8 +63,8 @@ A language's name is its file name, such as `Polski` for `lang/Polski.json`.
 - A value whose type differs from the English one, such as a string where a section is expected, is replaced
   by the English value.
 
-The merge removes `language_name` from a file as an unknown key. The `ValueError` that `set_language` raises
-for a file with `language_name` is therefore never reached.
+The merge removes `language_name` from a file as an unknown key, so a file cannot change the name of its
+language.
 
 A file that is not valid JSON makes `set_language` raise `json.JSONDecodeError`. It is a `ValueError`, so
 `main()` catches it and the app stays in English without a message. `scripts/langcheck.py`, which

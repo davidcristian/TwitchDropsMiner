@@ -3,10 +3,10 @@
 **Status:** open
 **Area:** lang
 **Origin:** found on 2026-10-18 while the docs were written
-**Verified:** 2026-10-22
+**Verified:** 2026-10-23
 
-`default_translation` in `translate.py` has 155 strings. Each of the 20 files in `lang/` other than
-`English.json` lacks between 38 and 54 of them. `English.json` is left out because it is gitignored and every
+`default_translation` in `translate.py` has 154 strings. Each of the 20 files in `lang/` other than
+`English.json` lacks between 41 and 54 of them. `English.json` is left out because it is gitignored and every
 run from source writes it again from `default_translation`. The counts come from comparing the nested key
 paths of `default_translation`, read from `translate.py` with the `ast` module, with the key paths of each
 file.
@@ -16,7 +16,7 @@ A missing key shows in English. `Translator.set_language` loads a language with
 `default_translation`. It also deletes every key that `default_translation` lacks, so a string at the wrong
 path shows in English as well ([023](023-language-file-keys-dropped.md)).
 
-## The 38 keys every language lacks
+## The 41 keys every language lacks
 
 These are the strings of this project's own features:
 
@@ -29,6 +29,9 @@ These are the strings of this project's own features:
 - Priority and Exclude patterns, `gui.settings.pattern_matches` and `gui.settings.pattern_empty`: 2 keys.
 - A failed save during the run, `error.save_failed` and `error.file_not_saved`: 2 keys.
 - The dialog when the app cannot start, `error.cannot_start` and `error.folder_not_writable`: 2 keys.
+- The titles of the box that shows the command line output, `arguments.title` and `arguments.error_title`:
+  2 keys.
+- A failed change of the autostart entry, `error.autostart_not_changed`: 1 key.
 
 ## Older keys some languages lack
 
@@ -40,19 +43,17 @@ These are the strings of this project's own features:
   Deutsch, Indonesian, Italiano, Nederlandse, Português, Română, Čeština, العربية and 日本語. These ten define
   `gui.settings.general.priority_only` instead, which `default_translation` does not have.
 - Tray notifications, `gui.settings.general.tray_notifications` (1 key): Deutsch, Nederlandse and Čeština.
-- The four `login.chrome` keys (4 keys): Čeština. No code reads them ([022](022-unused-code.md)).
 - The inventory filter, `gui.inventory.filter.not_linked` (1 key): Nederlandse, which defines
   `gui.inventory.filter.linked` instead.
 
 ## Missing keys per language
 
-- 54: Čeština.
-- 51: Nederlandse.
-- 50: Deutsch.
-- 49: Dansk, Indonesian, Italiano, Português, Română, العربية and 日本語.
-- 45: Français and Українська.
-- 40: Magyar, Norsk, Polski, Türkçe and Русский.
-- 38: Español, 简体中文 and 繁體中文.
+- 54: Nederlandse.
+- 53: Deutsch and Čeština.
+- 52: Dansk, Indonesian, Italiano, Português, Română, العربية and 日本語.
+- 48: Français and Українська.
+- 43: Magyar, Norsk, Polski, Türkçe and Русский.
+- 41: Español, 简体中文 and 繁體中文.
 
 ## What closes it
 
@@ -76,3 +77,6 @@ Cost: no Twitch requests.
   of them. The count includes `error.cannot_start` and `error.folder_not_writable`, which were added before.
 - 2026-10-22: Counts checked again after `status.restart_longer` was added: 155 strings, and Čeština lacks 54
   of them.
+- 2026-10-23: Counts checked again after the four `login.chrome` strings left `default_translation`: 154
+  strings, and Čeština lacks 53 of them. The counts include `arguments.title`, `arguments.error_title` and
+  `error.autostart_not_changed`, which were added before.
