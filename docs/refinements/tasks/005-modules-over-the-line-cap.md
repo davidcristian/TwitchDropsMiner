@@ -14,7 +14,7 @@ new work goes into a new module that they call. This task records where each one
 | Module | Lines | After the split |
 | --- | --- | --- |
 | `gui.py` | 3164 | |
-| `twitch.py` | 1734 | `twitch/` so far: `client.py` with 1189 lines, over the cap, and four files of 6 to 292 lines |
+| `twitch.py` | 1734 | `twitch/` so far: `client.py` with 1226 lines, over the cap, and four files of 6 to 292 lines |
 | `translate.py` | 612 | `translate/`, four files of 7 to 284 lines |
 | `channel.py` | 528 | `channel/`, five files of 7 to 166 lines |
 | `inventory.py` | 489 | `inventory/`, four files of 7 to 284 lines |
@@ -119,3 +119,6 @@ Splits cost no Twitch requests.
   with `_AuthState`, because both read `COOKIES_PATH`, which the tests patch. `_merge_data` had already become
   `merge_data` in `gqldata.py`. `Twitch` stays in `client.py` with the PubSub handlers, the channel discovery
   and `_run`, and the entry in `EXCEPTIONS` is now `twitch/client.py`.
+- 2026-10-23: `Twitch._run`, which had 356 lines, was cut into a method for each state from `INVENTORY_FETCH`
+  to `CHANNEL_SWITCH`, such as `_run_games_update`, which returns the values that a later state reads. Each
+  method holds its branch's lines unchanged. `_run` keeps 58 lines, and `client.py` now has 1226.

@@ -56,12 +56,15 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
    a `__dict__`, which accepts any new attribute. The class lists its mixins as bases and keeps `__init__`, which
    sets every attribute. A helper function that takes the object rewrites every `self` of the moved code, and a
    collaborating class needs new state and new calls, so a reviewer cannot check either as a move. They are the
-   better form for code that needs no `self`, such as the wanted games ranking in `Twitch._run`, or that keeps
-   state of its own, as `_AuthState` does. Such a rewrite is a commit of its own, after the split.
+   better form for code that needs no `self`, such as the wanted games ranking in `Twitch._run_games_update`, or
+   that keeps state of its own, as `_AuthState` does. Such a rewrite is a commit of its own, after the split.
 5. **A method over 300 lines is split before it moves.** It cannot move whole into a file of 300 lines. A
    `refactor:` commit of its own cuts it into methods, each a run of consecutive lines of the old body, and
    changes nothing else. The tests that run the method pass unchanged, and for `SettingsPanel.__init__` the
-   preview shows the same Settings tab.
+   preview shows the same Settings tab. A local variable that several of the new methods use stays a local of
+   the old method, which passes it to them as an argument and takes it back as a return value. So the object
+   gains no attribute, which `Twitch.shutdown` would have to clear. `Twitch._run` was cut this way: its loop
+   calls a method for each state from `INVENTORY_FETCH` to `CHANNEL_SWITCH`, such as `_run_games_update`.
 6. **A split commit moves code and changes no behavior.** It is a `refactor:` commit for one module. The moved
    lines keep their text and order, except imports, the bases of a class that gains mixins, and a name the move
    requires. The new lines are the package's `__init__.py`, a one-line docstring for each new file and mixin,

@@ -422,316 +422,18 @@ class Twitch(SessionMixin, RequestsMixin, InventoryFetchMixin):
                 self.gui.status.update(_("gui", "status", "idle"))
                 self.stop_watching()
             elif self._state is State.INVENTORY_FETCH:
-                self.gui.tray.change_icon("maint")
-                # ensure the websocket is running
-                self.websocket.start()
-                await self.fetch_inventory()
-                self.gui.set_games(set(campaign.game for campaign in self.inventory))
-                # match installed games against the campaigns we've just fetched
-                await self.detect_games()
-                # Save state on every inventory fetch
-                save_each(
-                    (self.gui.save, self.settings.save),
-                    lambda error: logger.error(_("error", "save_failed").format(error=error)),
-                )
-                if self._state is State.INVENTORY_FETCH:
-                    # a reload requested while this one ran is merged into it, so it sends no second reload
-                    self._state_change.clear()
-                self.change_state(State.GAMES_UPDATE)
+                await self._run_inventory_fetch()
             elif self._state is State.GAMES_UPDATE:
-                # claim drops from expired and active campaigns
-                for campaign in self.inventory:
-                    if not campaign.upcoming:
-                        for drop in campaign.drops:
-                            if drop.can_claim:
-                                await drop.claim()
-                # figure out which games we want
-                self.wanted_games.clear()
-                exclude = self.settings.exclude
-                priority = self.settings.priority
-                detected = self.settings.detected_games
-                priority_mode = self.settings.priority_mode
-                priority_only = priority_mode is PriorityMode.PRIORITY_ONLY
-                # List entries ignore case, accents and punctuation, and can use '*' and '?'
-                # wildcards, so a single entry can stand in for a whole series of games.
-                priority_patterns = gamelib.compile_patterns(priority)
-                exclude_patterns = gamelib.compile_patterns(exclude)
-                # Games detected as installed rank below every manually prioritized one,
-                # so an explicit choice always wins over an automatic one.
-                detected_order: dict[str, int] = {
-                    name: len(priority) + index for index, name in enumerate(detected)
-                }
-                # NOTE: resolve each game's rank once here, rather than on every comparison
-                # the sort below makes - matching a pattern is more expensive than a lookup
-                priority_order: dict[str, int] = {}
-                for campaign in self.inventory:
-                    game_name: str = campaign.game.name
-                    if game_name not in priority_order:
-                        rank: int | None = gamelib.match_rank(priority_patterns, game_name)
-                        priority_order[game_name] = (
-                            rank if rank is not None
-                            else detected_order.get(game_name, MAX_INT)
-                        )
-                next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
-                # sorted_campaigns: list[DropsCampaign] = list(self.inventory)
-                sorted_campaigns: list[DropsCampaign] = self.inventory
-                if not priority_only:
-                    if priority_mode is PriorityMode.ENDING_SOONEST:
-                        sorted_campaigns.sort(key=lambda c: c.ends_at)
-                    elif priority_mode is PriorityMode.LOW_AVBL_FIRST:
-                        sorted_campaigns.sort(key=lambda c: c.availability)
-                sorted_campaigns.sort(
-                    key=lambda c: priority_order.get(c.game.name, MAX_INT)
-                )
-                for campaign in sorted_campaigns:
-                    game: Game = campaign.game
-                    if (
-                        game not in self.wanted_games  # isn't already there
-                        # and isn't excluded by list or priority mode
-                        and not gamelib.any_match(exclude_patterns, game.name)
-                        # NOTE: a rank below MAX_INT means the game either matched a priority
-                        # list entry, or was detected as installed - both count as wanted
-                        # under priority-only mode
-                        and (
-                            not priority_only
-                            or priority_order.get(game.name, MAX_INT) < MAX_INT
-                        )
-                        # and can be progressed within the next hour
-                        and campaign.can_earn_within(next_hour)
-                    ):
-                        # non-excluded games with no priority are placed last, below priority ones
-                        self.wanted_games.append(game)
-                # show the user what all of the above actually settled on
-                self.gui.settings.set_wanted_games(self.wanted_games)
-                full_cleanup = True
-                self.restart_watching()
-                watch_restarted = True
-                self.change_state(State.CHANNELS_CLEANUP)
+                full_cleanup, watch_restarted = await self._run_games_update()
             elif self._state is State.CHANNELS_CLEANUP:
-                self.gui.status.update(_("gui", "status", "cleanup"))
-                if not self.wanted_games or full_cleanup:
-                    # no games selected or we're doing full cleanup: remove everything
-                    to_remove_channels: list[Channel] = list(channels.values())
-                else:
-                    # remove all channels that:
-                    to_remove_channels = [
-                        channel
-                        for channel in channels.values()
-                        if (
-                            not channel.acl_based  # aren't ACL-based
-                            and (
-                                channel.offline  # and are offline
-                                # or online but aren't streaming the game we want anymore
-                                or (channel.game is None or channel.game not in self.wanted_games)
-                            )
-                        )
-                    ]
-                full_cleanup = False
-                # removing a channel's row drops its selection, which the fetch restores when it adds the channel back
-                selection = self.gui.channels.get_selection()
-                removed_selection = (
-                    selection.id if selection is not None and selection in to_remove_channels else None
-                )
-                if to_remove_channels:
-                    to_remove_topics: list[str] = []
-                    for channel in to_remove_channels:
-                        to_remove_topics.append(
-                            WebsocketTopic.as_str("Channel", "StreamState", channel.id)
-                        )
-                        to_remove_topics.append(
-                            WebsocketTopic.as_str("Channel", "StreamUpdate", channel.id)
-                        )
-                    self.websocket.remove_topics(to_remove_topics)
-                    for channel in to_remove_channels:
-                        del channels[channel.id]
-                        channel.remove()
-                    del to_remove_channels, to_remove_topics
-                if self.wanted_games:
-                    self._no_campaign_printed = False
-                    self.change_state(State.CHANNELS_FETCH)
-                else:
-                    # with no games available, we switch to IDLE after cleanup
-                    if not self._no_campaign_printed:
-                        self.print(_("status", "no_campaign"))
-                        self._no_campaign_printed = True
-                    self.change_state(State.IDLE)
+                full_cleanup, removed_selection = self._run_channels_cleanup(channels, full_cleanup)
             elif self._state is State.CHANNELS_FETCH:
-                self.gui.status.update(_("gui", "status", "gathering"))
-                # start with all current channels
-                # NOTE: the GUI list is only rebuilt further below, and only if needed
-                new_channels: set[Channel] = set(channels.values())
-                # gather and add ACL channels from campaigns
-                # NOTE: we consider only campaigns that can be progressed
-                # NOTE: we use another set so that we can set them online separately
-                no_acl: set[Game] = set()
-                acl_channels: set[Channel] = set()
-                # the best priority of the wanted games whose campaigns list the channel in their ACL
-                acl_priority: dict[Channel, int] = {}
-                next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
-                for campaign in self.inventory:
-                    if (
-                        campaign.game in self.wanted_games
-                        and campaign.can_earn_within(next_hour)
-                    ):
-                        if campaign.allowed_channels:
-                            acl_channels.update(campaign.allowed_channels)
-                            game_priority = self.wanted_games.index(campaign.game)
-                            for channel in campaign.allowed_channels:
-                                acl_priority[channel] = min(game_priority, acl_priority.get(channel, game_priority))
-                        else:
-                            no_acl.add(campaign.game)
-                # remove all ACL channels that already exist from the other set
-                acl_channels.difference_update(new_channels)
-                # use the other set to set them online if possible
-                await self.bulk_check_online(acl_channels)
-                # finally, add them as new channels
-                new_channels.update(acl_channels)
-                for game in no_acl:
-                    # for every campaign without an ACL, for it's game,
-                    # add a list of live channels with drops enabled
-                    new_channels.update(await self.get_live_streams(game, drops_enabled=True))
-                # sort them descending by viewers, by priority and by game priority
-                # NOTE: Viewers sort also ensures ONLINE channels are sorted to the top
-                # NOTE: We can drop using the set now, because there's no more channels being added
-                ordered_channels: list[Channel] = sorted(
-                    new_channels, key=self._viewers_key, reverse=True
-                )
-                ordered_channels.sort(key=lambda ch: ch.acl_based, reverse=True)
-                ordered_channels.sort(key=self.get_priority)
-                # ensure that we won't end up with more channels than we can handle,
-                # keeping the list in this order
-                selection = self.gui.channels.get_selection()
-                kept_channels = set(
-                    self._slot_order(
-                        ordered_channels,
-                        acl_priority,
-                        selection.id if selection is not None else removed_selection,
-                    )[:MAX_CHANNELS]
-                )
-                to_remove_channels = [ch for ch in ordered_channels if ch not in kept_channels]
-                ordered_channels = [ch for ch in ordered_channels if ch in kept_channels]
-                if to_remove_channels:
-                    # the tracked channels and the gui list are replaced below,
-                    # so unsubscribe from their topics and cancel their online checks
-                    to_remove_topics = []
-                    for channel in to_remove_channels:
-                        channel.cancel_online_check()
-                        to_remove_topics.append(
-                            WebsocketTopic.as_str("Channel", "StreamState", channel.id)
-                        )
-                        to_remove_topics.append(
-                            WebsocketTopic.as_str("Channel", "StreamUpdate", channel.id)
-                        )
-                    self.websocket.remove_topics(to_remove_topics)
-                    del to_remove_channels, to_remove_topics
-                # Only tear the gui list down when the set of channels actually changed.
-                # A periodic refresh usually ends up with the exact same channels, and
-                # rebuilding the table every time would flicker and drop the user's selection.
-                gui_selection: Channel | None = None
-                if self.gui.channels.get_iids() != set(
-                    channel.iid for channel in ordered_channels
-                ):
-                    gui_selection = selection
-                    self.gui.channels.clear()
-                # set our new channel list
-                # NOTE: a stream event during the awaits above looks up its channel in this map,
-                # so the old channels stay in it until no await is left
-                channels.clear()
-                for channel in ordered_channels:
-                    channels[channel.id] = channel
-                    channel.display(add=True)
-                # restore the selection, or the one the cleanup removed, as long as the channel is still on the list
-                selection_id = gui_selection.id if gui_selection is not None else removed_selection
-                if selection_id is not None and selection_id in channels:
-                    self.gui.channels.set_selection(channels[selection_id])
-                # subscribe to these channel's state updates
-                to_add_topics: list[WebsocketTopic] = []
-                for channel_id in channels:
-                    to_add_topics.append(
-                        WebsocketTopic(
-                            "Channel", "StreamState", channel_id, self.process_stream_state
-                        )
-                    )
-                    to_add_topics.append(
-                        WebsocketTopic(
-                            "Channel", "StreamUpdate", channel_id, self.process_stream_update
-                        )
-                    )
-                self.websocket.add_topics(to_add_topics)
-                # relink watching channel after cleanup,
-                # or stop watching it if it no longer qualifies
-                # NOTE: this replaces 'self.watching_channel's internal value with the new object
-                watching_channel = self.watching_channel.get_with_default(None)
-                if watching_channel is not None:
-                    new_watching: Channel | None = channels.get(watching_channel.id)
-                    if new_watching is not None and self.can_watch(new_watching):
-                        self.watch(new_watching, update_status=False)
-                    else:
-                        # we've removed a channel we were watching
-                        self.stop_watching()
-                    del new_watching
-                # Show the active drop one minute lower when a watch starts or GAMES_UPDATE restarted it.
-                # This stops the countdown, so a refresh that keeps the watched channel skips it.
-                if watch_restarted or not self.watching_channel.has_value():
-                    for channel in channels.values():
-                        # check if there's any channels we can watch first
-                        if self.can_watch(channel):
-                            if (
-                                (active_campaign := self.get_active_campaign(channel)) is not None
-                                and (active_drop := active_campaign.first_drop) is not None
-                            ):
-                                active_drop.display(countdown=False, subone=True)
-                            break
-                watch_restarted = False
-                self.change_state(State.CHANNEL_SWITCH)
-                del (
-                    no_acl,
-                    acl_channels,
-                    acl_priority,
-                    kept_channels,
-                    new_channels,
-                    to_add_topics,
-                    ordered_channels,
-                    watching_channel,
-                )
+                watch_restarted = await self._run_channels_fetch(channels, watch_restarted, removed_selection)
             elif self._state is State.CHANNEL_SWITCH:
                 if self.settings.dump:
                     self.gui.close()
                     continue
-                self.gui.status.update(_("gui", "status", "switching"))
-                # Change into the selected channel, stay in the watching channel,
-                # or select a new channel that meets the required conditions
-                new_watching = None
-                selected_channel = self.gui.channels.get_selection()
-                if selected_channel is not None and self.can_watch(selected_channel):
-                    # selected channel is checked first, and set as long as we can watch it
-                    new_watching = selected_channel
-                else:
-                    # other channels, the watched one included, must pass should_switch
-                    # NOTE: sorted on every switch, because a channel can change its game
-                    for channel in sorted(channels.values(), key=self.get_priority):
-                        if self.should_switch(channel):
-                            new_watching = channel
-                            break
-                watching_channel = self.watching_channel.get_with_default(None)
-                # NOTE: a GUI-selected channel skips the 'should_switch' check above, so it ends
-                # up here even when it's already the one being watched - re-watching it would
-                # reprint the status, which gets noisy with periodic refreshes enabled
-                if new_watching is not None and new_watching != watching_channel:
-                    # if we have a better switch target - do so
-                    self.watch(new_watching)
-                elif watching_channel is not None and self.can_watch(watching_channel):
-                    # otherwise, continue watching what we had before
-                    self.gui.status.update(
-                        _("status", "watching").format(channel=watching_channel.name)
-                    )
-                else:
-                    # not watching anything and there isn't anything to watch either
-                    if not self._no_channel_printed:
-                        self.print(_("status", "no_channel"))
-                        self._no_channel_printed = True
-                    self.change_state(State.IDLE)
-                del new_watching, selected_channel, watching_channel
+                self._run_channel_switch(channels)
             elif self._state is State.RESTART:
                 if self._task_error is not None:
                     raise self._task_error
@@ -742,6 +444,341 @@ class Twitch(SessionMixin, RequestsMixin, InventoryFetchMixin):
                 # we've been requested to exit the application
                 break
             await self._state_change.wait()
+
+    async def _run_inventory_fetch(self) -> None:
+        """Run State.INVENTORY_FETCH: reload the inventory, detect the installed games and save the state."""
+        self.gui.tray.change_icon("maint")
+        # ensure the websocket is running
+        self.websocket.start()
+        await self.fetch_inventory()
+        self.gui.set_games(set(campaign.game for campaign in self.inventory))
+        # match installed games against the campaigns we've just fetched
+        await self.detect_games()
+        # Save state on every inventory fetch
+        save_each(
+            (self.gui.save, self.settings.save),
+            lambda error: logger.error(_("error", "save_failed").format(error=error)),
+        )
+        if self._state is State.INVENTORY_FETCH:
+            # a reload requested while this one ran is merged into it, so it sends no second reload
+            self._state_change.clear()
+        self.change_state(State.GAMES_UPDATE)
+
+    async def _run_games_update(self) -> tuple[bool, bool]:
+        """
+        Run State.GAMES_UPDATE: claim the drops that can be claimed and compute wanted_games.
+        Returns full_cleanup and watch_restarted, both True, which CHANNELS_CLEANUP and CHANNELS_FETCH read.
+        """
+        # claim drops from expired and active campaigns
+        for campaign in self.inventory:
+            if not campaign.upcoming:
+                for drop in campaign.drops:
+                    if drop.can_claim:
+                        await drop.claim()
+        # figure out which games we want
+        self.wanted_games.clear()
+        exclude = self.settings.exclude
+        priority = self.settings.priority
+        detected = self.settings.detected_games
+        priority_mode = self.settings.priority_mode
+        priority_only = priority_mode is PriorityMode.PRIORITY_ONLY
+        # List entries ignore case, accents and punctuation, and can use '*' and '?'
+        # wildcards, so a single entry can stand in for a whole series of games.
+        priority_patterns = gamelib.compile_patterns(priority)
+        exclude_patterns = gamelib.compile_patterns(exclude)
+        # Games detected as installed rank below every manually prioritized one,
+        # so an explicit choice always wins over an automatic one.
+        detected_order: dict[str, int] = {
+            name: len(priority) + index for index, name in enumerate(detected)
+        }
+        # NOTE: resolve each game's rank once here, rather than on every comparison
+        # the sort below makes - matching a pattern is more expensive than a lookup
+        priority_order: dict[str, int] = {}
+        for campaign in self.inventory:
+            game_name: str = campaign.game.name
+            if game_name not in priority_order:
+                rank: int | None = gamelib.match_rank(priority_patterns, game_name)
+                priority_order[game_name] = (
+                    rank if rank is not None
+                    else detected_order.get(game_name, MAX_INT)
+                )
+        next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
+        # sorted_campaigns: list[DropsCampaign] = list(self.inventory)
+        sorted_campaigns: list[DropsCampaign] = self.inventory
+        if not priority_only:
+            if priority_mode is PriorityMode.ENDING_SOONEST:
+                sorted_campaigns.sort(key=lambda c: c.ends_at)
+            elif priority_mode is PriorityMode.LOW_AVBL_FIRST:
+                sorted_campaigns.sort(key=lambda c: c.availability)
+        sorted_campaigns.sort(
+            key=lambda c: priority_order.get(c.game.name, MAX_INT)
+        )
+        for campaign in sorted_campaigns:
+            game: Game = campaign.game
+            if (
+                game not in self.wanted_games  # isn't already there
+                # and isn't excluded by list or priority mode
+                and not gamelib.any_match(exclude_patterns, game.name)
+                # NOTE: a rank below MAX_INT means the game either matched a priority
+                # list entry, or was detected as installed - both count as wanted
+                # under priority-only mode
+                and (
+                    not priority_only
+                    or priority_order.get(game.name, MAX_INT) < MAX_INT
+                )
+                # and can be progressed within the next hour
+                and campaign.can_earn_within(next_hour)
+            ):
+                # non-excluded games with no priority are placed last, below priority ones
+                self.wanted_games.append(game)
+        # show the user what all of the above actually settled on
+        self.gui.settings.set_wanted_games(self.wanted_games)
+        full_cleanup = True
+        self.restart_watching()
+        watch_restarted = True
+        self.change_state(State.CHANNELS_CLEANUP)
+        return full_cleanup, watch_restarted
+
+    def _run_channels_cleanup(
+        self, channels: OrderedDict[int, Channel], full_cleanup: bool
+    ) -> tuple[bool, int | None]:
+        """
+        Run State.CHANNELS_CLEANUP: remove every channel on a full cleanup or when no game is wanted, else the
+        channels without an ACL that are offline or stream a game that is not wanted.
+        Returns full_cleanup, now False, and the ID of the selected channel when this removed it.
+        """
+        self.gui.status.update(_("gui", "status", "cleanup"))
+        if not self.wanted_games or full_cleanup:
+            # no games selected or we're doing full cleanup: remove everything
+            to_remove_channels: list[Channel] = list(channels.values())
+        else:
+            # remove all channels that:
+            to_remove_channels = [
+                channel
+                for channel in channels.values()
+                if (
+                    not channel.acl_based  # aren't ACL-based
+                    and (
+                        channel.offline  # and are offline
+                        # or online but aren't streaming the game we want anymore
+                        or (channel.game is None or channel.game not in self.wanted_games)
+                    )
+                )
+            ]
+        full_cleanup = False
+        # removing a channel's row drops its selection, which the fetch restores when it adds the channel back
+        selection = self.gui.channels.get_selection()
+        removed_selection = (
+            selection.id if selection is not None and selection in to_remove_channels else None
+        )
+        if to_remove_channels:
+            to_remove_topics: list[str] = []
+            for channel in to_remove_channels:
+                to_remove_topics.append(
+                    WebsocketTopic.as_str("Channel", "StreamState", channel.id)
+                )
+                to_remove_topics.append(
+                    WebsocketTopic.as_str("Channel", "StreamUpdate", channel.id)
+                )
+            self.websocket.remove_topics(to_remove_topics)
+            for channel in to_remove_channels:
+                del channels[channel.id]
+                channel.remove()
+            del to_remove_channels, to_remove_topics
+        if self.wanted_games:
+            self._no_campaign_printed = False
+            self.change_state(State.CHANNELS_FETCH)
+        else:
+            # with no games available, we switch to IDLE after cleanup
+            if not self._no_campaign_printed:
+                self.print(_("status", "no_campaign"))
+                self._no_campaign_printed = True
+            self.change_state(State.IDLE)
+        return full_cleanup, removed_selection
+
+    async def _run_channels_fetch(
+        self, channels: OrderedDict[int, Channel], watch_restarted: bool, removed_selection: int | None
+    ) -> bool:
+        """
+        Run State.CHANNELS_FETCH: add the channels of the wanted games and keep at most MAX_CHANNELS of them.
+        Returns watch_restarted, now False.
+        """
+        self.gui.status.update(_("gui", "status", "gathering"))
+        # start with all current channels
+        # NOTE: the GUI list is only rebuilt further below, and only if needed
+        new_channels: set[Channel] = set(channels.values())
+        # gather and add ACL channels from campaigns
+        # NOTE: we consider only campaigns that can be progressed
+        # NOTE: we use another set so that we can set them online separately
+        no_acl: set[Game] = set()
+        acl_channels: set[Channel] = set()
+        # the best priority of the wanted games whose campaigns list the channel in their ACL
+        acl_priority: dict[Channel, int] = {}
+        next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
+        for campaign in self.inventory:
+            if (
+                campaign.game in self.wanted_games
+                and campaign.can_earn_within(next_hour)
+            ):
+                if campaign.allowed_channels:
+                    acl_channels.update(campaign.allowed_channels)
+                    game_priority = self.wanted_games.index(campaign.game)
+                    for channel in campaign.allowed_channels:
+                        acl_priority[channel] = min(game_priority, acl_priority.get(channel, game_priority))
+                else:
+                    no_acl.add(campaign.game)
+        # remove all ACL channels that already exist from the other set
+        acl_channels.difference_update(new_channels)
+        # use the other set to set them online if possible
+        await self.bulk_check_online(acl_channels)
+        # finally, add them as new channels
+        new_channels.update(acl_channels)
+        for game in no_acl:
+            # for every campaign without an ACL, for it's game,
+            # add a list of live channels with drops enabled
+            new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+        # sort them descending by viewers, by priority and by game priority
+        # NOTE: Viewers sort also ensures ONLINE channels are sorted to the top
+        # NOTE: We can drop using the set now, because there's no more channels being added
+        ordered_channels: list[Channel] = sorted(
+            new_channels, key=self._viewers_key, reverse=True
+        )
+        ordered_channels.sort(key=lambda ch: ch.acl_based, reverse=True)
+        ordered_channels.sort(key=self.get_priority)
+        # ensure that we won't end up with more channels than we can handle,
+        # keeping the list in this order
+        selection = self.gui.channels.get_selection()
+        kept_channels = set(
+            self._slot_order(
+                ordered_channels,
+                acl_priority,
+                selection.id if selection is not None else removed_selection,
+            )[:MAX_CHANNELS]
+        )
+        to_remove_channels = [ch for ch in ordered_channels if ch not in kept_channels]
+        ordered_channels = [ch for ch in ordered_channels if ch in kept_channels]
+        if to_remove_channels:
+            # the tracked channels and the gui list are replaced below,
+            # so unsubscribe from their topics and cancel their online checks
+            to_remove_topics = []
+            for channel in to_remove_channels:
+                channel.cancel_online_check()
+                to_remove_topics.append(
+                    WebsocketTopic.as_str("Channel", "StreamState", channel.id)
+                )
+                to_remove_topics.append(
+                    WebsocketTopic.as_str("Channel", "StreamUpdate", channel.id)
+                )
+            self.websocket.remove_topics(to_remove_topics)
+            del to_remove_channels, to_remove_topics
+        # Only tear the gui list down when the set of channels actually changed.
+        # A periodic refresh usually ends up with the exact same channels, and
+        # rebuilding the table every time would flicker and drop the user's selection.
+        gui_selection: Channel | None = None
+        if self.gui.channels.get_iids() != set(
+            channel.iid for channel in ordered_channels
+        ):
+            gui_selection = selection
+            self.gui.channels.clear()
+        # set our new channel list
+        # NOTE: a stream event during the awaits above looks up its channel in this map,
+        # so the old channels stay in it until no await is left
+        channels.clear()
+        for channel in ordered_channels:
+            channels[channel.id] = channel
+            channel.display(add=True)
+        # restore the selection, or the one the cleanup removed, as long as the channel is still on the list
+        selection_id = gui_selection.id if gui_selection is not None else removed_selection
+        if selection_id is not None and selection_id in channels:
+            self.gui.channels.set_selection(channels[selection_id])
+        # subscribe to these channel's state updates
+        to_add_topics: list[WebsocketTopic] = []
+        for channel_id in channels:
+            to_add_topics.append(
+                WebsocketTopic(
+                    "Channel", "StreamState", channel_id, self.process_stream_state
+                )
+            )
+            to_add_topics.append(
+                WebsocketTopic(
+                    "Channel", "StreamUpdate", channel_id, self.process_stream_update
+                )
+            )
+        self.websocket.add_topics(to_add_topics)
+        # relink watching channel after cleanup,
+        # or stop watching it if it no longer qualifies
+        # NOTE: this replaces 'self.watching_channel's internal value with the new object
+        watching_channel = self.watching_channel.get_with_default(None)
+        if watching_channel is not None:
+            new_watching: Channel | None = channels.get(watching_channel.id)
+            if new_watching is not None and self.can_watch(new_watching):
+                self.watch(new_watching, update_status=False)
+            else:
+                # we've removed a channel we were watching
+                self.stop_watching()
+            del new_watching
+        # Show the active drop one minute lower when a watch starts or GAMES_UPDATE restarted it.
+        # This stops the countdown, so a refresh that keeps the watched channel skips it.
+        if watch_restarted or not self.watching_channel.has_value():
+            for channel in channels.values():
+                # check if there's any channels we can watch first
+                if self.can_watch(channel):
+                    if (
+                        (active_campaign := self.get_active_campaign(channel)) is not None
+                        and (active_drop := active_campaign.first_drop) is not None
+                    ):
+                        active_drop.display(countdown=False, subone=True)
+                    break
+        watch_restarted = False
+        self.change_state(State.CHANNEL_SWITCH)
+        del (
+            no_acl,
+            acl_channels,
+            acl_priority,
+            kept_channels,
+            new_channels,
+            to_add_topics,
+            ordered_channels,
+            watching_channel,
+        )
+        return watch_restarted
+
+    def _run_channel_switch(self, channels: OrderedDict[int, Channel]) -> None:
+        """Run State.CHANNEL_SWITCH: watch the selected channel or the first that should_switch accepts."""
+        self.gui.status.update(_("gui", "status", "switching"))
+        # Change into the selected channel, stay in the watching channel,
+        # or select a new channel that meets the required conditions
+        new_watching = None
+        selected_channel = self.gui.channels.get_selection()
+        if selected_channel is not None and self.can_watch(selected_channel):
+            # selected channel is checked first, and set as long as we can watch it
+            new_watching = selected_channel
+        else:
+            # other channels, the watched one included, must pass should_switch
+            # NOTE: sorted on every switch, because a channel can change its game
+            for channel in sorted(channels.values(), key=self.get_priority):
+                if self.should_switch(channel):
+                    new_watching = channel
+                    break
+        watching_channel = self.watching_channel.get_with_default(None)
+        # NOTE: a GUI-selected channel skips the 'should_switch' check above, so it ends
+        # up here even when it's already the one being watched - re-watching it would
+        # reprint the status, which gets noisy with periodic refreshes enabled
+        if new_watching is not None and new_watching != watching_channel:
+            # if we have a better switch target - do so
+            self.watch(new_watching)
+        elif watching_channel is not None and self.can_watch(watching_channel):
+            # otherwise, continue watching what we had before
+            self.gui.status.update(
+                _("status", "watching").format(channel=watching_channel.name)
+            )
+        else:
+            # not watching anything and there isn't anything to watch either
+            if not self._no_channel_printed:
+                self.print(_("status", "no_channel"))
+                self._no_channel_printed = True
+            self.change_state(State.IDLE)
+        del new_watching, selected_channel, watching_channel
 
     async def _watch_sleep(self, delay: float) -> None:
         # we use wait_for here to allow an asyncio.sleep-like that can be ended prematurely

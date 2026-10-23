@@ -11,7 +11,7 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
 | File | What it holds |
 | --- | --- |
 | `__init__.py` | Imports `Twitch`. Callers import from `twitch`, never from a file of it |
-| `client.py` | `Twitch`: its attributes, the lifecycle and state methods, `_run`, the watch loop, the maintenance task, the PubSub handlers and the channel discovery |
+| `client.py` | `Twitch`: its attributes, the lifecycle and state methods, `_run` with a method for each state of a reload, the watch loop, the maintenance task, the PubSub handlers and the channel discovery |
 | `session.py` | `_AuthState`, `save_cookies`, and `SessionMixin`, a base class of `Twitch` that holds `get_session`, `get_auth` and `wait_until_login`. All the code that reads `COOKIES_PATH` is here, so a test patches it in one file |
 | `requests.py` | `RequestsMixin`, a base class of `Twitch` that holds `request` and `gql_request` |
 | `inventoryfetch.py` | `InventoryFetchMixin`, a base class of `Twitch` that holds `fetch_inventory` and `fetch_campaigns` |

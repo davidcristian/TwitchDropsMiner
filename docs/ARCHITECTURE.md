@@ -44,8 +44,10 @@ replaces the entries of `_drops` and `_campaigns`, and `shutdown` clears both.
 ## The state machine
 
 `Twitch._run` loops over `State` from `constants.py`: it clears the `_state_change` event, handles the current
-state, then waits on the event, which `change_state` sets with `_state`. A handler that ends with
-`change_state` continues at once; `IDLE`, and `CHANNEL_SWITCH` when it watches a channel, wait. Of the states
+state, then waits on the event, which `change_state` sets with `_state`. It handles each state from
+`INVENTORY_FETCH` to `CHANNEL_SWITCH` in a method named for that state, such as `_run_games_update`, which
+returns the values that a later state reads. A handler that ends with `change_state` continues at once; `IDLE`,
+and `CHANNEL_SWITCH` when it watches a channel, wait. Of the states
 requested during a pass, the handler's own next state included, the first in `STATE_ORDER` runs next: `EXIT`,
 `RESTART`, then the states of a reload from `INVENTORY_FETCH` to `CHANNEL_SWITCH`, then `IDLE`. So a reload
 also runs a later state that a request names, and a reload requested during `INVENTORY_FETCH` is merged into
