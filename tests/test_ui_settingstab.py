@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import shlex
+import sys
 import time
 from pathlib import Path
 from tkinter import Misc, ttk
@@ -11,6 +12,7 @@ import pytest
 
 import constants
 import ui.generalsettings as ui_generalsettings
+from autostart import source_python
 from constants import PriorityMode
 from fakedialog import FakeDialogs
 from fakes import FakeTwitch
@@ -151,7 +153,7 @@ def test_the_settings_tab_offers_the_choices_of_settings_py_in_their_order(windo
     assert list(getattr(panel, names)) == list(choices)
 
 
-def test_checking_autostart_creates_the_autostart_folder_with_an_entry_that_starts_the_source_with_python(
+def test_checking_autostart_creates_the_autostart_folder_with_an_entry_that_starts_the_source_with_its_python(
     window, monkeypatch, tmp_path
 ):
     gui = autostart_window(window, monkeypatch, tmp_path / "home", tmp_path / "config")
@@ -159,7 +161,9 @@ def test_checking_autostart_creates_the_autostart_folder_with_an_entry_that_star
     gui.settings.update_autostart()
 
     entry = tmp_path / "config" / "autostart" / "TwitchDropsMiner.desktop"
-    assert exec_arguments(entry) == [str(constants.SCRIPTS_PATH / "python"), str(constants.SELF_PATH.resolve())]
+    # the window writes a desktop entry on every system, with the Python that a source run uses on this one
+    python = source_python(constants.SCRIPTS_PATH, sys.platform)
+    assert exec_arguments(entry) == [str(python), str(constants.SELF_PATH.resolve())]
     assert gui.settings._query_autostart() is True
     assert not (tmp_path / "home").exists()
 
