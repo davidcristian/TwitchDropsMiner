@@ -1,6 +1,6 @@
 # `streamdata.py`
 
-**Purpose.** Reads the stream and channel data of GQL responses for `twitch.py` and `channel.py`: the
+**Purpose.** Reads the stream and channel data of GQL responses for `twitch.py` and `channel/`: the
 `GetStreamInfo`, `GameDirectory`, `AvailableDrops` and `PlaybackAccessToken` responses. After a `server error`,
 `Twitch.gql_request` sets the field that the error's `path` names to null ([twitch.md](twitch.md#gql-requests)),
 so each function here leaves out a null item or reads it as no value instead of raising. A raise in

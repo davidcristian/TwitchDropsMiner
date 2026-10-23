@@ -48,7 +48,7 @@ whole file with the newest contents, and `json_load` reads it in place of `path`
 | `cache.py` | `cache/mapping.json` | `merge=False`; catches `json.JSONDecodeError` ([cache.md](cache.md)) |
 | `translate.py` | `lang/*.json` | merged with `default_translation`. `save_template`, which `main.py` calls in a run from source, saves `lang/English.json` |
 
-`json_minify` is called by `websocket/messages.py` for every message it sends, and by `channel.py` for the spade and GQL
+`json_minify` is called by `websocket/messages.py` for every message it sends, and by `channel/stream.py` for the spade and GQL
 watch payloads, which only uncalled methods read ([channel.md](channel.md#watching)).
 
 ### Request pacing
@@ -94,7 +94,7 @@ it to 0. A `base` of 1 or less raises `ValueError`. With the defaults the delays
 than letters, digits and `_` turned into one `-`, with no `-` at either end). Two games are equal when their IDs
 are. `is_special()` is true for the IDs in `SPECIAL_GAME_IDS` (`509663`, `509672`): for a campaign of that game,
 `can_earn` then accepts a channel whatever game it streams, when the campaign's list of allowed channels is
-empty or includes it (`inventory.py`, `twitch.py`). `inventory.py`, `channel.py`, `twitch.py` and `gui.py` use
+empty or includes it (`inventory.py`, `twitch.py`). `inventory.py`, `channel/`, `twitch.py` and `gui.py` use
 `Game`.
 
 ### Other helpers
@@ -105,7 +105,7 @@ empty or includes it (`inventory.py`, `twitch.py`). `inventory.py`, `channel.py`
 | `set_root_icon(root, image_path)` | Sets the window icon and keeps a reference to the image | `main.py`, `gui.py` |
 | `webopen(url)` | Opens `url` in a new browser tab. In a packaged Linux build it restores `LD_LIBRARY_PATH` from `LD_LIBRARY_PATH_ORIG` for the call, because PyInstaller points it at the bundled libraries | `gui.py` |
 | `timestamp(string)` | Parses a Twitch UTC time, with or without fractions of a second | `inventory.py`, `twitch.py` |
-| `isonow()` | Returns the current UTC time with milliseconds and a `Z` | `channel.py`, in the watch payload that only uncalled methods read |
+| `isonow()` | Returns the current UTC time with milliseconds and a `Z` | `channel/stream.py`, in the watch payload that only uncalled methods read |
 | `create_nonce(chars, length)`, `CHARS_ASCII`, `CHARS_HEX_LOWER` | Return a random string | `websocket/messages.py` (30 ASCII characters), `twitch.py` (the 16 character hex session ID) |
 | `format_traceback(exc, **kwargs)` | Returns the traceback of `exc` and of its cause as a string, as `traceback.format_exception` does. `kwargs` such as `chain=False` go to that function | `websocket/messages.py` |
 

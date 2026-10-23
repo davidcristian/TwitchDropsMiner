@@ -16,7 +16,7 @@ new work goes into a new module that they call. This task records where each one
 | `gui.py` | 3164 | |
 | `twitch.py` | 1734 | |
 | `translate.py` | 612 | |
-| `channel.py` | 528 | |
+| `channel.py` | 528 | `channel/`, five files of 7 to 166 lines |
 | `inventory.py` | 489 | |
 | `constants.py` | 477 | 139, and `twitchapi/`, four files of 16 to 183 lines |
 | `websocket.py` | 414 | `websocket/`, four files of 7 to 252 lines |
@@ -101,3 +101,7 @@ Splits cost no Twitch requests.
   methods of `Websocket`, which had 300 lines by itself, moved to the mixin `MessagesMixin`.
 - 2026-10-23: The client types, the GQL operations and the PubSub topics moved from `constants.py` to the new
   package `twitchapi/`, and the entry of `constants.py` left `EXCEPTIONS`. Five modules remain over the cap.
+- 2026-10-23: `channel.py` became the package `channel/`, and its entry left `EXCEPTIONS`. `Channel`, which had
+  358 lines by itself, keeps its attributes and properties in `tracked.py`. Its online checks moved to the mixin
+  `OnlineMixin` and its watch requests to `WatchMixin`. Both set `__slots__ = ()`, so a `Channel` still has no
+  `__dict__`. Four modules remain over the cap.

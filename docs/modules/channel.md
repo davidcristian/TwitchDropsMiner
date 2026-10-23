@@ -1,9 +1,19 @@
-# `channel.py`
+# `channel/`
 
 **Purpose.** `Channel` is one Twitch channel the app tracks, and `Stream` is that channel's current broadcast.
-The module checks whether a channel is live, keeps its game, title, viewer count and drops status, and sends the
+The package checks whether a channel is live, keeps its game, title, viewer count and drops status, and sends the
 watch requests that make drop progress. `Twitch` keeps the tracked channels in `Twitch.channels`
 ([twitch.md](twitch.md)).
+
+## Files
+
+| File | What it holds |
+| --- | --- |
+| `__init__.py` | Imports `Channel` and `Stream`. Callers import from `channel`, never from a file of it |
+| `tracked.py` | `Channel`: its attributes, its properties, `display`, `cancel_online_check` and `remove` |
+| `online.py` | `OnlineMixin`, a base class of `Channel` that holds its [online checks](#online-checks): `get_stream`, `update_stream`, `external_update`, `check_online`, `set_offline` and their helpers |
+| `watch.py` | `WatchMixin`, a base class of `Channel` that holds its [watch requests](#watching): `send_watch`, `get_spade_url`, `_send_watch_spade` and `_send_watch_gql` |
+| `stream.py` | `Stream`, its playlist URL and the watch payloads |
 
 ## Public contract
 
@@ -181,7 +191,8 @@ fails leaves the marked `Stream` in place, and the next cycle starts another one
   `remove()` and `set_offline()` call it, so a removed channel does not call `on_channel_update` later. `Twitch`
   calls it for every channel in `shutdown`, and for each channel that `CHANNELS_FETCH` cuts at `MAX_CHANNELS`.
   It does not call `remove()` there, because a new channel that is cut has no row to remove.
-- `Channel` uses `__slots__`, so a new attribute must be added to the `__slots__` tuple.
+- `Channel` uses `__slots__`, so a new attribute must be added to the `__slots__` tuple. Its mixins set
+  `__slots__ = ()`, because a base class without `__slots__` gives every `Channel` a `__dict__`.
 - Every GQL query goes through `Twitch.gql_request`, and every other request through `Twitch.request`
   ([ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md)).
 - `on_channel_update` ends with `display()`, so the GUI row matches the status after every change.

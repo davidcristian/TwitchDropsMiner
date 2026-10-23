@@ -6,7 +6,7 @@
 **Verified:** 2026-10-22
 
 When PubSub sends `stream-up` for a tracked channel, `Twitch.process_stream_state` calls
-`Channel.check_online` in [channel.py](../../../channel.py). That starts `Channel._online_delay`, which waits
+`Channel.check_online` in [channel/online.py](../../../channel/online.py). That starts `Channel._online_delay`, which waits
 `ONLINE_DELAY` (120 seconds in `constants.py`) and then calls `update_stream` once. The wait exists because
 Twitch sends `stream-up` before the stream information is available.
 

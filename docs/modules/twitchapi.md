@@ -2,7 +2,7 @@
 
 **Purpose.** Defines what the app sends to Twitch: the clients it acts as (`ClientType`), the GQL operations with
 their hashes (`GQL_QUERIES`) and the PubSub topics it subscribes to (`WebsocketTopic`). It sends nothing itself:
-`twitch.py`, `channel.py` and `inventory.py` send the GQL requests, and `websocket/` the PubSub messages. It needs
+`twitch.py`, `channel/` and `inventory.py` send the GQL requests, and `websocket/` the PubSub messages. It needs
 neither Twitch nor a display, and `tests/test_twitchapi.py` tests it with plain values.
 [gql-operations.md](../runbooks/gql-operations.md) says how to update a hash, the client ID or the user agent.
 
@@ -29,7 +29,7 @@ or when a dict meets a value that is not a dict. A `...` inside a dict the calle
 encodes that body, before the request is sent.
 
 `GQLQuery(query, g64data)` sends its query text, with gzip and base64 encoded data. Only `Stream.gql_payload` in
-`channel.py` uses it, for the `sendSpadeEvents` watch mutation, and only `Channel._send_watch_gql` reads that
+`channel/stream.py` uses it, for the `sendSpadeEvents` watch mutation, and only `Channel._send_watch_gql` reads that
 payload. Nothing calls that method ([channel.md](channel.md#watching)), so its read of the response, which
 raises on a null field, never runs. `GQLOperation` is either type, and `Twitch.gql_request` takes one operation
 or a list.
@@ -41,14 +41,14 @@ complete response to null in turn ([ADR-0013](../adr/ADR-0013-test-standard.md))
 
 | Key | `operationName` | Used in | Response read by |
 | --- | --- | --- | --- |
-| `GetStreamInfo` | `VideoPlayerStreamInfoOverlayChannel` | `channel.py` | `channel_streams`, `channel_stream` |
+| `GetStreamInfo` | `VideoPlayerStreamInfoOverlayChannel` | `channel/` | `channel_streams`, `channel_stream` |
 | `ClaimDrop` | `DropsPage_ClaimDropRewards` | `inventory.py` | `claim_succeeded` |
 | `Inventory` | `Inventory` | `twitch.py` | `user_inventory`, `complete_campaigns` |
 | `CurrentDrop` | `DropCurrentSessionContext` | `twitch.py` | `current_drop` |
 | `Campaigns` | `ViewerDropsDashboard` | `twitch.py` | `campaign_summaries`, `complete_campaigns` |
 | `CampaignDetails` | `DropCampaignDetails` | `twitch.py` | `campaign_details`, `complete_campaigns` |
-| `AvailableDrops` | `DropsHighlightService_AvailableDrops` | `channel.py`, `twitch.py` | `channel_campaigns`, `available_campaigns` |
-| `PlaybackAccessToken` | `PlaybackAccessToken` | `channel.py` | `playback_token` |
+| `AvailableDrops` | `DropsHighlightService_AvailableDrops` | `channel/`, `twitch.py` | `channel_campaigns`, `available_campaigns` |
+| `PlaybackAccessToken` | `PlaybackAccessToken` | `channel/` | `playback_token` |
 | `GameDirectory` | `DirectoryPage_Game` | `twitch.py` | `directory_streams` |
 | `NotificationsDelete` | `OnsiteNotifications_DeleteNotification` | `twitch.py` | not read |
 

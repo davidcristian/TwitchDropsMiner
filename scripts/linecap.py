@@ -12,7 +12,6 @@ LIMITS = {".py": 300, ".md": 300}
 # Inherited modules over the limit until the splits that the module-split task records are made.
 # An entry fails once its module is under the limit, so the list only shrinks.
 EXCEPTIONS = frozenset({
-    "channel.py",
     "gui.py",
     "inventory.py",
     "translate.py",

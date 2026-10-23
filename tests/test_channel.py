@@ -6,7 +6,7 @@ from datetime import timedelta
 import pytest
 from yarl import URL
 
-import channel as channel_module
+import channel.online as channel_online
 from channel import Channel
 from exceptions import GQLException
 from fakes import TOKEN, USHER_LIST, FakeResponse, FakeTwitch, HeldAnswer, gql_answers, settle, stream_user
@@ -16,7 +16,7 @@ NULL_TOKEN = {"data": {"streamPlaybackAccessToken": None}}
 
 @pytest.fixture
 def no_online_delay(monkeypatch):
-    monkeypatch.setattr(channel_module, "ONLINE_DELAY", timedelta(0))
+    monkeypatch.setattr(channel_online, "ONLINE_DELAY", timedelta(0))
 
 
 def shown_channel(twitch: FakeTwitch, *, online: bool) -> Channel:

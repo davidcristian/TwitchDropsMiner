@@ -51,12 +51,13 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
    cycle.
 4. **A class over 300 lines is split into mixins.** A mixin is a class in the same package whose name ends in
    `Mixin`. It holds a group of the class's methods, moved unchanged, has no `__init__`, and declares as
-   annotations without a value the attributes and methods of the class that its methods use. The class lists
-   its mixins as bases and keeps `__init__`, which sets every attribute. A helper function that takes the object
-   rewrites every `self` of the moved code, and a collaborating class needs new state and new calls, so a
-   reviewer cannot check either as a move. They are the better form for code that needs no `self`, such as the
-   wanted games ranking in `Twitch._run`, or that keeps state of its own, as `_AuthState` does. Such a rewrite
-   is a commit of its own, after the split.
+   annotations without a value the attributes and methods of the class that its methods use. When the class has
+   `__slots__`, each mixin sets `__slots__ = ()`, because a base class without it gives every object of the class
+   a `__dict__`, which accepts any new attribute. The class lists its mixins as bases and keeps `__init__`, which
+   sets every attribute. A helper function that takes the object rewrites every `self` of the moved code, and a
+   collaborating class needs new state and new calls, so a reviewer cannot check either as a move. They are the
+   better form for code that needs no `self`, such as the wanted games ranking in `Twitch._run`, or that keeps
+   state of its own, as `_AuthState` does. Such a rewrite is a commit of its own, after the split.
 5. **A method over 300 lines is split before its class is.** It cannot move whole into a file of 300 lines. A
    `refactor:` commit of its own cuts it into methods, each a run of consecutive lines of the old body, and
    changes nothing else. The tests that run the method pass unchanged, and for `SettingsPanel.__init__` the
@@ -64,9 +65,9 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
 6. **A split commit moves code and changes no behavior.** It is a `refactor:` commit for one module. The moved
    lines keep their text and order, except imports, the bases of a class that gains mixins, and a name the move
    requires. The new lines are the package's `__init__.py`, a one-line docstring for each new file and mixin,
-   and the annotations of decision 4. A function that the preview's mock becomes re-indents the mock, which
-   `git diff -w` hides. `git diff -M --stat` shows the moves, and the sorted lines of the old file match those of
-   the new files, apart from the lines this decision allows.
+   and the annotations and the empty `__slots__` of decision 4. A function that the preview's mock becomes
+   re-indents the mock, which `git diff -w` hides. `git diff -M --stat` shows the moves, and the sorted lines of
+   the old file match those of the new files, apart from the lines this decision allows.
 7. **Tests follow the code they test.** A test that patches a module global, such as `random` for
    `ExponentialBackoff`, patches the file that now reads it (`utils.backoff`), in the split commit. A test of code
    that left `constants.py` or `gui.py` moves to the test file of the new package, such as

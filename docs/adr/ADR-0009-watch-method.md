@@ -5,7 +5,7 @@
 ## Context
 
 A drop progresses while the account watches a live stream that counts toward the drop's campaign. The app has
-to make Twitch count the account as a viewer of one channel without playing the video. `channel.py` holds
+to make Twitch count the account as a viewer of one channel without playing the video. `channel/` holds
 three ways to do this:
 
 - **Playlist HEAD requests,** `Channel.send_watch`: get the stream's video playlist as a video player does,
@@ -53,7 +53,7 @@ None of the five commits has a message body, so the code comments are the only w
    request. So the `CurrentDrop` check keeps its place, and a call starts the next cycle at most 5 seconds
    early.
 
-3. **The Spade and GQL methods stay in `channel.py` with no caller.** No code calls them, or `get_spade_url`,
+3. **The Spade and GQL methods stay in `channel/watch.py` with no caller.** No code calls them, or `get_spade_url`,
    `Channel.url`, `Stream.spade_payload`, `Stream.gql_payload` and `Stream._watch_payload`, which only they
    use. Keeping them sends the same requests as removing them would, and changes less code. If Twitch stops
    counting the HEAD requests, a switch back starts from a method that exists, and an upstream fix to one of
