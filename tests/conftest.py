@@ -193,16 +193,3 @@ def unreadable():
     for path in changed:
         path.chmod(0o700)
 
-
-@pytest.fixture
-def unopenable(unreadable):
-    def make(folder: Path) -> Path:
-        unreadable(folder)
-        try:
-            (folder / "child").is_dir()
-        except PermissionError:
-            return folder
-        # Python 3.14 returns False there, so the scan has no error to report
-        pytest.skip("Path.is_dir raises no error for a path inside a folder the user may not open")
-
-    return make

@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from .common import LocalGame, Platform, ScanError, ScanErrorKind, ScanResult, read_text
+from .common import LocalGame, Platform, ScanError, ScanErrorKind, ScanResult, exists, is_file, is_folder, read_text
 
 
 # Steam entries that are tooling rather than games, and would only ever produce
@@ -73,12 +73,12 @@ def _find_steamapps(directory: Path) -> Path | None:
     """
     Resolves a Steam root, a 'steamapps' folder or its 'common' folder to the 'steamapps' folder.
     """
-    if directory.name.lower() == "common" and (directory.parent / "libraryfolders.vdf").exists():
+    if directory.name.lower() == "common" and exists(directory.parent / "libraryfolders.vdf"):
         directory = directory.parent
     if any(directory.glob("appmanifest_*.acf")):
         return directory
     for candidate in (directory / "steamapps", directory / "SteamApps"):
-        if candidate.is_dir():
+        if is_folder(candidate):
             return candidate
     return None
 
@@ -93,7 +93,7 @@ def _steam_library_index(steamapps: Path, result: ScanResult) -> list[Path]:
         steamapps / "libraryfolders.vdf",
         steamapps.parent / "config" / "libraryfolders.vdf",  # older Steam layout
     ):
-        if not index_path.is_file():
+        if not is_file(index_path):
             continue
         text = read_text(index_path)
         if text is None:
@@ -101,7 +101,7 @@ def _steam_library_index(steamapps: Path, result: ScanResult) -> list[Path]:
         for raw_path in _parse_kv_all(text, "path"):
             library = Path(raw_path) / "steamapps"
             try:
-                found = library.is_dir()
+                found = is_folder(library)
             except OSError as exc:
                 error = ScanError(ScanErrorKind.FAILED, str(library), str(exc))
                 if error not in result.errors:

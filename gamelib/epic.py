@@ -9,7 +9,7 @@ from pathlib import Path
 from collections import abc
 from dataclasses import dataclass
 
-from .common import LocalGame, Platform, ScanResult, read_text
+from .common import LocalGame, Platform, ScanResult, is_file, is_folder, read_text
 
 logger = logging.getLogger("TwitchDrops")
 
@@ -71,11 +71,11 @@ def _epic_manifest_dirs(directory: Path, launcher_folders: tuple[Path, ...]) -> 
     if any(directory.glob("*.item")):
         dirs.append(directory)
     nested = directory / "Manifests"
-    if nested.is_dir() and any(nested.glob("*.item")):
+    if is_folder(nested) and any(nested.glob("*.item")):
         dirs.append(nested)
     # the launcher's own index location, which is where installs are really tracked
     for well_known in launcher_folders:
-        if well_known.is_dir() and any(well_known.glob("*.item")):
+        if is_folder(well_known) and any(well_known.glob("*.item")):
             dirs.append(well_known)
     return dirs
 
@@ -121,7 +121,7 @@ def _scan_legendary(directory: Path, result: ScanResult, indexes: tuple[Path, ..
     """
     found = False
     for index_path in (directory / "installed.json", *indexes):
-        if not index_path.is_file():
+        if not is_file(index_path):
             continue
         text = read_text(index_path)
         if text is None:

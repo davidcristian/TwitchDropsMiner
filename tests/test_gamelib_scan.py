@@ -44,11 +44,11 @@ def test_scan_directories_reports_a_folder_it_cannot_check(tmp_path, unreadable)
     assert result.errors[0].reason
 
 
-def test_scan_directories_scans_the_other_folders_after_one_it_cannot_open(tmp_path, steam_manifest, unopenable):
+def test_scan_directories_scans_the_other_folders_after_one_it_cannot_open(tmp_path, steam_manifest, unreadable):
     locked = tmp_path / "locked"
     steam_manifest(locked / "steamapps", 570, "Dota 2")
     steam_manifest(tmp_path / "Steam" / "steamapps", 620, "Portal 2")
-    unopenable(locked)
+    unreadable(locked)
     result = scan_directories([locked, tmp_path / "Steam"])
     assert names(result) == ["Portal 2"]
     assert [(error.kind, error.path) for error in result.errors] == [(ScanErrorKind.FAILED, str(locked))]
@@ -56,13 +56,13 @@ def test_scan_directories_scans_the_other_folders_after_one_it_cannot_open(tmp_p
 
 
 def test_scan_directories_keeps_the_games_found_in_a_folder_before_an_error(
-    tmp_path, launcher_folders, steam_manifest, unopenable
+    tmp_path, launcher_folders, steam_manifest, unreadable
 ):
     steam = tmp_path / "Steam"
     steam_manifest(steam / "steamapps", 620, "Portal 2")
     epic = launcher_folders.home / ".config" / "Epic"
     epic.mkdir(parents=True)
-    unopenable(epic)
+    unreadable(epic)
     result = scan_directories([steam])
     assert names(result) == ["Portal 2"]
     assert [(error.kind, error.path) for error in result.errors] == [(ScanErrorKind.FAILED, str(steam))]

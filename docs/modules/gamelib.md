@@ -11,7 +11,7 @@ explains the detection design and [ADR-0005](../adr/ADR-0005-list-patterns.md) t
 | Module | What it holds |
 | --- | --- |
 | `__init__.py` | Re-exports the public names listed in `__all__`. Callers import from `gamelib`, never from a submodule |
-| `common.py` | The shared types and `read_text`, which returns a file's text or `None` (logged at `DEBUG`) when it cannot be read |
+| `common.py` | The shared types, `read_text`, which returns a file's text or `None` (logged at `DEBUG`) when it cannot be read, and the path checks `exists`, `is_folder` and `is_file` |
 | `steam.py` | `scan_steam`, `STEAM_TOOL_APPIDS`, `STEAM_TOOL_PREFIXES` |
 | `epic.py` | `scan_epic`, for Epic manifests and the Legendary and Heroic index, and `launcher_indexes` with its `LauncherIndexes` |
 | `scan.py` | `scan_directories`, which runs both scanners on each folder |
@@ -59,11 +59,12 @@ install, and adds a `NO_GAMES` error when neither recognizes it. A Legendary or 
 folder that holds a manifest, among the [launcher indexes](#launcher-indexes) makes the Epic scanner recognize
 every folder, so that error does not appear then. A scanner can raise `OSError`, such as `PermissionError` for a
 path inside a folder the user may not open. The scan of that folder then ends with a `FAILED` error, as for an
-unknown user. The games found in it before the error are kept, and the other folders are still scanned. On
-Python 3.14, `Path.is_dir` and `Path.is_file` return `False` there instead of raising, so such a folder gets a
-`NO_GAMES` error. It then keeps the first game of each lower
-case name and platform, and sorts by lower case name. A Steam library or an Epic manifest folder that is already
-in `result.libraries` is not read again.
+unknown user. The games found in it before the error are kept, and the other folders are still scanned. The
+scanners check paths with `exists`, `is_folder` and `is_file` from `common.py`, which raise the same errors as
+`Path.exists`, `Path.is_dir` and `Path.is_file` of Python 3.10 to 3.13. Those `Path` methods of Python 3.14
+return `False` for any error, so a folder the user may not open would give no error. After the scan,
+`scan_directories` keeps the first game of each lower case name and platform, and sorts by lower case name. A
+Steam library or an Epic manifest folder that is already in `result.libraries` is not read again.
 
 **Steam** (`steam.py`):
 
@@ -73,8 +74,7 @@ in `result.libraries` is not read again.
 2. The library index is `steamapps/libraryfolders.vdf`, or `config/libraryfolders.vdf` next to `steamapps` in the
    older layout. For each `"path"` value in it, the `steamapps` folder under that path is another library when it
    exists. One added folder therefore covers the Steam libraries on other drives. A library that cannot be
-   checked gets one `FAILED` error, and the other libraries are still read. On Python 3.14 it is skipped
-   without an error.
+   checked gets one `FAILED` error, and the other libraries are still read.
 3. Each `appmanifest_*.acf` gives `name`, `appid` and `installdir`. The parser reads only flat `"key" "value"`
    pairs with a regular expression, and the first value of a key is used. Steam writes a quote and a backslash
    inside a quoted string as `\"` and `\\`. The parser reads these two, and `\n` and `\t` as a line break and a

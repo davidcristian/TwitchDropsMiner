@@ -42,9 +42,9 @@ OpenSSL 1.1.1 has had no public fixes since September 2023, and Python 3.10 reac
 - On that machine, PyGObject 3.50.2 compiled for 3.14, and Pillow, aiohttp, pystray and truststore installed.
   PyInstaller, pywin32 and the macOS packages were not installed there. Only a CI run shows that the three
   builds succeed, and only a start of each release shows that it runs.
-- On 3.14, `Path.is_dir` returns `False` for a path inside a folder the user may not open, so the releases
-  report such a game folder as holding no games, without the error
-  ([gamelib.md](../modules/gamelib.md#the-scan)). The four tests of that error skip on 3.14.
+- On 3.14, `Path.is_dir`, `Path.is_file` and `Path.exists` return `False` for a path inside a folder the user
+  may not open, where older versions raise `PermissionError`. The game scan checks paths with functions of its
+  own that raise it on every version, so the releases report the error ([gamelib.md](../modules/gamelib.md#the-scan)).
 - An assumption, not checked: the python.org 3.14 builds bundle OpenSSL 3.5, which gets fixes until April
   2030. After a CI run, the Windows log names the CPython release, and the release binaries contain the
   OpenSSL version as text.

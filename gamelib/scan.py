@@ -6,7 +6,7 @@ from collections import abc
 
 from .epic import scan_epic
 from .steam import scan_steam
-from .common import LocalGame, Platform, ScanError, ScanErrorKind, ScanResult
+from .common import LocalGame, Platform, ScanError, ScanErrorKind, ScanResult, is_folder
 
 
 def scan_directories(directories: abc.Iterable[Path | str]) -> ScanResult:
@@ -22,7 +22,7 @@ def scan_directories(directories: abc.Iterable[Path | str]) -> ScanResult:
             result.errors.append(ScanError(ScanErrorKind.FAILED, str(raw_directory), str(exc)))
             continue
         try:
-            if not directory.is_dir():
+            if not is_folder(directory):
                 result.errors.append(ScanError(ScanErrorKind.NOT_A_FOLDER, str(directory)))
                 continue
         except OSError as exc:
@@ -34,7 +34,7 @@ def scan_directories(directories: abc.Iterable[Path | str]) -> ScanResult:
             if scan_epic(directory, result):
                 recognized = True
         except OSError as exc:
-            # Path.is_dir and Path.is_file raise it for a path inside a folder the user may not open
+            # is_folder and is_file raise it for a path inside a folder the user may not open
             result.errors.append(ScanError(ScanErrorKind.FAILED, str(directory), str(exc)))
             continue
         if not recognized:

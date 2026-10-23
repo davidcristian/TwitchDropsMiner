@@ -1,12 +1,21 @@
 """The data types shared across gamelib, and the file reader both scanners use."""
 from __future__ import annotations
 
+import os
+import stat
+import errno
 import logging
 from pathlib import Path
 from enum import Enum, auto
+from typing import Protocol
 from dataclasses import dataclass, field
 
 logger = logging.getLogger("TwitchDrops")
+# The errors that Path.is_dir and Path.is_file of Python 3.10 to 3.13 take as a missing path. Python 3.14 takes
+# every OSError as one, which hides the PermissionError of a path inside a folder the user may not open.
+_MISSING_ERRNOS = (errno.ENOENT, errno.ENOTDIR, errno.EBADF, errno.ELOOP)
+# Windows' ERROR_NOT_READY, ERROR_INVALID_NAME and ERROR_CANT_RESOLVE_FILENAME
+_MISSING_WINERRORS = (21, 123, 1921)
 
 
 class Platform(Enum):
@@ -84,3 +93,39 @@ def read_text(path: Path) -> str | None:
     except OSError as exc:
         logger.log(logging.DEBUG, f"Game library: cannot read {path}: {exc}")
         return None
+
+
+class StatPath(Protocol):
+    """A path whose `stat` returns its status, such as a `Path`."""
+
+    def stat(self) -> os.stat_result: ...
+
+
+def _mode(path: StatPath) -> int | None:
+    """Return the st_mode of path, or None when it is missing, and raise any other OSError."""
+    try:
+        return path.stat().st_mode
+    except ValueError:
+        # a name with a null character
+        return None
+    except OSError as error:
+        if error.errno in _MISSING_ERRNOS or getattr(error, "winerror", None) in _MISSING_WINERRORS:
+            return None
+        raise
+
+
+def exists(path: StatPath) -> bool:
+    """Return whether path exists, as `Path.exists` does before Python 3.14, which raises a PermissionError."""
+    return _mode(path) is not None
+
+
+def is_folder(path: StatPath) -> bool:
+    """Return whether path is a folder, as `Path.is_dir` does before Python 3.14, which raises a PermissionError."""
+    mode = _mode(path)
+    return mode is not None and stat.S_ISDIR(mode)
+
+
+def is_file(path: StatPath) -> bool:
+    """Return whether path is a regular file, as `Path.is_file` does before Python 3.14."""
+    mode = _mode(path)
+    return mode is not None and stat.S_ISREG(mode)
