@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
-import twitch.client as twitch_client
+import twitch.channels as twitch_channels
 from constants import State
 from fakes import (
     GAME,
@@ -67,7 +67,7 @@ def run_to_switch(twitch: Twitch) -> Twitch:
 def test_an_offline_acl_channel_of_a_higher_game_keeps_its_slot_ahead_of_a_live_channel_of_a_lower_game(
     live_twitch, monkeypatch
 ):
-    monkeypatch.setattr(twitch_client, "MAX_CHANNELS", 2)
+    monkeypatch.setattr(twitch_channels, "MAX_CHANNELS", 2)
 
     twitch = run_to_switch(live_twitch(limit_fake(acl=[1], second=[2], third=[3])))
 
@@ -76,7 +76,7 @@ def test_an_offline_acl_channel_of_a_higher_game_keeps_its_slot_ahead_of_a_live_
 
 
 def test_the_live_channels_of_the_best_game_that_can_be_watched_keep_their_slots_first(live_twitch, monkeypatch):
-    monkeypatch.setattr(twitch_client, "MAX_CHANNELS", 2)
+    monkeypatch.setattr(twitch_channels, "MAX_CHANNELS", 2)
 
     twitch = run_to_switch(live_twitch(limit_fake(acl=[1, 4], second=[2], third=[])))
 
@@ -96,7 +96,7 @@ def test_a_selected_channel_that_can_be_watched_keeps_its_slot(live_twitch, monk
         fake.gui.channels.set_selection(twitch.channels[3])
         twitch.change_state(State.CHANNEL_SWITCH)
         await until(lambda: waits(twitch))
-        monkeypatch.setattr(twitch_client, "MAX_CHANNELS", 2)
+        monkeypatch.setattr(twitch_channels, "MAX_CHANNELS", 2)
         twitch.change_state(State.CHANNELS_CLEANUP)
         # the refresh sends the run's seventh and eighth GQL requests, which wait a second for the limiter
         await asyncio.sleep(2)

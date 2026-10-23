@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import twitch.client as twitch_client
+import twitch.lifecycle as twitch_lifecycle
 from constants import RESTART_JITTER, JsonType, State
 from fakes import NO_CAMPAIGNS, FakeTwitch, gql_answers, inventory
 from livetwitch import log_in, run_with_fast_clock
@@ -25,7 +25,7 @@ def restart_waits(live_twitch, monkeypatch, pick, *answers: JsonType) -> tuple[l
 
     Requests get answers in turn, and the one after the last closes the app. A Reload press comes an hour after EMPTY.
     """
-    monkeypatch.setattr(twitch_client, "random", SimpleNamespace(uniform=pick))
+    monkeypatch.setattr(twitch_lifecycle, "random", SimpleNamespace(uniform=pick))
     jitter = pick(0, RESTART_JITTER.total_seconds())
     pending = list(answers)
     sent_at: list[float] = []

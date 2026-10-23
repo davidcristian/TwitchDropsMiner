@@ -94,7 +94,7 @@ mock data and no login. AGENTS.md, [building.md](../building.md#preview-the-gui)
 | `channel.py` | `channel/` | `Stream`; `Channel` with its mixins |
 | `inventory.py` | `inventory/` | `Benefit`; `BaseDrop` and `TimedDrop`; `DropsCampaign` |
 | `translate.py` | `translate/` | the `TypedDict` classes; `default_translation`; `Translator` and `_` |
-| `twitch.py` | `twitch/` | `_AuthState` with the mixin of the session methods; `Twitch` with mixins for the requests, the inventory fetch, the PubSub handlers, the channel discovery and the state loop |
+| `twitch.py` | `twitch/` | `_AuthState` with the mixin of the session methods; `Twitch` with mixins for the requests, the inventory fetch, the shutdown with the tasks of a run, the state loop, the channel states, the discovery of games and channels, and the PubSub handlers |
 | `gui.py` | stays; `ui/` | the generic widgets, the Main tab panels, `TrayIcon`, `InventoryOverview`, `HelpTab`, `SettingsPanel` with its mixins, `GUIManager` with its theme |
 
 ## Consequences

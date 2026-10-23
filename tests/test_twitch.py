@@ -19,7 +19,7 @@ from fakes import GAME, USHER_LIST, FakeResponse, FakeTwitch, campaign_data, dro
 from inventory import DropsCampaign
 from livetwitch import run_with_fast_clock
 from redact import HIDDEN
-import twitch.client as twitch_client
+import twitch.discovery as twitch_discovery
 from twitch import Twitch
 
 SECRET = "s3cret-token"
@@ -113,7 +113,7 @@ def test_a_folder_removed_during_a_scan_has_no_detected_games(live_twitch, tmp_p
 @pytest.mark.usefixtures("launcher_folders")
 def test_each_scan_error_is_printed_once_in_the_language_of_the_app(live_twitch, monkeypatch, tmp_path, other_language):
     detect = {"scan_error": "Suche: {error}", "not_a_folder": "Kein Ordner: {path}", "no_games": "Leer: {path}"}
-    monkeypatch.setattr(twitch_client, "_", other_language({"gui": {"settings": {"detect": detect}}}))
+    monkeypatch.setattr(twitch_discovery, "_", other_language({"gui": {"settings": {"detect": detect}}}))
     (tmp_path / "empty").mkdir()
     fake = FakeTwitch()
     fake.settings.game_dirs = [str(tmp_path / "missing"), str(tmp_path / "empty")]
@@ -131,7 +131,7 @@ def test_each_scan_error_is_printed_once_in_the_language_of_the_app(live_twitch,
 @pytest.mark.skipif(sys.platform == "win32", reason="Windows forms a home folder for any user name")
 def test_a_scan_error_raised_by_a_check_of_a_folder_is_printed_with_its_reason(live_twitch, monkeypatch, other_language):
     detect = {"scan_error": "Suche: {error}", "failed": "{reason} ({path})"}
-    monkeypatch.setattr(twitch_client, "_", other_language({"gui": {"settings": {"detect": detect}}}))
+    monkeypatch.setattr(twitch_discovery, "_", other_language({"gui": {"settings": {"detect": detect}}}))
     fake = FakeTwitch()
     fake.settings.game_dirs = ["~tdm-no-such-user/Games"]
 

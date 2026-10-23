@@ -3,18 +3,22 @@
 **Purpose.** `Twitch` is the client object. It logs in, sends every HTTP and GQL request, runs the state machine
 that decides what to mine, and runs the task that sends the watch requests. It keeps the other parts as
 attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `channels` and `inventory`.
-`_AuthState` holds the login session. `client.py` is far over the 300 line cap
-([task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
+`_AuthState` holds the login session.
 
 ## Files
 
 | File | What it holds |
 | --- | --- |
 | `__init__.py` | Imports `Twitch`. Callers import from `twitch`, never from a file of it |
-| `client.py` | `Twitch`: its attributes, the lifecycle and state methods, `_run` with a method for each state of a reload, the watch loop, the maintenance task, the PubSub handlers and the channel discovery |
+| `client.py` | `Twitch`: its attributes, `run`, the state requests `change_state`, `state_change`, `close` and `task_failed` with `STATE_ORDER`, `prevent_close`, `print`, `save`, and the choice of the channel to watch: `get_priority`, `can_watch`, `should_switch`, `watch`, `stop_watching`, `restart_watching` and `get_active_campaign` |
 | `session.py` | `_AuthState`, `save_cookies`, and `SessionMixin`, a base class of `Twitch` that holds `get_session`, `get_auth` and `wait_until_login`. All the code that reads `COOKIES_PATH` is here, so a test patches it in one file |
 | `requests.py` | `RequestsMixin`, a base class of `Twitch` that holds `request` and `gql_request` |
 | `inventoryfetch.py` | `InventoryFetchMixin`, a base class of `Twitch` that holds `fetch_inventory` and `fetch_campaigns` |
+| `lifecycle.py` | `LifecycleMixin`, a base class of `Twitch` that holds `shutdown`, `_await_restart`, `_watch_loop` and `_maintenance_task`. All the code that reads `random` and `time` is here, so a test patches each in one file |
+| `states.py` | `StatesMixin`, a base class of `Twitch` that holds `_run` and the methods of `INVENTORY_FETCH`, `GAMES_UPDATE` and `CHANNEL_SWITCH`, such as `_run_games_update` |
+| `channels.py` | `ChannelsMixin`, a base class of `Twitch` that holds the methods of `CHANNELS_CLEANUP` and `CHANNELS_FETCH`, and `_slot_order`. It is the only file of the package that reads `MAX_CHANNELS`, so a test patches it here |
+| `discovery.py` | `DiscoveryMixin`, a base class of `Twitch` that holds `detect_games`, `get_live_streams` and `bulk_check_online` |
+| `pubsub.py` | `PubSubMixin`, a base class of `Twitch` that holds the [websocket handlers](#websocket-handlers) and `on_channel_update` |
 
 ## Public contract
 

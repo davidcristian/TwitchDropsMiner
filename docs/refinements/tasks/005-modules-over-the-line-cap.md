@@ -14,7 +14,7 @@ new work goes into a new module that they call. This task records where each one
 | Module | Lines | After the split |
 | --- | --- | --- |
 | `gui.py` | 3164 | |
-| `twitch.py` | 1734 | `twitch/` so far: `client.py` with 1226 lines, over the cap, and four files of 6 to 292 lines |
+| `twitch.py` | 1734 | `twitch/`, ten files of 6 to 292 lines |
 | `translate.py` | 612 | `translate/`, four files of 7 to 284 lines |
 | `channel.py` | 528 | `channel/`, five files of 7 to 166 lines |
 | `inventory.py` | 489 | `inventory/`, four files of 7 to 284 lines |
@@ -122,3 +122,11 @@ Splits cost no Twitch requests.
 - 2026-10-23: `Twitch._run`, which had 356 lines, was cut into a method for each state from `INVENTORY_FETCH`
   to `CHANNEL_SWITCH`, such as `_run_games_update`, which returns the values that a later state reads. Each
   method holds its branch's lines unchanged. `_run` keeps 58 lines, and `client.py` now has 1226.
+- 2026-10-23: The rest of `Twitch` left `client.py` for five mixins. `LifecycleMixin` in `lifecycle.py` holds
+  `shutdown`, `_await_restart`, `_watch_loop` and `_maintenance_task`. `StatesMixin` in `states.py` holds `_run`
+  and the methods of `INVENTORY_FETCH`, `GAMES_UPDATE` and `CHANNEL_SWITCH`, and `ChannelsMixin` in
+  `channels.py` those of `CHANNELS_CLEANUP` and `CHANNELS_FETCH` with `_slot_order`. `DiscoveryMixin` in
+  `discovery.py` holds `detect_games`, `get_live_streams` and `bulk_check_online`, and `PubSubMixin` in
+  `pubsub.py` the PubSub handlers. `shutdown` and `_watch_loop` share a file because both read `time`, and
+  `_await_restart` and `_maintenance_task` because both read `random`, which the tests patch. `client.py` has
+  271 lines, and its entry left `EXCEPTIONS`. One module remains over the cap.

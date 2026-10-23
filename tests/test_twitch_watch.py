@@ -5,7 +5,7 @@ import asyncio
 import pytest
 from yarl import URL
 
-import twitch.client as twitch_client
+import twitch.lifecycle as twitch_lifecycle
 from channel import Channel
 from fakes import TOKEN, USHER_LIST, FakeResponse, FakeTwitch, gql_answers, stream_user
 from livetwitch import run_with_fast_clock
@@ -31,7 +31,7 @@ def watch_request_times(live_twitch, monkeypatch, restart_at: float | None) -> l
     async def scenario():
         loop = asyncio.get_running_loop()
         # the loop measures its cycle with time(), which must follow the clock that skips the waits
-        monkeypatch.setattr(twitch_client, "time", loop.time)
+        monkeypatch.setattr(twitch_lifecycle, "time", loop.time)
         twitch = live_twitch(fake)
         channel = Channel(twitch, id=1, login="c1")
         channel.external_update(stream_user(1, online=True), [])
