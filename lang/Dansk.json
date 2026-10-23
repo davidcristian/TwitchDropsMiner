@@ -2,19 +2,32 @@
     "english_name": "Danish",
     "status": {
         "terminated": "\nProgram Afsluttet.\nLuk vinduet for at afslutte programmet.",
+        "fatal_error": "Der opstod en fatal fejl:\n",
+        "restarting": "Genstarter automatisk kl. {time}...",
+        "restart_longer": "Fejlen opstod mindre end en time efter den sidste genstart, så ventetiden er længere end indstillingen: {minutes} minutter.",
         "watching": "Ser på: {channel}",
         "goes_online": "{channel} går ONLINE, skifter...",
         "goes_offline": "{channel} går OFFLINE, skifter...",
         "claimed_drop": "Hentet belønning: {drop}",
         "no_channel": "Ingen tilgængelige kanaler at se. Venter på en ONLINE kanal...",
-        "no_campaign": "Der er ingen aktive kampagner at hente. Venter på en aktiv kampagne..."
+        "no_campaign": "Der er ingen aktive kampagner at hente. Venter på en aktiv kampagne...",
+        "logging_level": "Logningsniveau: {level}"
     },
     "login": {
         "unexpected_content": "Uventet indholdstype returneres, normalt på grund af at blive omdirigeret. Skal du logge ind for internetadgang?"
     },
     "error": {
         "site_down": "Twitch er nede, prøver igen om {seconds} sekunder...",
-        "no_connection": "Kan ikke oprette forbindelse til Twitch, prøver igen om {seconds} sekunder... ({url})"
+        "no_connection": "Kan ikke oprette forbindelse til Twitch, prøver igen om {seconds} sekunder... ({url})",
+        "save_failed": "Lagring mislykkedes, prøver igen ved næste genindlæsning: {error}",
+        "file_not_saved": "Kunne ikke gemme {file}: {error}",
+        "autostart_not_changed": "Kunne ikke ændre posten for automatisk start: {error}",
+        "cannot_start": "Kan ikke starte",
+        "folder_not_writable": "Programmet kan ikke skrive til den mappe, det kører fra, hvor det gemmer sine filer:\n\n{error}\n\nFlyt programmet til en mappe, du kan skrive til."
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "Fejl i kommandolinjeargumenter"
     },
     "gui": {
         "output": "Resultat",
@@ -23,6 +36,7 @@
             "idle": "Ledig",
             "exiting": "Afslutter...",
             "terminated": "Afsluttet",
+            "restarting": "Genstarter kl. {time}",
             "cleanup": "Oprydning af kanaler...",
             "gathering": "Indsamling af kanaler...",
             "switching": "Skifter kanal...",
@@ -50,6 +64,7 @@
             "logging_in": "Logger ind...",
             "required": "Login påkrævet",
             "request": "Log venligst ind for at fortsætte.",
+            "enter_code": "Indtast denne kode på Twitchs side til aktivering af enheder: {code}",
             "button": "Login"
         },
         "websocket": {
@@ -115,19 +130,76 @@
         "settings": {
             "general": {
                 "name": "General",
+                "language": "Sprog \ud83c\udf10 (kræver genstart): ",
                 "autostart": "Automatisk start: ",
                 "tray": "Automatisk start i systembakken: ",
                 "tray_notifications": "Bakkemeddelelser: ",
                 "dark_mode": "Mørk tilstand: ",
+                "priority_mode": "Prioritetstilstand: ",
+                "refresh_interval": "Tjek for nye streams hvert: ",
+                "restart_delay": "Genstart efter et nedbrud efter: ",
                 "proxy": "Proxy (kræver genstart):"
+            },
+            "advanced": {
+                "name": "Avanceret",
+                "warning": "Advarsel!",
+                "warning_text": "Disse indstillinger får mineren til at opføre sig forkert.\nHvis du oplever problemer, så sørg for, at alle disse indstillinger er slået fra.",
+                "enable_badges_emotes": "Aktivér delvis understøttelse af badges og emotes: ",
+                "available_drops_check": "Aktivér ekstra tjek af tilgængelige belønninger: "
+            },
+            "priority_modes": {
+                "priority_only": "Kun prioritet",
+                "ending_soonest": "Slutter snarest",
+                "low_availability": "Lav tilgængelighed først"
+            },
+            "refresh_intervals": {
+                "disabled": "Aldrig (genindlæs hver time)",
+                "minutes": "{minutes} min"
+            },
+            "restart_delays": {
+                "disabled": "Aldrig (forbliv stoppet)",
+                "minutes": "{minutes} min"
+            },
+            "wanted": {
+                "name": "Spil, der mines",
+                "game": "Spil",
+                "source": "Matchet af",
+                "installed": "installeret",
+                "unlisted": "ikke på nogen liste",
+                "count": "Miner {count} spil, højeste prioritet først.",
+                "empty": "Intet beregnet endnu - tryk på Genindlæs nedenfor."
+            },
+            "detect": {
+                "name": "Registrerede spil",
+                "dirs": "Spilmapper:",
+                "add_dir": "Tilføj en Steam- eller Epic-spilmappe",
+                "remove_dir": "Fjern den valgte mappe",
+                "rescan": "Scan igen",
+                "scanning": "Scanner spilmapper...",
+                "scan_error": "Spilscanning: {error}",
+                "not_a_folder": "Ikke en mappe: {path}",
+                "no_games": "Ingen Steam- eller Epic-spil fundet i: {path}",
+                "failed": "{path}: {reason}",
+                "detected": "{count} af {total} installerede spil matchet.",
+                "restored": "{count} spil fra den sidste scanning.",
+                "empty": "Intet registreret endnu - tilføj en spilmappe nedenfor.",
+                "no_dirs": "Ingen mapper tilføjet."
             },
             "game_name": "Spilnavn",
             "priority": "Prioritet",
             "exclude": "Udelukke",
+            "pattern_matches": "\"{pattern}\" matcher {count} spil: {games}",
+            "pattern_empty": "\"{pattern}\" matcher ikke noget spil med en kampagne lige nu.",
             "reload": "Genindlæs",
             "reload_text": "De fleste ændringer kræver en genindlæsning for at få en øjeblikkelig virkning: "
         },
         "help": {
+            "about": {
+                "name": "Om",
+                "repository": "Kodelager: ",
+                "based_on": "Baseret på: ",
+                "based_on_text": "TwitchDropsMiner af DevilXD"
+            },
             "links": {
                 "name": "Nyttige Links",
                 "inventory": "Se Twitch belønninger",
@@ -136,7 +208,11 @@
             "how_it_works": "Hvordan virker det?",
             "how_it_works_text": "Hvert ~60. sekund sender applikationen en \"set minut\"-begivenhed til den kanal, der i øjeblikket bliver set - dette er nok til at øge faldet. Bemærk, at dette helt omgår behovet for at downloade enhver faktisk stream video og lyd. For at holde status (ONLINE eller OFFLINE) for kanalerne opdateret, er der etableret en websocket-forbindelse, der modtager begivenheder om streams, der går op eller ned, eller opdateringer vedrørende det aktuelle antal seere.",
             "getting_started": "Kom igang",
-            "getting_started_text": "1. Log ind på applikationen.\n2. Sørg for, at din Twitch-konto er linket til alle kampagner, du er interesseret i at mine.\n3. Hvis du bare er interesseret i at mine alt, skal du fjerne markeringen i \"Kun prioritet\" og trykke på \"Genindlæs\".\n4. Hvis du ønsker at mine specifikke spil først, skal du bruge listen \"Prioritet\" til at opsætte en ordnet liste over spil efter eget valg. Spil fra toppen af ​​listen vil blive forsøgt at blive minet først, før dem nederst på listen.\n5. Hold indstillingen \"Kun prioritet\" markeret for at undgå at mine spil, der ikke er på prioritetslisten. Eller ej - det er op til dig.\n6. Brug listen \"Ekskluder\" til at fortælle applikationen, hvilke spil der aldrig bør mines.\n7. Ændring af indholdet af en af ​​listerne eller ændring af tilstanden for \"Kun prioritet\"-indstillingen kræver, at du trykker på \"Genindlæs\" for at ændringerne træder i kraft."
+            "getting_started_text": "1. Log ind på applikationen.\n2. Sørg for, at din Twitch-konto er linket til alle kampagner, du er interesseret i at mine.\n3. Hvis du bare er interesseret i at mine alt, skal du fjerne markeringen i \"Kun prioritet\" og trykke på \"Genindlæs\".\n4. Hvis du ønsker at mine specifikke spil først, skal du bruge listen \"Prioritet\" til at opsætte en ordnet liste over spil efter eget valg. Spil fra toppen af ​​listen vil blive forsøgt at blive minet først, før dem nederst på listen.\n5. Hold indstillingen \"Kun prioritet\" markeret for at undgå at mine spil, der ikke er på prioritetslisten. Eller ej - det er op til dig.\n6. Brug listen \"Ekskluder\" til at fortælle applikationen, hvilke spil der aldrig bør mines.\n7. Ændring af indholdet af en af ​​listerne eller ændring af tilstanden for \"Kun prioritet\"-indstillingen kræver, at du trykker på \"Genindlæs\" for at ændringerne træder i kraft.",
+            "invalidate": {
+                "button": "Ugyldiggør",
+                "text": "Ugyldiggør godkendelsestokenet (log ud):"
+            }
         }
     }
 }
