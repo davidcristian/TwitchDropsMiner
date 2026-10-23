@@ -23,7 +23,8 @@ if TYPE_CHECKING:
     from collections import abc
 
     from utils import AwaitableValue
-    from constants import JsonType, WebsocketTopic
+    from constants import JsonType
+    from twitchapi import WebsocketTopic
 
 
 WSMsgType = aiohttp.WSMsgType

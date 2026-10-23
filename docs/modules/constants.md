@@ -1,10 +1,9 @@
 # `constants.py`
 
 **Purpose.** Holds the values that the other modules share: the working directory and file paths, the intervals
-and limits, the `State` and `PriorityMode` enums, the GQL operations, the Twitch client identities, the PubSub
-topic names and the logging levels. It computes the paths once, at import, from how the app was started. It
-reads the app version from [`version.py`](#versionpy). The module is over the 300 line cap in AGENTS.md
-([refinement task 005](../refinements/tasks/005-modules-over-the-line-cap.md) gives its line count).
+and limits, the `State` and `PriorityMode` enums and the logging levels. It computes the paths once, at import,
+from how the app was started. It reads the app version from [`version.py`](#versionpy). The GQL operations, the
+Twitch client identities and the PubSub topic names are in [twitchapi.md](twitchapi.md).
 `tests/test_constants.py` tests it with plain values, and loads a second copy of it with a test `sys.argv[0]`,
 `APPIMAGE`, `APPDIR` and `sys.platform` to check the paths. For the AppImage cases it loads that copy from a test
 folder laid out as the AppImage recipe lays out the image.
@@ -98,67 +97,6 @@ says what each file holds.
 | `ENDING_SOONEST` | 1 | Ending soonest | Games on no list are wanted too, ranked last. Within one rank, the campaign that ends first comes first |
 | `LOW_AVBL_FIRST` | 2 | Low availability first | Games on no list are wanted too, ranked last. Within one rank, the lowest `availability` comes first |
 
-### GQL operations
-
-`GQLPersistedQuery(name, sha256, *, variables=None)` is a `dict` with `operationName`, the hash under
-`extensions.persistedQuery.sha256Hash` (with `version` 1) and, when given, `variables`. The request contains the
-hash and no query text. `with_variables(variables)` returns a deep copy with the given variables merged in; the
-stored template does not change. In a template, `...` marks a variable that the caller must give. The merge
-raises `RuntimeError` when a `...` is left unset in a dict the caller passes (`Unspecified variable: 'channel'`)
-or when a dict meets a value that is not a dict. A `...` inside a dict the caller leaves out stays in the copy:
-`ClaimDrop` with `{}` keeps `{"input": {"dropInstanceID": ...}}`, and `aiohttp` raises `TypeError` when it
-encodes that body, before the request is sent.
-
-`GQLQuery(query, g64data)` sends its query text, with gzip and base64 encoded data. Only `Stream.gql_payload` in
-`channel.py` uses it, for the `sendSpadeEvents` watch mutation, and only `Channel._send_watch_gql` reads that
-payload. Nothing calls that method ([channel.md](channel.md#watching)), so its read of the response, which
-raises on a null field, never runs. `GQLOperation` is either type, and `Twitch.gql_request` takes one operation
-or a list.
-
-`GQL_QUERIES` maps the key the code uses to the operation Twitch knows. To update a hash, follow
-[gql-operations.md](../runbooks/gql-operations.md). The last column names the functions that read the response,
-in [gqldata.md](gqldata.md) and [streamdata.md](streamdata.md). Each one has a test that sets each value of a
-complete response to null in turn ([ADR-0013](../adr/ADR-0013-test-standard.md)).
-
-| Key | `operationName` | Used in | Response read by |
-| --- | --- | --- | --- |
-| `GetStreamInfo` | `VideoPlayerStreamInfoOverlayChannel` | `channel.py` | `channel_streams`, `channel_stream` |
-| `ClaimDrop` | `DropsPage_ClaimDropRewards` | `inventory.py` | `claim_succeeded` |
-| `Inventory` | `Inventory` | `twitch.py` | `user_inventory`, `complete_campaigns` |
-| `CurrentDrop` | `DropCurrentSessionContext` | `twitch.py` | `current_drop` |
-| `Campaigns` | `ViewerDropsDashboard` | `twitch.py` | `campaign_summaries`, `complete_campaigns` |
-| `CampaignDetails` | `DropCampaignDetails` | `twitch.py` | `campaign_details`, `complete_campaigns` |
-| `AvailableDrops` | `DropsHighlightService_AvailableDrops` | `channel.py`, `twitch.py` | `channel_campaigns`, `available_campaigns` |
-| `PlaybackAccessToken` | `PlaybackAccessToken` | `channel.py` | `playback_token` |
-| `GameDirectory` | `DirectoryPage_Game` | `twitch.py` | `directory_streams` |
-| `NotificationsDelete` | `OnsiteNotifications_DeleteNotification` | `twitch.py` | not read |
-
-### Client identities
-
-`ClientInfo(client_url, client_id, user_agents)` has the attributes `CLIENT_URL`, `CLIENT_ID` and `USER_AGENT`,
-and iterates as that tuple. When `user_agents` is a list, `random.choice` picks one when the `ClientType` class
-body runs at import, so one run uses one user agent from start to end.
-
-| `ClientType` member | `CLIENT_URL` | User agents |
-| --- | --- | --- |
-| `WEB` | `https://www.twitch.tv` | one desktop Chrome |
-| `MOBILE_WEB` | `https://m.twitch.tv` | a list of Android Chrome |
-| `ANDROID_APP` | `https://www.twitch.tv` | a list of the Twitch Android app |
-| `SMARTBOX` | `https://android.tv.twitch.tv` | one Android TV box |
-
-`Twitch.__init__` sets `_client_type` to `ClientType.ANDROID_APP`. The `aiohttp` session sends its user agent
-with every request, and `twitch.py` adds its client ID to the login and GQL requests.
-[gql-operations.md](../runbooks/gql-operations.md) covers updating them.
-
-### PubSub topics
-
-`WEBSOCKET_TOPICS` maps a category (`"User"` or `"Channel"`) and a name to the Twitch topic.
-`WebsocketTopic(category, topic_name, target_id, process)` is one subscription: `str()` gives
-`<topic>.<target_id>`, such as `video-playback-by-id.123`, and calling it passes `(target_id, message)` to
-`process`. It compares equal to another topic or a string with the same text and has the same hash as that
-text, so a set or dict lookup by the text finds it. `WebsocketTopic.as_str` builds that text without an object.
-[websocket.md](websocket.md) describes the pool.
-
 ### Logging and strings
 
 - `CALL` is a log level between `DEBUG` and `INFO` (`logging.INFO - 1`), named `CALL`.
@@ -176,8 +114,8 @@ on macOS and Linux) and does not commit the change. The AppImage job passes the 
 ## Invariants
 
 - Importing the module has side effects: it computes the paths from `sys.argv[0]`, `APPIMAGE`, `APPDIR` and its
-  own file path, registers the `CALL` level and picks the user agents. Most modules and `build.spec` import it,
-  so it imports no repo module except `version`, which keeps it free of import cycles.
+  own file path, and registers the `CALL` level. Most modules and `build.spec` import it, so it imports no repo
+  module except `version`, which keeps it free of import cycles.
 - `appimage/AppImageBuilder.yml` copies `constants.py` into the image, under `usr/src`. A recipe that put it
   outside the image would make the AppImage count as a run from source, which writes its files into the read
   only image and fails at startup.
@@ -185,9 +123,7 @@ on macOS and Linux) and does not commit the change. The AppImage job passes the 
   ([utils.md](utils.md)). After a rename of the class, the setting falls back to its default on the next load.
   After a stored value is removed from the enum, loading the settings raises `ValueError` and the app does not
   start.
-- A new template variable that the caller must give is written as `...`, so a missing value raises before any
-  request is sent.
 - `MAX_CHANNELS` follows from the websocket limits: a change to `MAX_WEBSOCKETS` or `WS_TOPICS_LIMIT` changes how
   many channels the app tracks.
 
-**Dependencies.** `version`, `yarl` and the standard library.
+**Dependencies.** `version` and the standard library.

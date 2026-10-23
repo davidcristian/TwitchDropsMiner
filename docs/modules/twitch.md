@@ -281,5 +281,5 @@ scanned again. Each scan error is printed once while it persists, as the transla
   event that arrives during the requests, and a `stream-down` for the watched channel still makes the app switch.
 
 **Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `gqldata`, `streamdata`, `translate`,
-`redact`, `savefiles`, `ratelimit`, `restartdelay`, `exceptions`, `utils` and `constants`. Third party: aiohttp
-and yarl.
+`redact`, `savefiles`, `ratelimit`, `restartdelay`, `exceptions`, `utils`, `twitchapi` and `constants`. Third
+party: aiohttp and yarl.

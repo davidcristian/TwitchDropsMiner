@@ -60,15 +60,13 @@ from constants import (
     DUMP_PATH,
     COOKIES_PATH,
     MAX_CHANNELS,
-    GQL_QUERIES,
     WATCH_INTERVAL,
     REFRESH_JITTER,
     RESTART_JITTER,
     State,
-    ClientType,
     PriorityMode,
-    WebsocketTopic,
 )
+from twitchapi import GQL_QUERIES, ClientType, WebsocketTopic
 
 if TYPE_CHECKING:
     from utils import Game
@@ -76,7 +74,8 @@ if TYPE_CHECKING:
     from channel import Stream
     from settings import Settings
     from inventory import TimedDrop
-    from constants import ClientInfo, JsonType, GQLOperation
+    from constants import JsonType
+    from twitchapi import ClientInfo, GQLOperation
 
 
 logger = logging.getLogger("TwitchDrops")

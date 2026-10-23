@@ -67,7 +67,8 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [websocket.md](modules/websocket.md) | The PubSub websocket pool, its topics and the 199 channel limit |
 | [gui.md](modules/gui.md) | `GUIManager`, its tabs and panels, the tray icon, the theme and the `python gui.py` preview |
 | [settings.md](modules/settings.md) | Every `settings.json` key with its type and default, loading and saving |
-| [constants.md](modules/constants.md) | Paths, intervals and limits, `State`, `PriorityMode`, the GQL operations, the client types, and `version.py` |
+| [constants.md](modules/constants.md) | Paths, intervals and limits, `State`, `PriorityMode`, the logging values, and `version.py` |
+| [twitchapi.md](modules/twitchapi.md) | The GQL operations, the client types and the PubSub topics that the app sends to Twitch |
 | [translate.md](modules/translate.md) | The translation types, `default_translation`, loading `lang/*.json` and the English fallback |
 | [utils.md](modules/utils.md) | JSON loading and saving, `ExponentialBackoff` and the task helpers |
 | [cache.md](modules/cache.md) | `ImageCache`: where images are stored, their expiry and broken data |

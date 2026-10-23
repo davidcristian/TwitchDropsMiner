@@ -7,7 +7,8 @@ from collections.abc import Callable
 
 import aiohttp
 
-from constants import JsonType, WebsocketTopic
+from constants import JsonType
+from twitchapi import WebsocketTopic
 from fakes import FakeTwitch
 from livetwitch import SERVER_CLOSE, FakePubSub, run_with_fast_clock
 from twitch import Twitch

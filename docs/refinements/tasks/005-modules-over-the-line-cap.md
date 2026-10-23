@@ -18,7 +18,7 @@ new work goes into a new module that they call. This task records where each one
 | `translate.py` | 612 | |
 | `channel.py` | 528 | |
 | `inventory.py` | 489 | |
-| `constants.py` | 477 | |
+| `constants.py` | 477 | 139, and `twitchapi/`, four files of 16 to 183 lines |
 | `websocket.py` | 414 | `websocket/`, four files of 7 to 252 lines |
 | `utils.py` | 371 | `utils/`, seven files of 32 to 127 lines |
 
@@ -99,3 +99,5 @@ Splits cost no Twitch requests.
 - 2026-10-23: `utils.py` became the package `utils/`, and its entry left `EXCEPTIONS`.
 - 2026-10-23: `websocket.py` became the package `websocket/`, and its entry left `EXCEPTIONS`. The message
   methods of `Websocket`, which had 300 lines by itself, moved to the mixin `MessagesMixin`.
+- 2026-10-23: The client types, the GQL operations and the PubSub topics moved from `constants.py` to the new
+  package `twitchapi/`, and the entry of `constants.py` left `EXCEPTIONS`. Five modules remain over the cap.

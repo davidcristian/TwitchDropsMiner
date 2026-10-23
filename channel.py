@@ -15,12 +15,14 @@ from yarl import URL
 from streamdata import playback_token, channel_stream, available_campaigns
 from utils import Game, json_minify, isonow
 from exceptions import ExitRequest, MinerException, RequestException
-from constants import CALL, GQL_QUERIES, ONLINE_DELAY, ONLINE_TRIES, URLType, GQLQuery
+from twitchapi import GQL_QUERIES, GQLQuery
+from constants import CALL, ONLINE_DELAY, ONLINE_TRIES, URLType
 
 if TYPE_CHECKING:
     from twitch import Twitch
     from gui import ChannelList
-    from constants import JsonType, GQLPersistedQuery
+    from constants import JsonType
+    from twitchapi import GQLPersistedQuery
 
 
 logger = logging.getLogger("TwitchDrops")

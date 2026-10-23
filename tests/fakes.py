@@ -13,7 +13,8 @@ from typing import Any, Union
 
 from yarl import URL
 
-from constants import GQL_QUERIES, JsonType, State
+from constants import JsonType, State
+from twitchapi import GQL_QUERIES
 from settings import default_settings
 
 GQLAnswer = Callable[[JsonType], Union[JsonType, Awaitable[JsonType]]]

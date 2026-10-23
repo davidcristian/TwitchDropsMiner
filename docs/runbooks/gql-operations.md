@@ -3,8 +3,8 @@
 The app reads and changes Twitch data through GQL persisted queries. A persisted query is a query that Twitch
 stores. A request names it by its operation name and the SHA-256 hash of its text, and sends no query text. When
 Twitch changes a query, it stops accepting the old hash, and the feature that uses it fails. This runbook finds
-the new hash and writes it into `constants.py`. The last section covers the client ID and the user agent that
-every request sends. The module contracts are in [constants.md](../modules/constants.md) and
+the new hash and writes it into `twitchapi/gql.py`. The last section covers the client ID and the user agent that
+every request sends. The module contracts are in [twitchapi.md](../modules/twitchapi.md) and
 [twitch.md](../modules/twitch.md), and the request budget that a test run must respect is in
 [ADR-0002](../adr/ADR-0002-twitch-traffic-budget.md).
 
@@ -13,7 +13,7 @@ search for the hash yourself, and bring it in with [upstream-fixes.md](upstream-
 
 ## How an operation is defined
 
-`GQL_QUERIES` in `constants.py` maps a key to a `GQLPersistedQuery(name, sha256, *, variables=None)`:
+`GQL_QUERIES` in `twitchapi/gql.py` maps a key to a `GQLPersistedQuery(name, sha256, *, variables=None)`:
 
 - the key, such as `"Campaigns"`, is what the code looks up, as in `GQL_QUERIES["Campaigns"]`, before it
   passes the entry to `Twitch.gql_request`. It does not change when Twitch changes the query;
@@ -59,10 +59,10 @@ and other secrets shown as `<hidden>` ([redact.md](../modules/redact.md)).
 
 ## Find the current hash
 
-1. Find the key and the operation name in `constants.py`. With the name from the log line:
+1. Find the key and the operation name in `twitchapi/gql.py`. With the name from the log line:
 
    ```bash
-   grep -n -B1 '"ViewerDropsDashboard"' constants.py
+   grep -n -B1 '"ViewerDropsDashboard"' twitchapi/gql.py
    ```
 
    Most entries have a comment that says what the operation returns.
@@ -77,7 +77,7 @@ and other secrets shown as `<hidden>` ([redact.md](../modules/redact.md)).
 If Twitch renamed the operation, no request has the old name. Look for a request that returns the same data,
 and take its `operationName` as well.
 
-## Update `constants.py`
+## Update `twitchapi/gql.py`
 
 1. Replace the hash, the second argument of the entry.
 2. Compare the entry's `variables` with the payload's. Add a variable that the website sends and the entry
@@ -85,14 +85,14 @@ and take its `operationName` as well.
    the callers by key:
 
    ```bash
-   grep -n 'GQL_QUERIES\["Campaigns"\]' *.py
+   git grep -n 'GQL_QUERIES\["Campaigns"\]' -- '*.py'
    ```
 
 3. If Twitch renamed the operation, replace the name, the first argument. Keep the key.
 4. Print the payload the app sends and compare it with the browser's payload:
 
    ```bash
-   env/bin/python -c "from constants import GQL_QUERIES; print(GQL_QUERIES['Campaigns'])"
+   env/bin/python -c "from twitchapi import GQL_QUERIES; print(GQL_QUERIES['Campaigns'])"
    ```
 
 Then check that every hash has the right form. This prints `[]`, or the keys whose hash is malformed:
@@ -100,7 +100,7 @@ Then check that every hash has the right form. This prints `[]`, or the keys who
 ```bash
 env/bin/python -c "
 import re
-from constants import GQL_QUERIES
+from twitchapi import GQL_QUERIES
 print([k for k, v in GQL_QUERIES.items()
        if not re.fullmatch('[0-9a-f]{64}', v['extensions']['persistedQuery']['sha256Hash'])])
 "
@@ -126,18 +126,18 @@ Do not restart the app to repeat the test. Each start runs a full reload, which 
 The subject names the operation by its key, for example:
 
 ```text
-fix(constants): update the Campaigns GQL hash
+fix(twitchapi): update the Campaigns GQL hash
 ```
 
-The scope is `constants` because the change stays in `constants.py`. Drop the scope when a caller changes too.
+The scope is `twitchapi` because the change stays in `twitchapi/gql.py`. Drop the scope when a caller changes too.
 A body is optional; when you write one, name the error, for example "Twitch returns
 PersistedQueryNotFound for the old hash, so the inventory reload fails."
 
 ## The client ID and the user agent
 
-`ClientType` in `constants.py` holds four `ClientInfo` entries: `WEB`, `MOBILE_WEB`, `ANDROID_APP` and
+`ClientType` in `twitchapi/clients.py` holds four `ClientInfo` entries: `WEB`, `MOBILE_WEB`, `ANDROID_APP` and
 `SMARTBOX`. Each has a `CLIENT_URL`, a `CLIENT_ID` and a user agent or a list of them. From a list, `ClientInfo`
-picks one at random when `constants.py` is imported, so once per run. `Twitch.__init__` sets
+picks one at random when `twitchapi/clients.py` is imported, so once per run. `Twitch.__init__` sets
 `self._client_type` to `ClientType.ANDROID_APP`, and no code reads the other three entries. The app sends the
 client ID in the `Client-Id` header and in the login requests, and the user agent in the `User-Agent` header.
 

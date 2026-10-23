@@ -151,5 +151,5 @@ minutes the campaign also displays its `first_drop`.
 - The module is over the 300 line cap ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md)).
 
 **Dependencies.** `channel` (`Channel`), `utils` (`Game`, `timestamp`), `exceptions` (`GQLException`),
-`gqldata` (`claim_succeeded`), `constants` (`GQL_QUERIES`, `MAX_EXTRA_MINUTES`, `URLType`, `State`) and
+`gqldata` (`claim_succeeded`), `twitchapi` (`GQL_QUERIES`), `constants` (`MAX_EXTRA_MINUTES`, `URLType`, `State`) and
 `translate`. No third party package.

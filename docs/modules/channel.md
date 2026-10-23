@@ -187,6 +187,7 @@ fails leaves the marked `Stream` in place, and the next cycle starts another one
 - `on_channel_update` ends with `display()`, so the GUI row matches the status after every change.
 
 **Dependencies.** `streamdata` (`playback_token`, `channel_stream`, `available_campaigns`), `utils` (`Game`,
-`json_minify`, `isonow`), `exceptions` (`ExitRequest`, `MinerException`, `RequestException`) and `constants`
-(`GQL_QUERIES`, `ONLINE_DELAY`, `ONLINE_TRIES`, `CALL`, `URLType`, `GQLQuery`). Third party: aiohttp and yarl.
+`json_minify`, `isonow`), `exceptions` (`ExitRequest`, `MinerException`, `RequestException`), `twitchapi`
+(`GQL_QUERIES`, `GQLQuery`) and `constants` (`ONLINE_DELAY`, `ONLINE_TRIES`, `CALL`, `URLType`). Third party:
+aiohttp and yarl.
 `Twitch` and the GUI's `ChannelList` are imported for type checking only.

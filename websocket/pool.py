@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from collections import abc
 
     from twitch import Twitch
-    from constants import WebsocketTopic
+    from twitchapi import WebsocketTopic
 
 
 class WebsocketPool:

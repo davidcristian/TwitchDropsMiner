@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
     from twitch import Twitch
     from gui import WebsocketStatus
-    from constants import WebsocketTopic
+    from twitchapi import WebsocketTopic
     from .pool import WebsocketPool
 
 

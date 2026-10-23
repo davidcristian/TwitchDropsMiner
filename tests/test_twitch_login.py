@@ -9,7 +9,7 @@ import pytest
 from yarl import URL
 
 import twitch as twitch_module
-from constants import ClientType
+from twitchapi import ClientType
 from fakes import FakeResponse, FakeTwitch
 from livetwitch import FakeSession, run_with_fast_clock
 

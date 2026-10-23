@@ -8,7 +8,7 @@ from aiohttp import ClientHttpProxyError, RequestInfo
 from multidict import CIMultiDict, CIMultiDictProxy
 from yarl import URL
 
-from constants import GQLPersistedQuery
+from twitchapi import GQLPersistedQuery
 from redact import HIDDEN, redact
 
 DOCUMENTED_SECRET_KEYS = (

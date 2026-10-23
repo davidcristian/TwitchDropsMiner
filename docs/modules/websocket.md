@@ -41,8 +41,8 @@ connection's own task.
 
 ### Topics
 
-`WebsocketTopic(category, topic_name, target_id, process)` is defined in `constants.py`
-([constants.md](constants.md)). Its string is `<PubSub topic>.<target_id>`, with the topic name from the
+`WebsocketTopic(category, topic_name, target_id, process)` is defined in `twitchapi/topics.py`
+([twitchapi.md](twitchapi.md#pubsub-topics)). Its string is `<PubSub topic>.<target_id>`, with the topic name from the
 `WEBSOCKET_TOPICS` table. Two topics with the same string are equal. Calling a topic calls
 `process(target_id, message)`. The app subscribes to four kinds:
 
@@ -150,4 +150,5 @@ warning and skipped, and the rest of its batch is handled. The handlers and what
 `create_nonce`, `json_minify`, `format_traceback`, `CHARS_ASCII`), `exceptions` (`MinerException`,
 `WebsocketClosed`), `constants` (`PING_INTERVAL`, `PING_TIMEOUT`, `MAX_WEBSOCKETS`, `WS_TOPICS_LIMIT`,
 `WS_MIN_UPTIME`), `reconnect` (`ReconnectDelay`), `redact` for the log lines that print a message, and
-`translate` for the status texts. Third party: aiohttp.
+`translate` for the status texts. `twitchapi` (`WebsocketTopic`) and `JsonType` from `constants` are imported for
+type checking only. Third party: aiohttp.

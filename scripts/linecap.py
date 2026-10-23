@@ -13,7 +13,6 @@ LIMITS = {".py": 300, ".md": 300}
 # An entry fails once its module is under the limit, so the list only shrinks.
 EXCEPTIONS = frozenset({
     "channel.py",
-    "constants.py",
     "gui.py",
     "inventory.py",
     "translate.py",

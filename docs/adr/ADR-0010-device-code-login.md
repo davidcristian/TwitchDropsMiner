@@ -105,7 +105,7 @@ written reason for the flow or for a client.
 
 ## Related
 
-- [twitch.md](../modules/twitch.md#login), [constants.md](../modules/constants.md#client-identities),
+- [twitch.md](../modules/twitch.md#login), [twitchapi.md](../modules/twitchapi.md#client-identities),
   [gui.md](../modules/gui.md#the-window) and [ARCHITECTURE.md](../ARCHITECTURE.md#data-flow).
 - [troubleshooting.md](../troubleshooting.md#logging-in): logging in, logging out and switching accounts.
   [gql-operations.md](../runbooks/gql-operations.md#the-client-id-and-the-user-agent): changing the client ID.
