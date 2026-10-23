@@ -2,19 +2,32 @@
     "english_name": "Czech",
     "status": {
         "terminated": "\nAplikace byla ukončena.",
+        "fatal_error": "Došlo k závažné chybě:\n",
+        "restarting": "Automatický restart v {time}...",
+        "restart_longer": "Chyba nastala méně než hodinu po posledním restartu, proto je čekání delší, než je nastaveno: {minutes} min.",
         "watching": "Sledování kanálu: {channel}",
         "goes_online": "Kanál {channel} je online, přepínám...",
         "goes_offline": "Kanál {channel} je offline, přepínám na další...",
         "claimed_drop": "Drop vyzvednut: {drop}",
         "no_channel": "Žádný kanál není dostupný, čekání na další...",
-        "no_campaign": "Žádné dropy k dispozici, čekání na další dostupné dropy..."
+        "no_campaign": "Žádné dropy k dispozici, čekání na další dostupné dropy...",
+        "logging_level": "Úroveň protokolování: {level}"
     },
     "login": {
         "unexpected_content": "Chyba při přesměrování. Nepoužíváte VPN?"
     },
     "error": {
         "site_down": "Služba Twitch je nedostupná，zkuste to znovu za {seconds} sekund...",
-        "no_connection": "Nelze se připojit k službe Twitch, zkuste to znovu za {seconds}... ({url})"
+        "no_connection": "Nelze se připojit k službe Twitch, zkuste to znovu za {seconds}... ({url})",
+        "save_failed": "Uložení se nezdařilo, další pokus při příštím obnovení: {error}",
+        "file_not_saved": "Nelze uložit {file}: {error}",
+        "autostart_not_changed": "Nelze změnit položku automatického spuštění: {error}",
+        "cannot_start": "Nelze spustit",
+        "folder_not_writable": "Aplikace nemůže zapisovat do složky, ze které běží a ve které uchovává své soubory:\n\n{error}\n\nPřesuňte aplikaci do složky, do které můžete zapisovat."
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "Chyba argumentů příkazového řádku"
     },
     "gui": {
         "output": "Výstup",
@@ -23,6 +36,7 @@
             "idle": "Dokončeno načítání",
             "exiting": "Ukončování...",
             "terminated": "Aplikace ukončena",
+            "restarting": "Restart v {time}",
             "cleanup": "Čištění...",
             "gathering": "Vyhledávání dostupného živého kanálu...",
             "switching": "Přepínám mezi kanály...",
@@ -50,6 +64,7 @@
             "logging_in": "Přihlašování...",
             "required": "Potřebujete se nejdříve přihlásit",
             "request": "Pro přístup je potřeba přihlášení",
+            "enter_code": "Zadejte tento kód na stránce Twitch pro aktivaci zařízení: {code}",
             "button": "Přihlásit se"
         },
         "websocket": {
@@ -115,18 +130,76 @@
         "settings": {
             "general": {
                 "name": "Nastavení",
+                "language": "Jazyk \ud83c\udf10 (vyžaduje restart): ",
                 "autostart": "Automatické spuštění: ",
                 "tray": "Automaticky spusti minimalizovaně: ",
+                "tray_notifications": "Oznámení v systémové liště: ",
                 "dark_mode": "Tmavý režim: ",
+                "priority_mode": "Režim priority: ",
+                "refresh_interval": "Interval hledání nových streamů: ",
+                "restart_delay": "Restart po pádu za: ",
                 "proxy": "Proxy:"
+            },
+            "advanced": {
+                "name": "Pokročilé",
+                "warning": "Varování!",
+                "warning_text": "Tyto možnosti způsobí nesprávné chování mineru.\nPokud máte problémy, ujistěte se, že jsou všechny tyto možnosti vypnuté.",
+                "enable_badges_emotes": "Povolit částečnou podporu odznaků a emotikonů: ",
+                "available_drops_check": "Povolit dodatečnou kontrolu dostupných dropů: "
+            },
+            "priority_modes": {
+                "priority_only": "Pouze seznam priorit",
+                "ending_soonest": "Nejdříve končící",
+                "low_availability": "Nejdřív nízká dostupnost"
+            },
+            "refresh_intervals": {
+                "disabled": "Nikdy (hodinové obnovení)",
+                "minutes": "{minutes} min"
+            },
+            "restart_delays": {
+                "disabled": "Nikdy (zůstat zastaveno)",
+                "minutes": "{minutes} min"
+            },
+            "wanted": {
+                "name": "Těžené hry",
+                "game": "Hra",
+                "source": "Vybráno podle",
+                "installed": "nainstalováno",
+                "unlisted": "není v žádném seznamu",
+                "count": "Počet těžených her: {count}, od nejvyšší priority.",
+                "empty": "Zatím nic nezjištěno - stiskněte níže 'Obnovit'."
+            },
+            "detect": {
+                "name": "Rozpoznané hry",
+                "dirs": "Složky her:",
+                "add_dir": "Přidat složku her Steam nebo Epic",
+                "remove_dir": "Odebrat vybranou složku",
+                "rescan": "Znovu prohledat",
+                "scanning": "Prohledávání složek her...",
+                "scan_error": "Prohledávání her: {error}",
+                "not_a_folder": "Není složka: {path}",
+                "no_games": "Žádné hry Steam ani Epic nenalezeny v: {path}",
+                "failed": "{path}: {reason}",
+                "detected": "Spárované nainstalované hry: {count} z {total}.",
+                "restored": "Hry z posledního prohledání: {count}.",
+                "empty": "Zatím nic nerozpoznáno - přidejte níže složku her.",
+                "no_dirs": "Nejsou přidány žádné složky."
             },
             "game_name": "Název Hry",
             "priority": "Priorita",
             "exclude": "Vynechat",
+            "pattern_matches": "\"{pattern}\" odpovídá hrám ({count}): {games}",
+            "pattern_empty": "\"{pattern}\" teď neodpovídá žádné hře s kampaní.",
             "reload": "Obnovit",
             "reload_text": "Většina změn vyžaduje restart aplikace nebo obnovení: "
         },
         "help": {
+            "about": {
+                "name": "O aplikaci",
+                "repository": "Repozitář: ",
+                "based_on": "Založeno na: ",
+                "based_on_text": "TwitchDropsMiner od DevilXD"
+            },
             "links": {
                 "name": "Nápověda",
                 "inventory": "Zobrazit Twitch Inventář",
@@ -135,7 +208,11 @@
             "how_it_works": "Jak to funguje",
             "how_it_works_text": "Každých ~60 sekund aplikace odešle událost 'sledované minuty' na aktuálně sledovaný kanál - to stačí k posunu umístění. Všimněte si, že tímto způsobem zcela odpadá nutnost stahovat skutečné streamované video a zvuk. Aby byl stav kanálu (online nebo offline) stále aktuální, je navázáno spojení přes websocket, které přijímá události o spuštění nebo vypnutí streamů nebo aktualizace o aktuálním počtu diváků.",
             "getting_started": "Jak začít",
-            "getting_started_text": "1. Přihlaste se do aplikace. \n2. Ujistěte se, že je váš účet Twitch spojen se všemi reklamními sériemi, které chcete těžit. \n3. Pokud chcete klepnout pouze na veškerý obsah, zrušte zaškrtnutí políčka 'Pouze prioritní' a stiskněte tlačítko 'Obnovit'. \n4. Pokud se chcete nejprve věnovat konkrétním hrám, použijte seznam 'Prioritní' a nastavte si pořadí vybraných her. Nejprve se vyzkouší hry na začátku seznamu a poté hry na konci seznamu. \n5. Ponechte zaškrtnutou možnost 'Pouze prioritní', abyste se vyhnuli vyhledávání her, které nejsou na seznamu priorit. Nebo ne - záleží na vás. \n6. Pomocí seznamu 'vyloučit' můžete aplikaci sdělit, které hry by neměly být vytěženy. \n7. Změna obsahu obou seznamů nebo stavu možnosti Pouze prioritní vyžaduje stisknutí tlačítka Znovu načíst, aby se změna projevila."
+            "getting_started_text": "1. Přihlaste se do aplikace. \n2. Ujistěte se, že je váš účet Twitch spojen se všemi reklamními sériemi, které chcete těžit. \n3. Pokud chcete klepnout pouze na veškerý obsah, zrušte zaškrtnutí políčka 'Pouze prioritní' a stiskněte tlačítko 'Obnovit'. \n4. Pokud se chcete nejprve věnovat konkrétním hrám, použijte seznam 'Prioritní' a nastavte si pořadí vybraných her. Nejprve se vyzkouší hry na začátku seznamu a poté hry na konci seznamu. \n5. Ponechte zaškrtnutou možnost 'Pouze prioritní', abyste se vyhnuli vyhledávání her, které nejsou na seznamu priorit. Nebo ne - záleží na vás. \n6. Pomocí seznamu 'vyloučit' můžete aplikaci sdělit, které hry by neměly být vytěženy. \n7. Změna obsahu obou seznamů nebo stavu možnosti Pouze prioritní vyžaduje stisknutí tlačítka Znovu načíst, aby se změna projevila.",
+            "invalidate": {
+                "button": "Zneplatnit",
+                "text": "Zneplatnit ověřovací token (odhlásit se):"
+            }
         }
     }
 }
