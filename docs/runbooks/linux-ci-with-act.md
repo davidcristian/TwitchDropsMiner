@@ -186,8 +186,8 @@ the recipe has not put a checked copy in its build folder ([building.md](../buil
 These differences from GitHub's runners remain:
 
 - act runs the Validate and PyInstaller jobs as root, and GitHub as the `runner` user. Eight tests that need
-  file modes which root bypasses skip under act, so a Validate run shows 10 skipped tests where a run as another
-  user shows 2.
+  file modes which root bypasses skip under act, so a Validate run under act shows eight more skipped tests than a
+  run as another user.
 - The act images have Ubuntu's pipx package, and GitHub's images install pipx with pip. So in the AppImage job,
   pip prints a dependency conflict between pipx and argcomplete, which does not stop the job.
 - `actions/setup-python` downloads the newest patch release, and on GitHub it may use an older one from the
