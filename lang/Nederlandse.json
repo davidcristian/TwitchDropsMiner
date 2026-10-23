@@ -2,19 +2,32 @@
     "english_name": "Dutch",
     "status": {
         "terminated": "\nToepassing gestopt.\nSLuit het venster om de toepassing af te sluiten",
+        "fatal_error": "Fatale fout opgetreden:\n",
+        "restarting": "Automatisch opnieuw starten om {time}...",
+        "restart_longer": "De fout trad minder dan een uur na de vorige herstart op, dus de wachttijd is langer dan de instelling: {minutes} minuten.",
         "watching": "{channel} wordt bekeken",
         "goes_online": "{channel} is ONLINE gegaan, wijzig...",
         "goes_offline": "{channel} is OFFLINE gegaan, wijzig...",
         "claimed_drop": "Drop verkregen: {drop}",
         "no_channel": "Geen deelnemende kanalen online. Wachten op streamers...",
-        "no_campaign": "Geen actieve campagnes beschikbaar. Wachten op nieuwe campagne..."
+        "no_campaign": "Geen actieve campagnes beschikbaar. Wachten op nieuwe campagne...",
+        "logging_level": "Logniveau: {level}"
     },
     "login": {
         "unexpected_content": "Onverwacht inhoudstype geretourneerd, meestal als gevolg van een omleiding.\nIs inloggen vereist voor toegang tot internet?"
     },
     "error": {
         "site_down": "Twitch is niet beschikbaar. Probeer het over {seconds} seconden opnieuw...",
-        "no_connection": "Kan geen verbinding maken met Twitch. Probeer het over {seconds} seconden opnieuw... ({url})"
+        "no_connection": "Kan geen verbinding maken met Twitch. Probeer het over {seconds} seconden opnieuw... ({url})",
+        "save_failed": "Opslaan mislukt, nieuwe poging bij de volgende herlaadbeurt: {error}",
+        "file_not_saved": "Kan {file} niet opslaan: {error}",
+        "autostart_not_changed": "Kan de autostart-vermelding niet wijzigen: {error}",
+        "cannot_start": "Kan niet starten",
+        "folder_not_writable": "De toepassing kan niet schrijven naar de map van waaruit ze draait, waar ze haar bestanden bewaart:\n\n{error}\n\nVerplaats de toepassing naar een map waarin je kunt schrijven."
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "Fout in opdrachtregelargumenten"
     },
     "gui": {
         "output": "Protocol",
@@ -23,6 +36,7 @@
             "idle": "Inactief",
             "exiting": "Beëindigd...",
             "terminated": "Geannuleerd",
+            "restarting": "Opnieuw starten om {time}",
             "cleanup": "Kanalen opruimen..",
             "gathering": "Kanalen verzamelen...",
             "switching": "Het kanaal wijzigen...",
@@ -50,6 +64,7 @@
             "logging_in": "Aanmelden...",
             "required": "Aanmelden vereist",
             "request": "Log in om door te gaan.",
+            "enter_code": "Voer deze code in op de apparaatactivatiepagina van Twitch: {code}",
             "button": "Aanmelden"
         },
         "websocket": {
@@ -88,6 +103,7 @@
             "filter": {
                 "name": "Filter",
                 "show": "Weergeven:",
+                "not_linked": "Niet gekoppeld",
                 "upcoming": "Verwacht",
                 "expired": "Verlopen",
                 "excluded": "Uitgesloten",
@@ -114,18 +130,76 @@
         "settings": {
             "general": {
                 "name": "Algemeen",
+                "language": "Taal 🌐 (Vereist opnieuw opstarten): ",
                 "autostart": "Autostart: ",
                 "tray": "Automatisch starten in de taakbalk: ",
+                "tray_notifications": "Taakbalkmeldingen: ",
                 "dark_mode": "Donkere modus: ",
+                "priority_mode": "Prioriteitsmodus: ",
+                "refresh_interval": "Controleren op nieuwe streams elke: ",
+                "restart_delay": "Herstarten na een crash na: ",
                 "proxy": "Proxy (Vereist opnieuw opstarten):"
+            },
+            "advanced": {
+                "name": "Geavanceerd",
+                "warning": "Waarschuwing!",
+                "warning_text": "Door deze opties werkt de miner niet goed.\nAls je problemen ondervindt, zorg er dan voor dat al deze opties zijn uitgeschakeld.",
+                "enable_badges_emotes": "Gedeeltelijke ondersteuning voor badges en emotes inschakelen: ",
+                "available_drops_check": "Extra controle op beschikbare drops inschakelen: "
+            },
+            "priority_modes": {
+                "priority_only": "Alleen prioriteit",
+                "ending_soonest": "Eindigt het eerst",
+                "low_availability": "Lage beschikbaarheid eerst"
+            },
+            "refresh_intervals": {
+                "disabled": "Nooit (elk uur herladen)",
+                "minutes": "{minutes} min"
+            },
+            "restart_delays": {
+                "disabled": "Nooit (gestopt blijven)",
+                "minutes": "{minutes} min"
+            },
+            "wanted": {
+                "name": "Games die worden verwerkt",
+                "game": "Spel",
+                "source": "Gekozen door",
+                "installed": "geïnstalleerd",
+                "unlisted": "op geen enkele lijst",
+                "count": "{count} game(s) worden verwerkt, hoogste prioriteit eerst.",
+                "empty": "Nog niets bepaald - druk hieronder op \"Herladen\"."
+            },
+            "detect": {
+                "name": "Gedetecteerde games",
+                "dirs": "Gamemappen:",
+                "add_dir": "Een Steam- of Epic-gamemap toevoegen",
+                "remove_dir": "De geselecteerde map verwijderen",
+                "rescan": "Opnieuw scannen",
+                "scanning": "Gamemappen scannen...",
+                "scan_error": "Gamescan: {error}",
+                "not_a_folder": "Geen map: {path}",
+                "no_games": "Geen Steam- of Epic-games gevonden in: {path}",
+                "failed": "{path}: {reason}",
+                "detected": "{count} van {total} geïnstalleerde games herkend.",
+                "restored": "{count} games uit de laatste scan.",
+                "empty": "Nog niets gedetecteerd - voeg hieronder een gamemap toe.",
+                "no_dirs": "Geen mappen toegevoegd."
             },
             "game_name": "Spel",
             "priority": "Prioriteit",
             "exclude": "Uitsluiten",
+            "pattern_matches": "\"{pattern}\" komt overeen met {count} game(s): {games}",
+            "pattern_empty": "\"{pattern}\" komt nu met geen enkele game met een campagne overeen.",
             "reload": "Herladen",
             "reload_text": "Voor de meeste wijzigingen is een herlaadbeurt vereist om onmiddellijk van kracht te zijn: "
         },
         "help": {
+            "about": {
+                "name": "Over",
+                "repository": "Repository: ",
+                "based_on": "Gebaseerd op: ",
+                "based_on_text": "TwitchDropsMiner door DevilXD"
+            },
             "links": {
                 "name": "Handige Links",
                 "inventory": "Bekijk Twitch-inventaris",
@@ -134,7 +208,11 @@
             "how_it_works": "Dit is hoe het werkt",
             "how_it_works_text": "Elke ~60 seconden verzendt de applicatie een \"minuut gekeken\" gebeurtenis naar het kanaal waar deze momenteel naar kijkt.\nDit is voldoende om voortgang te boeken voor drops. Opmerking: op deze manier is het niet nodig om de stream te downloaden en wordt er bandbreedte bespaard. \nOm de online of offline status van de kanalen up-to-date te houden, wordt er een websocket verbinding opgezet\ndie de kanalen controleert op hun status.",
             "getting_started": "Eerste stappen",
-            "getting_started_text": "• Meld je aan bij de applicatie.\n• Zorg ervoor dat het Twitch-account is gekoppeld aan alle campagnes waarin je geïnteresseerd bent.\n• Als je alle drops wilt verwerken, verwijder je het vinkje bij \"Alleen prioriteit\" en druk je op \"Herladen\" .\n• Als je alleen bepaalde games wilt overwegen, gebruik dan de lijst \"Prioriteit\" om de keuze per game te verfijnen.\n• De lijst geeft prioriteit van boven naar beneden.\n• De optie \"Alleen prioriteit\" verhindert dat games die niet op de prioriteitenlijst staan, worden verwerkt.\n• Met de lijst \"Uitsluiten\" is het mogelijk om games te filteren die nooit in overweging mogen worden genomen.\n• Als lijsten of opties zijn aangepast, moet je op \"Herladen\" drukken zodat de wijzigingen van kracht worden."
+            "getting_started_text": "• Meld je aan bij de applicatie.\n• Zorg ervoor dat het Twitch-account is gekoppeld aan alle campagnes waarin je geïnteresseerd bent.\n• Als je alle drops wilt verwerken, verwijder je het vinkje bij \"Alleen prioriteit\" en druk je op \"Herladen\" .\n• Als je alleen bepaalde games wilt overwegen, gebruik dan de lijst \"Prioriteit\" om de keuze per game te verfijnen.\n• De lijst geeft prioriteit van boven naar beneden.\n• De optie \"Alleen prioriteit\" verhindert dat games die niet op de prioriteitenlijst staan, worden verwerkt.\n• Met de lijst \"Uitsluiten\" is het mogelijk om games te filteren die nooit in overweging mogen worden genomen.\n• Als lijsten of opties zijn aangepast, moet je op \"Herladen\" drukken zodat de wijzigingen van kracht worden.",
+            "invalidate": {
+                "button": "Ongeldig maken",
+                "text": "Het authenticatietoken ongeldig maken (uitloggen):"
+            }
         }
     }
 }
