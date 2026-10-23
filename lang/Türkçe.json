@@ -2,19 +2,32 @@
     "english_name": "Turkish",
     "status": {
         "terminated": "\nUygulama Sonlandırıldı.\nUygulamadan çıkmak için pencereyi kapatın.",
+        "fatal_error": "Kritik bir hata oluştu:\n",
+        "restarting": "Otomatik yeniden başlatma zamanı: {time}...",
+        "restart_longer": "Hata, son yeniden başlatmadan sonraki bir saat içinde oluştu, bu yüzden bekleme süresi ayardan daha uzun: {minutes} dakika.",
         "watching": "İzleniyor: {channel}",
         "goes_online": "{channel} ÇEVRİMİÇİ oldu, geçiş yapılıyor...",
         "goes_offline": "{channel} ÇEVRİMDIŞI oldu, geçiş yapılıyor...",
         "claimed_drop": "Alınan drop: {drop}",
         "no_channel": "İzlenecek uygun kanal yok. ÇEVRİMİÇİ bir kanal bekleniyor...",
-        "no_campaign": "Drop kazılacak aktif kampanya yok. Aktif bir kampanya bekleniyor..."
+        "no_campaign": "Drop kazılacak aktif kampanya yok. Aktif bir kampanya bekleniyor...",
+        "logging_level": "Günlük kaydı seviyesi: {level}"
     },
     "login": {
         "unexpected_content": "Beklenmeyen içerik türü döndürüldü, genellikle bir yönlendirmeden kaynaklanır. İnternet erişimi için giriş yapmanız gerekiyor mu?"
     },
     "error": {
         "site_down": "Twitch çöktü, {seconds} saniye içinde tekrar deneniyor...",
-        "no_connection": "Twitch'e bağlanılamıyor, {seconds} saniye içinde tekrar deneniyor... ({url})"
+        "no_connection": "Twitch'e bağlanılamıyor, {seconds} saniye içinde tekrar deneniyor... ({url})",
+        "save_failed": "Kaydetme başarısız oldu, bir sonraki yenilemede tekrar denenecek: {error}",
+        "file_not_saved": "{file} kaydedilemedi: {error}",
+        "autostart_not_changed": "Otomatik başlatma kaydı değiştirilemedi: {error}",
+        "cannot_start": "Başlatılamıyor",
+        "folder_not_writable": "Uygulama, çalıştığı ve dosyalarını tuttuğu klasöre yazamıyor:\n\n{error}\n\nUygulamayı yazma izniniz olan bir klasöre taşıyın."
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "Komut Satırı Argüman Hatası"
     },
     "gui": {
         "output": "Çıktı",
@@ -23,6 +36,7 @@
             "idle": "Boşta",
             "exiting": "Çıkılıyor...",
             "terminated": "Sonlandırıldı",
+            "restarting": "Yeniden başlatma: {time}",
             "cleanup": "Kanallar temizleniyor...",
             "gathering": "Kanallar toplanıyor...",
             "switching": "Kanal değiştiriliyor...",
@@ -50,6 +64,7 @@
             "logging_in": "Giriş yapılıyor...",
             "required": "Giriş gerekli",
             "request": "Devam etmek için lütfen giriş yapın.",
+            "enter_code": "Bu kodu Twitch'in cihaz etkinleştirme sayfasına girin: {code}",
             "button": "Giriş"
         },
         "websocket": {
@@ -115,11 +130,14 @@
         "settings": {
             "general": {
                 "name": "Genel",
+                "language": "Dil 🌐 (yeniden başlatma gerektirir): ",
                 "autostart": "Otomatik Başlatma: ",
                 "tray": "Sistem tepsisinde başlat: ",
                 "tray_notifications": "Sistem tepsisi bildirimleri: ",
                 "dark_mode": "Karanlık mod: ",
                 "priority_mode": "Öncelik modu: ",
+                "refresh_interval": "Yeni yayın kontrol aralığı: ",
+                "restart_delay": "Çökünce yeniden başlatma: ",
                 "proxy": "Proxy (yeniden başlatma gerektirir):"
             },
             "advanced": {
@@ -134,13 +152,54 @@
                 "ending_soonest": "En erken biten",
                 "low_availability": "Önce düşük bulunabilirlik (az bulunanlar)"
             },
+            "refresh_intervals": {
+                "disabled": "Asla (saatlik yenileme)",
+                "minutes": "{minutes} dk"
+            },
+            "restart_delays": {
+                "disabled": "Asla (durmuş kalır)",
+                "minutes": "{minutes} dk"
+            },
+            "wanted": {
+                "name": "Kazılan Oyunlar",
+                "game": "Oyun",
+                "source": "Eşleşme kaynağı",
+                "installed": "yüklü",
+                "unlisted": "hiçbir listede değil",
+                "count": "{count} oyun kazılıyor, en yüksek öncelik önce.",
+                "empty": "Henüz bir şey belirlenmedi - aşağıdaki \"Yenile\" butonuna basın."
+            },
+            "detect": {
+                "name": "Algılanan Oyunlar",
+                "dirs": "Oyun klasörleri:",
+                "add_dir": "Steam veya Epic oyun klasörü ekle",
+                "remove_dir": "Seçili klasörü kaldır",
+                "rescan": "Yeniden tara",
+                "scanning": "Oyun klasörleri taranıyor...",
+                "scan_error": "Oyun taraması: {error}",
+                "not_a_folder": "Klasör değil: {path}",
+                "no_games": "Steam veya Epic oyunu bulunamadı: {path}",
+                "failed": "{path}: {reason}",
+                "detected": "{total} yüklü oyundan {count} tanesi eşleşti.",
+                "restored": "Son taramadan {count} oyun.",
+                "empty": "Henüz bir şey algılanmadı - aşağıdan bir oyun klasörü ekleyin.",
+                "no_dirs": "Klasör eklenmedi."
+            },
             "game_name": "Oyun adı",
             "priority": "Öncelik",
             "exclude": "Hariç Tut",
+            "pattern_matches": "\"{pattern}\" {count} oyunla eşleşiyor: {games}",
+            "pattern_empty": "\"{pattern}\" şu anda kampanyası olan hiçbir oyunla eşleşmiyor.",
             "reload": "Yenile",
             "reload_text": "Çoğu değişikliğin hemen etkili olması için uygulamanın yenilenmesi gerekir: "
         },
         "help": {
+            "about": {
+                "name": "Hakkında",
+                "repository": "Depo: ",
+                "based_on": "Temel alınan: ",
+                "based_on_text": "DevilXD'nin TwitchDropsMiner'ı"
+            },
             "links": {
                 "name": "Faydalı Bağlantılar",
                 "inventory": "Twitch envanterini gör",
@@ -149,7 +208,11 @@
             "how_it_works": "Nasıl Çalışır",
             "how_it_works_text": "Her birkaç saniyede bir, uygulama yayın meta verilerini getirerek belirli bir yayını izliyormuş gibi davranır - bu, dropların ilerlemesi için yeterlidir. Bunun, gerçek bir video ve ses yayını indirme ihtiyacını tamamen ortadan kaldırdığını unutmayın. Kanalların durumunu (ÇEVRİMİÇİ veya ÇEVRİMDIŞI) güncel tutmak için, açılan veya kapanan yayınlar hakkında etkinlikler alan veya mevcut izleyici sayısıyla ilgili güncellemeleri bildiren bir websocket bağlantısı kurulur.",
             "getting_started": "Başlarken",
-            "getting_started_text": "1. Uygulamaya giriş yapın.\n2. Twitch hesabınızın drop kazmak (mining) istediğiniz tüm kampanyalara bağlı olduğundan emin olun.\n3. Mümkün olan her şeyden drop kazanmakla ilgileniyorsanız, Öncelik Modunu \"Sadece öncelik listesi\" dışında bir seçeneğe değiştirin ve \"Yenile\" butonuna basın.\n4. Öncelikle belirli oyunları kazmak istiyorsanız, seçtiğiniz oyunların sıralı bir listesini oluşturmak için \"Öncelik\" listesini kullanın. Listenin başındaki oyunlar, daha alt sıralardakilerden önce kazılmaya çalışılacaktır.\n5. Öncelik listesinde olmayan oyunların kazılmasını önlemek için \"Öncelik modu\"nu \"Sadece öncelik listesi\" olarak seçili bırakın. Ya da bırakmayın - tamamen size kalmış.\n6. Uygulamaya hangi oyunların asla kazılmaması gerektiğini söylemek için \"Hariç Tut\" listesini kullanın.\n7. İki listeden birinin içeriğini değiştirmek veya \"Öncelik modu\"nu değiştirmek, değişikliklerin etkili olması için \"Yenile\"ye basmanızı gerektirir."
+            "getting_started_text": "1. Uygulamaya giriş yapın.\n2. Twitch hesabınızın drop kazmak (mining) istediğiniz tüm kampanyalara bağlı olduğundan emin olun.\n3. Mümkün olan her şeyden drop kazanmakla ilgileniyorsanız, Öncelik Modunu \"Sadece öncelik listesi\" dışında bir seçeneğe değiştirin ve \"Yenile\" butonuna basın.\n4. Öncelikle belirli oyunları kazmak istiyorsanız, seçtiğiniz oyunların sıralı bir listesini oluşturmak için \"Öncelik\" listesini kullanın. Listenin başındaki oyunlar, daha alt sıralardakilerden önce kazılmaya çalışılacaktır.\n5. Öncelik listesinde olmayan oyunların kazılmasını önlemek için \"Öncelik modu\"nu \"Sadece öncelik listesi\" olarak seçili bırakın. Ya da bırakmayın - tamamen size kalmış.\n6. Uygulamaya hangi oyunların asla kazılmaması gerektiğini söylemek için \"Hariç Tut\" listesini kullanın.\n7. İki listeden birinin içeriğini değiştirmek veya \"Öncelik modu\"nu değiştirmek, değişikliklerin etkili olması için \"Yenile\"ye basmanızı gerektirir.",
+            "invalidate": {
+                "button": "Geçersiz kıl",
+                "text": "Kimlik doğrulama belirtecini geçersiz kıl (çıkış yap):"
+            }
         }
     }
 }
