@@ -109,3 +109,4 @@ cycle, so that change states its count, as [AGENTS.md](../../../AGENTS.md#the-on
   `Websocket.wait_until_connected` were removed. `AwaitableValue.wait` lost its one caller and is now listed here.
 - 2026-10-23: Removed the five items in `utils.py`, `generate_claim`, `get_drop`, `Websocket.connected`,
   `WebsocketPool.wait_until_connected` and `SelectMenu`.
+- 2026-10-23: Removed the five `GQL_QUERIES` entries.

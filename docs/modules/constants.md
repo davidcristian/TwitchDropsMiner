@@ -132,7 +132,6 @@ complete response to null in turn ([ADR-0013](../adr/ADR-0013-test-standard.md))
 | `PlaybackAccessToken` | `PlaybackAccessToken` | `channel.py` | `playback_token` |
 | `GameDirectory` | `DirectoryPage_Game` | `twitch.py` | `directory_streams` |
 | `NotificationsDelete` | `OnsiteNotifications_DeleteNotification` | `twitch.py` | not read |
-| `ClaimCommunityPoints`, `ChannelPointsContext`, `SlugRedirect`, `NotificationsView`, `NotificationsList` | | no caller ([task 022](../refinements/tasks/022-unused-code.md)) | |
 
 ### Client identities
 

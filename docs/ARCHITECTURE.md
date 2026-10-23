@@ -142,10 +142,6 @@ tab. [ADR-0002](adr/ADR-0002-twitch-traffic-budget.md) sets the request budget.
 | HTTP | `Twitch.request` | `id.twitch.tv` (login, `Invalidate`), `www.twitch.tv`, `usher.ttvnw.net`, the stream playlist and its segment URLs, image URLs from campaign data (`ImageCache`) | No rate limit. Retries a 5xx status or a connection error with backoff up to 3 minutes. |
 | PubSub | `Websocket` | `wss://pubsub-edge.twitch.tv/v1` | Up to `MAX_WEBSOCKETS` (8) connections with up to `WS_TOPICS_LIMIT` (50) topics each. `LISTEN` and `UNLISTEN` go in groups of 20 topics. A `PING` every `PING_INTERVAL` (3 minutes); a connection with no `PONG` within `PING_TIMEOUT` (10 seconds) reconnects. |
 
-Nothing sends `ClaimCommunityPoints`, `ChannelPointsContext`, `SlugRedirect`, `NotificationsView` or
-`NotificationsList`, which `GQL_QUERIES` in `constants.py` also defines
-([task 022](refinements/tasks/022-unused-code.md)).
-
 ## Background tasks
 
 | Task | Started by | Runs |
