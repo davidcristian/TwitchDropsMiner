@@ -2,19 +2,32 @@
     "english_name": "French",
     "status": {
         "terminated": "\nL'application a été arrêtée.\nVeuillez fermer l'application.",
+        "fatal_error": "Erreur fatale rencontrée :\n",
+        "restarting": "Redémarrage automatique à {time}...",
+        "restart_longer": "L'erreur est survenue moins d'une heure après le dernier redémarrage, l'attente est donc plus longue que le réglage : {minutes} minutes.",
         "watching": "En train de regarder : {channel}",
         "goes_online": "{channel} passe EN LIGNE, changement...",
         "goes_offline": "{channel} passe HORS LIGNE, changement...",
         "claimed_drop": "Drop récupéré : {drop}",
         "no_channel": "Aucune chaîne disponible à regarder. En attente d'une chaîne EN LIGNE...",
-        "no_campaign": "Aucune campagne active pour laquelle miner des drops. En attente d'une campagne active..."
+        "no_campaign": "Aucune campagne active pour laquelle miner des drops. En attente d'une campagne active...",
+        "logging_level": "Niveau de journalisation : {level}"
     },
     "login": {
         "unexpected_content": "Type de contenu inattendu renvoyé, généralement dû à une redirection. Avez-vous besoin de vous connecter pour accéder à Internet ?"
     },
     "error": {
         "site_down": "Twitch n'est pas disponible. Veuillez réessayer dans {seconds} secondes...",
-        "no_connection": "Impossible de se connecter à Twitch. Veuillez réessayer dans {seconds} secondes... ({url})"
+        "no_connection": "Impossible de se connecter à Twitch. Veuillez réessayer dans {seconds} secondes... ({url})",
+        "save_failed": "Échec de l'enregistrement, nouvel essai au prochain rechargement : {error}",
+        "file_not_saved": "Impossible d'enregistrer {file} : {error}",
+        "autostart_not_changed": "Impossible de modifier l'entrée de démarrage automatique : {error}",
+        "cannot_start": "Démarrage impossible",
+        "folder_not_writable": "L'application ne peut pas écrire dans le dossier depuis lequel elle s'exécute, où elle conserve ses fichiers :\n\n{error}\n\nDéplacez l'application dans un dossier où vous pouvez écrire."
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "Erreur dans les arguments de la ligne de commande"
     },
     "gui": {
         "output": "Sortie",
@@ -23,6 +36,7 @@
             "idle": "Inactif",
             "exiting": "Sortie...",
             "terminated": "Terminé",
+            "restarting": "Redémarrage à {time}",
             "cleanup": "Nettoyage des canaux...",
             "gathering": "Recherche de chaînes en direct...",
             "switching": "Collecte des chaînes en cours...",
@@ -50,6 +64,7 @@
             "logging_in": "Connexion en cours...",
             "required": "Connexion requise",
             "request": "Veuillez vous connecter pour continuer.",
+            "enter_code": "Saisissez ce code sur la page d'activation d'appareil de Twitch : {code}",
             "button": "Se connecter"
         },
         "websocket": {
@@ -115,25 +130,76 @@
         "settings": {
             "general": {
                 "name": "Général",
+                "language": "Langue 🌐 (nécessite un redémarrage) : ",
                 "autostart": "Démarrage automatique :",
                 "tray": "Démarrage automatique dans la barre des tâches :",
                 "tray_notifications": "Notifications dans la barre des tâches :",
                 "dark_mode": "Mode sombre : ",
                 "priority_mode": "Mode de priorité :",
+                "refresh_interval": "Rechercher de nouveaux flux toutes les : ",
+                "restart_delay": "Redémarrer après un plantage au bout de : ",
                 "proxy": "Proxy (nécessite un redémarrage) :"
+            },
+            "advanced": {
+                "name": "Avancé",
+                "warning": "Attention !",
+                "warning_text": "Ces options perturbent le fonctionnement du mineur.\nSi vous rencontrez des problèmes, assurez-vous que toutes ces options sont désactivées.",
+                "enable_badges_emotes": "Activer la prise en charge partielle des badges et des emotes : ",
+                "available_drops_check": "Activer la vérification supplémentaire des drops disponibles : "
             },
             "priority_modes": {
                 "priority_only": "Liste de priorité uniquement",
                 "ending_soonest": "Se termine le plus tôt",
                 "low_availability": "Faible disponibilité en premier"
             },
+            "refresh_intervals": {
+                "disabled": "Jamais (rechargement horaire)",
+                "minutes": "{minutes} min"
+            },
+            "restart_delays": {
+                "disabled": "Jamais (rester arrêté)",
+                "minutes": "{minutes} min"
+            },
+            "wanted": {
+                "name": "Jeux en cours de minage",
+                "game": "Jeu",
+                "source": "Retenu par",
+                "installed": "installé",
+                "unlisted": "dans aucune liste",
+                "count": "Minage de {count} jeu(x), priorité la plus haute en premier.",
+                "empty": "Rien de calculé pour l'instant - appuyez sur \"Recharger\" ci-dessous."
+            },
+            "detect": {
+                "name": "Jeux détectés",
+                "dirs": "Dossiers de jeux :",
+                "add_dir": "Ajouter un dossier de jeux Steam ou Epic",
+                "remove_dir": "Supprimer le dossier sélectionné",
+                "rescan": "Analyser à nouveau",
+                "scanning": "Analyse des dossiers de jeux...",
+                "scan_error": "Analyse des jeux : {error}",
+                "not_a_folder": "Ce n'est pas un dossier : {path}",
+                "no_games": "Aucun jeu Steam ou Epic trouvé dans : {path}",
+                "failed": "{path} : {reason}",
+                "detected": "{count} jeux installés reconnus sur {total}.",
+                "restored": "{count} jeux de la dernière analyse.",
+                "empty": "Rien de détecté pour l'instant - ajoutez un dossier de jeux ci-dessous.",
+                "no_dirs": "Aucun dossier ajouté."
+            },
             "game_name": "Nom du jeu",
             "priority": "Priorité",
             "exclude": "Exclure",
+            "pattern_matches": "\"{pattern}\" correspond à {count} jeu(x) : {games}",
+            "pattern_empty": "\"{pattern}\" ne correspond actuellement à aucun jeu ayant une campagne.",
             "reload": "Recharger",
             "reload_text": "La plupart des modifications nécessitent un rechargement pour prendre effet immédiatement : "
         },
         "help": {
+            "about": {
+                "name": "À propos",
+                "repository": "Dépôt : ",
+                "based_on": "Basé sur : ",
+                "based_on_text": "TwitchDropsMiner par DevilXD"
+            },
             "links": {
                 "name": "Liens utiles",
                 "inventory": "Afficher l'inventaire Twitch",
@@ -142,7 +208,11 @@
             "how_it_works": "Comment ça fonctionne",
             "how_it_works_text": "Toutes les quelques secondes, l'application fait semblant de regarder un flux particulier en récupérant les métadonnées du flux - ce qui suffit pour faire avancer les drops. Notez que cela contourne complètement le besoin de télécharger la vidéo et le son du flux réel. Pour maintenir à jour le statut (EN LIGNE ou HORS LIGNE) des chaînes, une connexion websocket est établie pour recevoir des événements sur les flux qui montent ou descendent, ou des mises à jour concernant le nombre actuel de spectateurs.",
             "getting_started": "Premiers pas",
-            "getting_started_text": "1. Connectez-vous à l'application.\n2. Assurez-vous que votre compte Twitch est lié à toutes les campagnes qui vous intéressent.\n3. Si vous souhaitez miner tout ce qui est possible, modifiez le mode de priorité en autre chose que \"Liste de priorité uniquement\" et appuyez sur \"Recharger\".\n4. Si vous souhaitez miner certains jeux en priorité, utilisez la liste \"Priorité\" pour définir un ordre de préférence des jeux de votre choix. Les jeux en haut de la liste seront minés en premier, avant ceux qui se trouvent plus bas dans la liste.\n5. Gardez le mode de priorité sur \"Liste de priorité uniquement\" pour éviter de miner des jeux qui ne sont pas dans la liste de priorité. Ou pas - c'est à vous de décider.\n6. Utilisez la liste \"Exclure\" pour indiquer à l'application les jeux qui ne doivent jamais être minés.\n7. Toute modification du contenu des listes ou du mode de priorité nécessite d'appuyer sur \"Recharger\" pour que les changements prennent effet."
+            "getting_started_text": "1. Connectez-vous à l'application.\n2. Assurez-vous que votre compte Twitch est lié à toutes les campagnes qui vous intéressent.\n3. Si vous souhaitez miner tout ce qui est possible, modifiez le mode de priorité en autre chose que \"Liste de priorité uniquement\" et appuyez sur \"Recharger\".\n4. Si vous souhaitez miner certains jeux en priorité, utilisez la liste \"Priorité\" pour définir un ordre de préférence des jeux de votre choix. Les jeux en haut de la liste seront minés en premier, avant ceux qui se trouvent plus bas dans la liste.\n5. Gardez le mode de priorité sur \"Liste de priorité uniquement\" pour éviter de miner des jeux qui ne sont pas dans la liste de priorité. Ou pas - c'est à vous de décider.\n6. Utilisez la liste \"Exclure\" pour indiquer à l'application les jeux qui ne doivent jamais être minés.\n7. Toute modification du contenu des listes ou du mode de priorité nécessite d'appuyer sur \"Recharger\" pour que les changements prennent effet.",
+            "invalidate": {
+                "button": "Invalider",
+                "text": "Invalider le jeton d'authentification (se déconnecter) :"
+            }
         }
     }
 }
