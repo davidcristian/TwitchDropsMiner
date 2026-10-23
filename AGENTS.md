@@ -43,7 +43,8 @@ burst of requests puts that account at risk.
 | `inventory/` | `DropsCampaign` and `TimedDrop`: campaign data, drop progress, claiming. `campaign.py` holds `DropsCampaign`, `drop.py` holds `BaseDrop` and `TimedDrop`, and `benefit.py` holds `Benefit` and `BenefitType` |
 | `channel/` | `Channel` and `Stream`: stream state and online checks. `tracked.py` holds `Channel`, `online.py` and `watch.py` its mixins for the online checks and the watch requests, and `stream.py` holds `Stream` |
 | `websocket/` | The PubSub websocket pool and its topics. `pool.py` holds `WebsocketPool`, `connection.py` holds `Websocket`, and `messages.py` its mixin that receives and sends messages |
-| `gui.py` | The whole GUI. `python gui.py` opens it with mock data and no login, and sends no request |
+| `gui.py` | `GUIManager`, which builds the window, and its panels and tabs. `python gui.py` opens it with mock data and no login, and sends no request |
+| `ui/` | The parts of the window that `gui.py` builds and imports. `placeholder.py` holds `PlaceholderEntry` and `PlaceholderCombobox`, and `widgets.py` the other generic widgets and `Notebook`, the tabs |
 | `settings.py` | `settings.json`: the `SettingsFile` type, its defaults, loading and saving |
 | `constants.py` | Paths, intervals, `State`, `PriorityMode` and the logging values |
 | `twitchapi/` | What the app sends to Twitch: `ClientType` in `clients.py`, the GQL queries with their hashes in `gql.py`, and `WebsocketTopic` in `topics.py` |

@@ -1,8 +1,9 @@
 # `gui.py`
 
-**Purpose.** The whole tkinter window: four tabs, the tray icon, the light and dark themes, and a preview that
-opens the window with mock data. `Twitch.__init__` creates one `GUIManager`, and the rest of the app changes the
-window only through that object and the parts it exposes as attributes. The file is far over the 300 line cap
+**Purpose.** The tkinter window: four tabs, the tray icon, the light and dark themes, and a preview that opens
+the window with mock data. `Twitch.__init__` creates one `GUIManager`, and the rest of the app changes the
+window only through that object and the parts it exposes as attributes. Some of those parts are in the package
+`ui/`, from which `gui.py` imports them ([ui.md](ui.md)). The file is far over the 300 line cap
 in [AGENTS.md](../../AGENTS.md#module-map), so new logic that does not need tkinter goes in a new module
 ([task 005](../refinements/tasks/005-modules-over-the-line-cap.md) gives its line count). Before a search and
 replace edit in this file, read the `gui.py` recipe in [AGENTS.md](../../AGENTS.md#recipes).
@@ -72,8 +73,8 @@ and keeps it as an attribute. The labels in quotes are the English strings from 
   `cookies.jar` when Twitch returns 200, and sets `State.RESTART`. The button stays disabled until a login
   completes.
 
-The helper widgets at the top of the file (`PlaceholderEntry`, `PlaceholderCombobox`, `PaddedListbox`,
-`MouseOverLabel`, `LinkLabel`, `SelectCombobox`) are used only inside `gui.py`.
+The generic widgets, such as `PlaceholderEntry`, `PaddedListbox` and `Notebook`, are in `ui/`
+([ui.md](ui.md#the-generic-widgets)).
 
 ## How the GUI runs with asyncio
 
@@ -236,6 +237,6 @@ A new setting that the GUI reads needs an entry in the mock `settings`, or the p
   chosen with ➕ raise `AttributeError` in the preview.
 
 **Dependencies.** Repo modules: `translate`, `cache`, `colorfonts`, `autostart`, `gamelib`, `exceptions`,
-`folderpicker`, `traybackend`, `scrollarea`, `settings` (`default_settings`, `setting_choices`), `utils` and
-`constants`; `twitch`, `channel` and `inventory` for type checking only. Third-party: `pystray`,
+`folderpicker`, `traybackend`, `scrollarea`, `settings` (`default_settings`, `setting_choices`), `utils`,
+`constants` and `ui`; `twitch`, `channel` and `inventory` for type checking only. Third-party: `pystray`,
 Pillow, `yarl`, pywin32 (`win32api`, `win32con`, `win32gui`) on Windows, and `AppKit` on macOS.

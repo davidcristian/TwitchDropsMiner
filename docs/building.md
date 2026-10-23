@@ -174,8 +174,8 @@ The `linux-appimage` job in `ci.yml` builds the AppImage on Ubuntu 22.04 with
   folder, `appimage-build/`. A recipe cannot name a runtime file or a hash. After the build, the `linux-appimage`
   job compares the AppImage with these files, so a version of appimage-builder that looks elsewhere fails the job;
 - copies the top-level `*.py` files, `gamelib/`, `utils/`, `websocket/`, `twitchapi/`, `channel/`, `inventory/`,
-  `translate/`, `twitch/`, `lang/` and `icons/` into `usr/src` inside the image, starts `usr/src/main.py`, and
-  installs `requirements.txt` at the versions in `constraints.txt`. The app counts as an AppImage only when
+  `translate/`, `twitch/`, `ui/`, `lang/` and `icons/` into `usr/src` inside the image, starts `usr/src/main.py`,
+  and installs `requirements.txt` at the versions in `constraints.txt`. The app counts as an AppImage only when
   `constants.py` is inside the image ([constants.md](modules/constants.md#working-directory-and-paths));
 - sets no update information and no signing key, so the AppImage has neither.
 

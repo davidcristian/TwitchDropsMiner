@@ -13,7 +13,7 @@ new work goes into a new module that they call. This task records where each one
 
 | Module | Lines | After the split |
 | --- | --- | --- |
-| `gui.py` | 3164 | |
+| `gui.py` | 3164 | 2829 so far, over the cap, and `ui/`, three files of 15 to 236 lines |
 | `twitch.py` | 1734 | `twitch/`, ten files of 6 to 292 lines |
 | `translate.py` | 612 | `translate/`, four files of 7 to 284 lines |
 | `channel.py` | 528 | `channel/`, five files of 7 to 166 lines |
@@ -130,3 +130,6 @@ Splits cost no Twitch requests.
   `pubsub.py` the PubSub handlers. `shutdown` and `_watch_loop` share a file because both read `time`, and
   `_await_restart` and `_maintenance_task` because both read `random`, which the tests patch. `client.py` has
   271 lines, and its entry left `EXCEPTIONS`. One module remains over the cap.
+- 2026-10-23: The generic widgets left `gui.py` for the new package `ui/`: `PlaceholderEntry` and
+  `PlaceholderCombobox` for `placeholder.py`, and `PaddedListbox`, `MouseOverLabel`, `LinkLabel`,
+  `SelectCombobox` and `Notebook` for `widgets.py`. `gui.py` imports them from `ui` and has 2829 lines.

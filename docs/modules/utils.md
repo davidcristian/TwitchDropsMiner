@@ -103,7 +103,7 @@ empty or includes it (`inventory/`, `twitch/`). `inventory/`, `channel/`, `twitc
 | --- | --- | --- |
 | `resource_path(relative_path)` | `constants._resource_path` ([constants.md](constants.md#working-directory-and-paths)) | `main.py`, `gui.py` |
 | `set_root_icon(root, image_path)` | Sets the window icon and keeps a reference to the image | `main.py`, `gui.py` |
-| `webopen(url)` | Opens `url` in a new browser tab. In a packaged Linux build it restores `LD_LIBRARY_PATH` from `LD_LIBRARY_PATH_ORIG` for the call, because PyInstaller points it at the bundled libraries | `gui.py` |
+| `webopen(url)` | Opens `url` in a new browser tab. In a packaged Linux build it restores `LD_LIBRARY_PATH` from `LD_LIBRARY_PATH_ORIG` for the call, because PyInstaller points it at the bundled libraries | `gui.py`, `ui/widgets.py` |
 | `timestamp(string)` | Parses a Twitch UTC time, with or without fractions of a second | `inventory/`, `twitch/inventoryfetch.py` |
 | `isonow()` | Returns the current UTC time with milliseconds and a `Z` | `channel/stream.py`, in the watch payload that only uncalled methods read |
 | `create_nonce(chars, length)`, `CHARS_ASCII`, `CHARS_HEX_LOWER` | Return a random string | `websocket/messages.py` (30 ASCII characters), `twitch/session.py` (the 16 character hex session ID) |
