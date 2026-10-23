@@ -51,6 +51,7 @@ Each record states the decision that applies today and is edited in place when i
 | [ADR-0017: Requests for the next state](adr/ADR-0017-state-requests.md) | Of the states requested while `Twitch._run` handles one, the first of `EXIT`, `RESTART` and the states of a reload in their order runs next, a reload requested while another fetches the inventory is merged into it, and a reload keeps the channel list's selection. |
 | [ADR-0018: The channels kept at the channel limit](adr/ADR-0018-channel-slots.md) | At the limit of 199 tracked channels, the channels that the switch can watch next keep their slots first, and the others keep theirs by the priority of a game, an offline ACL channel by its campaign's. |
 | [ADR-0019: Missing strings written without a native speaker](adr/ADR-0019-strings-without-a-native-speaker.md) | The maintainer's side writes the strings that a language file lacks, in the file's own terms and form of address, keeping the format fields; nothing else in the file changes, a speaker may correct any of them, and a new string is added in English only. |
+| [ADR-0020: How a module over the line cap is split](adr/ADR-0020-module-splits.md) | A split module becomes a package of the same name whose `__init__.py` keeps the callers' imports, except `constants.py` and `gui.py`, which stay and move code to `twitchapi/` and `ui/`; big classes split into mixins; a split commit only moves code. |
 
 ## Modules
 

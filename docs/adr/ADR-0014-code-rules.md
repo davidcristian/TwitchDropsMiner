@@ -32,8 +32,9 @@ platform differences in one place, and the typing rules.
 
 ## Consequences
 
-- A new module is easier to test than the inherited code next to it. The splits of task 005 are the time to
-  apply these rules to the inherited logic.
+- A new module is easier to test than the inherited code next to it. The splits of task 005 move the inherited
+  code unchanged ([ADR-0020](ADR-0020-module-splits.md)), and a later change that rewrites moved logic applies
+  these rules.
 - The 26 lines of inline platform checks stay until a change rewrites the code around them.
 - No script checks these rules. ruff's rules find unused names and syntax errors, not missing types or a broad
   `except` ([ADR-0012](ADR-0012-check-command.md)), so the reader and the reviewer check them.
