@@ -1,10 +1,10 @@
 # The logic in utils and settings has no tests
 
-**Status:** open
+**Status:** done 2026-10-23
 **Area:** utils, settings, tests
 **Origin:** [ADR-0013](../../adr/ADR-0013-test-standard.md), and the candidates of
 [task 003](003-test-suite.md)
-**Verified:** 2026-10-21
+**Verified:** 2026-10-23
 
 The test suite covers `redact`, `reconnect`, `gamelib`, `gqldata`, `imagedata`, `savefiles`, `ratelimit`,
 `instancelock` and `scripts/`. Two candidates of task 003 are left: the helpers in `utils.py` and the loading of
@@ -48,3 +48,6 @@ Twitch requests: none.
 - 2026-10-23: `utils.py` imports without a display or Twitch, so it joined the coverage list, and
   `tests/test_utils*.py` test each of its public functions. A test of `format_traceback` showed that it raised
   `ValueError` for every exception, which a fix with that test repaired.
+- 2026-10-23: Closed. `settings.py` joined the coverage list too, and `tests/test_settings.py` tests the loading
+  example above, the flags, assignment, `alter` and `save`. `deduplicate` left `utils.py` as code that nothing
+  calls ([022](022-unused-code.md)), so it needs no test.

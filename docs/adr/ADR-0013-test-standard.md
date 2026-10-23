@@ -51,7 +51,7 @@ installed none of these packages, so a fix in one of them was checked by a scrip
    `pyproject.toml`: the modules that need neither Twitch nor a display, today `redact`, `reconnect`,
    `restartdelay`, `gamelib`, `gqldata`, `streamdata`, `imagedata`, `savefiles`, `settingsdata`, `ratelimit`,
    `instancelock`, `parentexit`, `mousewheel`, `folderpicker` (its tests replace the dialog with fakes),
-   `colorfonts`, `traybackend`, `autostart`, `constants`, `utils` and the `scripts/` folder. The floor
+   `colorfonts`, `traybackend`, `autostart`, `constants`, `utils`, `settings` and the `scripts/` folder. The floor
    applies to their total. A new such module is added to the list. The modules that need Twitch or a display
    are not listed.
 5. **Tests do not read the machine they run on.** A test that looks for launchers, the registry or a home folder
@@ -101,9 +101,8 @@ installed none of these packages, so a fix in one of them was checked by a scrip
 - The Validate job installs the app's packages except PyGObject, and pywin32 only on Windows
   ([ADR-0012](ADR-0012-check-command.md)), and `tests/conftest.py` sets `PYSTRAY_BACKEND=dummy`, so that
   importing `gui.py` loads no tray backend. A test can import every module except `registry.py`, which needs
-  Windows, and `tests/test_imports.py` imports each module that imports the app's packages. Apart from
-  `start_task`, the logic of `utils.py` and `settings.py` has no tests yet
-  ([task 031](../refinements/tasks/031-tests-for-utils-and-settings.md)).
+  Windows, and `tests/test_imports.py` imports each module that imports the app's packages. So `utils.py` and
+  `settings.py`, which import `tkinter`, Pillow and yarl, are in the coverage list of decision 4.
 - A Linux machine with neither `xvfb-run` nor a display skips the tests of the window, so its result differs
   from that of CI, and the skip reason names `xvfb-run`. The Validate job uses the `xvfb-run` of the runner's
   Ubuntu image ([ADR-0012](ADR-0012-check-command.md)).
@@ -129,7 +128,7 @@ installed none of these packages, so a fix in one of them was checked by a scrip
 - [ADR-0012](ADR-0012-check-command.md) (the command that runs the suite) and
   [ADR-0014](ADR-0014-code-rules.md) (logic apart from I/O).
 - Tasks [003](../refinements/tasks/003-test-suite.md) (closed by this record),
-  [031](../refinements/tasks/031-tests-for-utils-and-settings.md) (the modules not yet tested) and
+  [031](../refinements/tasks/031-tests-for-utils-and-settings.md) (the tests of `utils.py` and `settings.py`) and
   [009](../refinements/tasks/009-trademark-symbols-in-game-names.md) (a defect whose strict `xfail` tests became
   plain tests with its fix), and [075](../refinements/tasks/075-test-run-stays-open-after-the-last-test.md) (the
   run that stayed open, which decision 7 answers).
