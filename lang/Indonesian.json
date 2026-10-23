@@ -2,19 +2,32 @@
     "english_name": "Indonesian",
     "status": {
         "terminated": "\nAplikasi telah dihentikan. \nSilakan tutup aplikasi.",
+        "fatal_error": "Terjadi kesalahan fatal:\n",
+        "restarting": "Memulai ulang secara otomatis pada {time}...",
+        "restart_longer": "Kesalahan terjadi kurang dari satu jam setelah mulai ulang terakhir, jadi waktu tunggu lebih lama dari pengaturan: {minutes} menit.",
         "watching": "Menonton : {channel}",
         "goes_online": "{channel} Tiket masuk ONLINE, ganti...",
         "goes_offline": "{channel} menjadi OFF-LINE, ubah...",
         "claimed_drop": "Drop dipulihkan : {drop}",
         "no_channel": "Tidak ada saluran yang tersedia untuk ditonton. Menunggu saluran secara ONLINE...",
-        "no_campaign": "Tidak ada kampanye aktif yang bisa ditambang. Menunggu kampanye aktif..."
+        "no_campaign": "Tidak ada kampanye aktif yang bisa ditambang. Menunggu kampanye aktif...",
+        "logging_level": "Tingkat log: {level}"
     },
     "login": {
         "unexpected_content": "Jenis konten yang tidak diharapkan yang dikembalikan, biasanya karena pengalihan. Apakah Anda perlu tersambung untuk mengakses Internet ?"
     },
     "error": {
         "site_down": "Twitch tidak tersedia. Silakan coba lagi dalam {seconds} detik...",
-        "no_connection": "Tidak dapat tersambung ke Twitch. Silakan coba lagi dalam {seconds} detik... ({url})"
+        "no_connection": "Tidak dapat tersambung ke Twitch. Silakan coba lagi dalam {seconds} detik... ({url})",
+        "save_failed": "Gagal menyimpan, mencoba lagi pada muat ulang berikutnya: {error}",
+        "file_not_saved": "Tidak dapat menyimpan {file}: {error}",
+        "autostart_not_changed": "Tidak dapat mengubah entri mulai otomatis: {error}",
+        "cannot_start": "Tidak dapat memulai",
+        "folder_not_writable": "Aplikasi tidak dapat menulis ke folder tempat aplikasi dijalankan dan menyimpan berkasnya:\n\n{error}\n\nPindahkan aplikasi ke folder yang dapat Anda tulisi."
+    },
+    "arguments": {
+        "title": "Twitch Drops Miner",
+        "error_title": "Kesalahan Argumen Baris Perintah"
     },
     "gui": {
         "output": "Keluaran",
@@ -23,6 +36,7 @@
             "idle": "Tidak aktif",
             "exiting": "Keluar...",
             "terminated": "Diakhiri",
+            "restarting": "Memulai ulang pada {time}",
             "cleanup": "Membersihkan saluran...",
             "gathering": "Pencarian saluran langsung...",
             "switching": "Koleksi saluran yang sedang berlangsung...",
@@ -50,6 +64,7 @@
             "logging_in": "Koneksi dalam proses...",
             "required": "Diperlukan sambungan",
             "request": "Silakan masuk untuk melanjutkan.",
+            "enter_code": "Masukkan kode ini di halaman aktivasi perangkat Twitch: {code}",
             "button": "Masuk"
         },
         "websocket": {
@@ -115,19 +130,76 @@
         "settings": {
             "general": {
                 "name": "Umum",
+                "language": "Bahasa 🌐 (harus dimulai ulang): ",
                 "autostart": "Mulai secara otomatis :",
                 "tray": "Mulai otomatis di bilah tugas :",
                 "tray_notifications": "Pemberitahuan bilah tugas :",
                 "dark_mode": "Mode gelap: ",
+                "priority_mode": "Mode prioritas: ",
+                "refresh_interval": "Periksa streaming baru setiap: ",
+                "restart_delay": "Mulai ulang setelah crash dalam: ",
                 "proxy": "Proksi (harus dimulai ulang) :"
+            },
+            "advanced": {
+                "name": "Lanjutan",
+                "warning": "Peringatan!",
+                "warning_text": "Opsi-opsi ini akan membuat penambang berperilaku tidak semestinya.\nJika Anda mengalami masalah, pastikan semua opsi ini dinonaktifkan.",
+                "enable_badges_emotes": "Aktifkan dukungan sebagian untuk lencana dan emote: ",
+                "available_drops_check": "Aktifkan pemeriksaan tambahan drop yang tersedia: "
+            },
+            "priority_modes": {
+                "priority_only": "Hanya Prioritas",
+                "ending_soonest": "Berakhir paling cepat",
+                "low_availability": "Ketersediaan rendah dulu"
+            },
+            "refresh_intervals": {
+                "disabled": "Nonaktif (muat ulang per jam)",
+                "minutes": "{minutes} menit"
+            },
+            "restart_delays": {
+                "disabled": "Nonaktif (tetap berhenti)",
+                "minutes": "{minutes} menit"
+            },
+            "wanted": {
+                "name": "Game yang Ditambang",
+                "game": "Game",
+                "source": "Dicocokkan oleh",
+                "installed": "terpasang",
+                "unlisted": "tidak ada di daftar mana pun",
+                "count": "Menambang {count} game, prioritas tertinggi lebih dulu.",
+                "empty": "Belum ada yang dihitung - tekan \"Muat Ulang\" di bawah."
+            },
+            "detect": {
+                "name": "Game Terdeteksi",
+                "dirs": "Folder game:",
+                "add_dir": "Tambahkan folder game Steam atau Epic",
+                "remove_dir": "Hapus folder yang dipilih",
+                "rescan": "Pindai ulang",
+                "scanning": "Memindai folder game...",
+                "scan_error": "Pemindaian game: {error}",
+                "not_a_folder": "Bukan folder: {path}",
+                "no_games": "Tidak ditemukan game Steam atau Epic di: {path}",
+                "failed": "{path}: {reason}",
+                "detected": "{count} dari {total} game terpasang cocok.",
+                "restored": "{count} game dari pemindaian terakhir.",
+                "empty": "Belum ada yang terdeteksi - tambahkan folder game di bawah.",
+                "no_dirs": "Belum ada folder yang ditambahkan."
             },
             "game_name": "Nama game",
             "priority": "Prioritas",
             "exclude": "Kecualikan",
+            "pattern_matches": "\"{pattern}\" cocok dengan {count} game: {games}",
+            "pattern_empty": "\"{pattern}\" saat ini tidak cocok dengan game mana pun yang memiliki kampanye.",
             "reload": "Muat Ulang",
             "reload_text": "Sebagian besar perubahan memerlukan pemuatan ulang untuk segera diterapkan : "
         },
         "help": {
+            "about": {
+                "name": "Tentang",
+                "repository": "Repositori: ",
+                "based_on": "Berdasarkan: ",
+                "based_on_text": "TwitchDropsMiner oleh DevilXD"
+            },
             "links": {
                 "name": "Tautan berguna",
                 "inventory": "Lihat inventaris Twitch",
@@ -136,7 +208,11 @@
             "how_it_works": "Cara kerja",
             "how_it_works_text": "Kira-kira setiap ~60 detik, aplikasi ini mengirimkan \"menit ditonton\" ke saluran yang sedang ditonton - yang cukup untuk membuat drop terus bergerak. Perhatikan bahwa hal ini sepenuhnya mengabaikan kebutuhan untuk mengunduh video dan audio dari streaming yang sebenarnya. Untuk menjaga agar status (ONLINE atau OFFLINE) saluran tetap terbaru, koneksi websocket dibuat untuk menerima peristiwa tentang streaming yang naik atau turun, atau pembaruan tentang jumlah penonton saat ini",
             "getting_started": "Mulai",
-            "getting_started_text": "1. Masuk ke aplikasi.\n2. Pastikan akun Twitch Anda ditautkan ke semua kampanye yang Anda minati.\n3. Jika Anda hanya ingin menambang semuanya, hapus centang pada \"Hanya Prioritas\" dan tekan \"Muat Ulang\".\n4. Jika Anda ingin menambang game tertentu terlebih dahulu, gunakan daftar \"Prioritas\" untuk menentukan daftar game pilihan Anda. Game yang berada di bagian atas daftar akan tergoda untuk ditambang terlebih dahulu, sebelum game yang berada di bagian bawah daftar.\n5. Biarkan opsi \"Prioritas saja\" dicentang untuk menghindari menambang game yang tidak ada dalam daftar prioritas. Atau tidak - terserah Anda.\n6. Gunakan daftar \"Kecualikan\" untuk memberi tahu aplikasi game mana yang tidak boleh ditambang.\n7. Untuk memodifikasi konten dari salah satu daftar atau mengubah status opsi \"Hanya Prioritas\", Anda perlu menekan \"Muat Ulang\" agar perubahan dapat diterapkan."
+            "getting_started_text": "1. Masuk ke aplikasi.\n2. Pastikan akun Twitch Anda ditautkan ke semua kampanye yang Anda minati.\n3. Jika Anda hanya ingin menambang semuanya, hapus centang pada \"Hanya Prioritas\" dan tekan \"Muat Ulang\".\n4. Jika Anda ingin menambang game tertentu terlebih dahulu, gunakan daftar \"Prioritas\" untuk menentukan daftar game pilihan Anda. Game yang berada di bagian atas daftar akan tergoda untuk ditambang terlebih dahulu, sebelum game yang berada di bagian bawah daftar.\n5. Biarkan opsi \"Prioritas saja\" dicentang untuk menghindari menambang game yang tidak ada dalam daftar prioritas. Atau tidak - terserah Anda.\n6. Gunakan daftar \"Kecualikan\" untuk memberi tahu aplikasi game mana yang tidak boleh ditambang.\n7. Untuk memodifikasi konten dari salah satu daftar atau mengubah status opsi \"Hanya Prioritas\", Anda perlu menekan \"Muat Ulang\" agar perubahan dapat diterapkan.",
+            "invalidate": {
+                "button": "Cabut",
+                "text": "Cabut token autentikasi (keluar):"
+            }
         }
     }
 }
