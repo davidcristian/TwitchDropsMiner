@@ -5,6 +5,7 @@
         "fatal_error": "Schwerwiegender Fehler aufgetreten:\n",
         "restarting": "Automatischer Neustart um {time}...",
         "restart_longer": "Der Fehler trat weniger als eine Stunde nach dem letzten Neustart auf, daher ist die Wartezeit länger als eingestellt: {minutes} Minuten.",
+        "restart_now": "Drücke \"Neu laden\" im Tab \"Einstellungen\", um jetzt neu zu starten.",
         "watching": "{channel} wird zugesehen",
         "goes_online": "{channel} ist ONLINE gegangen, wechseln...",
         "goes_offline": "{channel} ist OFFLINE gegangen, wechseln...",
@@ -181,7 +182,7 @@
                 "no_games": "Keine Steam- oder Epic-Spiele gefunden in: {path}",
                 "failed": "{path}: {reason}",
                 "detected": "{count} von {total} installierten Spielen zugeordnet.",
-                "restored": "{count} Spiele aus der letzten Suche.",
+                "restored": "Spiele aus der letzten Suche: {count}.",
                 "empty": "Noch nichts erkannt - füge unten einen Spieleordner hinzu.",
                 "no_dirs": "Keine Ordner hinzugefügt."
             },
