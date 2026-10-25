@@ -33,7 +33,7 @@ OpenSSL 1.1.1 has had no public fixes since September 2023, and Python 3.10 reac
 ## Consequences
 
 - The Validate job runs on the build Python on Windows and macOS too, where two of the releases bundle it. Those
-  two runs are not required until each has passed once
+  two runs are required since each passed once
   ([task 078](../refinements/tasks/078-windows-macos-checks-on-the-build-python-not-required.md)).
 - On 2026-10-21 the checks, the GUI preview and `main.py` ran on a local CPython 3.14.7 with `requirements.txt`
   and `requirements-dev.txt` installed: `just check` passed (1039 tests passed, 98% branch coverage), the GUI

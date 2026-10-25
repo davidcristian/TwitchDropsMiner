@@ -1,6 +1,6 @@
 # ADR-0012: One check command
 
-**Status:** Accepted (2026-10-22)
+**Status:** Accepted (2026-10-25)
 
 ## Context
 
@@ -103,10 +103,12 @@ lint rules without its formatter or pyright.
      and the tests of the window on Tk without X11.
    - Windows and macOS with `BUILD_PYTHON_VERSION`, the Python that their releases bundle.
 
-   A failure in a required run fails the workflow, and the build jobs wait for all six. The Windows and macOS
-   runs on `PYTHON_VERSION` set `continue-on-error` until each had passed once, on 2026-10-23
-   ([task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)), and their runs on
-   `BUILD_PYTHON_VERSION` set it until each has passed once
+   All six are required: a failure in any of them fails the workflow, and the build jobs wait for all six. Each
+   matrix entry keeps its `required` field, so that a new entry can set it to `false`: the job then sets
+   `continue-on-error` for that entry until a run of it has passed. The Windows and macOS entries on
+   `PYTHON_VERSION` were not required until each had passed once, on 2026-10-23
+   ([task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)), and their entries on
+   `BUILD_PYTHON_VERSION` until each had passed once
    ([task 078](../refinements/tasks/078-windows-macos-checks-on-the-build-python-not-required.md)).
 
 ## Consequences
@@ -158,6 +160,8 @@ lint rules without its formatter or pyright.
   Python the app supports and 3.14 the Python of the releases; 3.11 to 3.13 are neither.
 - **Windows and macOS required from their first run.** They had never run, and a test written for Linux that
   fails there would stop every build until it was fixed or skipped.
+- **No `required` field once every entry is required.** A new entry, such as a newer Python, would then stop
+  every build from its first run for the same reason, or the field and `continue-on-error` would be added back.
 - **Windows and macOS on `PYTHON_VERSION` only.** Then no check would run the Python of those two releases on
   their systems, and Python 3.14 has behaved differently from 3.10 before, such as `Path.is_dir` returning
   `False` where 3.10 raises `PermissionError`.

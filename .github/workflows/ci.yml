@@ -27,8 +27,8 @@ env:
 jobs:
   validate:
     name: Validate (${{matrix.os}}, ${{matrix.python}})
-    # Each entry names the variable above that sets its Python. A failure of an entry that is not required does not
-    # fail the workflow.
+    # Each entry names the variable above that sets its Python. A new entry can set `required: false` until it has
+    # passed once: a failure of an entry that is not required does not fail the workflow.
     strategy:
       fail-fast: false
       matrix:
@@ -45,13 +45,12 @@ jobs:
           - os: macos-latest
             python: PYTHON_VERSION
             required: true
-          # not required until each has passed once, as docs/refinements/tasks/078-windows-macos-checks-on-the-build-python-not-required.md says
           - os: windows-latest
             python: BUILD_PYTHON_VERSION
-            required: false
+            required: true
           - os: macos-latest
             python: BUILD_PYTHON_VERSION
-            required: false
+            required: true
     runs-on: ${{matrix.os}}
     continue-on-error: ${{!matrix.required}}
 
