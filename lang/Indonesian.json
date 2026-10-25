@@ -5,6 +5,7 @@
         "fatal_error": "Terjadi kesalahan fatal:\n",
         "restarting": "Memulai ulang secara otomatis pada {time}...",
         "restart_longer": "Kesalahan terjadi kurang dari satu jam setelah mulai ulang terakhir, jadi waktu tunggu lebih lama dari pengaturan: {minutes} menit.",
+        "restart_now": "Tekan \"Muat Ulang\" di tab \"Parameter\" untuk memulai ulang sekarang.",
         "watching": "Menonton : {channel}",
         "goes_online": "{channel} Tiket masuk ONLINE, ganti...",
         "goes_offline": "{channel} menjadi OFF-LINE, ubah...",
