@@ -5,6 +5,7 @@
         "fatal_error": "發生嚴重錯誤：\n",
         "restarting": "將於 {time} 自動重新啟動…",
         "restart_longer": "錯誤發生在上次重新啟動後不到一小時，因此等待時間比設定值更長：{minutes} 分鐘。",
+        "restart_now": "若要立即重新啟動，請在「設置」分頁中按「重新載入」。",
         "watching": "正在觀看：{channel}",
         "goes_online": "{channel} 頻道已開始實況，正在跳轉…",
         "goes_offline": "{channel} 頻道已結束實況，正在跳轉…",
