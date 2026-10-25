@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-import sys
 import time
 from tkinter.font import Font
 
 import pytest
 
+import gui as gui_module
 from channel import Channel
 from fakes import FakeTwitch
 from gui import ConsoleOutput, GUIManager
@@ -63,6 +63,7 @@ def test_a_window_at_its_minimum_height_shortens_only_the_output_box(window, dar
     fake.settings.dark_mode = dark
     gui = window(fake)
     root = gui._root
+    root.update()
     root.geometry("{}x{}".format(*root.minsize()))
     root.update()
 
@@ -119,11 +120,6 @@ def test_setting_the_theme_again_does_not_resize_a_window_that_follows_its_reque
     assert resizes == []
 
 
-@pytest.mark.xfail(
-    sys.platform == "darwin",
-    strict=True,
-    reason="docs/refinements/tasks/072-macos-window-smaller-than-wm-maxsize.md",
-)
 def test_the_window_opens_at_its_requested_size_cut_to_the_largest_size_tk_allows(window):
     root = window(FakeTwitch())._root
     root.update()
@@ -135,9 +131,50 @@ def test_the_window_opens_at_its_requested_size_cut_to_the_largest_size_tk_allow
     )
 
 
+@pytest.mark.parametrize(("windowing_system", "refits"), [("aqua", True), ("x11", False), ("win32", False)])
+def test_only_the_macos_windowing_system_fits_the_window_again_after_it_first_shows(windowing_system, refits):
+    assert gui_module.refits_after_first_map(windowing_system) is refits
+
+
+def test_on_macos_the_window_is_fitted_to_the_screen_again_after_it_first_shows(window, monkeypatch):
+    monkeypatch.setattr(gui_module, "refits_after_first_map", lambda windowing_system: True)
+    root = window(FakeTwitch())._root
+    requested = (root.winfo_reqwidth(), root.winfo_reqheight())
+    largest = tuple(min(size, most) - 10 for size, most in zip(requested, root.maxsize()))
+    monkeypatch.setattr(root, "maxsize", lambda: largest)
+    shrunk: list[bool] = []
+
+    def shrink(event) -> None:
+        # what macOS does when a window that was fitted while withdrawn first shows
+        if event.widget is root and not shrunk:
+            shrunk.append(True)
+            root.geometry(f"{largest[0] - 20}x{largest[1] - 20}")
+
+    root.bind("<Map>", shrink, add="+")
+    root.update()
+
+    assert shrunk == [True]
+    assert (root.winfo_width(), root.winfo_height()) == largest
+
+
+def test_on_macos_a_window_shown_again_keeps_the_size_it_had(window, monkeypatch):
+    monkeypatch.setattr(gui_module, "refits_after_first_map", lambda windowing_system: True)
+    root = window(FakeTwitch())._root
+    root.update()
+    root.geometry("{}x{}".format(*root.minsize()))
+    root.update()
+    root.withdraw()
+    root.update()
+    root.deiconify()
+    root.update()
+
+    assert (root.winfo_width(), root.winfo_height()) == root.minsize()
+
+
 def test_the_settings_tab_in_a_small_window_scrolls_to_the_end_of_its_content(window):
     gui = window(FakeTwitch())
     root, area = gui._root, gui.settings._area
+    root.update()
     root.minsize(1, 1)
     root.geometry("700x400")
     gui.tabs._nb.select(2)

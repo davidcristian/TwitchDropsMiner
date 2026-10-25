@@ -1,9 +1,9 @@
 # On macOS the window opens 20 pixels smaller than `wm maxsize`
 
-**Status:** open
+**Status:** done 2026-10-25
 **Area:** gui
 **Origin:** Found on 2026-10-22: the first macOS run of the Validate job in CI
-**Verified:** 2026-10-22
+**Verified:** 2026-10-25
 
 `GUIManager.__init__` calls `_fit_to_screen` while the window is still withdrawn. When the window requests more
 than `wm maxsize`, `_fit_to_screen` sets the window size to `fitted_size` of the two
@@ -32,3 +32,9 @@ first `<Map>` event of the window. Then remove the `xfail` mark. Twitch requests
 
 - 2026-10-22: Opened. The first macOS run of the Validate job failed the test of the window size at start. The
   same test passed on Windows.
+- 2026-10-25: Closed. Runs on macOS in CI with Tk 8.6.12 and 9.0.4 showed the cause: Tk reports the state
+  `zoomed` after `_fit_to_screen` sets the size to `wm maxsize` while the window is withdrawn, and at the first
+  `<Map>` event the state becomes `normal` and the window shrinks by 20 pixels on each axis. On macOS,
+  `GUIManager` now calls `_fit_to_screen` again through `after_idle` from the first `<Map>` event, which gave
+  the full size in those runs, and the test of the window size at start has no `xfail` mark. The change
+  itself ran only on Linux, with `refits_after_first_map` replaced to return true.

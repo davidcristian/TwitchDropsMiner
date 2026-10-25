@@ -106,8 +106,18 @@ After `apply_theme`, `GUIManager.__init__` calls `_fit_to_screen`. When the wind
 frame), the window opens at `fitted_size` of the two and the Settings tab scrolls. Otherwise the window keeps
 following its requested size, so a large screen shows it as before. On a screen 1366 by 768 pixels the preview
 window is 1351 pixels wide. On a screen 1280 by 720 pixels it is 1265 by 690 in both themes, and the Output box
-has room for 9 lines in light mode and 7 in dark mode. On macOS in CI the window opened 20 pixels smaller than
-`wm maxsize` on each axis ([task 072](../refinements/tasks/072-macos-window-smaller-than-wm-maxsize.md)).
+has room for 9 lines in light mode and 7 in dark mode.
+
+On macOS, Tk reports a window whose size was set to `wm maxsize` while it was withdrawn as `zoomed`, and at its
+first `<Map>` event the window leaves that state and becomes 20 pixels smaller on each axis
+([task 072](../refinements/tasks/072-macos-window-smaller-than-wm-maxsize.md)). So when
+`refits_after_first_map` returns true for Tk's windowing system, which it does only for `aqua`, the first
+`<Map>` event of the root calls `_fit_to_screen` again through `after_idle`, and the binding is then removed.
+In runs on macOS in CI with Tk 8.6.12 and 9.0.4 that gave the full size, and a fit inside the `<Map>` handler,
+a size one pixel below `wm maxsize` or `wm state zoomed` did not. On X11 and Windows the second fit does not
+run. `_fit_to_screen` sets the geometry whenever the window requests more than `wm maxsize`, so there it could
+replace a size that the window manager chose at the first show, and with the `tray` setting the first show is
+the first restore from the tray.
 
 ## The preview
 
