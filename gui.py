@@ -45,9 +45,10 @@ if TYPE_CHECKING:
     from inventory import TimedDrop
 
 
-def refits_after_first_map(windowing_system: str) -> bool:
-    """Return whether the window is fitted to the screen again after it first shows in `windowing_system`."""
-    # macOS shows a window fitted while withdrawn as zoomed, and makes it 20 pixels smaller when it first shows
+def sizes_again_after_first_map(windowing_system: str) -> bool:
+    """Return whether the minimum size is measured and the window fitted to the screen again after it first shows."""
+    # macOS shows a window fitted while withdrawn as zoomed, and makes it 20 pixels smaller when it first shows.
+    # On macOS with Python 3.14.9 in CI, the content requested 8 pixels less on each axis after __init__ than during it.
     return windowing_system == "aqua"
 
 
@@ -178,8 +179,8 @@ class GUIManager(EventLoopMixin, ThemeMixin):
             self._orig_theme_name = ''
         self.apply_theme(self._twitch.settings.dark_mode)
         self._fit_to_screen()
-        if refits_after_first_map(root.tk.call("tk", "windowingsystem")):
-            self._first_map = root.bind("<Map>", self._fit_after_first_map)
+        if sizes_again_after_first_map(root.tk.call("tk", "windowingsystem")):
+            self._first_map = root.bind("<Map>", self._size_again_after_first_map)
         # stay hidden in tray if needed, otherwise show the window when everything's ready
         if self._twitch.settings.tray and sys.platform != "darwin":
             # NOTE: this starts the tray icon thread
@@ -257,11 +258,15 @@ class GUIManager(EventLoopMixin, ThemeMixin):
         if size != wanted:
             root.geometry(f"{size.width}x{size.height}")
 
-    def _fit_after_first_map(self, event: Event[Misc]) -> None:
+    def _size_again_after_first_map(self, event: Event[Misc]) -> None:
         # a fit inside the first <Map> handler still leaves the window smaller on macOS, and one after it does not
         if event.widget is self._root:
             self._root.unbind("<Map>", self._first_map)
-            self._root.after_idle(self._fit_to_screen)
+            self._root.after_idle(self._measure_and_fit)
+
+    def _measure_and_fit(self) -> None:
+        self._minimum.measure()
+        self._fit_to_screen()
 
 
 if __name__ == "__main__":

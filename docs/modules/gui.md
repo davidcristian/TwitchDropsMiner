@@ -92,7 +92,8 @@ and again from the "Dark mode" checkbox through `SettingsPanel.update_dark_mode`
   to the size the window requests while the Settings tab's area is `collapsed()` and the Output box is
   `shortened()` to `MIN_LINES`, because the fonts and paddings of the theme change that size. The Settings tab
   scrolls, so the widest tab that cannot scroll, the Main tab, sets the minimum. In the preview on Linux the
-  minimum is 865 by 602 pixels in light mode and 878 by 636 in dark mode before the mock data arrives.
+  minimum is 865 by 602 pixels in light mode and 878 by 636 in dark mode before the mock data arrives. On macOS
+  it is measured once more after the window first shows, as the end of this section describes.
 - `MIN_LINES` is 4, so the minimum height fits a screen 720 pixels high. On that screen Tk on X11 allows a
   window 690 pixels high, and on Windows a taskbar and a title bar leave about 650, an estimate that was not
   measured. With all 10 lines the minimum height in dark mode was 738 pixels; with 4 it is 636.
@@ -111,13 +112,23 @@ has room for 9 lines in light mode and 7 in dark mode.
 On macOS, Tk reports a window whose size was set to `wm maxsize` while it was withdrawn as `zoomed`, and at its
 first `<Map>` event the window leaves that state and becomes 20 pixels smaller on each axis
 ([task 072](../refinements/tasks/072-macos-window-smaller-than-wm-maxsize.md)). So when
-`refits_after_first_map` returns true for Tk's windowing system, which it does only for `aqua`, the first
-`<Map>` event of the root calls `_fit_to_screen` again through `after_idle`, and the binding is then removed.
-In runs on macOS in CI with Tk 8.6.12 and 9.0.4 that gave the full size, and a fit inside the `<Map>` handler,
-a size one pixel below `wm maxsize` or `wm state zoomed` did not. On X11 and Windows the second fit does not
-run. `_fit_to_screen` sets the geometry whenever the window requests more than `wm maxsize`, so there it could
+`sizes_again_after_first_map` returns true for Tk's windowing system, which it does only for `aqua`, the first
+`<Map>` event of the root calls `_measure_and_fit` through `after_idle`, and the binding is then removed.
+`_measure_and_fit` calls `MinimumSize.measure` and then `_fit_to_screen`, so the fit uses the new minimum. In
+runs on macOS in CI with Tk 8.6.12 and 9.0.4 the second fit gave the full size, and a fit inside the `<Map>`
+handler, a size one pixel below `wm maxsize` or `wm state zoomed` did not. On X11 and Windows neither call runs
+again. `_fit_to_screen` sets the geometry whenever the window requests more than `wm maxsize`, so there it could
 replace a size that the window manager chose at the first show, and with the `tray` setting the first show is
 the first restore from the tray.
+
+On a macOS runner in CI with Python 3.14.9 and Tk 9.0.4, the measurement in `apply_theme` set a minimum of 914
+by 606 pixels. Once `__init__` had returned, with the window still withdrawn, the same content requested 906 by
+598, and a measurement at any later time set that size. The tab frames requested the same sizes as before, so
+`MinimumSize.follow` did not measure again, and the minimum stayed 8 pixels larger on each axis than that size.
+On an older runner image with Python 3.14.8 and Tk 9.0.4, on Python 3.10.11 with Tk 8.6.12, and on Linux, the
+measurement in `apply_theme` already gave the final size. Which call in `__init__` changes the requested size
+was not found. The most likely one is the geometry call of `_fit_to_screen`, when Tk on macOS creates the real
+window.
 
 ## The preview
 

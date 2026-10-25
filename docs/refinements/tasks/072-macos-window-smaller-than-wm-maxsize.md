@@ -38,3 +38,5 @@ first `<Map>` event of the window. Then remove the `xfail` mark. Twitch requests
   `GUIManager` now calls `_fit_to_screen` again through `after_idle` from the first `<Map>` event, which gave
   the full size in those runs, and the test of the window size at start has no `xfail` mark. The change
   itself ran only on Linux, with `refits_after_first_map` replaced to return true.
+- 2026-10-25: `refits_after_first_map` is now `sizes_again_after_first_map`, because the same `after_idle`
+  call now also measures the minimum window size again ([gui.md](../../modules/gui.md#the-theme-and-dark-mode)).

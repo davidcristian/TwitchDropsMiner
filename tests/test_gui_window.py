@@ -32,26 +32,30 @@ async def until(condition) -> None:
         await asyncio.sleep(0.01)
 
 
+def minimum_and_requested_without_settings(gui: GUIManager) -> tuple[tuple[int, int], tuple[int, int]]:
+    """Return the minimum window size, and the size the window requests without the Settings tab and most output."""
+    root, notebook, output = gui._root, gui.tabs._nb, gui.output._text
+    pane, text = notebook.tabs()[2], notebook.tab(2, "text")
+    notebook.forget(2)
+    output.configure(height=ConsoleOutput.MIN_LINES)
+    root.update_idletasks()
+    requested = (root.winfo_reqwidth(), root.winfo_reqheight())
+    output.configure(height=ConsoleOutput.LINES)
+    notebook.insert(2, pane, text=text, sticky="nsew")
+    return root.minsize(), requested
+
+
 @pytest.mark.parametrize("dark", [False, True])
 def test_the_minimum_window_size_is_the_size_of_the_theme_without_the_settings_tab_and_most_output(window, dark):
     fake = FakeTwitch()
     fake.settings.dark_mode = dark
     gui = window(fake)
-    root, notebook, output = gui._root, gui.tabs._nb, gui.output._text
+    # the window shows, as it does at a start of the app
+    gui._root.update()
 
-    def minimum_and_requested_without_settings() -> tuple[tuple[int, int], tuple[int, int]]:
-        pane, text = notebook.tabs()[2], notebook.tab(2, "text")
-        notebook.forget(2)
-        output.configure(height=ConsoleOutput.MIN_LINES)
-        root.update_idletasks()
-        requested = (root.winfo_reqwidth(), root.winfo_reqheight())
-        output.configure(height=ConsoleOutput.LINES)
-        notebook.insert(2, pane, text=text, sticky="nsew")
-        return root.minsize(), requested
-
-    at_start = minimum_and_requested_without_settings()
+    at_start = minimum_and_requested_without_settings(gui)
     gui.apply_theme(not dark)
-    after_the_change = minimum_and_requested_without_settings()
+    after_the_change = minimum_and_requested_without_settings(gui)
 
     assert at_start[0] == at_start[1]
     assert after_the_change[0] == after_the_change[1]
@@ -131,13 +135,13 @@ def test_the_window_opens_at_its_requested_size_cut_to_the_largest_size_tk_allow
     )
 
 
-@pytest.mark.parametrize(("windowing_system", "refits"), [("aqua", True), ("x11", False), ("win32", False)])
-def test_only_the_macos_windowing_system_fits_the_window_again_after_it_first_shows(windowing_system, refits):
-    assert gui_module.refits_after_first_map(windowing_system) is refits
+@pytest.mark.parametrize(("windowing_system", "sizes"), [("aqua", True), ("x11", False), ("win32", False)])
+def test_only_the_macos_windowing_system_sizes_the_window_again_after_it_first_shows(windowing_system, sizes):
+    assert gui_module.sizes_again_after_first_map(windowing_system) is sizes
 
 
 def test_on_macos_the_window_is_fitted_to_the_screen_again_after_it_first_shows(window, monkeypatch):
-    monkeypatch.setattr(gui_module, "refits_after_first_map", lambda windowing_system: True)
+    monkeypatch.setattr(gui_module, "sizes_again_after_first_map", lambda windowing_system: True)
     root = window(FakeTwitch())._root
     requested = (root.winfo_reqwidth(), root.winfo_reqheight())
     largest = tuple(min(size, most) - 10 for size, most in zip(requested, root.maxsize()))
@@ -157,8 +161,21 @@ def test_on_macos_the_window_is_fitted_to_the_screen_again_after_it_first_shows(
     assert (root.winfo_width(), root.winfo_height()) == largest
 
 
+def test_on_macos_the_minimum_window_size_is_measured_again_after_the_window_first_shows(window, monkeypatch):
+    monkeypatch.setattr(gui_module, "sizes_again_after_first_map", lambda windowing_system: True)
+    gui = window(FakeTwitch())
+    measured = gui._root.minsize()
+    # as on macOS with Python 3.14.9, the content requests another size after the window is built
+    gui.tabs._nb.configure(padding=4)
+    gui._root.update()
+    minimum, requested = minimum_and_requested_without_settings(gui)
+
+    assert minimum == requested
+    assert minimum != measured
+
+
 def test_on_macos_a_window_shown_again_keeps_the_size_it_had(window, monkeypatch):
-    monkeypatch.setattr(gui_module, "refits_after_first_map", lambda windowing_system: True)
+    monkeypatch.setattr(gui_module, "sizes_again_after_first_map", lambda windowing_system: True)
     root = window(FakeTwitch())._root
     root.update()
     root.geometry("{}x{}".format(*root.minsize()))
