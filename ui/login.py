@@ -1,4 +1,4 @@
-"""`LoginForm`, the panel of the Main tab that shows the login status and waits for the Login button."""
+"""`LoginForm`, the panel of the Main tab that shows the login status and waits for a login or a token."""
 from __future__ import annotations
 
 import asyncio
@@ -9,6 +9,7 @@ from yarl import URL
 
 from translate import _
 from utils import webopen
+from tokencheck import entered_token
 
 if TYPE_CHECKING:
     from gui import GUIManager
@@ -27,27 +28,47 @@ class LoginForm:
         ttk.Label(frame, textvariable=self._var, justify="center").grid(column=1, row=0)
 
         self._confirm = asyncio.Event()
+        self._entered: str | None = None
         self._button = ttk.Button(
             frame, text=_("gui", "login", "button"), command=self._confirm.set, state="disabled"
         )
         self._button.grid(column=0, row=1, columnspan=2)
+        ttk.Label(frame, text=_("gui", "login", "token")).grid(column=0, row=2)
+        self._token = ttk.Entry(frame, width=12, show="*", state="disabled")
+        self._token.grid(column=1, row=2, sticky="ew")
+        self._token_button = ttk.Button(
+            frame, text=_("gui", "login", "token_button"), command=self._use_token, state="disabled"
+        )
+        self._token_button.grid(column=0, row=3, columnspan=2, pady=(2, 0))
         self.update(_("gui", "login", "logged_out"), None)
 
-    async def wait_for_login_press(self) -> None:
-        self._confirm.clear()
-        try:
-            self._button.config(state="normal")
-            await self._manager.coro_unless_closed(self._confirm.wait())
-        finally:
-            self._button.config(state="disabled")
+    def _use_token(self) -> None:
+        if token := entered_token(self._token.get()):
+            self._entered = token
+            self._token.delete(0, "end")
+            self._confirm.set()
 
-    async def ask_login(self) -> None:
-        """Ask the user to log in, and return when they press Login."""
+    async def wait_for_login_press(self) -> str | None:
+        """Wait for a press of Login, which returns None, or of the token button with a token, which returns it."""
+        self._confirm.clear()
+        self._entered = None
+        widgets = (self._button, self._token, self._token_button)
+        try:
+            for widget in widgets:
+                widget.config(state="normal")
+            await self._manager.coro_unless_closed(self._confirm.wait())
+            return self._entered
+        finally:
+            for widget in widgets:
+                widget.config(state="disabled")
+
+    async def ask_login(self) -> str | None:
+        """Ask the user to log in, and return the token they entered, or None when they press Login."""
         self.update(_("gui", "login", "required"), None)
         # ensure the window isn't hidden into tray when this runs
         self._manager.grab_attention(sound=False)
         self._manager.print(_("gui", "login", "request"))
-        await self.wait_for_login_press()
+        return await self.wait_for_login_press()
 
     async def ask_enter_code(self, page_url: URL, user_code: str) -> None:
         """Show the code to enter, then open the activation page in the browser."""

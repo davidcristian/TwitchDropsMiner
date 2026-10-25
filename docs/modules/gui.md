@@ -20,7 +20,7 @@ and keeps it as an attribute. The labels in quotes are the English strings from 
 | `tray` | `TrayIcon` | all | The "Minimize to Tray" button at the top right, and the tray icon |
 | `status` | `StatusBar` | Main | One line that says what the app does now, such as "Fetching inventory..." |
 | `websockets` | `WebsocketStatus` | Main | The state and topic count of each of the `MAX_WEBSOCKETS` (8) websockets |
-| `login` | `LoginForm` | Main | The login status, the user ID and the "Login" button |
+| `login` | `LoginForm` | Main | The login status, the user ID, the "Login" button, and the masked "Token:" entry with the "Use token" button, all three enabled only while the login waits |
 | `progress` | `CampaignProgress` | Main | Game, campaign and rewards of the current drop, two progress bars, a countdown |
 | `output` | `ConsoleOutput` | Main | The Output box: a read-only `tk.Text` with a time stamp on each line |
 | `channels` | `ChannelList` | Main | The channel table and the "Switch" button |

@@ -24,9 +24,9 @@ message in the Output box through it too, because the usher URL has the playback
   - any other value is returned as it is. So is a URL given as a `str`.
 - `HIDDEN` is `"<hidden>"`.
 - `SECRET_KEYS` is the set of key and query parameter names whose values are hidden: `access_token`,
-  `auth_token`, `authorization`, `cookie`, `device_code`, `password`, `proxy-authorization`, `refresh_token`,
-  `set-cookie` and `token`. `sig`, the signature that goes with the playback token, is not in it
-  ([ADR-0011](../adr/ADR-0011-secrets-in-logs.md) says why).
+  `auth-token` (the cookie that keeps the login token), `auth_token`, `authorization`, `cookie`, `device_code`,
+  `password`, `proxy-authorization`, `refresh_token`, `set-cookie` and `token`. `sig`, the signature that goes
+  with the playback token, is not in it ([ADR-0011](../adr/ADR-0011-secrets-in-logs.md) says why).
 
 ## Invariants
 

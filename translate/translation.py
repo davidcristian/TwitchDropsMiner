@@ -25,6 +25,8 @@ class StatusMessages(TypedDict):
 class LoginMessages(TypedDict):
     unexpected_content: str
     no_code: str
+    token_rejected: str
+    unknown_client: str
 
 
 class ErrorMessages(TypedDict):
@@ -80,6 +82,8 @@ class GUILoginForm(TypedDict):
     enter_code: str
     required: str
     button: str
+    token: str
+    token_button: str
 
 
 class GUIWebsocket(TypedDict):

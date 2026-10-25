@@ -78,7 +78,10 @@ From source, the same command is `env/bin/python main.py -vvv --log`.
 
 ## Logging in
 
-The app logs in through Twitch's device activation page, not through a password:
+The app logs in with a code on Twitch's device activation page, or with a token that you copy from your browser.
+It never asks for your password.
+
+**With a code:**
 
 1. Press `Login` in the Login Form on the Main tab.
 2. The Output box shows a code, and a few seconds later your browser opens the Twitch activation page. If no
@@ -88,17 +91,43 @@ The app logs in through Twitch's device activation page, not through a password:
 The app checks every few seconds whether you entered the code. When the code expires first, press `Login` again
 for a new one.
 
+**When `Login` shows no code.** Since about 2026-09-18, Twitch has rejected the device code login, the login with a
+code above, for the client that the app uses. A `Login` press then shows "The login could not get a code from
+Twitch: invalid client" in the Output box, or another message from Twitch after the colon. While Twitch does so,
+log in with a token from your browser instead.
+
+**With a token from your browser:**
+
+1. Log in to <https://www.twitch.tv> in your browser with the account the app should mine on.
+2. Open the browser's developer tools. In most browsers, press `F12`.
+3. Open the panel that shows the stored data of the page: `Application` in Chrome and Edge, `Storage` in
+   Firefox.
+4. Under `Cookies`, select `https://www.twitch.tv`.
+5. Find the cookie named `auth-token`, and copy its value. Copy the value only, not the name.
+6. In the app, paste the value into the `Token:` entry of the Login Form, and press `Use token`.
+
+The app sends the token to Twitch once to check it. "Twitch did not accept the token." means that the value is
+wrong or the session has ended: copy it again. "The token belongs to a Twitch client that the app does not know."
+means that the value is not the `auth-token` of `https://www.twitch.tv`. After either message, the Login Form
+waits for the next token.
+
+The token works like a password: anyone who has it can use your Twitch account. Do not share it. The app keeps
+it in `cookies.jar`, like a login with a code. The token belongs to the session of that browser, so logging out
+of Twitch in that browser ends it, and at its next start the app asks you to log in again. `Invalidate` in the
+app ends the token too, which logs that browser out of Twitch.
+
+The app reads nothing from your browser by itself, and it takes no part in Twitch's integrity check. Twitch's
+website sends an integrity token, which shows Twitch that a real browser runs the page, with some of its
+requests. The app sends none. If Twitch requires one for the requests that the app sends with the token, each
+run ends with an error from Twitch, such as "failed integrity check", and the app restarts after the time set in
+"Restart after a crash after" on the Settings tab. The app does nothing to get past the check, so the token
+login does not work then.
+
 **To log out or switch accounts**, press `Invalidate` on the Help tab. It ends the session at Twitch, deletes
 `cookies.jar` and starts the login again. Another way is to close the app, delete `cookies.jar` and start the app.
 Delete `cookies.jar` the same way when the login keeps failing. When Twitch rejects the saved session, the app
 deletes it and asks you to log in again by itself. When `cookies.jar` is damaged, the app asks you to log in
 again, and with `-v` the Output box shows "Could not load cookies.jar" with the error.
-
-**When `Login` shows no code.** Since about 2026-09-18, Twitch has rejected the device code login, the login with a
-code above, for the client that the app uses. A `Login` press then shows "The login could not get a code from
-Twitch: invalid client" in the Output box, or another message from Twitch after the colon. While Twitch does so,
-the login saved in `cookies.jar` is the only one the app can use. `Invalidate` and deleting `cookies.jar` both end
-that login, and the app cannot log in again until Twitch accepts the device code login again.
 
 **"Unexpected content type returned, usually due to being redirected."** Something between the app and Twitch
 sent the response instead of Twitch. This happens on networks that need a login page before they allow internet

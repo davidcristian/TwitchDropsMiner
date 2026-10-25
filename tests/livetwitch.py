@@ -68,6 +68,8 @@ class FakeSession:
         self._pubsub = pubsub
         self.closed = False
         self.timeout = aiohttp.ClientTimeout(sock_connect=5, total=10)
+        # the default headers, which aiohttp sends with every request
+        self.headers: dict[str, str] = {}
 
     @cached_property
     def cookie_jar(self) -> aiohttp.CookieJar:

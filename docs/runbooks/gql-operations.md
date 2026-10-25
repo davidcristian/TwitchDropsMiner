@@ -138,15 +138,17 @@ PersistedQueryNotFound for the old hash, so the inventory reload fails."
 `ClientType` in `twitchapi/clients.py` holds four `ClientInfo` entries: `WEB`, `MOBILE_WEB`, `ANDROID_APP` and
 `SMARTBOX`. Each has a `CLIENT_URL`, a `CLIENT_ID` and a user agent or a list of them. From a list, `ClientInfo`
 picks one at random when `twitchapi/clients.py` is imported, so once per run. `Twitch.__init__` sets
-`self._client_type` to `ClientType.ANDROID_APP`, and no code reads the other three entries. The app sends the
-client ID in the `Client-Id` header and in the login requests, and the user agent in the `User-Agent` header.
+`self._client_type` to `ClientType.ANDROID_APP`, and the login switches it to the entry of the token's client
+([ADR-0021](../adr/ADR-0021-browser-token-login.md)). The app sends the client ID in the `Client-Id` header and in
+the login requests, and the user agent in the `User-Agent` header.
 
 - **The user agent.** No code checks it, and no error message names it. Upstream updates the version numbers in
   these strings from time to time, in commits named `User agent update`. Bring those in with
-  [upstream-fixes.md](upstream-fixes.md). Only a change to the `ANDROID_APP` list changes what the app sends.
-- **The client ID.** A new `CLIENT_ID` in `ANDROID_APP`, or a switch of `_client_type` to another entry, logs
-  every user out once. For a new `CLIENT_ID`, `_AuthState._validate` compares the client ID that Twitch reports
-  for the saved token with `CLIENT_ID`; when they differ, it logs `Cookie client ID mismatch`, deletes
-  `cookies.jar` and starts the login again. After a switch to an entry with another `CLIENT_URL`, the jar has no
-  token for that URL, so the login starts without that check. Say so in the pull request, because every user
-  sees it. [ADR-0010](../adr/ADR-0010-device-code-login.md) states the login decision.
+  [upstream-fixes.md](upstream-fixes.md). A change to the list of the client in use, `ANDROID_APP` or the client
+  of the token, changes what the app sends.
+- **The client ID.** A new `CLIENT_ID` in an entry logs out every user whose token belongs to that entry, once.
+  `_AuthState._log_in` looks up the client ID that Twitch reports for the saved token among the entries; when no
+  entry has it, it logs `Restored session is of an unknown client`, deletes `cookies.jar` and starts the login
+  again. A switch of the client that `Twitch.__init__` sets to an entry with another `CLIENT_URL` logs every user
+  out once too, because the jar has no token for that URL. Say so in the pull request, because every user sees
+  it. [ADR-0010](../adr/ADR-0010-device-code-login.md) states the login decision.

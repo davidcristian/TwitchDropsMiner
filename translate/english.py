@@ -32,6 +32,8 @@ default_translation: Translation = {
             "Do you need to login for internet access?"
         ),
         "no_code": "The login could not get a code from Twitch: {message}",
+        "token_rejected": "Twitch did not accept the token.",
+        "unknown_client": "The token belongs to a Twitch client that the app does not know.",
     },
     "error": {
         "site_down": "Twitch is down, retrying in {seconds} seconds...",
@@ -86,6 +88,8 @@ default_translation: Translation = {
             "request": "Please log in to continue.",
             "enter_code": "Enter this code on Twitch's device activation page: {code}",
             "button": "Login",
+            "token": "Token:",
+            "token_button": "Use token",
         },
         "websocket": {
             "name": "Websocket Status",

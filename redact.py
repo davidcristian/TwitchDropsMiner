@@ -11,9 +11,10 @@ from yarl import URL
 HIDDEN = "<hidden>"
 # Header names, form fields, JSON keys and URL query parameters whose value is a secret, compared lowercase.
 # "token" is the revoke request's field and the usher URL's playback token, which identifies the user.
-# "device_code" lets anyone finish a login in progress.
+# "device_code" lets anyone finish a login in progress. "auth-token" is the cookie that holds the login token.
 SECRET_KEYS = frozenset({
     "access_token",
+    "auth-token",
     "auth_token",
     "authorization",
     "cookie",

@@ -12,6 +12,7 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
 | `__init__.py` | Imports `Twitch`. Callers import from `twitch`, never from a file of it |
 | `client.py` | `Twitch`: its attributes, `run`, the state requests `change_state`, `state_change`, `close` and `task_failed` with `STATE_ORDER`, `prevent_close`, `print`, `save`, and the choice of the channel to watch: `get_priority`, `can_watch`, `should_switch`, `watch`, `stop_watching`, `restart_watching` and `get_active_campaign` |
 | `session.py` | `_AuthState`, `save_cookies`, and `SessionMixin`, a base class of `Twitch` that holds `get_session`, `get_auth` and `wait_until_login`. All the code that reads `COOKIES_PATH` is here, so a test patches it in one file |
+| `login.py` | `LoginMixin`, a base class of `_AuthState` that holds `_log_in`, the loop that checks each token, and `_use_client`, which switches to the client of the token |
 | `requests.py` | `RequestsMixin`, a base class of `Twitch` that holds `request` and `gql_request` |
 | `inventoryfetch.py` | `InventoryFetchMixin`, a base class of `Twitch` that holds `fetch_inventory` and `fetch_campaigns` |
 | `lifecycle.py` | `LifecycleMixin`, a base class of `Twitch` that holds `shutdown`, `_await_restart` with its wait `_wait_for_reload`, `_watch_loop` and `_maintenance_task`. All the code that reads `random` and `time` is here, so a test patches each in one file |
@@ -67,8 +68,8 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
   a coroutine that ends once the login is valid. `get_session()` returns the `aiohttp.ClientSession` and creates
   it on the first call, with timeouts of 5 and 10 seconds times `settings.connection_quality` (1 to 6), and with
   the cookies of `cookies.jar`. See [Login](#login) for a file that fails to load.
-- `_client_type` is `ClientType.ANDROID_APP`, and the GUI reads its `CLIENT_ID`. Updating it is in
-  [the GQL runbook](../runbooks/gql-operations.md).
+- `_client_type` is `ClientType.ANDROID_APP` at the start of each login and the token's client type after it
+  ([Login](#login)). The GUI reads its `CLIENT_ID`. Updating it is in [the GQL runbook](../runbooks/gql-operations.md).
 
 ### Channels, campaigns and watching
 
@@ -118,20 +119,19 @@ stream without a game ([streamdata.md](streamdata.md#null-stream-fields)).
 
 ## Login
 
-`get_auth` calls `_AuthState.validate`, which holds a lock so that concurrent callers log in once. It creates a
-random `session_id`, reads `device_id` from the `unique_id` cookie that a GET of `https://www.twitch.tv` sets, and
-takes `access_token` from the `auth-token` cookie in `cookies.jar`. Without that cookie, `_oauth_login` runs the
-OAuth device code flow: it waits for the `Login` press (`ask_login`), POSTs to `https://id.twitch.tv/oauth2/device`,
-shows the code through the Login Form (`ask_enter_code`), then POSTs to `https://id.twitch.tv/oauth2/token` every
-`interval` seconds until the user has entered the code. The code is requested after the press, because its lifetime
-counts from the request. An expired code raises `RequestInvalid`, and the flow starts again with a wait for the next
-press, so each press requests one code. After a device response without a code, the flow prints Twitch's message and
-waits for the next press ([devicecode.md](devicecode.md)). A GET of `https://id.twitch.tv/oauth2/validate` returns
-`user_id`. After a 401 it clears the domain's cookies, and after a token for another client ID it deletes
-`cookies.jar`. In both cases it logs in again. Each of the two checks runs at most twice, then raises `RuntimeError`.
-At the end it saves the cookie jar with `save_cookies`, which writes a second file and renames it over `cookies.jar`.
-A save that raises `OSError`, such as on a full disk, is logged, the old `cookies.jar` stays whole and the login goes
-on ([savefiles.md](savefiles.md#saves-during-the-run-outside-the-inventory-fetch)).
+`get_auth` calls `_AuthState.validate`, which holds a lock so that concurrent callers log in once. It creates a random
+`session_id`, calls `_log_in`, and then reads `device_id` from the `unique_id` cookie that a GET of the client's
+`CLIENT_URL` sets. `_log_in` takes the token from the `auth-token` cookie of `https://www.twitch.tv` in `cookies.jar`,
+or else from `_oauth_login`, which waits for the Login Form (`ask_login`) and returns a token entered with `Use token`.
+After a `Login` press it runs the OAuth device code flow: it POSTs to `https://id.twitch.tv/oauth2/device`, shows the
+code through the Login Form (`ask_enter_code`), then POSTs to `https://id.twitch.tv/oauth2/token` every `interval`
+seconds until the user has entered the code. The code is requested after the press, because its lifetime counts from the
+request. An expired code raises `RequestInvalid`, and after a device response without a code the flow prints Twitch's
+message ([devicecode.md](devicecode.md)). Either way it waits for the next press, so each press requests one code. A GET
+of `https://id.twitch.tv/oauth2/validate` checks each token ([tokencheck.md](tokencheck.md#in-the-login)), and
+`_validate` saves the cookie jar with `save_cookies`, which writes a second file and renames it over `cookies.jar`. A
+save that raises `OSError`, such as on a full disk, is logged, the old `cookies.jar` stays whole and the login goes on
+([savefiles.md](savefiles.md#saves-during-the-run-outside-the-inventory-fetch)).
 
 When `cookies.jar` fails to load, `get_session` logs a warning with the error's class and text, empties the
 jar and goes on, so the login runs again. aiohttp reads a file that is not JSON as a pickle, so the error can
@@ -139,9 +139,9 @@ be of many types, and `get_session` catches `Exception`. With aiohttp 3.14.3, an
 a cut off file `KeyError`, a JSON list `AttributeError` and a folder `IsADirectoryError`. None of these texts
 held a cookie value.
 
-The `Invalidate` button on the Help tab revokes the token at `https://id.twitch.tv/oauth2/revoke`. On a 200
-response it calls `invalidate(delete_cookies=True)`, and in every case it enters `State.RESTART`. The device
-code flow is the only login: the app has no password login ([ADR-0010](../adr/ADR-0010-device-code-login.md)).
+The `Invalidate` button on the Help tab revokes the token at `https://id.twitch.tv/oauth2/revoke`, with the
+`CLIENT_ID` of `_client_type`. On a 200 response it calls `invalidate(delete_cookies=True)`, and in every case it
+enters `State.RESTART`. The app has no password login ([ADR-0010](../adr/ADR-0010-device-code-login.md)).
 
 ## State machine
 
@@ -296,5 +296,5 @@ scanned again. Each scan error is printed once while it persists, as the transla
   event that arrives during the requests, and a `stream-down` for the watched channel still makes the app switch.
 
 **Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `gqldata`, `streamdata`, `devicecode`,
-`translate`, `redact`, `savefiles`, `ratelimit`, `restartdelay`, `exceptions`, `utils`, `twitchapi` and
-`constants`. Third party: aiohttp and yarl.
+`tokencheck`, `translate`, `redact`, `savefiles`, `ratelimit`, `restartdelay`, `exceptions`, `utils`, `twitchapi`
+and `constants`. Third party: aiohttp and yarl.

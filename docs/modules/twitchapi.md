@@ -65,9 +65,10 @@ body runs at import, so one run uses one user agent from start to end.
 | `ANDROID_APP` | `https://www.twitch.tv` | a list of the Twitch Android app |
 | `SMARTBOX` | `https://android.tv.twitch.tv` | one Android TV box |
 
-`Twitch.__init__` sets `_client_type` to `ClientType.ANDROID_APP`. The `aiohttp` session sends its user agent
-with every request, and `twitch/session.py` adds its client ID to the login and GQL requests.
-[gql-operations.md](../runbooks/gql-operations.md) covers updating them.
+`Twitch.__init__` sets `_client_type` to `ClientType.ANDROID_APP`, and the login switches it to the entry whose
+`CLIENT_ID` the token check returns ([tokencheck.md](tokencheck.md#the-client-of-the-token)). The `aiohttp`
+session sends its user agent with every request, and `twitch/session.py` adds its client ID to the login and GQL
+requests. [gql-operations.md](../runbooks/gql-operations.md) covers updating them.
 
 ### PubSub topics
 

@@ -1,6 +1,7 @@
 import copy
 import json
 from collections.abc import Mapping
+from http.cookies import SimpleCookie
 from typing import NamedTuple
 
 import pytest
@@ -13,6 +14,7 @@ from redact import HIDDEN, redact
 
 DOCUMENTED_SECRET_KEYS = (
     "access_token",
+    "auth-token",
     "auth_token",
     "authorization",
     "cookie",
@@ -54,6 +56,13 @@ def test_redact_hides_the_whole_value_of_a_secret_key():
         "cookie": HIDDEN,
         "token": HIDDEN,
     }
+
+
+def test_redact_hides_the_login_token_in_cookies_by_name():
+    cookies = SimpleCookie()
+    cookies["auth-token"] = "s3cret"
+
+    assert redact(cookies) == {"auth-token": HIDDEN}
 
 
 def test_redact_hides_secrets_in_nested_values():

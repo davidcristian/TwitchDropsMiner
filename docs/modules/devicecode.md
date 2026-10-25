@@ -26,7 +26,8 @@ sends no request and needs neither Twitch nor a display.
    client";
 3. waits for the next `Login` press, and sends one device request after it.
 
-So each press sends one device request and no other request, and the app sends none by itself. The run goes
-on, without the restart wait of a fatal error ([twitch.md](twitch.md#restart-after-a-fatal-error)).
+So each press sends one device request, and the app sends none by itself. Before it, the first press of a run
+sends the GET of `https://www.twitch.tv` that reads the device ID, which every run sends once. The run goes on,
+without the restart wait of a fatal error ([twitch.md](twitch.md#restart-after-a-fatal-error)).
 
 **Dependencies.** None: the standard library only.

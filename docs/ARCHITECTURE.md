@@ -96,10 +96,13 @@ the wait after the next error is `restart_delay` again.
 
 ## Data flow
 
-1. **Login.** `_AuthState._validate` takes the device ID from the `unique_id` cookie of `www.twitch.tv`.
-   Without an `auth-token` cookie, `_oauth_login` runs the device code flow with the `ClientType.ANDROID_APP`
-   client ID: at each press of `Login`, it requests a code from `id.twitch.tv/oauth2/device`, prints it, opens
-   the activation page and polls `id.twitch.tv/oauth2/token`. `id.twitch.tv/oauth2/validate` returns the user ID.
+1. **Login.** `_AuthState._log_in` takes the token from the `auth-token` cookie in `cookies.jar`. Without it,
+   the Login Form returns a token that the user copied from the browser, or `_oauth_login` runs the device code
+   flow with the `ClientType.ANDROID_APP` client ID: at each press of `Login`, it requests a code from
+   `id.twitch.tv/oauth2/device`, prints it, opens the activation page and polls `id.twitch.tv/oauth2/token`.
+   `id.twitch.tv/oauth2/validate` returns the client ID and the user ID of the token, and the app acts as that
+   client from then on ([ADR-0021](adr/ADR-0021-browser-token-login.md)). `_validate` then takes the device ID
+   from the `unique_id` cookie of the client's URL, such as `www.twitch.tv`.
 2. **Inventory.** `fetch_inventory` sends `Inventory` (campaigns in progress, rewards claimed), `Campaigns`
    (every campaign; it keeps `ACTIVE` and `UPCOMING`) and `CampaignDetails` for each campaign, 20 per request.
    It builds a `DropsCampaign` from each, and the Inventory tab loads their images through `ImageCache`.

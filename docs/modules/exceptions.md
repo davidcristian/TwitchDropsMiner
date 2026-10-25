@@ -67,9 +67,10 @@ No other code catches `MinerException` by name.
 
 **`RequestException`** is the base class for request failures.
 
-- Raised directly only by `Twitch.run`, which wraps an `aiohttp.ContentTypeError` in one with the message
-  `_("login", "unexpected_content")` and the original error as its cause. It goes to
-  `Twitch._await_restart` like any other fatal error.
+- Raised directly by `Twitch.run`, which wraps an `aiohttp.ContentTypeError` in one with the message
+  `_("login", "unexpected_content")` and the original error as its cause, and by `_AuthState._log_in` for a
+  token check response that is not 200 or 401, or a 200 without a user ID
+  ([tokencheck.md](tokencheck.md#in-the-login)). It goes to `Twitch._await_restart` like any other fatal error.
 - Caught by `Channel._send_watch_spade` and `Channel._send_watch_gql`, which return `False`. No code calls
   either method.
 

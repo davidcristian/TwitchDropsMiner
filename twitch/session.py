@@ -18,6 +18,8 @@ from exceptions import RequestInvalid
 from utils import CHARS_HEX_LOWER, create_nonce
 from constants import COOKIES_PATH
 
+from .login import LoginMixin
+
 if TYPE_CHECKING:
     from collections import abc
 
@@ -40,11 +42,13 @@ def save_cookies(jar: aiohttp.CookieJar) -> None:
     )
 
 
-class _AuthState:
+class _AuthState(LoginMixin):
     def __init__(self, twitch: Twitch):
         self._twitch: Twitch = twitch
         self._lock = asyncio.Lock()
         self._logged_in = asyncio.Event()
+        # the client of the device code login, at whose URL cookies.jar keeps the token; each login starts with it
+        self._login_client: ClientInfo = twitch._client_type
         self.user_id: int
         self.device_id: str
         self.session_id: str
@@ -95,7 +99,6 @@ class _AuthState:
             "Pragma": "no-cache",
             "Referer": str(client_info.CLIENT_URL),
             "User-Agent": client_info.USER_AGENT,
-            "X-Device-Id": self.device_id,
         }
         device_payload = {
             "client_id": client_info.CLIENT_ID,
@@ -103,7 +106,10 @@ class _AuthState:
         }
         while True:
             # the code is valid for expires_in from its request, so it is requested only after the press
-            await login_form.ask_login()
+            if (token := await login_form.ask_login()) is not None:
+                return token
+            await self._read_device_id()
+            headers["X-Device-Id"] = self.device_id
             try:
                 now = datetime.now(timezone.utc)
                 async with self._twitch.request(
@@ -182,68 +188,25 @@ class _AuthState:
     async def _validate(self):
         if not hasattr(self, "session_id"):
             self.session_id = create_nonce(CHARS_HEX_LOWER, 16)
-        if not self._hasattrs("device_id", "access_token", "user_id"):
-            session = await self._twitch.get_session()
-            jar = cast(aiohttp.CookieJar, session.cookie_jar)
-            client_info: ClientInfo = self._twitch._client_type
-        if not self._hasattrs("device_id"):
-            async with self._twitch.request(
-                "GET", client_info.CLIENT_URL, headers=self.headers()
-            ) as response:
-                page_html = await response.text("utf8")
-                assert page_html is not None
-            # doing the request ends up setting the "unique_id" value in the cookie
-            cookie = jar.filter_cookies(client_info.CLIENT_URL)
-            self.device_id = cookie["unique_id"].value
         if not self._hasattrs("access_token", "user_id"):
-            # looks like we're missing something
-            login_form: LoginForm = self._twitch.gui.login
-            logger.info("Checking login")
-            login_form.update(_("gui", "login", "logging_in"), None)
-            for client_mismatch_attempt in range(2):
-                for invalid_token_attempt in range(2):
-                    cookie = jar.filter_cookies(client_info.CLIENT_URL)
-                    if "auth-token" not in cookie:
-                        self.access_token = await self._oauth_login()
-                        cookie["auth-token"] = self.access_token
-                    elif not hasattr(self, "access_token"):
-                        logger.info("Restoring session from cookie")
-                        self.access_token = cookie["auth-token"].value
-                    # validate the auth token, by obtaining user_id
-                    async with self._twitch.request(
-                        "GET",
-                        "https://id.twitch.tv/oauth2/validate",
-                        headers={"Authorization": f"OAuth {self.access_token}"}
-                    ) as response:
-                        if response.status == 401:
-                            # the access token we have is invalid - clear the cookie and reauth
-                            logger.info("Restored session is invalid")
-                            assert client_info.CLIENT_URL.host is not None
-                            jar.clear_domain(client_info.CLIENT_URL.host)
-                            continue
-                        elif response.status == 200:
-                            validate_response = await response.json()
-                            break
-                else:
-                    raise RuntimeError("Login verification failure (step #2)")
-                # ensure the cookie's client ID matches the currently selected client
-                if validate_response["client_id"] == client_info.CLIENT_ID:
-                    break
-                # otherwise, we need to delete the entire cookie file and clear the jar
-                logger.info("Cookie client ID mismatch")
-                jar.clear()
-                COOKIES_PATH.unlink(missing_ok=True)
-            else:
-                raise RuntimeError("Login verification failure (step #1)")
-            self.user_id = int(validate_response["user_id"])
-            cookie["persistent"] = str(self.user_id)
-            logger.info(f"Login successful, user ID: {self.user_id}")
-            login_form.update(_("gui", "login", "logged_in"), self.user_id)
-            # update our cookie and save it
-            jar.update_cookies(cookie, client_info.CLIENT_URL)
+            jar = cast(aiohttp.CookieJar, (await self._twitch.get_session()).cookie_jar)
+            await self._log_in(jar)
             save_cookies(jar)
+        # the device ID comes from the URL of the token's client, so it is read after the login
+        await self._read_device_id()
         self._twitch.gui.help._invalidate_button.config(state="normal")
         self._logged_in.set()
+
+    async def _read_device_id(self) -> None:
+        """Set device_id, when it is not set, to the unique_id cookie that a GET of the client's URL sets."""
+        if hasattr(self, "device_id"):
+            return
+        client_url = self._twitch._client_type.CLIENT_URL
+        async with self._twitch.request("GET", client_url, headers=self.headers()) as response:
+            page_html = await response.text("utf8")
+            assert page_html is not None
+        jar = cast(aiohttp.CookieJar, (await self._twitch.get_session()).cookie_jar)
+        self.device_id = jar.filter_cookies(client_url)["unique_id"].value
 
 
 class SessionMixin:
