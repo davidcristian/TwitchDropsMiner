@@ -5,6 +5,7 @@
         "fatal_error": "Végzetes hiba történt:\n",
         "restarting": "Automatikus újraindítás ekkor: {time}...",
         "restart_longer": "A hiba kevesebb mint egy órával az előző újraindítás után jelentkezett, ezért a várakozás hosszabb a beállításnál: {minutes} perc.",
+        "restart_now": "Az azonnali újraindításhoz nyomd meg az „Újratöltés” gombot a Beállítások lapon.",
         "watching": "Most nézve: {channel}",
         "goes_online": "{channel} ONLINE lett, átváltás...",
         "goes_offline": "{channel} OFFLINE lett, átváltás...",
