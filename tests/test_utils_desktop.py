@@ -3,7 +3,6 @@ from __future__ import annotations
 import gc
 import os
 import sys
-import tkinter as tk
 from types import SimpleNamespace
 
 import pytest
@@ -15,13 +14,6 @@ from utils import set_root_icon, webopen
 
 LD = "LD_LIBRARY_PATH"
 ORIGINAL = "LD_LIBRARY_PATH_ORIG"
-
-
-@pytest.fixture
-def root(display):
-    root = tk.Tk()
-    yield root
-    root.destroy()
 
 
 def test_set_root_icon_keeps_the_icon_image_after_it_returns(root, tmp_path):

@@ -45,13 +45,6 @@ def test_fitted_size_is_never_below_the_smallest_size():
     assert fitted_size(Size(1500, 900), Size(1400, 800), Size(1300, 700)) == Size(1400, 800)
 
 
-@pytest.fixture
-def root(display):
-    root = tk.Tk()
-    yield root
-    root.destroy()
-
-
 def fitted_area(root: tk.Tk, window: Size | None = None) -> ScrollArea:
     """Return a fitted area with content of the CONTENT size, in a window of the `window` size or its own size."""
     area = ScrollArea(root, row=0, fit=True)

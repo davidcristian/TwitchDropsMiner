@@ -1,6 +1,6 @@
 # ADR-0013: Tests assert behavior, with an 80% coverage floor
 
-**Status:** Accepted (2026-10-23)
+**Status:** Accepted (2026-10-25)
 
 ## Context
 
@@ -77,6 +77,11 @@ installed none of these packages, so a fix in one of them was checked by a scrip
      `init.tcl`, Tcl found its write-only standard channel under that number and opened no channel, and the Tk
      being created failed with `Can't find a usable init.tcl`. The app is not affected, because no code of it
      closes or replaces a standard handle.
+   - On macOS, Python with Tk 9.0.4 crashes in the `update_idletasks` of a new Tk when an earlier Tk was
+     destroyed before it handled any event. So the `display` and `root` fixtures of `tests/conftest.py`
+     destroy their Tk through `destroy_tk`, which runs `update_idletasks` first. The app is not affected:
+     `GUIManager.__init__` runs `update_idletasks`, and `main.py` updates its argument parser window before it
+     destroys it.
 7. **A run fails when a test leaves a thread running.** Python's exit waits for each thread that is not a
    daemon thread, so such a thread keeps a finished run open forever, and the pre-commit hook with it.
    `tests/threadcheck.py`, which `tests/conftest.py` loads, gives such a thread 5 seconds (`GRACE`) after the last

@@ -7,11 +7,15 @@ import sys
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
+from typing import TYPE_CHECKING
 
 import pytest
 
 from gitrepo import isolate_git
 from threadcheck import pytest_sessionfinish, pytest_unconfigure  # noqa: F401
+
+if TYPE_CHECKING:
+    import tkinter
 
 # pystray picks its tray backend when ui/tray.py imports it. The others need GTK or a display, which CI does not have.
 os.environ["PYSTRAY_BACKEND"] = "dummy"
@@ -69,11 +73,29 @@ def display():
     import tkinter as tk
 
     try:
-        tk.Tk().destroy()
+        root = tk.Tk()
     except tk.TclError as exc:
         if os.environ.get("CI"):
             pytest.fail(f"Tk cannot open a window: {exc}")
         pytest.skip(f"Tk cannot open a window ({exc}). On Linux, `just check` runs the tests under xvfb-run")
+    destroy_tk(root)
+
+
+def destroy_tk(root: tkinter.Tk) -> None:
+    """Destroy `root` after it handles its idle events."""
+    # Tk 9 on macOS crashes in the next Tk's update_idletasks when a Tk is destroyed before it handles an event
+    root.update_idletasks()
+    root.destroy()
+
+
+@pytest.fixture
+def root(display):
+    """Return a new Tk root window, and destroy it after the test."""
+    import tkinter as tk
+
+    root = tk.Tk()
+    yield root
+    destroy_tk(root)
 
 
 @pytest.fixture
