@@ -5,6 +5,7 @@
         "fatal_error": "Fatale fout opgetreden:\n",
         "restarting": "Automatisch opnieuw starten om {time}...",
         "restart_longer": "De fout trad minder dan een uur na de vorige herstart op, dus de wachttijd is langer dan de instelling: {minutes} minuten.",
+        "restart_now": "Druk op \"Herladen\" op het tabblad \"Instellingen\" om nu opnieuw te starten.",
         "watching": "{channel} wordt bekeken",
         "goes_online": "{channel} is ONLINE gegaan, wijzig...",
         "goes_offline": "{channel} is OFFLINE gegaan, wijzig...",
@@ -166,7 +167,7 @@
                 "source": "Gekozen door",
                 "installed": "geïnstalleerd",
                 "unlisted": "op geen enkele lijst",
-                "count": "{count} game(s) worden verwerkt, hoogste prioriteit eerst.",
+                "count": "Games die worden verwerkt: {count}, hoogste prioriteit eerst.",
                 "empty": "Nog niets bepaald - druk hieronder op \"Herladen\"."
             },
             "detect": {
@@ -181,7 +182,7 @@
                 "no_games": "Geen Steam- of Epic-games gevonden in: {path}",
                 "failed": "{path}: {reason}",
                 "detected": "{count} van {total} geïnstalleerde games herkend.",
-                "restored": "{count} games uit de laatste scan.",
+                "restored": "Games uit de laatste scan: {count}.",
                 "empty": "Nog niets gedetecteerd - voeg hieronder een gamemap toe.",
                 "no_dirs": "Geen mappen toegevoegd."
             },
