@@ -90,7 +90,8 @@ Never (`restart_delay` 0), `run` raises it again, and `main.py` prints it and ke
 starts `_run` again, which begins with a full reload. The wait is `restart_delay` after the first error, and it
 doubles after each run that ends within an hour, up to 60 minutes ([restartdelay.md](modules/restartdelay.md)).
 So an error that ends every run reloads at most once an hour after its first hour. The error of a failed
-critical task takes the same path: `RESTART` raises it from `_run`.
+critical task takes the same path: `RESTART` raises it from `_run`. A `Reload` press ends the wait at once, and
+the wait after the next error is `restart_delay` again.
 
 ## Data flow
 

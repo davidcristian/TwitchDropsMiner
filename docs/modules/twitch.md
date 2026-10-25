@@ -14,7 +14,7 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
 | `session.py` | `_AuthState`, `save_cookies`, and `SessionMixin`, a base class of `Twitch` that holds `get_session`, `get_auth` and `wait_until_login`. All the code that reads `COOKIES_PATH` is here, so a test patches it in one file |
 | `requests.py` | `RequestsMixin`, a base class of `Twitch` that holds `request` and `gql_request` |
 | `inventoryfetch.py` | `InventoryFetchMixin`, a base class of `Twitch` that holds `fetch_inventory` and `fetch_campaigns` |
-| `lifecycle.py` | `LifecycleMixin`, a base class of `Twitch` that holds `shutdown`, `_await_restart`, `_watch_loop` and `_maintenance_task`. All the code that reads `random` and `time` is here, so a test patches each in one file |
+| `lifecycle.py` | `LifecycleMixin`, a base class of `Twitch` that holds `shutdown`, `_await_restart` with its wait `_wait_for_reload`, `_watch_loop` and `_maintenance_task`. All the code that reads `random` and `time` is here, so a test patches each in one file |
 | `states.py` | `StatesMixin`, a base class of `Twitch` that holds `_run` and the methods of `INVENTORY_FETCH`, `GAMES_UPDATE` and `CHANNEL_SWITCH`, such as `_run_games_update` |
 | `channels.py` | `ChannelsMixin`, a base class of `Twitch` that holds the methods of `CHANNELS_CLEANUP` and `CHANNELS_FETCH`, and `_slot_order`. It is the only file of the package that reads `MAX_CHANNELS`, so a test patches it here |
 | `discovery.py` | `DiscoveryMixin`, a base class of `Twitch` that holds `detect_games`, `get_live_streams` and `bulk_check_online` |
@@ -46,7 +46,7 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
   call cannot restart an app that is closing.
 - `state_change(state)` returns a function with no arguments that calls `change_state(state)`. The GUI uses it
   as a button command: `Switch` in the channel list (`State.CHANNEL_SWITCH`) and `Reload` on the Settings tab
-  (`State.INVENTORY_FETCH`).
+  (`State.INVENTORY_FETCH`). A `Reload` press, unlike a `change_state` call, also ends the wait before a restart.
 
 ### Requests
 
@@ -220,8 +220,9 @@ to 60 seconds (`RESTART_JITTER`). `run` calls `_restart_delay.started()` before 
 at most 60 minutes ([restartdelay.md](restartdelay.md)). A wait longer than the setting adds the line
 `status.restart_longer` to the Output box. `run` then starts `_run` again, which begins with a full reload, so
 an error that ends every run reloads at most once an hour after its first hour. Closing the window ends the
-wait and the app. The setting is "Restart after a crash after" on the Settings tab: "Never (stay stopped)",
-stored as 0, or 1, 5, 10, 15, 30 or 60 minutes, default 10
+wait and the app. A `Reload` press ends the wait too: `run` starts `_run` at once, and `_restart_delay.reset()`
+makes the next wait the setting. The setting is "Restart after a crash after" on the Settings tab: "Never (stay
+stopped)", stored as 0, or 1, 5, 10, 15, 30 or 60 minutes, default 10
 ([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)).
 
 ## Wanted games

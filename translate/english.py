@@ -17,6 +17,7 @@ default_translation: Translation = {
             "The error came less than an hour after the last restart, "
             "so the wait is longer than the setting: {minutes} minutes."
         ),
+        "restart_now": "Press Reload on the Settings tab to restart now.",
         "watching": "Watching: {channel}",
         "goes_online": "{channel} goes ONLINE, switching...",
         "goes_offline": "{channel} goes OFFLINE, switching...",

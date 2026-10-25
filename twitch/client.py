@@ -69,6 +69,8 @@ class Twitch(
         # State management
         self._state: State = State.IDLE
         self._state_change = asyncio.Event()
+        # set by a press of the Reload button, which ends the wait of _await_restart
+        self._reload_pressed: bool = False
         self.wanted_games: list[Game] = []
         self.inventory: list[DropsCampaign] = []
         self._drops: dict[str, TimedDrop] = {}
@@ -116,9 +118,16 @@ class Twitch(
         self._state_change.set()
 
     def state_change(self, state: State) -> abc.Callable[[], None]:
-        # this is identical to change_state, but defers the call
-        # perfect for GUI usage
-        return partial(self.change_state, state)
+        """Return the command of a button that requests state."""
+        return partial(self._press, state)
+
+    def _press(self, state: State) -> None:
+        """Request state for a button, and mark a Reload press, which ends the wait before a restart."""
+        # change_state sets no mark, so a reload that a task of the failed run requests, such as process_drops
+        # after a claim, does not end the wait
+        if state is State.INVENTORY_FETCH:
+            self._reload_pressed = True
+        self.change_state(state)
 
     def close(self):
         """

@@ -26,6 +26,10 @@ class RestartDelay:
         """Record that a run started now."""
         self._started_at = self._clock()
 
+    def reset(self) -> None:
+        """Forget the last wait, so the wait after the next error is the setting, as after a start of the app."""
+        self._wait = 0
+
     def next_minutes(self, minutes: int) -> int:
         """Return the wait after a run ended on a fatal error, where minutes is the `restart_delay` setting."""
         started_at = self._started_at

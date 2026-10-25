@@ -78,3 +78,20 @@ def test_it_reads_no_time_until_a_run_starts(clock):
     assert clock.reads == 0
     delays.started()
     assert clock.reads == 1
+
+
+def test_a_reset_sets_the_next_wait_back_to_the_setting(delays, clock):
+    assert waits(delays, clock, [1, 1, 1]) == [1, 2, 4]
+
+    delays.reset()
+
+    assert waits(delays, clock, [1, 1]) == [1, 2]
+
+
+def test_a_reset_before_the_first_error_reads_no_time_and_keeps_the_setting(clock):
+    delays = RestartDelay(clock)
+
+    delays.reset()
+
+    assert clock.reads == 0
+    assert waits(delays, clock, [5]) == [5]

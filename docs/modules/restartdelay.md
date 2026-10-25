@@ -17,6 +17,9 @@ it with a fake clock.
   - after a run shorter than `RESET_AFTER` (3600 seconds), the last wait doubled, at most `LONGEST` (60), and
     never less than `minutes`.
   - after a run of `RESET_AFTER` or longer, after the first error, and when no run has started, `minutes`.
+- `reset()` forgets the last wait, so `next_minutes` returns `minutes` after the next error, as after the first.
+  `Twitch._await_restart` calls it when a `Reload` press ends the wait, because a press starts a new run as a
+  start of the app does ([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)).
 
 ## Invariants
 

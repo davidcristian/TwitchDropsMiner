@@ -12,6 +12,7 @@ class StatusMessages(TypedDict):
     fatal_error: str
     restarting: str
     restart_longer: str
+    restart_now: str
     watching: str
     goes_online: str
     goes_offline: str

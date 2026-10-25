@@ -1,6 +1,6 @@
 # ADR-0006: Restart after a fatal error
 
-**Status:** Accepted (2026-10-22)
+**Status:** Accepted (2026-10-25)
 
 ## Context
 
@@ -17,6 +17,9 @@ Each restart begins with a full reload, the most expensive work the app does
 operation that each run sends. With the same delay after every error, such an error reloads once per delay: up
 to 49 times an hour at the 1 minute choice and 5.9 at the default, against once an hour in a run that works
 ([019](../refinements/tasks/019-restart-runs-a-full-reload.md)).
+
+A longer wait after a repeated error leaves a user who has fixed the cause, such as a proxy setting, waiting for
+the restart. That user needs a way to restart at once without closing the app.
 
 ## Decision
 
@@ -41,11 +44,18 @@ to 49 times an hour at the 1 minute choice and 5.9 at the default, against once 
    `RESTART_JITTER` (60 seconds). After an outage, the copies of the app restart at different moments instead
    of all at once.
 
-4. **Closing the window during the wait exits at once.** The wait is
-   `asyncio.wait_for(self.gui.wait_until_closed(), ...)`, so it ends when the user closes the window, and
-   `Twitch.run` leaves its loop when `gui.close_requested` is set. During the wait the tray icon is `error`,
-   the Status box shows `Restarting at {time}`, the Output box shows
-   `Restarting automatically at {time}...`, and the channel list is empty.
+4. **Closing the window during the wait exits at once, and a `Reload` press restarts at once.** The wait is
+   `asyncio.wait_for(self._wait_for_reload(), ...)`. `_wait_for_reload` returns when the state is `EXIT`, which
+   `GUIManager.close` requests, or when a `Reload` press set `_reload_pressed` during the wait. `Twitch.run`
+   then leaves its loop when `gui.close_requested` is set, and otherwise starts `_run` at once. Only a press
+   sets `_reload_pressed`: the button's command, which `state_change` returns, sets it, and `change_state` does
+   not. So a reload that a task of the failed run requests during the wait, as `process_drops` does at the end
+   of a drop claim, does not end it. The other buttons do not end the wait. `Invalidate` is disabled during it,
+   because `shutdown` clears the login state. `Switch`, `Rescan` and a change of the game folders can request a
+   state, which the next run drops, as it drops every request made before it
+   ([ADR-0017](ADR-0017-state-requests.md)). During the wait the tray icon is `error`, the Status box shows
+   `Restarting at {time}`, the Output box shows `Restarting automatically at {time}...` and
+   `Press Reload on the Settings tab to restart now.` (`status.restart_now`), and the channel list is empty.
 
 5. **Never stops on the error.** With `restart_delay` set to `0`, `_await_restart` returns `False` and
    `Twitch.run` raises the error. `main.py` prints it, shows "Terminated" and keeps the window open until the
@@ -61,7 +71,9 @@ to 49 times an hour at the 1 minute choice and 5.9 at the default, against once 
    more, it is the setting again. So an error that ends every run reloads at most once an hour after the first
    hour, as a run that works does. When the wait is longer than the setting, a line in the Output box before
    the restart time says so and gives the wait in minutes (`status.restart_longer`). The run's length is
-   measured on the event loop's clock, which is `time.monotonic` in the app.
+   measured on the event loop's clock, which is `time.monotonic` in the app. When a `Reload` press ends a
+   wait, `_await_restart` calls `RestartDelay.reset`, so the wait after the next error is the setting, as after
+   a start of the app.
 
 ## Consequences
 
@@ -86,8 +98,11 @@ to 49 times an hour at the 1 minute choice and 5.9 at the default, against once 
 - An error that ends each run after an hour or more of running sets the wait back to the setting every time.
   Its restart adds one reload to the run's own hourly reload, so it costs at most 2 reloads an hour.
 - An error that ends the run before any GQL request, such as a proxy error at login, doubles the wait too,
-  though such a restart sends only the two login requests. After the cause is fixed, the next restart can be up
-  to 61 minutes away. Closing and opening the app starts a new run at once, with the setting as the first wait.
+  though such a restart sends only the two login requests. After the cause is fixed, a `Reload` press starts a
+  new run at once, with the setting as the next wait, as closing and opening the app does. Without a press, the
+  next restart can be up to 61 minutes away.
+- A `Reload` press during the wait costs one restart: the two login requests and one full reload, which the user
+  asks for. A press during a run costs one reload too. The counts above leave out these presses.
 - The Settings tab names the setting "Restart after a crash after:", the wait after the first error. The
   Output box line of decision 7 explains a longer wait when it happens.
 - `Twitch.shutdown()` clears the drops, campaigns, channels, inventory, login state and `wanted_games`, so a
@@ -115,6 +130,12 @@ to 49 times an hour at the 1 minute choice and 5.9 at the default, against once 
   start, and an error in `fetch_inventory` would still need a full reload.
 - **Stopping the app when a critical task fails.** A bug in such a task can repeat on every run, but so can a
   bug in `_run`, which restarts. "Never (stay stopped)" keeps the stop for a user who wants it.
+- **Ending the wait at any reload request.** A drop claim of the failed run can request a reload after the
+  shutdown, and the run would then restart at once with no press.
+- **Keeping the doubled wait after a press.** A user who fixed the cause would wait up to 60 minutes after the
+  next error, while closing and opening the app waits the setting.
+- **A hint in the Status box.** The box shows one string, so a hint there would need a new string in place of
+  `gui.status.restarting`, which every language translates.
 
 ## Related
 

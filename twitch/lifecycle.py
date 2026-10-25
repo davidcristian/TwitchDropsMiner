@@ -58,6 +58,9 @@ class LifecycleMixin:
     _no_channel_printed: bool
     _scan_errors_printed: set[gamelib.ScanError]
     _task_error: Exception | None
+    _state: State
+    _state_change: asyncio.Event
+    _reload_pressed: bool
     _restart_delay: RestartDelay
     _session: aiohttp.ClientSession | None
     _auth_state: _AuthState
@@ -138,13 +141,22 @@ class LifecycleMixin:
         if minutes > setting:
             self.print(_("status", "restart_longer").format(minutes=minutes))
         self.print(_("status", "restarting").format(time=restart_time))
+        self.print(_("status", "restart_now"))
         logger.log(CALL, f"Restarting at: {restart_time}")
-        # closing the window cuts the wait short, so the user never has to sit through it
+        # closing the window or a Reload press cuts the wait short, so the user never has to sit through it
         with suppress(asyncio.TimeoutError):
-            await asyncio.wait_for(
-                self.gui.wait_until_closed(), timeout=delay.total_seconds()
-            )
+            await asyncio.wait_for(self._wait_for_reload(), timeout=delay.total_seconds())
+        if self._reload_pressed:
+            # a press starts the waits again from the setting, as a start of the app does
+            self._restart_delay.reset()
         return True
+
+    async def _wait_for_reload(self) -> None:
+        """Return when the window closes or the Reload button is pressed."""
+        self._reload_pressed = False
+        while self._state is not State.EXIT and not self._reload_pressed:
+            await self._state_change.wait()
+            self._state_change.clear()
 
     async def _watch_sleep(self, delay: float) -> None:
         # we use wait_for here to allow an asyncio.sleep-like that can be ended prematurely
