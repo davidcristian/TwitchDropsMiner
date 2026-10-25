@@ -1,9 +1,9 @@
 # The Windows and macOS checks in CI have not passed and are not required
 
-**Status:** open
+**Status:** done 2026-10-25
 **Area:** ci, repo checks
 **Origin:** Found on 2026-10-21: the Validate job in `.github/workflows/ci.yml` has one runner and one Python
-**Verified:** 2026-10-23
+**Verified:** 2026-10-25
 
 The Validate job in `.github/workflows/ci.yml` runs `just check` four times
 ([ADR-0012](../../adr/ADR-0012-check-command.md)): on `ubuntu-latest` with `PYTHON_VERSION` (3.10) and with
@@ -116,3 +116,9 @@ None of this sends a Twitch request.
   now expects the Python of the system it runs on. The Ubuntu entry on Python 3.14 failed a game scan test:
   `Path.is_dir` of 3.14 returns `False` for a path inside a folder the user may not open, so the scan now
   checks paths with functions of its own. The task stays open until a Windows run passes.
+- 2026-10-25: Closed. The run after the fixes of 2026-10-23 showed each point of the list above on Windows and
+  macOS. pip installed every package at its set version, the official `just` passed its hash check and ran
+  from Git Bash and PowerShell, and Tk opened its windows. The suite passed on a CRLF checkout on Windows, with
+  2013 passed and 40 skipped, and on macOS with 2032 passed, 20 skipped and 1 xfailed, at 97.35% and 97.83%
+  branch coverage. An earlier run passed and ran the builds although its Windows and macOS entries failed. The
+  two entries now set `required: true`.

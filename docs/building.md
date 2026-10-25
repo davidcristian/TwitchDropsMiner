@@ -92,8 +92,7 @@ environment variable is set, they fail instead. Tk on Windows and macOS needs no
 
 The Validate job in CI installs `requirements-dev.txt` with `-c constraints.txt` and runs `just check` four
 times: on Ubuntu with Python 3.10 and with Python 3.14, and on Windows and on macOS with Python 3.10. The build
-jobs wait for all four. A failure on Ubuntu fails the workflow, and the builds do not start. Until each has
-passed once, the Windows and macOS runs set `continue-on-error`, so a failure there does not fail the workflow
+jobs wait for all four. A failure in any of them fails the workflow, and the builds do not start
 ([task 046](refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)). On Ubuntu the job has no display
 and no PyGObject, so to run the checks as it does, use a new virtual environment on Python 3.10 with
 `requirements-dev.txt` alone, outside the repository folder, and unset `DISPLAY`:

@@ -102,10 +102,9 @@ lint rules without its formatter or pyright.
    - Windows and macOS with `PYTHON_VERSION`. These run the `cmd.exe` recipes, the code for those two systems,
      and the tests of the window on Tk without X11.
 
-   A failure in either Ubuntu run fails the workflow, and the build jobs wait for all four runs. Until each has
-   passed once, the Windows and macOS runs set `continue-on-error`, so a failure there does not fail the
-   workflow. [Task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md) lists what that run
-   must show.
+   A failure in any of the four runs fails the workflow, and the build jobs wait for all four. The Windows and
+   macOS runs set `continue-on-error` until each had passed once, on 2026-10-23
+   ([task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)).
 
 ## Consequences
 
@@ -122,7 +121,7 @@ lint rules without its formatter or pyright.
 - The four builds wait for the slowest of the four Validate runs.
 - Each Validate run is a check named `Validate (<runner>, <variable>)`, such as
   `Validate (ubuntu-latest, PYTHON_VERSION)`. A branch rule on GitHub that requires a check names these.
-- A change that fails only on Windows or macOS can be merged while those runs are not required.
+- A test that fails only on Windows or macOS stops the builds until it is fixed, or skipped with its reason.
 - Nothing checks that the app's packages in `requirements-dev.txt` match `requirements.txt`, so a change to one
   of those lines is made in both files.
 - Commits from upstream keep their own messages, and a commit made without the hooks is not checked.

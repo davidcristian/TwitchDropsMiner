@@ -27,8 +27,8 @@ env:
 jobs:
   validate:
     name: Validate (${{matrix.os}}, ${{matrix.python}})
-    # Each entry names the variable above that sets its Python. Windows and macOS have not passed a run yet, so a
-    # failure there does not fail the workflow.
+    # Each entry names the variable above that sets its Python. A failure of an entry that is not required does not
+    # fail the workflow.
     strategy:
       fail-fast: false
       matrix:
@@ -41,10 +41,10 @@ jobs:
             required: true
           - os: windows-latest
             python: PYTHON_VERSION
-            required: false
+            required: true
           - os: macos-latest
             python: PYTHON_VERSION
-            required: false
+            required: true
     runs-on: ${{matrix.os}}
     continue-on-error: ${{!matrix.required}}
 

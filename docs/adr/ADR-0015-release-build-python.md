@@ -50,8 +50,8 @@ OpenSSL 1.1.1 has had no public fixes since September 2023, and Python 3.10 reac
   OpenSSL version as text.
 - The AppImage does not change. Its recipe installs Python 3.10 and its libraries from the Ubuntu 22.04
   archives, which Ubuntu patches, and does not read the `PYTHON_VERSION` that the job passes to it.
-- [Task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md) lists what the Windows and
-  macOS runs of the Validate job must show before they are required.
+- The Windows and macOS runs of the Validate job, on `PYTHON_VERSION`, are required since each passed on
+  2026-10-23 ([task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)).
 
 ## Alternatives rejected
 
