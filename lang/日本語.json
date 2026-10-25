@@ -5,6 +5,7 @@
     "fatal_error": "致命的なエラーが発生しました：\n",
     "restarting": "{time} に自動的に再起動します...",
     "restart_longer": "前回の再起動から1時間以内にエラーが発生したため、待機時間が設定より長くなります：{minutes} 分。",
+    "restart_now": "今すぐ再起動するには、「設定」タブの「再読み込み」を押してください。",
     "watching": "{channel} を視聴中",
     "goes_online": "{channel} がオンラインになりました。切り替え中...",
     "goes_offline": "{channel} がオフラインになりました。切り替え中...",
