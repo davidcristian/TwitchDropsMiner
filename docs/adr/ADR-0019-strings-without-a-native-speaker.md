@@ -39,6 +39,8 @@ of these languages.
   new string.
 - Some strings may read as written by someone who does not speak the language, or use a word that a speaker
   would not choose. Only a speaker who reads them finds these.
+- A separate pass on 2026-10-25, also without a native speaker, checked these strings against each file's own
+  terms.
 - An existing string that no longer matches the English one stays as it is, such as a Getting Started text
   that names a checkbox the window no longer has. Decision 3 leaves it to a speaker.
 - The README's translator credits name the people who wrote each file, and stay as they are

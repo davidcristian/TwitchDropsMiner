@@ -5,6 +5,7 @@
         "fatal_error": "Wystąpił błąd krytyczny:\n",
         "restarting": "Automatyczny restart o {time}...",
         "restart_longer": "Błąd wystąpił mniej niż godzinę po ostatnim restarcie, więc czas oczekiwania jest dłuższy niż w ustawieniach: {minutes} min.",
+        "restart_now": "Kliknij „Przeładuj” na karcie „Ustawienia”, aby od razu ponownie uruchomić aplikację.",
         "watching": "Aktualnie oglądany kanał: {channel}",
         "goes_online": "Kanał {channel} jest teraz ONLINE, przełączam kanał...",
         "goes_offline": "Kanał {channel} jest teraz OFFLINE, przełączam kanał...",
