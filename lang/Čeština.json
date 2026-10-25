@@ -5,6 +5,7 @@
         "fatal_error": "Došlo k závažné chybě:\n",
         "restarting": "Automatický restart v {time}...",
         "restart_longer": "Chyba nastala méně než hodinu po posledním restartu, proto je čekání delší, než je nastaveno: {minutes} min.",
+        "restart_now": "Pro okamžitý restart stiskněte 'Obnovit' na kartě 'Nastavení'.",
         "watching": "Sledování kanálu: {channel}",
         "goes_online": "Kanál {channel} je online, přepínám...",
         "goes_offline": "Kanál {channel} je offline, přepínám na další...",
