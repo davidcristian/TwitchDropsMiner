@@ -5,6 +5,7 @@
         "fatal_error": "Ocorreu um erro fatal:\n",
         "restarting": "Reiniciando automaticamente às {time}...",
         "restart_longer": "O erro ocorreu menos de uma hora após o último reinício, então a espera é maior que a configurada: {minutes} minutos.",
+        "restart_now": "Clique em \"Recarregar\" na aba \"Configurações\" para reiniciar agora.",
         "watching": "Assistindo o: {channel}",
         "goes_online": "{channel} esta ONLINE, Mudando...",
         "goes_offline": "{channel} ficou OFFLINE, Mudando...",
@@ -181,7 +182,7 @@
                 "no_games": "Nenhum jogo Steam ou Epic encontrado em: {path}",
                 "failed": "{path}: {reason}",
                 "detected": "{count} de {total} jogos instalados reconhecidos.",
-                "restored": "{count} jogos do último escaneamento.",
+                "restored": "Jogos do último escaneamento: {count}.",
                 "empty": "Nada detectado ainda - adicione uma pasta de jogos abaixo.",
                 "no_dirs": "Nenhuma pasta adicionada."
             },
