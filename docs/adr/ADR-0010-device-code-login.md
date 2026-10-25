@@ -1,6 +1,6 @@
 # ADR-0010: Login by device code with the Android app client
 
-**Status:** Accepted (2026-10-22)
+**Status:** Accepted (2026-10-25)
 
 ## Context
 
@@ -16,8 +16,8 @@ current client, "Automatically clear the jar and delete the cookie file for re-a
 that the client ID check had raised since 2022-12-24 with a new login, and "Implement the auth token invalidation
 button" (2026-07-02) added `Invalidate`. None of these commits has a message body, so the original project left no
 written reason for the flow or for a client.
-`ClientType`, the `Invalidate` handler and the device code flow work as upstream's do today. Upstream's
-`_AuthState` also keeps `_login`, with no caller.
+`ClientType`, the `Invalidate` handler and the device code flow work as upstream's do today, except that a device
+response without a code does not end the run. Upstream's `_AuthState` also keeps `_login`, with no caller.
 
 ## Decision
 
@@ -26,7 +26,10 @@ written reason for the flow or for a client.
    1. Calls `LoginForm.ask_login`. The Output box shows "Please log in to continue.", and the call returns
       when the user presses `Login`.
    2. POSTs the client ID and an empty `scopes` to `https://id.twitch.tv/oauth2/device`. The response has a
-      device code, a user code, a polling `interval`, a lifetime `expires_in` and the activation page.
+      device code, a user code, a polling `interval`, a lifetime `expires_in` and the activation page. When
+      the status is not 200 or one of these fields is missing, it logs a warning, prints "The login could not
+      get a code from Twitch:" with Twitch's `message`, or the status without one, and starts again at step 1
+      ([devicecode.md](../modules/devicecode.md)). So each press sends one device request.
    3. Calls `LoginForm.ask_enter_code`, which shows the user code, and 4 seconds later the browser opens the
       activation page.
    4. POSTs the device code to `https://id.twitch.tv/oauth2/token` every `interval` seconds. The code comment
@@ -65,10 +68,11 @@ written reason for the flow or for a client.
    auth token", and the new run restores the same session from the cookie.
 
 6. **There is no password login.** The app has no code for `https://passport.twitch.tv/login`, a CAPTCHA or
-   a 2FA code, and the Login Form has no username, password or 2FA entries. An error during the device code
-   flow is a fatal error like any other, with the same restart delay
-   ([ADR-0006](ADR-0006-restart-after-fatal-error.md)). A change that upstream makes to its `_login` is left
-   out when its commit is brought in ([upstream-fixes.md](../runbooks/upstream-fixes.md#when-the-pick-conflicts)).
+   a 2FA code, and the Login Form has no username, password or 2FA entries. Any error during the device code
+   flow other than a device response without a code is a fatal error like any other, with the same restart
+   delay ([ADR-0006](ADR-0006-restart-after-fatal-error.md)). A change that upstream makes to its `_login` is
+   left out when its commit is brought in
+   ([upstream-fixes.md](../runbooks/upstream-fixes.md#when-the-pick-conflicts)).
 
 ## Consequences
 
@@ -85,6 +89,10 @@ written reason for the flow or for a client.
 - **The code is requested after the `Login` press,** because its lifetime counts from that request. The app
   can wait for the press for any time, such as after a start with the computer while nobody is there, and the
   code it shows is still valid. A code that expires before the user enters it needs another press.
+- **Twitch has rejected the device code request of the `ANDROID_APP` client** since about 2026-09-18. It
+  returns an error instead of a code, and reports of it show the message "invalid client". So no new login can
+  be made, and only a token that `cookies.jar` already holds works. The app prints Twitch's message at each
+  `Login` press, and the run goes on. Upstream sends the same request and gets the same error.
 - **`cookies.jar` gives access to the account,** as the README's caution says, and it is gitignored. A log line
   shows the token as `<hidden>` ([ADR-0011](ADR-0011-secrets-in-logs.md)).
 - **The README's note on the "New Login" email** says that the app presents itself to Twitch as Chrome. The
@@ -102,11 +110,14 @@ written reason for the flow or for a client.
   ran. Removing them makes an upstream change to `_login` conflict, but upstream last changed it on 2024-08-04
   ([task 010](../refinements/tasks/010-unreachable-password-login.md)).
 - **Another `ClientType` entry.** It logs every user out once, and nothing here shows that it works better.
+- **Sending the device request again without a press.** While Twitch rejects the client, every request gets the
+  same error, and nobody may be there to enter a code.
 
 ## Related
 
-- [twitch.md](../modules/twitch.md#login), [twitchapi.md](../modules/twitchapi.md#client-identities),
-  [gui.md](../modules/gui.md#the-window) and [ARCHITECTURE.md](../ARCHITECTURE.md#data-flow).
+- [twitch.md](../modules/twitch.md#login), [devicecode.md](../modules/devicecode.md),
+  [twitchapi.md](../modules/twitchapi.md#client-identities), [gui.md](../modules/gui.md#the-window) and
+  [ARCHITECTURE.md](../ARCHITECTURE.md#data-flow).
 - [troubleshooting.md](../troubleshooting.md#logging-in): logging in, logging out and switching accounts.
   [gql-operations.md](../runbooks/gql-operations.md#the-client-id-and-the-user-agent): changing the client ID.
 - [ADR-0002](ADR-0002-twitch-traffic-budget.md), [ADR-0006](ADR-0006-restart-after-fatal-error.md),

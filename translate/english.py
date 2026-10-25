@@ -31,6 +31,7 @@ default_translation: Translation = {
             "Unexpected content type returned, usually due to being redirected. "
             "Do you need to login for internet access?"
         ),
+        "no_code": "The login could not get a code from Twitch: {message}",
     },
     "error": {
         "site_down": "Twitch is down, retrying in {seconds} seconds...",

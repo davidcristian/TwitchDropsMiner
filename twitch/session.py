@@ -11,7 +11,9 @@ import aiohttp
 from yarl import URL
 
 from translate import _
+from redact import redact
 from savefiles import save_each, replace_file
+from devicecode import device_code_error, read_json
 from exceptions import RequestInvalid
 from utils import CHARS_HEX_LOWER, create_nonce
 from constants import COOKIES_PATH
@@ -109,7 +111,11 @@ class _AuthState:
                 ) as response:
                     # Twitch sends a 40 character device_code, an 8 letter user_code, an interval
                     # of 5 seconds and an expires_in of 1800 seconds.
-                    response_json: JsonType = await response.json()
+                    response_json: JsonType = read_json(await response.read())
+                    if (message := device_code_error(response.status, response_json)) is not None:
+                        logger.warning(f"Twitch sent no device code: {response.status} {redact(response_json)!r}")
+                        self._twitch.print(_("login", "no_code").format(message=message))
+                        continue
                     device_code: str = response_json["device_code"]
                     user_code: str = response_json["user_code"]
                     interval: int = response_json["interval"]

@@ -94,6 +94,12 @@ Delete `cookies.jar` the same way when the login keeps failing. When Twitch reje
 deletes it and asks you to log in again by itself. When `cookies.jar` is damaged, the app asks you to log in
 again, and with `-v` the Output box shows "Could not load cookies.jar" with the error.
 
+**When `Login` shows no code.** Since about 2026-09-18, Twitch has rejected the device code login, the login with a
+code above, for the client that the app uses. A `Login` press then shows "The login could not get a code from
+Twitch: invalid client" in the Output box, or another message from Twitch after the colon. While Twitch does so,
+the login saved in `cookies.jar` is the only one the app can use. `Invalidate` and deleting `cookies.jar` both end
+that login, and the app cannot log in again until Twitch accepts the device code login again.
+
 **"Unexpected content type returned, usually due to being redirected."** Something between the app and Twitch
 sent the response instead of Twitch. This happens on networks that need a login page before they allow internet
 access. Log in to the network in a browser. If you set a proxy on the Settings tab, check it as well.

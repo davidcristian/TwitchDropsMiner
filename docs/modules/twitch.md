@@ -121,17 +121,17 @@ stream without a game ([streamdata.md](streamdata.md#null-stream-fields)).
 `get_auth` calls `_AuthState.validate`, which holds a lock so that concurrent callers log in once. It creates a
 random `session_id`, reads `device_id` from the `unique_id` cookie that a GET of `https://www.twitch.tv` sets, and
 takes `access_token` from the `auth-token` cookie in `cookies.jar`. Without that cookie, `_oauth_login` runs the
-OAuth device code flow: it waits for the `Login` press (`ask_login`), POSTs to
-`https://id.twitch.tv/oauth2/device`, shows the code through the Login Form (`ask_enter_code`), then POSTs to
-`https://id.twitch.tv/oauth2/token` every `interval` seconds until the user has entered the code. The code is
-requested after the press, because its lifetime counts from the request. An expired code raises
-`RequestInvalid`, and the flow starts again with a wait for the next press, so each press requests one code. A GET of
-`https://id.twitch.tv/oauth2/validate` returns `user_id`. After a 401 it clears the domain's cookies, and after
-a token for another client ID it deletes `cookies.jar`. In both cases it logs in again. Each of the two checks
-runs at most twice, then raises `RuntimeError`. At the end it saves the cookie jar with `save_cookies`, which
-writes a second file and renames it over `cookies.jar`. A save that raises `OSError`, such as on a full disk, is
-logged, the old `cookies.jar` stays whole and the login goes on
-([savefiles.md](savefiles.md#saves-during-the-run-outside-the-inventory-fetch)).
+OAuth device code flow: it waits for the `Login` press (`ask_login`), POSTs to `https://id.twitch.tv/oauth2/device`,
+shows the code through the Login Form (`ask_enter_code`), then POSTs to `https://id.twitch.tv/oauth2/token` every
+`interval` seconds until the user has entered the code. The code is requested after the press, because its lifetime
+counts from the request. An expired code raises `RequestInvalid`, and the flow starts again with a wait for the next
+press, so each press requests one code. After a device response without a code, the flow prints Twitch's message and
+waits for the next press ([devicecode.md](devicecode.md)). A GET of `https://id.twitch.tv/oauth2/validate` returns
+`user_id`. After a 401 it clears the domain's cookies, and after a token for another client ID it deletes
+`cookies.jar`. In both cases it logs in again. Each of the two checks runs at most twice, then raises `RuntimeError`.
+At the end it saves the cookie jar with `save_cookies`, which writes a second file and renames it over `cookies.jar`.
+A save that raises `OSError`, such as on a full disk, is logged, the old `cookies.jar` stays whole and the login goes
+on ([savefiles.md](savefiles.md#saves-during-the-run-outside-the-inventory-fetch)).
 
 When `cookies.jar` fails to load, `get_session` logs a warning with the error's class and text, empties the
 jar and goes on, so the login runs again. aiohttp reads a file that is not JSON as a pickle, so the error can
@@ -295,6 +295,6 @@ scanned again. Each scan error is printed once while it persists, as the transla
   one, with no `await` in between. So `process_stream_state` and `process_stream_update` find the channel of an
   event that arrives during the requests, and a `stream-down` for the watched channel still makes the app switch.
 
-**Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `gqldata`, `streamdata`, `translate`,
-`redact`, `savefiles`, `ratelimit`, `restartdelay`, `exceptions`, `utils`, `twitchapi` and `constants`. Third
-party: aiohttp and yarl.
+**Dependencies.** `gui`, `channel`, `websocket`, `inventory`, `gamelib`, `gqldata`, `streamdata`, `devicecode`,
+`translate`, `redact`, `savefiles`, `ratelimit`, `restartdelay`, `exceptions`, `utils`, `twitchapi` and
+`constants`. Third party: aiohttp and yarl.

@@ -81,6 +81,7 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [restartdelay.md](modules/restartdelay.md) | `RestartDelay`: the wait before each restart after a fatal error, doubled while each run ends within an hour |
 | [gqldata.md](modules/gqldata.md) | `get_field`, `merge_data` and the readers that leave out a field a server error set to null |
 | [streamdata.md](modules/streamdata.md) | The readers of stream, channel and playback token data, which read a null field as no stream, no game or no campaign |
+| [devicecode.md](modules/devicecode.md) | `read_json` and `device_code_error`: the check of the device code response, and the message the login prints when it has no code |
 | [imagedata.md](modules/imagedata.md) | `decode_image`: the full decode of an image download, which returns None for broken data; `png_mode`: the mode to save it in as PNG |
 | [savefiles.md](modules/savefiles.md) | `save_each`: the saves during a run, where a failed save is logged and the run goes on. `replace_file`: a write through a second file that keeps the old file when it fails. `UnsavedChanges`: whether a file has a change to write |
 | [ratelimit.md](modules/ratelimit.md) | `RateLimiter`: at most 5 GQL requests start in any second and at most 5 are open |

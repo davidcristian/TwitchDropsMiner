@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
+from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -11,6 +13,7 @@ from yarl import URL
 import twitch.requests as twitch_requests
 import twitch.session as twitch_session
 from twitchapi import ClientType
+from translate import _
 from fakes import FakeResponse, FakeTwitch
 from livetwitch import FakeSession, run_with_fast_clock
 
@@ -32,13 +35,16 @@ class LoopClock(datetime):
 class LoginSession(FakeSession):
     """A session that answers the requests of the device code login and adds each one to `events`.
 
-    The user enters the code of the device request numbered `entered`, counted from 1.
+    The first device requests get `failures`. The user enters the code of the request numbered `entered`, from 1.
     """
 
-    def __init__(self, fake: FakeTwitch, events: list[str], *, entered: int) -> None:
+    def __init__(
+        self, fake: FakeTwitch, events: list[str], *, entered: int, failures: Sequence[FakeResponse] = ()
+    ) -> None:
         super().__init__(fake)
         self.events = events
         self.entered = entered
+        self.failures = list(failures)
         self.device_forms: list[dict[str, str]] = []
 
     async def request(self, method: str, url: URL | str, **kwargs: Any) -> FakeResponse:
@@ -47,6 +53,8 @@ class LoginSession(FakeSession):
             self.device_forms.append(kwargs["data"])
             number = len(self.device_forms)
             self.events.append("device")
+            if self.failures:
+                return self.failures.pop(0)
             return FakeResponse(body=json.dumps({
                 "device_code": f"device{number}", "user_code": f"CODE{number}", "interval": INTERVAL,
                 "expires_in": LIFETIME, "verification_uri": "https://www.twitch.tv/activate",
@@ -78,16 +86,19 @@ class FakeLoginForm:
         pass
 
 
-def log_in(live_twitch, monkeypatch, *waits: float, entered: int) -> tuple[list[str], LoginSession, Any]:
-    """Log in from an empty cookie jar, and return the events, the session and the login state."""
+def log_in(
+    live_twitch, monkeypatch, *waits: float, entered: int, failures: Sequence[FakeResponse] = ()
+) -> tuple[list[str], LoginSession, Any]:
+    """Log in from an empty cookie jar, and return the events and lines printed, the session and the login state."""
     # the login sets the expiry of the code, and Twitch.request checks it
     monkeypatch.setattr(twitch_session, "datetime", LoopClock)
     monkeypatch.setattr(twitch_requests, "datetime", LoopClock)
     events: list[str] = []
     fake = FakeTwitch()
     client = live_twitch(fake)
-    client._session = session = LoginSession(fake, events, entered=entered)
+    client._session = session = LoginSession(fake, events, entered=entered, failures=failures)
     fake.gui.login = FakeLoginForm(events, *waits)
+    fake.gui.print = lambda message: events.append(f"print {message}")
     client._auth_state.invalidate()
     return events, session, run_with_fast_clock(client.get_auth())
 
@@ -113,3 +124,33 @@ def test_an_expired_code_is_replaced_only_after_the_next_login_press(live_twitch
     assert events[-1] == "poll"
     assert session.device_forms == [DEVICE_FORM, DEVICE_FORM]
     assert (auth.access_token, auth.user_id) == ("new-token", 7)
+
+
+# Since about 2026-09-18 Twitch sends the 400 to the device request of the Android app client ID
+@pytest.mark.parametrize(("response", "message"), [
+    (FakeResponse(400, json.dumps({"status": 400, "message": "invalid client"})), "invalid client"),
+    (FakeResponse(body=json.dumps({"user_code": "CODE", "interval": INTERVAL, "expires_in": LIFETIME})), "200"),
+    (FakeResponse(403, "<html>Forbidden</html>"), "403"),
+])
+def test_a_device_response_without_a_code_prints_twitchs_message_and_the_next_press_sends_one_request(
+    live_twitch, monkeypatch, response, message
+):
+    events, session, auth = log_in(live_twitch, monkeypatch, 0, 0, entered=2, failures=[response])
+
+    assert events == [
+        "press", "device", f"print {_('login', 'no_code').format(message=message)}",
+        "press", "device", "show CODE2", "poll",
+    ]
+    assert session.device_forms == [DEVICE_FORM, DEVICE_FORM]
+    assert (auth.access_token, auth.user_id) == ("new-token", 7)
+
+
+def test_the_warning_for_a_device_response_without_a_code_shows_the_status_and_hides_the_device_code(
+    live_twitch, monkeypatch, caplog
+):
+    response = FakeResponse(400, json.dumps({"device_code": "secret", "message": "invalid client"}))
+    with caplog.at_level(logging.WARNING, logger="TwitchDrops"):
+        log_in(live_twitch, monkeypatch, 0, 0, entered=2, failures=[response])
+
+    warnings = [record.getMessage() for record in caplog.records if record.levelno == logging.WARNING]
+    assert warnings == ["Twitch sent no device code: 400 {'device_code': '<hidden>', 'message': 'invalid client'}"]

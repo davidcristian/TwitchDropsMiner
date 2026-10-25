@@ -59,6 +59,7 @@ burst of requests puts that account at risk.
 | `restartdelay.py` | `RestartDelay`, the wait before each restart after a fatal error, which doubles while each run ends within an hour |
 | `gqldata.py` | Reads GQL responses and leaves out the fields that a server error set to null |
 | `streamdata.py` | Reads the stream data of GQL responses in the same way, through `gqldata.get_field` |
+| `devicecode.py` | `read_json`, which reads a response body that may not be JSON, and `device_code_error`, which returns Twitch's message when the device code response of the login has no code |
 | `imagedata.py` | `decode_image`, which decodes a whole image download for `cache.py` or returns None for broken data, and `png_mode`, the mode to save it in |
 | `savefiles.py` | `save_each`, which runs saves during a run and reports a failed one instead of raising, `replace_file`, which writes a file through a second file so a failed write keeps the old one, and `UnsavedChanges`, which writes a file only when it has a change not saved yet |
 | `settingsdata.py` | `drop_non_text_items`, which removes the items that are not strings from the list and set settings at load |

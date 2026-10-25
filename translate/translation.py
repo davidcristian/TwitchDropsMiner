@@ -24,6 +24,7 @@ class StatusMessages(TypedDict):
 
 class LoginMessages(TypedDict):
     unexpected_content: str
+    no_code: str
 
 
 class ErrorMessages(TypedDict):

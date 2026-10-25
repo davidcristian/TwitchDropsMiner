@@ -25,7 +25,7 @@ string in the current language. Other languages are JSON files in `lang/`. To ad
 | `language_name` | `NotRequired[str]` | Set by `Translator` to the name of the loaded language; a file cannot set it |
 | `english_name` | `str` | The language's name in English. No code reads it. It stays to tell a reader which language a file such as `العربية.json` holds |
 | `status` | `StatusMessages` | Lines printed to the Output box, such as `watching` and `claimed_drop` |
-| `login` | `LoginMessages` | `unexpected_content` |
+| `login` | `LoginMessages` | `unexpected_content`, `no_code` |
 | `error` | `ErrorMessages` | `no_connection`, `site_down`, `save_failed`, `file_not_saved`, `cannot_start`, `folder_not_writable` |
 | `arguments` | `ArgumentMessages` | `title` and `error_title`, the titles of the message box that shows the command line output ([main.md](main.md#command-line-flags)) |
 | `gui` | `GUIMessages` | The window's text, one nested type per part |
