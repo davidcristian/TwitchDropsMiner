@@ -5,6 +5,7 @@
         "fatal_error": "Kritik bir hata oluştu:\n",
         "restarting": "Otomatik yeniden başlatma zamanı: {time}...",
         "restart_longer": "Hata, son yeniden başlatmadan sonraki bir saat içinde oluştu, bu yüzden bekleme süresi ayardan daha uzun: {minutes} dakika.",
+        "restart_now": "Şimdi yeniden başlatmak için \"Ayarlar\" sekmesindeki \"Yenile\" butonuna basın.",
         "watching": "İzleniyor: {channel}",
         "goes_online": "{channel} ÇEVRİMİÇİ oldu, geçiş yapılıyor...",
         "goes_offline": "{channel} ÇEVRİMDIŞI oldu, geçiş yapılıyor...",
