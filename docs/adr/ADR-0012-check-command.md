@@ -94,17 +94,20 @@ lint rules without its formatter or pyright.
      ([building.md](../building.md#run-the-checks)). On Linux, the test recipe runs pytest under `xvfb-run`,
      which the runner's Ubuntu image has, for the tests that open the window
      ([ADR-0013](ADR-0013-test-standard.md)).
-7. **The Validate job runs `just check` four times**, from a `strategy.matrix` in `ci.yml`:
+7. **The Validate job runs `just check` six times**, from a `strategy.matrix` in `ci.yml`:
    - Ubuntu with `PYTHON_VERSION`, 3.10, the oldest Python the app supports. There `syntaxcheck.py` finds
      nested f-string quotes, and a test that imports or calls a name 3.10 lacks fails.
    - Ubuntu with `BUILD_PYTHON_VERSION`, 3.14, the Python of the release builds
      ([ADR-0015](ADR-0015-release-build-python.md)).
    - Windows and macOS with `PYTHON_VERSION`. These run the `cmd.exe` recipes, the code for those two systems,
      and the tests of the window on Tk without X11.
+   - Windows and macOS with `BUILD_PYTHON_VERSION`, the Python that their releases bundle.
 
-   A failure in any of the four runs fails the workflow, and the build jobs wait for all four. The Windows and
-   macOS runs set `continue-on-error` until each had passed once, on 2026-10-23
-   ([task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)).
+   A failure in a required run fails the workflow, and the build jobs wait for all six. The Windows and macOS
+   runs on `PYTHON_VERSION` set `continue-on-error` until each had passed once, on 2026-10-23
+   ([task 046](../refinements/tasks/046-checks-run-only-on-linux-and-python-3-10.md)), and their runs on
+   `BUILD_PYTHON_VERSION` set it until each has passed once
+   ([task 078](../refinements/tasks/078-windows-macos-checks-on-the-build-python-not-required.md)).
 
 ## Consequences
 
@@ -118,10 +121,11 @@ lint rules without its formatter or pyright.
   docstrings over three lines and 8 banned words. A fix cherry-picked from upstream can conflict on those lines.
 - `syntaxcheck.py` does not find names that Python 3.10 lacks, such as `typing.Self`, which fail only when the
   module is imported. The Validate job finds such a name only where a test imports or calls it.
-- The four builds wait for the slowest of the four Validate runs.
+- The four builds wait for the slowest of the six Validate runs.
 - Each Validate run is a check named `Validate (<runner>, <variable>)`, such as
   `Validate (ubuntu-latest, PYTHON_VERSION)`. A branch rule on GitHub that requires a check names these.
-- A test that fails only on Windows or macOS stops the builds until it is fixed, or skipped with its reason.
+- A test that fails only on Windows or macOS with Python 3.10 stops the builds until it is fixed, or skipped with
+  its reason.
 - Nothing checks that the app's packages in `requirements-dev.txt` match `requirements.txt`, so a change to one
   of those lines is made in both files.
 - Commits from upstream keep their own messages, and a commit made without the hooks is not checked.
@@ -154,6 +158,9 @@ lint rules without its formatter or pyright.
   Python the app supports and 3.14 the Python of the releases; 3.11 to 3.13 are neither.
 - **Windows and macOS required from their first run.** They had never run, and a test written for Linux that
   fails there would stop every build until it was fixed or skipped.
+- **Windows and macOS on `PYTHON_VERSION` only.** Then no check would run the Python of those two releases on
+  their systems, and Python 3.14 has behaved differently from 3.10 before, such as `Path.is_dir` returning
+  `False` where 3.10 raises `PermissionError`.
 
 ## Related
 

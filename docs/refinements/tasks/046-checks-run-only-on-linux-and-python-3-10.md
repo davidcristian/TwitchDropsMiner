@@ -122,3 +122,5 @@ None of this sends a Twitch request.
   2013 passed and 40 skipped, and on macOS with 2032 passed, 20 skipped and 1 xfailed, at 97.35% and 97.83%
   branch coverage. An earlier run passed and ran the builds although its Windows and macOS entries failed. The
   two entries now set `required: true`.
+- 2026-10-25: The choice that the close left: Windows and macOS also run on `BUILD_PYTHON_VERSION`, not
+  required until each has passed once ([task 078](078-windows-macos-checks-on-the-build-python-not-required.md)).

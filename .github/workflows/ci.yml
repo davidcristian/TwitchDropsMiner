@@ -45,6 +45,13 @@ jobs:
           - os: macos-latest
             python: PYTHON_VERSION
             required: true
+          # not required until each has passed once, as docs/refinements/tasks/078-windows-macos-checks-on-the-build-python-not-required.md says
+          - os: windows-latest
+            python: BUILD_PYTHON_VERSION
+            required: false
+          - os: macos-latest
+            python: BUILD_PYTHON_VERSION
+            required: false
     runs-on: ${{matrix.os}}
     continue-on-error: ${{!matrix.required}}
 
