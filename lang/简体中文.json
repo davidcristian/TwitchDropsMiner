@@ -5,6 +5,7 @@
         "fatal_error": "遇到致命错误：\n",
         "restarting": "将在{time}自动重启...",
         "restart_longer": "错误发生在上次重启后不到一小时，因此等待时间比设置的更长：{minutes}分钟。",
+        "restart_now": "若要立即重启，请在“设置”选项卡中点击“刷新”。",
         "watching": "正在观看：{channel}",
         "goes_online": "“{channel}”频道已上线, 正在切换...",
         "goes_offline": "“{channel}”频道已离线, 正在切换...",
