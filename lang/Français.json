@@ -5,6 +5,7 @@
         "fatal_error": "Erreur fatale rencontrée :\n",
         "restarting": "Redémarrage automatique à {time}...",
         "restart_longer": "L'erreur est survenue moins d'une heure après le dernier redémarrage, l'attente est donc plus longue que le réglage : {minutes} minutes.",
+        "restart_now": "Appuyez sur \"Recharger\" dans l'onglet \"Paramètres\" pour redémarrer maintenant.",
         "watching": "En train de regarder : {channel}",
         "goes_online": "{channel} passe EN LIGNE, changement...",
         "goes_offline": "{channel} passe HORS LIGNE, changement...",
@@ -180,8 +181,8 @@
                 "not_a_folder": "Ce n'est pas un dossier : {path}",
                 "no_games": "Aucun jeu Steam ou Epic trouvé dans : {path}",
                 "failed": "{path} : {reason}",
-                "detected": "{count} jeux installés reconnus sur {total}.",
-                "restored": "{count} jeux de la dernière analyse.",
+                "detected": "Jeux installés reconnus : {count} sur {total}.",
+                "restored": "Jeux de la dernière analyse : {count}.",
                 "empty": "Rien de détecté pour l'instant - ajoutez un dossier de jeux ci-dessous.",
                 "no_dirs": "Aucun dossier ajouté."
             },
