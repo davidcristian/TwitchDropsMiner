@@ -5,6 +5,7 @@
         "fatal_error": "A apărut o eroare fatală :\n",
         "restarting": "Repornire automată la {time}...",
         "restart_longer": "Eroarea a apărut la mai puțin de o oră după ultima repornire, deci așteptarea este mai lungă decât setarea : {minutes} min.",
+        "restart_now": "Apăsați \"Reîncarcă\" în fila \"Setări\" pentru a reporni acum.",
         "watching": "Se vizionează : {channel}",
         "goes_online": "{channel} intră ONLINE, se schimbă...",
         "goes_offline": "{channel} intră OFFLINE, se schimbă...",
