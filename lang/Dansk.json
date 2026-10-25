@@ -5,6 +5,7 @@
         "fatal_error": "Der opstod en fatal fejl:\n",
         "restarting": "Genstarter automatisk kl. {time}...",
         "restart_longer": "Fejlen opstod mindre end en time efter den sidste genstart, så ventetiden er længere end indstillingen: {minutes} minutter.",
+        "restart_now": "Tryk på Genindlæs under fanen Indstillinger for at genstarte nu.",
         "watching": "Ser på: {channel}",
         "goes_online": "{channel} går ONLINE, skifter...",
         "goes_offline": "{channel} går OFFLINE, skifter...",
