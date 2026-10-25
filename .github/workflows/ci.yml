@@ -199,6 +199,13 @@ jobs:
         with:
           python-version: ${{env.BUILD_PYTHON_VERSION}}
 
+      # The runner's Python has packages of its own, such as certifi at a version that changes with the runner image.
+      # The build installs into a new virtual environment, so installcheck reads only the packages that pip installs.
+      - name: Create the build environment
+        run: |
+          python3 -m venv "$RUNNER_TEMP/build-venv"
+          echo "$RUNNER_TEMP/build-venv/bin" >> "$GITHUB_PATH"
+
       - name: Install project dependencies
         run: |
           python3 -m pip install -c constraints.txt pip wheel

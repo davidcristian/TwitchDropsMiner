@@ -223,7 +223,13 @@ After its installs, each build job runs `scripts/installcheck.py`. It reads the 
 installed package with `importlib.metadata`, and fails on a package that `constraints.txt` lacks or sets to
 another version. A line with a marker, such as `python_version < "3.11"`, counts only where the marker holds,
 and the script fails on a marker other than `name op "value"` clauses joined by `and`. The PyInstaller jobs
-check every package that their Python can import. The AppImage job installs into Ubuntu's own Python as a user
+check every package that their Python can import. The macOS runner's Python has certifi in its own
+site-packages, at a version that changes with the runner image, so the macOS job creates a new virtual
+environment from it with `python3 -m venv`, puts its `bin` folder first on `PATH`, and installs there. Its check
+then reads only the packages that pip installed, and PyInstaller still bundles the runner's Python and its Tcl/Tk.
+The Windows and Linux jobs install into the runner's Python, since their check has not reported a package that
+pip did not install. When one does, that job needs the same virtual environment, not a line in
+`constraints.txt`. The AppImage job installs into Ubuntu's own Python as a user
 without root, so it checks only the user's site folder, where pip puts each package, and leaves out
 appimage-builder, which comes from a git commit. After the build it checks
 `AppDir/usr/lib/python3.10/site-packages`, the folder of the app's packages in the AppImage. A folder without

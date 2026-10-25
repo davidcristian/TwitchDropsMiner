@@ -9,7 +9,9 @@ send no Twitch request. Run every command from the repository folder, on Linux, 
 
 - In each pull request of Dependabot, which proposes new versions once a month and a release that fixes a security
   issue at once ([building.md](../building.md#exact-versions)). Run step 3 on its branch, and add a line for each
-  package that the check after the installs of a build job reports.
+  package that the check after the installs of a build job reports. A package that the job's pip did not install
+  comes with the runner's Python and gets no line: that job then installs into a new virtual environment, as the
+  macOS job does.
 - In the pull request that changes `requirements.txt`, the app's lines in `requirements-dev.txt`,
   `BUILD_PYTHON_VERSION` in `ci.yml`, the Ubuntu release of the Linux builds or the commit of appimage-builder
   that the AppImage job installs.
