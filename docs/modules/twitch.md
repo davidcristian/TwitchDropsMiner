@@ -80,8 +80,8 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
   `can_earn(channel)` True, and either the channel's game is in `wanted_games` with drops enabled, or that
   campaign is for a special game ([inventory.md](inventory.md#special-games)). A campaign whose game the Exclude
   list or the "Priority list only" mode keeps out of `wanted_games` makes no channel watchable.
-- `get_priority(channel)` returns the index of the channel's game in `wanted_games`, or `MAX_INT` when the
-  channel is offline or its game is not wanted. A lower number is a higher priority.
+- `get_priority(channel)` returns the index of the game of a channel or a `Stream` in `wanted_games`, or
+  `MAX_INT` when the channel is offline or the game is not wanted. A lower number is a higher priority.
 - `should_switch(channel)` returns True when `can_watch(channel)` is True and no channel is watched, or the
   watched channel cannot be watched, has a lower priority, or has the same priority while only the new channel
   is ACL-based (on a campaign's ACL, its access control list of allowed channels).
@@ -89,8 +89,8 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
   minute countdown and ends the current watch cycle after its `CurrentDrop` check, so the next watch request
   goes out early ([Watch loop](#watch-loop)).
 - `Channel` calls `on_channel_update(channel, stream_before, stream_after)` after a status change. It watches a
-  channel that came online or changed its stream, if `should_switch` allows it, and enters
-  `State.CHANNEL_SWITCH` when the watched channel can no longer be watched, with `_watched_stopped` set.
+  channel that came online or changed its stream, if `should_switch` allows it, and enters `CHANNEL_SWITCH`, with
+  `_watched_stopped` set, when the watched channel can no longer be watched or its new game has a lower priority.
 - `get_live_streams(game, *, limit=20, drops_enabled=True)` sends one `GameDirectory` query and returns up to
   `limit` live channels of the game, or none when the game is null. `bulk_check_online(channels)` is in
   [channel.md](channel.md#bulk-check).

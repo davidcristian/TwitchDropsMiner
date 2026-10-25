@@ -32,6 +32,7 @@ class PubSubMixin:
     _watched_stopped: bool
     print: abc.Callable[[str], None]
     change_state: abc.Callable[[State], None]
+    get_priority: abc.Callable[[Channel | Stream], int]
     can_watch: abc.Callable[[Channel], bool]
     should_switch: abc.Callable[[Channel], bool]
     watch: abc.Callable[..., None]
@@ -119,6 +120,13 @@ class PubSubMixin:
                             f"(🎁: {stream_before.drops_enabled and '✔' or '❌'} -> "
                             f"{stream_after.drops_enabled and '✔' or '❌'})"
                         )
+                    self._watched_stopped = True
+                    self.change_state(State.CHANNEL_SWITCH)
+                elif self.get_priority(channel) > self.get_priority(stream_before):
+                    logger.info(
+                        f"{channel.name} changed to a game of a lower priority, switching... "
+                        f"({stream_before.game} -> {channel.game})"
+                    )
                     self._watched_stopped = True
                     self.change_state(State.CHANNEL_SWITCH)
                 else:

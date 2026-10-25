@@ -41,6 +41,7 @@ from .pubsub import PubSubMixin
 
 if TYPE_CHECKING:
     from utils import Game
+    from channel import Stream
     from settings import Settings
     from inventory import TimedDrop
     from twitchapi import ClientInfo
@@ -166,10 +167,10 @@ class Twitch(
         self.gui.save(force=force)
         self.settings.save(force=force)
 
-    def get_priority(self, channel: Channel) -> int:
+    def get_priority(self, channel: Channel | Stream) -> int:
         """
-        Returns the index of the channel's game in wanted_games, where 0 is the highest priority,
-        or MAX_INT when the channel's game is None (as when offline) or not wanted.
+        Returns the index of the game of the channel or stream in wanted_games, where 0 is the highest priority,
+        or MAX_INT when the game is None (as when offline) or not wanted.
         """
         if (
             (game := channel.game) is None  # None when OFFLINE or no game set

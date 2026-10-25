@@ -1,6 +1,6 @@
 # A watched channel that changes to a game of a lower priority stays watched until the next switch
 
-**Status:** open
+**Status:** done 2026-10-25
 **Area:** twitch
 **Origin:** The stream refresh at a stop of the watched channel
 ([ADR-0018](../../adr/ADR-0018-channel-slots.md#decision)), on 2026-10-25
@@ -26,3 +26,9 @@ refresh at a stop, which covers a stream that ends or can no longer be watched.
 ## History
 
 - 2026-10-25: Opened. Found while adding the stream refresh at a stop of the watched channel.
+- 2026-10-25: Done. Checked against the code first: `on_channel_update` entered `CHANNEL_SWITCH` for the
+  watched channel only when `can_watch` failed. It now also enters it with `_watched_stopped` set when
+  `get_priority` of the new stream is higher than that of the stream before, so the switch watches a better
+  tracked channel, or at the limit runs the one early refresh
+  ([ADR-0018](../../adr/ADR-0018-channel-slots.md#decision)). Twitch requests: the switch sends none, and the
+  refresh costs one stream refresh, at most once per such update.

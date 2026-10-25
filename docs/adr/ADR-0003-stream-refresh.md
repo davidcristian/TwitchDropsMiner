@@ -79,8 +79,9 @@ The GQL requests of one refresh:
 
 So in the common case a refresh sends one request per wanted game without an ACL, 0 to 3 requests. At the
 default interval, at most 11 refreshes run between two hourly reloads, because each one comes at least 5
-minutes after the previous wait began. At the channel limit, a stop of the watched channel can add one refresh
-at once ([ADR-0018](ADR-0018-channel-slots.md#decision)), and these 11 keep their times.
+minutes after the previous wait began. At the channel limit, a stop of the watched channel, or a change of its
+game to one of a lower priority, can add one refresh at once ([ADR-0018](ADR-0018-channel-slots.md#decision)),
+and these 11 keep their times.
 
 - The check of ACL channels left off the list also finds one that went live since the last refresh. If it
   streams a wanted game, the channel fetch ranks it with that game ([ADR-0018](ADR-0018-channel-slots.md)).

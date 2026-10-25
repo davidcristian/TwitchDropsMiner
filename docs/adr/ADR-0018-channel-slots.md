@@ -22,7 +22,9 @@ likely: ten games without an ACL list up to 200 directory channels.
 Keeping the offline ACL channels has a cost of its own. When the channels of the best game all end their
 streams before the next channel fetch, the live channels of the next games can be off the list. The app then
 watched a channel of a game further down the list, or none, until the next stream refresh, up to 6 minutes
-later with the default `refresh_interval` ([ADR-0003](ADR-0003-stream-refresh.md)).
+later with the default `refresh_interval` ([ADR-0003](ADR-0003-stream-refresh.md)). A watched channel that
+changed to a game of a lower priority left the same gap. Below the limit too, it stayed watched until the next
+switch while a tracked channel of a game with a higher priority was live.
 
 ## Decision
 
@@ -38,12 +40,17 @@ later with the default `refresh_interval` ([ADR-0003](ADR-0003-stream-refresh.md
    the live channels of games with a lower priority than its campaign's, and behind those of the same game or
    a higher one. `Twitch._slot_order` returns this order, and `CHANNELS_FETCH` keeps the first 199 channels in
    it.
-4. **A stop of the watched channel starts a stream refresh at once when a channel off the list is better.**
-   `CHANNELS_FETCH` stores in `_cut_priority` the best priority of the channels it leaves off the list that
-   `can_watch` accepts. When the watched channel ends its stream or can no longer be watched,
-   `on_channel_update` sets `_watched_stopped`. The `CHANNEL_SWITCH` that follows clears it, and when its
-   choice is no channel, or a channel of a lower priority than `_cut_priority`, it stops watching and enters
-   `CHANNELS_CLEANUP` instead. That stream refresh ends in a `CHANNEL_SWITCH`, which watches the first choice
+4. **A stop of the watched channel, or a drop in the priority of its game, starts a stream refresh at once
+   when a channel off the list is better.** `CHANNELS_FETCH` stores in `_cut_priority` the best priority of the
+   channels it leaves off the list that `can_watch` accepts. `on_channel_update` sets `_watched_stopped` and
+   enters `CHANNEL_SWITCH` when the watched channel ends its stream or can no longer be watched. It does the
+   same when the channel can still be watched but `get_priority` of its new stream is higher than that of the
+   stream before, so its new game has a lower priority. Both values come from the current `wanted_games`, so
+   only the change of game counts: a title change, or a game of the same or a higher priority, starts no
+   switch. The `CHANNEL_SWITCH` that follows clears `_watched_stopped`, and when its choice is no channel, or a
+   channel of a lower priority than `_cut_priority`, it stops watching and enters `CHANNELS_CLEANUP` instead.
+   Otherwise it watches its choice, a tracked channel of a better game when `should_switch` accepts one, or
+   keeps the watched channel. That stream refresh ends in a `CHANNEL_SWITCH`, which watches the first choice
    when the refresh finds no better channel. A selected channel that `can_watch` accepts is watched without a
    refresh, because every switch watches it.
 5. **The setting "Never (hourly reload only)" turns this refresh off too.** With it, the channel fetch runs
@@ -60,14 +67,16 @@ later with the default `refresh_interval` ([ADR-0003](ADR-0003-stream-refresh.md
   ([channel.md](../modules/channel.md#after-a-stream-up-event)).
 - The refresh at a stop costs what a stream refresh costs ([ADR-0003](ADR-0003-stream-refresh.md#consequences)):
   one `GameDirectory` request per wanted game whose campaign has no ACL, and one `GetStreamInfo` request per
-  20 ACL channels off the list. It runs at most once per stop of the watched channel. The switch at its end
-  finds `_watched_stopped` cleared, and no better channel off the list either, because the fetch keeps first
+  20 ACL channels off the list. It runs at most once per stop of the watched channel or drop in the priority of
+  its game, and the switch after such a drop sends no request. The switch at the end of the refresh finds
+  `_watched_stopped` cleared, and no better channel off the list either, because the fetch keeps first
   the channels that this switch can watch.
 - The switch requests the refresh through `change_state` ([ADR-0017](ADR-0017-state-requests.md)), so an
   exit, a restart or a reload requested in the same pass runs first, and a reload ends in its own switch.
   `_maintenance_task` keeps its schedule, so the next scheduled refresh comes when it would without this one.
 - No channel is watched while the requests of the refresh run. At 5 GQL requests per second, each 100 ACL
-  channels off the list add one second.
+  channels off the list add one second. After a drop in priority, a refresh that finds no better channel ends
+  in a switch that watches the same channel again and prints its "Watching" line a second time.
 - With the refresh set to "Never", the gap stays: the app watches a channel of a game further down the list,
   or none, until the next channel fetch, at most an hour later.
 - Offline ACL channels of the same game have the same rank, so the set order decides which of them keep a
@@ -96,4 +105,4 @@ later with the default `refresh_interval` ([ADR-0003](ADR-0003-stream-refresh.md
 - [001-offline-acl-channels-trimmed-first.md](../refinements/tasks/001-offline-acl-channels-trimmed-first.md):
   the task this decision closed.
 - [079-watched-channel-on-a-lower-game-stays-watched.md](../refinements/tasks/079-watched-channel-on-a-lower-game-stays-watched.md):
-  a watched channel that changes to a game of a lower priority, which gets no refresh at once.
+  the task that added the drop in the priority of the watched game to this decision.

@@ -98,8 +98,8 @@ status:
   `INFO`. Nothing checks the channel again until its next websocket event, such as a `viewcount`, or until
   `CHANNELS_FETCH` adds it anew, which for a tracked ACL channel is the next reload.
 - Online before the check, after a settings update or a failed playlist request: when the watched channel can
-  no longer be watched, `Twitch` enters `State.CHANNEL_SWITCH`, and prints
-  "`{channel} goes OFFLINE, switching...`" when the stream ended.
+  no longer be watched, or streams a game of a lower priority than before, `Twitch` enters
+  `State.CHANNEL_SWITCH`, and prints "`{channel} goes OFFLINE, switching...`" when the stream ended.
   Another channel that is still online is watched when `should_switch` allows it.
 
 A query that raises `MinerException` ends the check without a further try, because `Twitch.request` and
