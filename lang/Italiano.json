@@ -5,6 +5,7 @@
         "fatal_error": "Si è verificato un errore fatale:\n",
         "restarting": "Riavvio automatico alle {time}...",
         "restart_longer": "L'errore si è verificato meno di un'ora dopo l'ultimo riavvio, quindi l'attesa è più lunga dell'impostazione: {minutes} minuti.",
+        "restart_now": "Premi \"Ricarica\" nella scheda \"Impostazioni\" per riavviare ora.",
         "watching": "Guardando: {channel}",
         "goes_online": "{channel} è ONLINE, cambiando...",
         "goes_offline": "{channel} è OFFLINE, cambiando...",
@@ -181,7 +182,7 @@
                 "no_games": "Nessun gioco Steam o Epic trovato in: {path}",
                 "failed": "{path}: {reason}",
                 "detected": "{count} di {total} giochi installati riconosciuti.",
-                "restored": "{count} giochi dall'ultima scansione.",
+                "restored": "Giochi dall'ultima scansione: {count}.",
                 "empty": "Ancora nulla di rilevato - aggiungi una cartella di giochi qui sotto.",
                 "no_dirs": "Nessuna cartella aggiunta."
             },
