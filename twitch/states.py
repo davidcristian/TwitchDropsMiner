@@ -44,6 +44,8 @@ class StatesMixin:
     _state_change: asyncio.Event
     _task_error: Exception | None
     _no_channel_printed: bool
+    _cut_priority: int | None
+    _watched_stopped: bool
     _watching_task: asyncio.Task[None] | None
     _watch_loop: abc.Callable[[], abc.Coroutine[Any, Any, NoReturn]]
     get_auth: abc.Callable[[], abc.Coroutine[Any, Any, _AuthState]]
@@ -218,6 +220,7 @@ class StatesMixin:
     def _run_channel_switch(self, channels: OrderedDict[int, Channel]) -> None:
         """Run State.CHANNEL_SWITCH: watch the selected channel or the first that should_switch accepts."""
         self.gui.status.update(_("gui", "status", "switching"))
+        stopped, self._watched_stopped = self._watched_stopped, False
         # Change into the selected channel, stay in the watching channel,
         # or select a new channel that meets the required conditions
         new_watching = None
@@ -225,6 +228,8 @@ class StatesMixin:
         if selected_channel is not None and self.can_watch(selected_channel):
             # selected channel is checked first, and set as long as we can watch it
             new_watching = selected_channel
+            # a stream refresh cannot change this choice
+            stopped = False
         else:
             # other channels, the watched one included, must pass should_switch
             # NOTE: sorted on every switch, because a channel can change its game
@@ -233,10 +238,14 @@ class StatesMixin:
                     new_watching = channel
                     break
         watching_channel = self.watching_channel.get_with_default(None)
+        if stopped and self._refresh_finds_better(new_watching, watching_channel):
+            # the refresh ends in a switch, which watches new_watching unless it finds a better channel
+            self.stop_watching()
+            self.change_state(State.CHANNELS_CLEANUP)
         # NOTE: a GUI-selected channel skips the 'should_switch' check above, so it ends
         # up here even when it's already the one being watched - re-watching it would
         # reprint the status, which gets noisy with periodic refreshes enabled
-        if new_watching is not None and new_watching != watching_channel:
+        elif new_watching is not None and new_watching != watching_channel:
             # if we have a better switch target - do so
             self.watch(new_watching)
         elif watching_channel is not None and self.can_watch(watching_channel):
@@ -251,3 +260,14 @@ class StatesMixin:
                 self._no_channel_printed = True
             self.change_state(State.IDLE)
         del new_watching, selected_channel, watching_channel
+
+    def _refresh_finds_better(self, new_watching: Channel | None, watching_channel: Channel | None) -> bool:
+        """
+        Return True when the stream refresh is on and the last CHANNELS_FETCH left off the list a channel that
+        can_watch accepted with a higher priority than the one this switch watches next, or any when it watches none.
+        """
+        if self._cut_priority is None or self.settings.refresh_interval <= 0:
+            return False
+        if new_watching is None and watching_channel is not None and self.can_watch(watching_channel):
+            new_watching = watching_channel
+        return new_watching is None or self._cut_priority < self.get_priority(new_watching)

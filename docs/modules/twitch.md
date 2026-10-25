@@ -90,7 +90,7 @@ attributes: `gui` (a `GUIManager`), `websocket` (the PubSub `WebsocketPool`), `c
   goes out early ([Watch loop](#watch-loop)).
 - `Channel` calls `on_channel_update(channel, stream_before, stream_after)` after a status change. It watches a
   channel that came online or changed its stream, if `should_switch` allows it, and enters
-  `State.CHANNEL_SWITCH` when the watched channel can no longer be watched.
+  `State.CHANNEL_SWITCH` when the watched channel can no longer be watched, with `_watched_stopped` set.
 - `get_live_streams(game, *, limit=20, drops_enabled=True)` sends one `GameDirectory` query and returns up to
   `limit` live channels of the game, or none when the game is null. `bulk_check_online(channels)` is in
   [channel.md](channel.md#bulk-check).
@@ -163,8 +163,8 @@ keep their slots first: those that `can_watch` accepts with the best priority am
 channel when `can_watch` accepts it. Every other channel ranks by the priority of its game. An ACL channel that
 is offline, or streams a game that is not wanted, ranks with the best of the wanted games whose campaigns list
 it. So an offline ACL channel keeps its subscription ahead of the live channels of games with a lower priority.
-The cut unsubscribes a channel's topics and cancels its online check ([channel.md](channel.md#invariants)), and
-the rebuilt channel list has no row for it.
+The cut unsubscribes a channel's topics and cancels its online check ([channel.md](channel.md#invariants)), and the
+rebuilt channel list has no row for it. `_cut_priority` is the best priority of a cut channel that `can_watch` accepts.
 
 `CHANNELS_CLEANUP` stores the ID of the selected channel when it removes that channel, which a full cleanup
 does to every channel, and `CHANNELS_FETCH` selects the channel again when the new list has it. So a
@@ -286,8 +286,8 @@ scanned again. Each scan error is printed once while it persists, as the transla
   time ends the app instead. The task itself ends without raising, because `Websocket.stop` awaits its task.
 - `shutdown` cancels the online check of each tracked channel, clears the channels, the GUI channel list,
   inventory, drops, `_campaigns`, login state, wanted games and triggers, and resets `_no_campaign_printed`,
-  `_no_channel_printed`, `_scan_errors_printed` and `_task_error`, so the next `_run` starts as a fresh one
-  would. A new field filled during a run must be cleared there.
+  `_no_channel_printed`, `_scan_errors_printed`, `_task_error`, `_cut_priority` and `_watched_stopped`, so the
+  next `_run` starts as a fresh one would. A new field filled during a run must be cleared there.
 - `fetch_inventory` clears `_campaigns` and `_drops` before it fills them. A campaign that the latest reload
   left out then has no entry and makes no stream drops enabled ([channel.md](channel.md#drops-enabled)).
 - `channels` stays within `MAX_CHANNELS` ([websocket.md](websocket.md#the-199-channel-limit)).

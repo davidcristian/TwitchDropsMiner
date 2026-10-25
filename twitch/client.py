@@ -80,6 +80,10 @@ class Twitch(
         # the messages that nothing can be mined or watched from being printed again on each refresh
         self._no_campaign_printed: bool = False
         self._no_channel_printed: bool = False
+        # the best priority of a channel that the last CHANNELS_FETCH left off the list while can_watch accepted it,
+        # and whether the watched channel stopped since the last CHANNEL_SWITCH, which then can refresh at once
+        self._cut_priority: int | None = None
+        self._watched_stopped: bool = False
         # NOTE: the game folder scan re-runs on every reload, so remember which problems
         # we've already reported - a folder on an unplugged drive would print hourly otherwise
         self._scan_errors_printed: set[gamelib.ScanError] = set()

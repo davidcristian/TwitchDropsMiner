@@ -29,6 +29,7 @@ class PubSubMixin:
     channels: OrderedDict[int, Channel]
     watching_channel: AwaitableValue[Channel]
     _drops: dict[str, TimedDrop]
+    _watched_stopped: bool
     print: abc.Callable[[str], None]
     change_state: abc.Callable[[State], None]
     can_watch: abc.Callable[[Channel], bool]
@@ -118,6 +119,7 @@ class PubSubMixin:
                             f"(🎁: {stream_before.drops_enabled and '✔' or '❌'} -> "
                             f"{stream_after.drops_enabled and '✔' or '❌'})"
                         )
+                    self._watched_stopped = True
                     self.change_state(State.CHANNEL_SWITCH)
                 else:
                     # Channel stays ONLINE, and we can still watch it - no change

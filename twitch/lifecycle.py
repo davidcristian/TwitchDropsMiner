@@ -56,6 +56,8 @@ class LifecycleMixin:
     _mnt_task: asyncio.Task[None] | None
     _no_campaign_printed: bool
     _no_channel_printed: bool
+    _cut_priority: int | None
+    _watched_stopped: bool
     _scan_errors_printed: set[gamelib.ScanError]
     _task_error: Exception | None
     _state: State
@@ -109,6 +111,8 @@ class LifecycleMixin:
         self._no_channel_printed = False
         self._scan_errors_printed.clear()
         self._task_error = None
+        self._cut_priority = None
+        self._watched_stopped = False
         # wait at least half a second + whatever it takes to complete the closing
         # this allows aiohttp to safely close the session
         await asyncio.sleep(start_time + 0.5 - time())

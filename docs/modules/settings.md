@@ -39,7 +39,7 @@ widget and is changed only by the app or by editing the file.
 | `priority` | `list[str]` | `[]` | "Priority" list | `Twitch._run` in `State.GAMES_UPDATE`, in list order, and the inventory filter ([ADR-0005](../adr/ADR-0005-list-patterns.md)) |
 | `exclude` | `set[str]` | `set()` | "Exclude" list | `Twitch._run` in `State.GAMES_UPDATE`, and the inventory filter |
 | `priority_mode` | `PriorityMode` | `PriorityMode.PRIORITY_ONLY` | "Priority mode: " | `Twitch._run` in `State.GAMES_UPDATE`, and the inventory filter |
-| `refresh_interval` | `int` (minutes) | `5` | "Check for new streams every: " | `Twitch._maintenance_task` ([ADR-0003](../adr/ADR-0003-stream-refresh.md)) |
+| `refresh_interval` | `int` (minutes) | `5` | "Check for new streams every: " | `Twitch._maintenance_task` ([ADR-0003](../adr/ADR-0003-stream-refresh.md)) and `Twitch._refresh_finds_better` ([ADR-0018](../adr/ADR-0018-channel-slots.md#decision)) |
 | `restart_delay` | `int` (minutes) | `10` | "Restart after a crash after: " | `Twitch._await_restart`, as the wait after the first fatal error. A later wait doubles while each run ends within an hour, up to 60 minutes ([ADR-0006](../adr/ADR-0006-restart-after-fatal-error.md)) |
 | `autostart_tray` | `bool` | `False` | "Autostart into tray: " | `SettingsPanel.__init__`, for the checkbox. `update_autostart` stores the checkbox in it and adds `--tray` to the autostart command while the checkbox is on |
 | `tray_notifications` | `bool` | `True` | "Tray notifications: " | `TrayIcon.notify` |

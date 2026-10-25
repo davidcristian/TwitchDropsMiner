@@ -121,3 +121,4 @@ involves and costs, in Twitch requests where that applies. Why it was deferred, 
 | [076: A name that ends with a lone letter such as Σ pairs with the name without it](tasks/076-lone-letter-at-the-end-pairs-as-fuzzy.md) | gamelib |
 | [077: A stop of the X11 tray icon right after it starts leaves a thread that keeps the app open](tasks/077-x11-tray-icon-stop-right-after-start-keeps-the-app-open.md) | gui, traybackend |
 | [078: The Windows and macOS checks on the build Python have not passed and are not required](tasks/078-windows-macos-checks-on-the-build-python-not-required.md) | ci, repo checks |
+| [079: A watched channel that changes to a game of a lower priority stays watched until the next switch](tasks/079-watched-channel-on-a-lower-game-stays-watched.md) | twitch |

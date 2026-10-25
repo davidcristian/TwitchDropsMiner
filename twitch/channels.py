@@ -28,6 +28,7 @@ class ChannelsMixin:
     wanted_games: list[Game]
     watching_channel: AwaitableValue[Channel]
     _no_campaign_printed: bool
+    _cut_priority: int | None
     print: abc.Callable[[str], None]
     change_state: abc.Callable[[State], None]
     get_priority: abc.Callable[[Channel], int]
@@ -187,6 +188,9 @@ class ChannelsMixin:
         )
         to_remove_channels = [ch for ch in ordered_channels if ch not in kept_channels]
         ordered_channels = [ch for ch in ordered_channels if ch in kept_channels]
+        self._cut_priority = next(
+            (self.get_priority(channel) for channel in to_remove_channels if self.can_watch(channel)), None
+        )
         if to_remove_channels:
             # the tracked channels and the gui list are replaced below,
             # so unsubscribe from their topics and cancel their online checks
