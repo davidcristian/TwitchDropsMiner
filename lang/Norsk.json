@@ -5,6 +5,7 @@
     "fatal_error": "Det oppstod en alvorlig feil:\n",
     "restarting": "Starter på nytt automatisk kl. {time}...",
     "restart_longer": "Feilen kom mindre enn en time etter forrige omstart, så ventetiden er lengre enn innstillingen: {minutes} minutter.",
+    "restart_now": "Trykk på \"Last inn på nytt\" i fanen \"Innstillinger\" for å gjøre en omstart nå.",
     "watching": "Ser på: {channel}",
     "goes_online": "{channel} går ONLINE, bytter...",
     "goes_offline": "{channel} går OFFLINE, bytter...",
