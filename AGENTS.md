@@ -70,6 +70,8 @@ burst of requests puts that account at risk.
 | `mousewheel.py` | `wheel_events` and `wheel_scroll`, which read a mouse wheel turn on each windowing system |
 | `scrollarea.py` | `ScrollArea`, the canvas with scroll bars of the Inventory and Settings tabs, and the window size calculations |
 | `folderpicker.py` | `FolderPicker`, which shows the game folder dialog in a child process, so the miner keeps running while it is open |
+| `browser.py` | The browser engine logic: find a browser, build its launch arguments, parse the integrity response, and capture a login or an integrity token from a `BrowserConnection` |
+| `browsercdp.py` | The `BrowserConnection` over the Chrome DevTools Protocol: start a browser, open its page, read the page's requests, and run it under Xvfb on Linux |
 | `colorfonts.py` | `skip_color_fonts`, which makes fontconfig leave out color fonts before Tk starts when libXft is older than 2.3.5, which cannot draw them |
 | `traybackend.py` | `import_pystray`, which imports pystray with the first Linux tray backend that loads, so a broken GTK library or a missing DBus session bus leaves the X11 backend, `icon_class`, which makes the X11 icon receive clicks, dock in a tray that starts after it and take other threads' changes through a connection of their own, and `hides_by_stopping`, which has `ui/tray.py` stop the X11 icon to hide it |
 | `version.py` | `__version__`, to which CI appends the commit hash. Its doc is part of `docs/modules/constants.md` |

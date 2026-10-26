@@ -92,6 +92,8 @@ invariants and what it depends on. Every module in the [module map](../AGENTS.md
 | [mousewheel.md](modules/mousewheel.md) | `wheel_events` and `wheel_scroll`: the wheel events of each windowing system and their direction |
 | [scrollarea.md](modules/scrollarea.md) | `ScrollArea`: the scrolling canvas of the Inventory and Settings tabs, its scroll bars and wheel, the window size at start and the minimum window size |
 | [folderpicker.md](modules/folderpicker.md) | `FolderPicker` and `ChildDialog`: the folder dialog in a child process, which the app polls for the answer |
+| [browser.md](modules/browser.md) | The browser engine logic: find a browser, build its launch arguments, parse the integrity response, and capture a login or an integrity token |
+| [browsercdp.md](modules/browsercdp.md) | `CdpConnection` and `launch`: the browser engine over the Chrome DevTools Protocol, with the Xvfb wrapper on Linux |
 | [colorfonts.md](modules/colorfonts.md) | `skip_color_fonts`: the color fonts left out with a libXft older than 2.3.5, why, and the fontconfig rule that leaves them out |
 | [traybackend.md](modules/traybackend.md) | `import_pystray`: the tray backends tried in turn on Linux, the errors that move on to the next, the check of the DBus session bus, and the warnings |
 | [settingsdata.md](modules/settingsdata.md) | `drop_non_text_items`: the check that removes items that are not strings from the list and set settings |
