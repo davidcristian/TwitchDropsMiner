@@ -1,6 +1,6 @@
 # ADR-0021: Login with a token copied from the browser
 
-**Status:** Accepted (2026-10-25)
+**Status:** Superseded by ADR-0022
 
 ## Context
 

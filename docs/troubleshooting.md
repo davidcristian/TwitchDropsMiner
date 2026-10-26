@@ -78,10 +78,7 @@ From source, the same command is `env/bin/python main.py -vvv --log`.
 
 ## Logging in
 
-The app logs in by opening a browser for you to sign in, or with a token that you copy from your browser. It
-never asks for your password.
-
-**With a browser (the normal way):**
+The app logs in by opening a browser for you to sign in. It never asks for your password.
 
 1. Press `Log in with browser` in the Login Form on the Main tab.
 2. A browser window opens on the Twitch drops page. Sign in there to the account the app should mine on, and
@@ -98,31 +95,15 @@ The old login with a code on Twitch's device activation page no longer works: si
 rejects it for the client the app used, and a `Login` press prints "The login could not get a code from Twitch:
 invalid client". Use the browser login above.
 
-**With a token from your browser (a fallback):**
-
-1. Log in to <https://www.twitch.tv> in your browser with the account the app should mine on.
-2. Open the browser's developer tools. In most browsers, press `F12`.
-3. Open the panel that shows the stored data of the page: `Application` in Chrome and Edge, `Storage` in
-   Firefox.
-4. Under `Cookies`, select `https://www.twitch.tv`.
-5. Find the cookie named `auth-token`, and copy its value. Copy the value only, not the name.
-6. In the app, paste the value into the `Token:` entry of the Login Form, and press `Use token`.
-
-The app sends the token to Twitch once to check it. "Twitch did not accept the token." means that the value is
-wrong or the session has ended: copy it again. "The token belongs to a Twitch client that the app does not know."
-means that the value is not the `auth-token` of `https://www.twitch.tv`. After either message, the Login Form
-waits for the next token.
-
-The token works like a password: anyone who has it can use your Twitch account. Do not share it. The app keeps
-it in `cookies.jar`. The token belongs to the session of that browser, so logging out of Twitch in that browser
-ends it, and at its next start the app asks you to log in again. `Invalidate` in the app ends the token too,
-which logs that browser out of Twitch.
+The app keeps your login in `cookies.jar` and restores it on every run, so you log in only once. Do not share
+that file: anyone who has it can use your account. Logging out of Twitch in the browser you signed in with ends
+the login, so the app asks you to log in again at its next start.
 
 Twitch guards the drops campaigns query with a `Client-Integrity` header that only a browser page produces. The
 browser login reads that header, and a background task renews it before it expires, so mining keeps working for
-days. A token you paste without a browser login has no such header, so it fails that query. When Twitch stops
-accepting the renewed header, a run ends with an error such as "failed integrity check", and the app logs in and
-renews it on the next run, after the wait set in "Restart after a crash after" on the Settings tab.
+days. When Twitch stops accepting the renewed header, a run ends with an error such as "failed integrity check",
+and the app logs in and renews it on the next run, after the wait set in "Restart after a crash after" on the
+Settings tab.
 
 **To log out or switch accounts**, press `Invalidate` on the Help tab. It ends the session at Twitch, deletes
 `cookies.jar` and starts the login again. Another way is to close the app, delete `cookies.jar` and start the app.

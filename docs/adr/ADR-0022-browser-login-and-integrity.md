@@ -23,9 +23,10 @@ token every 16 hours.
 
 1. **The Login Form opens a browser.** A "Log in with browser" button runs the browser engine, which opens a
    visible browser on the inventory page. The user signs in and solves any challenge there. The engine reads the
-   `auth-token` cookie once it appears and the integrity token from the page's next `/integrity` response, and the
-   app logs in with that token as the web client, checked as [ADR-0021](ADR-0021-browser-token-login.md) checks
-   any token. The token paste stays as a fallback.
+   `auth-token` cookie once it appears and the integrity token from the page's next `/integrity` response. The app
+   checks the token with `GET https://id.twitch.tv/oauth2/validate`, which names its client
+   ([tokencheck.md](../modules/tokencheck.md#in-the-login)), switches to that client for its user agent and client
+   ID, and keeps the token in the `auth-token` cookie of `cookies.jar`. This is the only login the app offers.
 2. **The app sends `Client-Integrity`.** `_AuthState.headers` adds the header on every GQL request while a token is
    held, with the `X-Device-Id` the token is bound to, read once so a refresh cannot split the two.
 3. **A task renews the token before it expires.** `_integrity_loop` runs for the whole run. It sleeps until
@@ -70,7 +71,7 @@ token every 16 hours.
 
 ## Related
 
-- [ADR-0021](ADR-0021-browser-token-login.md): the token check and the switch to the token's client.
+- [ADR-0021](ADR-0021-browser-token-login.md): the token paste this record replaces, now superseded.
 - [ADR-0010](ADR-0010-device-code-login.md), [ADR-0002](ADR-0002-twitch-traffic-budget.md),
   [ADR-0006](ADR-0006-restart-after-fatal-error.md), [ADR-0011](ADR-0011-secrets-in-logs.md).
 - [browser.md](../modules/browser.md), [browsercdp.md](../modules/browsercdp.md),

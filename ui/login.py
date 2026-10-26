@@ -1,4 +1,4 @@
-"""`LoginForm`, the panel of the Main tab that shows the login status and waits for a login or a token."""
+"""`LoginForm`, the panel of the Main tab that shows the login status and waits for a login."""
 from __future__ import annotations
 
 import asyncio
@@ -9,7 +9,6 @@ from yarl import URL
 
 from translate import _
 from utils import webopen
-from tokencheck import entered_token
 
 if TYPE_CHECKING:
     from gui import GUIManager
@@ -28,30 +27,16 @@ class LoginForm:
         ttk.Label(frame, textvariable=self._var, justify="center").grid(column=1, row=0)
 
         self._confirm = asyncio.Event()
-        self._entered: str | None = None
         self._browser = False
         self._button = ttk.Button(
             frame, text=_("gui", "login", "button"), command=self._confirm.set, state="disabled"
         )
         self._button.grid(column=0, row=1, columnspan=2)
-        ttk.Label(frame, text=_("gui", "login", "token")).grid(column=0, row=2)
-        self._token = ttk.Entry(frame, width=12, show="*", state="disabled")
-        self._token.grid(column=1, row=2, sticky="ew")
-        self._token_button = ttk.Button(
-            frame, text=_("gui", "login", "token_button"), command=self._use_token, state="disabled"
-        )
-        self._token_button.grid(column=0, row=3, columnspan=2, pady=(2, 0))
         self._browser_button = ttk.Button(
             frame, text=_("gui", "login", "browser_button"), command=self._use_browser, state="disabled"
         )
-        self._browser_button.grid(column=0, row=4, columnspan=2, pady=(2, 0))
+        self._browser_button.grid(column=0, row=2, columnspan=2, pady=(2, 0))
         self.update(_("gui", "login", "logged_out"), None)
-
-    def _use_token(self) -> None:
-        if token := entered_token(self._token.get()):
-            self._entered = token
-            self._token.delete(0, "end")
-            self._confirm.set()
 
     def _use_browser(self) -> None:
         self._browser = True
@@ -62,23 +47,21 @@ class LoginForm:
         """Whether the last ask ended with a press of the browser login button."""
         return self._browser
 
-    async def wait_for_login_press(self) -> str | None:
-        """Wait for a press of Login or the browser button, which return None, or of the token button with a token."""
+    async def wait_for_login_press(self) -> None:
+        """Wait for a press of the Login button or the browser login button."""
         self._confirm.clear()
-        self._entered = None
         self._browser = False
-        widgets = (self._button, self._token, self._token_button, self._browser_button)
+        widgets = (self._button, self._browser_button)
         try:
             for widget in widgets:
                 widget.config(state="normal")
             await self._manager.coro_unless_closed(self._confirm.wait())
-            return self._entered
         finally:
             for widget in widgets:
                 widget.config(state="disabled")
 
-    async def ask_login(self) -> str | None:
-        """Ask the user to log in, and return the token they entered, or None when they press Login."""
+    async def ask_login(self) -> None:
+        """Ask the user to log in, and return when they press Login or the browser login button."""
         self.update(_("gui", "login", "required"), None)
         # ensure the window isn't hidden into tray when this runs
         self._manager.grab_attention(sound=False)

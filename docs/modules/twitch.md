@@ -122,7 +122,7 @@ stream without a game ([streamdata.md](streamdata.md#null-stream-fields)).
 `get_auth` calls `_AuthState.validate`, which holds a lock so that concurrent callers log in once. It creates a random
 `session_id`, calls `_log_in`, and then reads `device_id` from the `unique_id` cookie that a GET of the client's
 `CLIENT_URL` sets. `_log_in` takes the token from the `auth-token` cookie of `https://www.twitch.tv` in `cookies.jar`,
-or else from `_oauth_login`, which waits for the Login Form (`ask_login`) and returns a token entered with `Use token`.
+or else from `_oauth_login`, which waits for the Login Form (`ask_login`).
 A `Login` press runs the OAuth device code flow (POST `/oauth2/device`, show the code, poll `/oauth2/token`), which
 Twitch now rejects for the app's client, so it prints Twitch's message and waits for the next press
 ([devicecode.md](devicecode.md)). A GET

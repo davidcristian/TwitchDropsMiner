@@ -2,7 +2,7 @@ import pytest
 from yarl import URL
 
 from twitchapi import ClientInfo, ClientType
-from tokencheck import CLIENT_TYPES, TokenCheck, TokenResult, check_token, client_of, entered_token
+from tokencheck import CLIENT_TYPES, TokenCheck, TokenResult, check_token, client_of
 
 OTHER = ClientInfo(URL("https://other.example"), "other-id", "Other/1.0")
 
@@ -75,19 +75,3 @@ def test_a_200_response_without_a_whole_number_user_id_fails(user_id):
 
 def test_a_200_response_without_a_user_id_fails():
     assert check_token(200, {"client_id": ClientType.WEB.CLIENT_ID}) == TokenCheck(TokenResult.FAILED)
-
-
-@pytest.mark.parametrize(("text", "token"), [
-    ("abc123", "abc123"),
-    ("  abc123\n", "abc123"),
-    ("abc\r\n123\t", "abc123"),
-    ("abc\x00\x7f\x1b123", "abc123"),
-    ("a-b_c.1", "a-b_c.1"),
-])
-def test_entered_token_removes_whitespace_and_control_characters(text, token):
-    assert entered_token(text) == token
-
-
-@pytest.mark.parametrize("text", ["", "   ", "\n\t", "\x00"])
-def test_entered_token_returns_an_empty_text_for_an_entry_without_a_token(text):
-    assert entered_token(text) == ""

@@ -31,12 +31,6 @@ class TokenCheck(NamedTuple):
     user_id: int = 0
 
 
-def entered_token(text: str) -> str:
-    """Return the text entered as a token without whitespace and control characters, which no token has."""
-    # aiohttp raises ValueError for a header value with a control character, such as a newline
-    return "".join(char for char in text if char.isprintable() and not char.isspace())
-
-
 def client_of(client_id: Any, clients: abc.Iterable[ClientInfo] = CLIENT_TYPES) -> ClientInfo | None:
     """Return the client of clients whose `CLIENT_ID` is client_id, or None when none has it."""
     return next((client for client in clients if client.CLIENT_ID == client_id), None)

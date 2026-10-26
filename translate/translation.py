@@ -84,8 +84,6 @@ class GUILoginForm(TypedDict):
     enter_code: str
     required: str
     button: str
-    token: str
-    token_button: str
     browser_button: str
 
 

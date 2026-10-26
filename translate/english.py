@@ -90,8 +90,6 @@ default_translation: Translation = {
             "request": "Please log in to continue.",
             "enter_code": "Enter this code on Twitch's device activation page: {code}",
             "button": "Login",
-            "token": "Token:",
-            "token_button": "Use token",
             "browser_button": "Log in with browser",
         },
         "websocket": {
