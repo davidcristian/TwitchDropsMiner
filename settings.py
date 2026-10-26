@@ -33,6 +33,7 @@ class SettingsFile(TypedDict):
     priority_mode: PriorityMode
     game_dirs: list[str]
     detected_games: list[str]
+    browser_path: str
 
 
 default_settings: SettingsFile = {
@@ -51,6 +52,7 @@ default_settings: SettingsFile = {
     "priority_mode": PriorityMode.PRIORITY_ONLY,
     "game_dirs": [],
     "detected_games": [],
+    "browser_path": "",
 }
 
 
@@ -94,6 +96,7 @@ class Settings:
     priority_mode: PriorityMode
     game_dirs: list[str]
     detected_games: list[str]
+    browser_path: str
 
     PASSTHROUGH = ("_settings", "_args", "_changes")
 

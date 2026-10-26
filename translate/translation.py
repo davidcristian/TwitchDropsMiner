@@ -27,6 +27,8 @@ class LoginMessages(TypedDict):
     no_code: str
     token_rejected: str
     unknown_client: str
+    no_browser: str
+    browser_timeout: str
 
 
 class ErrorMessages(TypedDict):

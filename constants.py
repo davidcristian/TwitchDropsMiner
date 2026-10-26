@@ -97,6 +97,9 @@ WS_MIN_UPTIME = timedelta(seconds=60)
 ONLINE_DELAY = timedelta(seconds=120)
 ONLINE_TRIES = 3
 WATCH_INTERVAL = timedelta(seconds=20)
+# How long the browser login waits for the user to log in, and the integrity refresh for the page's request.
+BROWSER_LOGIN_TIMEOUT = timedelta(minutes=5)
+INTEGRITY_CAPTURE_TIMEOUT = timedelta(seconds=60)
 # Random amount of time added on top of the channel refresh interval,
 # so that the requests don't end up sent on a perfectly fixed schedule.
 REFRESH_JITTER = timedelta(seconds=60)

@@ -52,6 +52,8 @@ class _AuthState(LoginMixin):
         self._login_client: ClientInfo = twitch._client_type
         # the current integrity token, with the device id it is bound to and its expiry, or None for no web token
         self.integrity: IntegrityToken | None = None
+        # one browser runs at a time, so a refresh and the on-error retry never start two
+        self._integrity_lock = asyncio.Lock()
         self.user_id: int
         self.device_id: str
         self.session_id: str

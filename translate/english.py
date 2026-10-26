@@ -34,6 +34,8 @@ default_translation: Translation = {
         "no_code": "The login could not get a code from Twitch: {message}",
         "token_rejected": "Twitch did not accept the token.",
         "unknown_client": "The token belongs to a Twitch client that the app does not know.",
+        "no_browser": "No web browser was found to log in with. Install Chrome, Edge, Chromium or Brave.",
+        "browser_timeout": "The browser login did not finish in time. Please try again.",
     },
     "error": {
         "site_down": "Twitch is down, retrying in {seconds} seconds...",
