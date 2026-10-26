@@ -53,7 +53,8 @@ requested during a pass, the handler's own next state included, the first in `ST
 also runs a later state that a request names, and a reload requested during `INVENTORY_FETCH` is merged into
 it ([ADR-0017](adr/ADR-0017-state-requests.md)). `EXIT` is never replaced. Before
 the loop, `_run` starts the GUI poll task, logs in with `get_auth`, starts the websocket pool without waiting for
-a connection, starts `_watch_loop`, subscribes the user's two PubSub topics and moves to `INVENTORY_FETCH`.
+a connection, starts `_watch_loop` and `_integrity_loop`, subscribes the user's two PubSub topics and moves to
+`INVENTORY_FETCH`.
 
 | State | What `_run` does | Next |
 | --- | --- | --- |
@@ -148,6 +149,7 @@ tab. [ADR-0002](adr/ADR-0002-twitch-traffic-budget.md) sets the request budget.
 | GQL, Twitch's GraphQL API | `Twitch.gql_request`, with the operations and hashes in `GQL_QUERIES` ([runbook](runbooks/gql-operations.md)) | `https://gql.twitch.tv/gql` | `RateLimiter(capacity=5, window=1)`: at most 5 POSTs start in any span of 1 second, and at most 5 are open. A batch of operations is one POST. Retries with backoff up to 60 seconds. |
 | HTTP | `Twitch.request` | `id.twitch.tv` (login, `Invalidate`), `www.twitch.tv`, `usher.ttvnw.net`, the stream playlist and its segment URLs, image URLs from campaign data (`ImageCache`) | No rate limit. Retries a 5xx status or a connection error with backoff up to 3 minutes. |
 | PubSub | `Websocket` | `wss://pubsub-edge.twitch.tv/v1` | Up to `MAX_WEBSOCKETS` (8) connections with up to `WS_TOPICS_LIMIT` (50) topics each. `LISTEN` and `UNLISTEN` go in groups of 20 topics. A `PING` every `PING_INTERVAL` (3 minutes); a connection with no `PONG` within `PING_TIMEOUT` (10 seconds) reconnects. |
+| Browser | the browser engine (`browser.py`, `browsercdp.py`) | `www.twitch.tv` (the login page and the inventory page) | A visible window at a browser login, and one hidden load about every 16 hours to renew the integrity token ([ADR-0022](adr/ADR-0022-browser-login-and-integrity.md)). Not through the app's session or the GQL limiter. |
 
 ## Background tasks
 
@@ -156,6 +158,7 @@ tab. [ADR-0002](adr/ADR-0002-twitch-traffic-budget.md) sets the request budget.
 | `GUIManager._poll` | `GUIManager.start`, at the start of `_run` | every 0.05 seconds |
 | `Twitch._watch_loop` | `_run`, once per run | every `WATCH_INTERVAL` (20 seconds); the `CurrentDrop` check 15 seconds into a cycle; `restart_watching` ends a cycle after that check |
 | `Twitch._maintenance_task` | the end of each `fetch_inventory` | sleeps until the earliest of: `refresh_interval` minutes plus up to `REFRESH_JITTER` (60 seconds); the start or end of a campaign or drop that can progress within the hour; one hour after it started, when it moves to `INVENTORY_FETCH` and ends |
+| `Twitch._integrity_loop` | `_run`, once per run | while the login holds an integrity token, sleeps until `INTEGRITY_MARGIN` (10 minutes) before its expiry, then renews it; waits `INTEGRITY_RETRY` (5 minutes) after a failure ([ADR-0022](adr/ADR-0022-browser-login-and-integrity.md)) |
 | `Websocket._handle`, one per connection | `WebsocketPool.start` and `WebsocketPool.add_topics` | each pass collects messages until 0.5 seconds pass with no message; a `PING` every 3 minutes; reconnects at once after a connection that stayed open `WS_MIN_UPTIME` (60 seconds), and otherwise after a backoff delay of up to 3 minutes |
 | `Channel._online_delay`, one per channel | `Channel.check_online` | `ONLINE_DELAY` (120 seconds) after the event, and for an offline channel without a stream up to twice more, 120 seconds apart |
 | `CampaignProgress._timer_loop` | `CampaignProgress.start_timer` | once a second, for one minute |
@@ -163,8 +166,8 @@ tab. [ADR-0002](adr/ADR-0002-twitch-traffic-budget.md) sets the request budget.
 
 `refresh_interval` is "Check for new streams every": 0 (Never), 1, 2, 5, 10, 15 or 30 minutes, 5 by default
 ([ADR-0003](adr/ADR-0003-stream-refresh.md)). `_watch_loop`, `_maintenance_task` and `Websocket._handle` use
-`task_wrapper(critical=True)`: an exception in one ends the run as a fatal error. `Twitch.shutdown` stops all
-three.
+`task_wrapper(critical=True)`: an exception in one ends the run as a fatal error. `_integrity_loop` uses
+`task_wrapper(critical=False)`, so a failed refresh is logged and the run goes on. `Twitch.shutdown` stops them.
 
 ## Platform differences
 

@@ -123,25 +123,25 @@ stream without a game ([streamdata.md](streamdata.md#null-stream-fields)).
 `session_id`, calls `_log_in`, and then reads `device_id` from the `unique_id` cookie that a GET of the client's
 `CLIENT_URL` sets. `_log_in` takes the token from the `auth-token` cookie of `https://www.twitch.tv` in `cookies.jar`,
 or else from `_oauth_login`, which waits for the Login Form (`ask_login`) and returns a token entered with `Use token`.
-After a `Login` press it runs the OAuth device code flow: it POSTs to `https://id.twitch.tv/oauth2/device`, shows the
-code through the Login Form (`ask_enter_code`), then POSTs to `https://id.twitch.tv/oauth2/token` every `interval`
-seconds until the user has entered the code. The code is requested after the press, because its lifetime counts from the
-request. An expired code raises `RequestInvalid`, and after a device response without a code the flow prints Twitch's
-message ([devicecode.md](devicecode.md)). Either way it waits for the next press, so each press requests one code. A GET
+A `Login` press runs the OAuth device code flow (POST `/oauth2/device`, show the code, poll `/oauth2/token`), which
+Twitch now rejects for the app's client, so it prints Twitch's message and waits for the next press
+([devicecode.md](devicecode.md)). A GET
 of `https://id.twitch.tv/oauth2/validate` checks each token ([tokencheck.md](tokencheck.md#in-the-login)), and
-`_validate` saves the cookie jar with `save_cookies`, which writes a second file and renames it over `cookies.jar`. A
-save that raises `OSError`, such as on a full disk, is logged, the old `cookies.jar` stays whole and the login goes on
-([savefiles.md](savefiles.md#saves-during-the-run-outside-the-inventory-fetch)).
+`_validate` saves the jar with `save_cookies`, which renames a second file over `cookies.jar`; a failed `OSError`
+save is logged and the old file stays whole ([savefiles.md](savefiles.md#saves-during-the-run-outside-the-inventory-fetch)).
+
+`Log in with browser` calls `browser_login`, which opens a visible browser and returns the token with the integrity
+token it reads. `_AuthState.headers` sends a `Client-Integrity` header bound to the browser's device id,
+`_integrity_loop` renews it before it expires, and a `failed integrity check` during a request refreshes it once
+([ADR-0022](../adr/ADR-0022-browser-login-and-integrity.md), [browser.md](browser.md)).
 
 When `cookies.jar` fails to load, `get_session` logs a warning with the error's class and text, empties the
 jar and goes on, so the login runs again. aiohttp reads a file that is not JSON as a pickle, so the error can
-be of many types, and `get_session` catches `Exception`. With aiohttp 3.14.3, an empty file raised `EOFError`,
-a cut off file `KeyError`, a JSON list `AttributeError` and a folder `IsADirectoryError`. None of these texts
-held a cookie value.
+be of many types, and `get_session` catches `Exception`.
 
 The `Invalidate` button on the Help tab revokes the token at `https://id.twitch.tv/oauth2/revoke`, with the
 `CLIENT_ID` of `_client_type`. On a 200 response it calls `invalidate(delete_cookies=True)`, and in every case it
-enters `State.RESTART`. The app has no password login ([ADR-0010](../adr/ADR-0010-device-code-login.md)).
+enters `State.RESTART`. The app has no password form; the user signs in on Twitch's own page in the browser.
 
 ## State machine
 

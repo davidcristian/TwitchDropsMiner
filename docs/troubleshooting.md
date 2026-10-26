@@ -78,25 +78,27 @@ From source, the same command is `env/bin/python main.py -vvv --log`.
 
 ## Logging in
 
-The app logs in with a code on Twitch's device activation page, or with a token that you copy from your browser.
-It never asks for your password.
+The app logs in by opening a browser for you to sign in, or with a token that you copy from your browser. It
+never asks for your password.
 
-**With a code:**
+**With a browser (the normal way):**
 
-1. Press `Login` in the Login Form on the Main tab.
-2. The Output box shows a code, and a few seconds later your browser opens the Twitch activation page. If no
-   browser opens, go to <https://www.twitch.tv/activate> yourself.
-3. Log in to Twitch in the browser with the account the app should mine on, and enter the code.
+1. Press `Log in with browser` in the Login Form on the Main tab.
+2. A browser window opens on the Twitch drops page. Sign in there to the account the app should mine on, and
+   solve any captcha or two-factor step Twitch shows.
+3. Once you are signed in, the app reads your login from the browser and closes the window.
 
-The app checks every few seconds whether you entered the code. When the code expires first, press `Login` again
-for a new one.
+The app needs a Chromium-based browser installed: Chrome, Edge, Chromium or Brave. It starts the browser with its
+own throwaway profile, not your everyday one. When it finds none, it prints "No web browser was found to log in
+with": install one, or set `browser_path` in `settings.json` to the path of a browser. On Linux the app renews
+the login in the background with a hidden browser that needs the `xvfb` package, so install `xvfb` with your
+package manager.
 
-**When `Login` shows no code.** Since about 2026-09-18, Twitch has rejected the device code login, the login with a
-code above, for the client that the app uses. A `Login` press then shows "The login could not get a code from
-Twitch: invalid client" in the Output box, or another message from Twitch after the colon. While Twitch does so,
-log in with a token from your browser instead.
+The old login with a code on Twitch's device activation page no longer works: since about 2026-09-18 Twitch
+rejects it for the client the app used, and a `Login` press prints "The login could not get a code from Twitch:
+invalid client". Use the browser login above.
 
-**With a token from your browser:**
+**With a token from your browser (a fallback):**
 
 1. Log in to <https://www.twitch.tv> in your browser with the account the app should mine on.
 2. Open the browser's developer tools. In most browsers, press `F12`.
@@ -112,16 +114,15 @@ means that the value is not the `auth-token` of `https://www.twitch.tv`. After e
 waits for the next token.
 
 The token works like a password: anyone who has it can use your Twitch account. Do not share it. The app keeps
-it in `cookies.jar`, like a login with a code. The token belongs to the session of that browser, so logging out
-of Twitch in that browser ends it, and at its next start the app asks you to log in again. `Invalidate` in the
-app ends the token too, which logs that browser out of Twitch.
+it in `cookies.jar`. The token belongs to the session of that browser, so logging out of Twitch in that browser
+ends it, and at its next start the app asks you to log in again. `Invalidate` in the app ends the token too,
+which logs that browser out of Twitch.
 
-The app reads nothing from your browser by itself, and it takes no part in Twitch's integrity check. Twitch's
-website sends an integrity token, which shows Twitch that a real browser runs the page, with some of its
-requests. The app sends none. If Twitch requires one for the requests that the app sends with the token, each
-run ends with an error from Twitch, such as "failed integrity check", and the app restarts after the time set in
-"Restart after a crash after" on the Settings tab. The app does nothing to get past the check, so the token
-login does not work then.
+Twitch guards the drops campaigns query with a `Client-Integrity` header that only a browser page produces. The
+browser login reads that header, and a background task renews it before it expires, so mining keeps working for
+days. A token you paste without a browser login has no such header, so it fails that query. When Twitch stops
+accepting the renewed header, a run ends with an error such as "failed integrity check", and the app logs in and
+renews it on the next run, after the wait set in "Restart after a crash after" on the Settings tab.
 
 **To log out or switch accounts**, press `Invalidate` on the Help tab. It ends the session at Twitch, deletes
 `cookies.jar` and starts the login again. Another way is to close the app, delete `cookies.jar` and start the app.

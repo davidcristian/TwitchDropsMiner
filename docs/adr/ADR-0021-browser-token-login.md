@@ -38,11 +38,10 @@ so it would have deleted a token of the web client at the next start.
 5. **The token is kept as the device code login keeps its token,** in the `auth-token` cookie of
    `https://www.twitch.tv` in `cookies.jar`. The token check names the client at every start, so no
    `settings.json` key stores it.
-6. **The app does not touch the browser or the integrity check.** It reads no browser file or cookie store,
-   does not start or drive a browser, and creates or sends no integrity token (`Client-Integrity`). When Twitch
-   answers an operation sent with the web client with an integrity error, such as "failed integrity check", the
-   app reports it through the error paths it has: `gql_request` raises `GQLException`, which ends the run as a
-   fatal error ([ADR-0006](ADR-0006-restart-after-fatal-error.md)). It does nothing to get past the check.
+6. **The token paste reads no browser files.** The paste path reads no browser file or cookie store. Logging in
+   with a browser and refreshing the `Client-Integrity` header are a separate decision
+   ([ADR-0022](ADR-0022-browser-login-and-integrity.md)); the paste path itself sends no integrity token, so a
+   pasted web token fails the `Campaigns` operation until a browser login or a running refresh provides one.
 
 ## Consequences
 
@@ -56,10 +55,10 @@ so it would have deleted a token of the web client at the next start.
 - **The token works like a password.** The entry masks it, `cookies.jar` keeps it, and no log line shows it:
   `redact` hides the `Authorization` header and the `auth-token` cookie name
   ([ADR-0011](ADR-0011-secrets-in-logs.md)).
-- **The riskiest assumption** is that Twitch answers the GQL operations of the app, sent with the web client ID
-  and no integrity token, as it answers those of the Android app client. Only a real login can show it. If
-  Twitch requires the integrity token, every run that sends the operation ends with the error, and the restart
-  wait doubles up to 60 minutes.
+- **A pasted web token with no integrity token** fails the `Campaigns` operation, which the web client guards with
+  `Client-Integrity`. A browser login or a running refresh provides that header
+  ([ADR-0022](ADR-0022-browser-login-and-integrity.md)); a web token used without one ends each run at the error,
+  and the restart wait doubles up to 60 minutes.
 - **A token of `MOBILE_WEB` or `SMARTBOX` is handled the same way.** Their `CLIENT_URL` is not `www.twitch.tv`, so the
   device ID comes from their own page, and the cookies stay at `www.twitch.tv`.
 - **A rejected token from the device code flow** prints the message and waits for the next press, like an
@@ -72,10 +71,9 @@ so it would have deleted a token of the web client at the next start.
 
 - **The device code login with the `SMARTBOX` client.** Twitch still answers its device code request, but, as
   upstream's maintainer reports, that client gets no campaigns, so the miner would not start new campaigns.
-- **Reading the token from the browser's cookie store, or driving a browser.** The owner ruled it out. The app
-  would read the files of other programs.
-- **Creating an integrity token** to pass the check that Twitch may apply to the web client. The owner ruled it
-  out.
+- **Reading the token from the browser's cookie store.** The app reads no other program's files. Driving a
+  browser the app starts, to log in and to capture the integrity token, is
+  [ADR-0022](ADR-0022-browser-login-and-integrity.md).
 - **A `settings.json` key with the client type.** The token check returns the client ID at every start, and a
   key would need a name that can never change ([ADR-0007](ADR-0007-kept-identifiers.md)).
 
