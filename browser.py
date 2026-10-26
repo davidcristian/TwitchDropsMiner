@@ -4,6 +4,7 @@ Protocol) and holds every decision, so a fake connection tests it without a real
 """
 from __future__ import annotations
 
+import os
 import sys
 import json
 import shutil
@@ -20,9 +21,25 @@ INVENTORY_URL = "https://www.twitch.tv/drops/inventory"
 INTEGRITY_SUFFIX = "/integrity"
 # the cookie the browser sets once the user has logged in
 AUTH_COOKIE = "auth-token"
-# the names a Chromium-based browser is installed under, in the order the engine tries them
+# the names a Chromium-based browser is on the PATH under, in the order the engine tries them
 BROWSER_NAMES = (
-    "google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "microsoft-edge", "msedge", "brave",
+    "google-chrome", "google-chrome-stable", "chrome", "chromium", "chromium-browser",
+    "microsoft-edge", "msedge", "brave-browser", "brave",
+)
+# where a browser installs on Windows: an environment variable for the root directory, then the path under it
+WINDOWS_ROOTS = ("ProgramFiles", "ProgramFiles(x86)", "LocalAppData")
+WINDOWS_BROWSERS = (
+    "Google/Chrome/Application/chrome.exe",
+    "Microsoft/Edge/Application/msedge.exe",
+    "BraveSoftware/Brave-Browser/Application/brave.exe",
+    "Chromium/Application/chrome.exe",
+)
+# where a browser installs on macOS
+MAC_BROWSERS = (
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
 )
 
 
@@ -90,11 +107,23 @@ class BrowserConnection(Protocol):
         ...
 
 
+def install_candidates() -> list[Path]:
+    """Return the standard install paths of a browser on Windows and macOS, in the order the engine tries them."""
+    candidates: list[Path] = []
+    for variable in WINDOWS_ROOTS:
+        if root := os.environ.get(variable):
+            candidates += [Path(root) / suffix for suffix in WINDOWS_BROWSERS]
+    candidates += [Path(path) for path in MAC_BROWSERS]
+    return candidates
+
+
 def find_browser(configured: str = "", names: abc.Iterable[str] = BROWSER_NAMES) -> str | None:
-    """Return the browser to run: the configured path when it is a file, else the first of names on the PATH."""
+    """Return the browser to run: the configured path, else one on the PATH, else a standard install location."""
     if configured:
         return configured if Path(configured).is_file() else None
-    return next((found for name in names if (found := shutil.which(name))), None)
+    if found := next((path for name in names if (path := shutil.which(name))), None):
+        return found
+    return next((str(path) for path in install_candidates() if path.is_file()), None)
 
 
 def launch_args(port: int, profile: str, *, headless: bool, user_agent: str = "") -> list[str]:

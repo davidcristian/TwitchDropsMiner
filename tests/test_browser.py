@@ -65,8 +65,37 @@ def test_find_browser_returns_the_first_name_on_the_path():
     assert browser.find_browser("", names=["definitely-not-a-browser", "sh"]) == browser.shutil.which("sh")
 
 
-def test_find_browser_returns_none_when_no_name_is_found():
+def test_find_browser_returns_none_when_nothing_is_found(monkeypatch):
+    monkeypatch.setattr(browser, "MAC_BROWSERS", ())
+    for variable in browser.WINDOWS_ROOTS:
+        monkeypatch.delenv(variable, raising=False)
     assert browser.find_browser("", names=["definitely-not-a-browser-xyz"]) is None
+
+
+def test_find_browser_finds_a_windows_install(tmp_path, monkeypatch):
+    chrome = tmp_path / "Google" / "Chrome" / "Application" / "chrome.exe"
+    chrome.parent.mkdir(parents=True)
+    chrome.write_text("")
+    monkeypatch.setenv("ProgramFiles", str(tmp_path))
+    assert browser.find_browser("", names=["no-such-browser"]) == str(chrome)
+
+
+def test_find_browser_finds_a_macos_install(tmp_path, monkeypatch):
+    app = tmp_path / "Chromium"
+    app.write_text("")
+    monkeypatch.setattr(browser, "MAC_BROWSERS", (str(app),))
+    for variable in browser.WINDOWS_ROOTS:
+        monkeypatch.delenv(variable, raising=False)
+    assert browser.find_browser("", names=["no-such-browser"]) == str(app)
+
+
+def test_install_candidates_includes_windows_roots_and_mac_paths(monkeypatch):
+    monkeypatch.setenv("ProgramFiles", "C:/PF")
+    monkeypatch.delenv("ProgramFiles(x86)", raising=False)
+    monkeypatch.delenv("LocalAppData", raising=False)
+    candidates = [str(path) for path in browser.install_candidates()]
+    assert any("C:/PF" in path and path.endswith("chrome.exe") for path in candidates)
+    assert any(path.startswith("/Applications/") for path in candidates)
 
 
 def test_launch_args_for_login_has_no_headless_or_user_agent():

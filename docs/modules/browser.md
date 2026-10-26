@@ -9,7 +9,8 @@ the Chrome DevTools Protocol, so a fake connection tests it without a real brows
 ## Public contract
 
 - `find_browser(configured="", names=BROWSER_NAMES)` returns the browser path: `configured` when it is a file,
-  else the first of `names` found on the `PATH`, else `None`.
+  else the first of `names` found on the `PATH`, else a browser at a standard install location on Windows (under
+  `%ProgramFiles%` and the like) or macOS (`/Applications`), else `None`.
 - `launch_args(port, profile, *, headless, user_agent="")` returns the browser arguments for a debugging port and
   a throwaway profile. `headless` adds `--headless=new`; a `user_agent` adds `--user-agent`. The last argument is
   the inventory page.
