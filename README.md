@@ -100,20 +100,6 @@ Twitch Drops Miner is built for these goals:
 - Low Twitch traffic. Twitch sees no more traffic than a diligent person would cause, because the app runs on your own account and a burst of requests puts that account at risk. Requests to GQL, the GraphQL API that the Twitch website uses, are limited to 5 per second. A full reload, which can send thousands of GQL operations in batches of 20, runs at startup, once an hour, after a restart that follows a fatal error, after a drop is claimed or Twitch sends a reward notification, and when you press `Invalidate` or `Reload`. The checks for new streams between reloads cost a few requests each.
 - One account. The app mines on a single Twitch account.
 
-The app is not built for:
-
-- Channel points.
-- Other sites that depend on watching Twitch streams.
-- Running without a GUI, or with only a console.
-- Running as a 24/7 miner on a remote server, in Docker or in any other remote deployment.
-- Unattended use with 100% uptime. A restart after a fatal error waits 10 minutes by default, and up to 60 minutes when the error repeats.
-- More than one account.
-- Campaigns that your account is not linked to.
-- Anything that raises Twitch traffic above what a diligent person would cause.
-- Notifications beyond the current tray notifications, such as email or webhooks.
-
-Features from this list will not be added.
-
 ### License:
 
 This project is licensed under the [GNU Affero General Public License v3](LICENSE). Code from the original project stays under the [MIT License](LICENSE.MIT).
