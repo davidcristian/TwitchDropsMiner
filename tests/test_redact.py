@@ -17,6 +17,7 @@ DOCUMENTED_SECRET_KEYS = (
     "auth-token",
     "auth_token",
     "authorization",
+    "client-integrity",
     "cookie",
     "device_code",
     "password",

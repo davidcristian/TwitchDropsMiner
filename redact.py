@@ -10,13 +10,14 @@ from yarl import URL
 
 HIDDEN = "<hidden>"
 # Header names, form fields, JSON keys and URL query parameters whose value is a secret, compared lowercase.
-# "token" is the revoke request's field and the usher URL's playback token, which identifies the user.
-# "device_code" lets anyone finish a login in progress. "auth-token" is the cookie that holds the login token.
+# "token" is the revoke field and the usher URL's playback token. "device_code" finishes a login in progress.
+# "auth-token" keeps the login token in cookies.jar; "client-integrity" is the integrity header for that token.
 SECRET_KEYS = frozenset({
     "access_token",
     "auth-token",
     "auth_token",
     "authorization",
+    "client-integrity",
     "cookie",
     "device_code",
     "password",

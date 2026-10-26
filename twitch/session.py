@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
     from gui import LoginForm
     from settings import Settings
+    from browser import IntegrityToken
     from constants import JsonType
     from twitchapi import ClientInfo
 
@@ -49,6 +50,8 @@ class _AuthState(LoginMixin):
         self._logged_in = asyncio.Event()
         # the client of the device code login, at whose URL cookies.jar keeps the token; each login starts with it
         self._login_client: ClientInfo = twitch._client_type
+        # the current integrity token, with the device id it is bound to and its expiry, or None for no web token
+        self.integrity: IntegrityToken | None = None
         self.user_id: int
         self.device_id: str
         self.session_id: str
@@ -179,6 +182,10 @@ class _AuthState(LoginMixin):
             headers["Origin"] = str(client_info.CLIENT_URL)
             headers["Referer"] = str(client_info.CLIENT_URL)
             headers["Authorization"] = f"OAuth {self.access_token}"
+            # one read of the record, so a refresh that replaces it cannot split the token from its device id
+            if (integrity := self.integrity) is not None:
+                headers["Client-Integrity"] = integrity.token
+                headers["X-Device-Id"] = integrity.device_id
         return headers
 
     async def validate(self):

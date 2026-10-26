@@ -41,8 +41,9 @@ The log lines are f-strings, so a value is already text when a log handler recei
    parameters with a secret key name are `<hidden>`. The value that is sent is not changed. The retry message
    of `Twitch.request` in the Output box shows its URL through `redact()` too.
 2. **A secret is found by its key name**, compared lowercase. `SECRET_KEYS` holds `access_token`, `auth-token`,
-   `auth_token`, `authorization`, `cookie`, `device_code`, `password`, `proxy-authorization`, `refresh_token`,
-   `set-cookie` and `token`. `auth-token` is the name of the cookie that keeps the token in `cookies.jar`, so a
+   `auth_token`, `authorization`, `client-integrity`, `cookie`, `device_code`, `password`, `proxy-authorization`,
+   `refresh_token`, `set-cookie` and `token`. `client-integrity` is the integrity header a browser produces for
+   the login token. `auth-token` is the name of the cookie that keeps the token in `cookies.jar`, so a
    mapping of cookies by name shows it hidden. The code and aiohttp name these keys where they build the value,
    so the name is known before the value becomes text. A query parameter name is compared after it is decoded as yarl
    decodes it, and the rest of the URL keeps its encoded text.
