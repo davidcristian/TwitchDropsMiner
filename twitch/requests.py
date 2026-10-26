@@ -116,6 +116,8 @@ class RequestsMixin:
         backoff = ExponentialBackoff(maximum=60)
         # Use a flag to retry the request a single time, if a specific set of errors is encountered
         single_retry: bool = True
+        # Refresh the integrity token once and retry when Twitch rejects it mid-request
+        integrity_retry: bool = True
         for delay in backoff:
             async with self._qgl_limiter:
                 auth_state = await self.get_auth()
@@ -174,6 +176,13 @@ class RequestsMixin:
                             ):
                                 force_retry = True
                                 break
+                            elif integrity_retry and error_dict["message"] == "failed integrity check":
+                                # the error handling runs outside the GQL limiter, so the browser refresh is safe
+                                integrity_retry = False
+                                if await auth_state.refresh_integrity():
+                                    logger.error("Integrity check failed, so the token was refreshed for a retry")
+                                    force_retry = True
+                                    break
                     else:
                         raise GQLException(response_json['errors'])
                 # Other error handling

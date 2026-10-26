@@ -16,7 +16,9 @@ from translate import _
 from exceptions import GQLException
 from gqldata import current_drop
 from utils import task_wrapper
-from constants import CALL, WATCH_INTERVAL, REFRESH_JITTER, RESTART_JITTER, State
+from constants import (
+    CALL, WATCH_INTERVAL, REFRESH_JITTER, RESTART_JITTER, INTEGRITY_MARGIN, INTEGRITY_RETRY, State
+)
 from twitchapi import GQL_QUERIES
 
 from .session import save_cookies
@@ -54,6 +56,7 @@ class LifecycleMixin:
     _campaigns: dict[str, DropsCampaign]
     _mnt_triggers: deque[datetime]
     _mnt_task: asyncio.Task[None] | None
+    _integrity_task: asyncio.Task[None] | None
     _no_campaign_printed: bool
     _no_channel_printed: bool
     _cut_priority: int | None
@@ -83,6 +86,9 @@ class LifecycleMixin:
         if self._mnt_task is not None:
             self._mnt_task.cancel()
             self._mnt_task = None
+        if self._integrity_task is not None:
+            self._integrity_task.cancel()
+            self._integrity_task = None
         # stop websocket, close session and save cookies
         await self.websocket.stop(clear_topics=True)
         if self._session is not None:
@@ -231,6 +237,21 @@ class LifecycleMixin:
                     else:
                         logger.log(CALL, "No active drop could be determined")
             await self._watch_sleep(interval - min(time() - last_sent, interval))
+
+    @task_wrapper(critical=False)
+    async def _integrity_loop(self) -> None:
+        """Renew the integrity token before it expires, while the login holds one."""
+        while True:
+            integrity = self._auth_state.integrity
+            if integrity is None:
+                # a non-web login has no integrity token, so there is nothing to renew
+                await asyncio.sleep(INTEGRITY_RETRY.total_seconds())
+                continue
+            left = integrity.expires_at / 1000 - time() - INTEGRITY_MARGIN.total_seconds()
+            if left > 0:
+                await asyncio.sleep(left)
+            elif not await self._auth_state.refresh_integrity():
+                await asyncio.sleep(INTEGRITY_RETRY.total_seconds())
 
     @task_wrapper(critical=True)
     async def _maintenance_task(self) -> None:

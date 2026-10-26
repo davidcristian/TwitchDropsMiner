@@ -100,6 +100,9 @@ WATCH_INTERVAL = timedelta(seconds=20)
 # How long the browser login waits for the user to log in, and the integrity refresh for the page's request.
 BROWSER_LOGIN_TIMEOUT = timedelta(minutes=5)
 INTEGRITY_CAPTURE_TIMEOUT = timedelta(seconds=60)
+# The integrity token is refreshed this long before it expires, and a failed refresh is retried after this.
+INTEGRITY_MARGIN = timedelta(minutes=10)
+INTEGRITY_RETRY = timedelta(minutes=5)
 # Random amount of time added on top of the channel refresh interval,
 # so that the requests don't end up sent on a perfectly fixed schedule.
 REFRESH_JITTER = timedelta(seconds=60)

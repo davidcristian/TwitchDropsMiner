@@ -75,6 +75,10 @@ class StatesMixin:
         if self._watching_task is not None:
             self._watching_task.cancel()
         self._watching_task = asyncio.create_task(self._watch_loop())
+        # the integrity refresh runs for the whole run, like the watch task
+        if self._integrity_task is not None:
+            self._integrity_task.cancel()
+        self._integrity_task = asyncio.create_task(self._integrity_loop())
         # Add default topics
         self.websocket.add_topics([
             WebsocketTopic("User", "Drops", auth_state.user_id, self.process_drops),

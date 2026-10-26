@@ -111,6 +111,8 @@ class Twitch(
         self.websocket = WebsocketPool(self)
         # Maintenance task
         self._mnt_task: asyncio.Task[None] | None = None
+        # Integrity refresh task, which renews the Client-Integrity token before it expires
+        self._integrity_task: asyncio.Task[None] | None = None
 
     def change_state(self, state: State) -> None:
         """Request the state that _run handles next."""

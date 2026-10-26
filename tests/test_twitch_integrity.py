@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import time
 import asyncio
+import contextlib
 
 import pytest
 
@@ -8,7 +10,12 @@ import browser
 import browsercdp
 from browser import IntegrityToken, LoginResult
 from exceptions import RequestException
+from twitchapi import GQL_QUERIES
+from fakes import FakeTwitch, gql_answers
+from livetwitch import run_with_fast_clock
 from fakelogin import BROWSER_CHOICE, WEB, check_response, log_in
+
+FAILED_INTEGRITY = {"errors": [{"message": "failed integrity check"}]}
 
 
 def logged_in_web(live_twitch, monkeypatch):
@@ -117,3 +124,57 @@ def test_the_browser_button_logs_in_and_keeps_the_integrity(live_twitch, monkeyp
     assert auth.access_token == "browser-token"
     assert auth._twitch._client_type is WEB
     assert auth.integrity == IntegrityToken("i", "d", 5)
+
+
+def test_integrity_loop_refreshes_when_the_token_is_near_expiry(live_twitch, monkeypatch):
+    twitch = live_twitch(FakeTwitch())
+    auth = twitch._auth_state
+    auth.integrity = IntegrityToken("old", "d", int(time.time() * 1000))
+    calls = []
+
+    async def main():
+        refreshed = asyncio.Event()
+
+        async def fake_refresh():
+            calls.append(1)
+            auth.integrity = IntegrityToken("new", "d", int((time.time() + 3600) * 1000))
+            refreshed.set()
+            return True
+
+        monkeypatch.setattr(auth, "refresh_integrity", fake_refresh)
+        task = asyncio.ensure_future(twitch._integrity_loop())
+        await asyncio.wait_for(refreshed.wait(), 5)
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+    run_with_fast_clock(main())
+    assert calls == [1]
+
+
+def test_gql_request_refreshes_and_retries_on_an_integrity_failure(live_twitch, monkeypatch):
+    answers = [FAILED_INTEGRITY, {"data": {"ok": True}}]
+    fake = FakeTwitch(gql=gql_answers(Inventory=lambda op: answers.pop(0)))
+    twitch = live_twitch(fake)
+    calls = []
+
+    async def fake_refresh():
+        calls.append(1)
+        return True
+
+    monkeypatch.setattr(twitch._auth_state, "refresh_integrity", fake_refresh)
+    result = run_with_fast_clock(twitch.gql_request(GQL_QUERIES["Inventory"]))
+    assert calls == [1]
+    assert result == {"data": {"ok": True}}
+
+
+def test_gql_request_raises_when_the_refresh_cannot_recover(live_twitch, monkeypatch):
+    fake = FakeTwitch(gql=gql_answers(Inventory=lambda op: FAILED_INTEGRITY))
+    twitch = live_twitch(fake)
+
+    async def fake_refresh():
+        return False
+
+    monkeypatch.setattr(twitch._auth_state, "refresh_integrity", fake_refresh)
+    with pytest.raises(Exception, match="failed integrity check"):
+        run_with_fast_clock(twitch.gql_request(GQL_QUERIES["Inventory"]))
