@@ -29,6 +29,7 @@ class LoginForm:
 
         self._confirm = asyncio.Event()
         self._entered: str | None = None
+        self._browser = False
         self._button = ttk.Button(
             frame, text=_("gui", "login", "button"), command=self._confirm.set, state="disabled"
         )
@@ -40,6 +41,10 @@ class LoginForm:
             frame, text=_("gui", "login", "token_button"), command=self._use_token, state="disabled"
         )
         self._token_button.grid(column=0, row=3, columnspan=2, pady=(2, 0))
+        self._browser_button = ttk.Button(
+            frame, text=_("gui", "login", "browser_button"), command=self._use_browser, state="disabled"
+        )
+        self._browser_button.grid(column=0, row=4, columnspan=2, pady=(2, 0))
         self.update(_("gui", "login", "logged_out"), None)
 
     def _use_token(self) -> None:
@@ -48,11 +53,21 @@ class LoginForm:
             self._token.delete(0, "end")
             self._confirm.set()
 
+    def _use_browser(self) -> None:
+        self._browser = True
+        self._confirm.set()
+
+    @property
+    def used_browser(self) -> bool:
+        """Whether the last ask ended with a press of the browser login button."""
+        return self._browser
+
     async def wait_for_login_press(self) -> str | None:
-        """Wait for a press of Login, which returns None, or of the token button with a token, which returns it."""
+        """Wait for a press of Login or the browser button, which return None, or of the token button with a token."""
         self._confirm.clear()
         self._entered = None
-        widgets = (self._button, self._token, self._token_button)
+        self._browser = False
+        widgets = (self._button, self._token, self._token_button, self._browser_button)
         try:
             for widget in widgets:
                 widget.config(state="normal")

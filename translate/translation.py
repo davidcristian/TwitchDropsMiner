@@ -86,6 +86,7 @@ class GUILoginForm(TypedDict):
     button: str
     token: str
     token_button: str
+    browser_button: str
 
 
 class GUIWebsocket(TypedDict):

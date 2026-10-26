@@ -92,6 +92,7 @@ default_translation: Translation = {
             "button": "Login",
             "token": "Token:",
             "token_button": "Use token",
+            "browser_button": "Log in with browser",
         },
         "websocket": {
             "name": "Websocket Status",

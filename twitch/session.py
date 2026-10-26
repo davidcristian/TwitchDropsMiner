@@ -14,7 +14,7 @@ from translate import _
 from redact import redact
 from savefiles import save_each, replace_file
 from devicecode import device_code_error, read_json
-from exceptions import RequestInvalid
+from exceptions import RequestException, RequestInvalid
 from utils import CHARS_HEX_LOWER, create_nonce
 from constants import COOKIES_PATH
 
@@ -113,6 +113,12 @@ class _AuthState(LoginMixin):
             # the code is valid for expires_in from its request, so it is requested only after the press
             if (token := await login_form.ask_login()) is not None:
                 return token
+            if login_form.used_browser:
+                try:
+                    return await self.browser_login()
+                except RequestException as exc:
+                    self._twitch.print(str(exc))
+                    continue
             await self._read_device_id()
             headers["X-Device-Id"] = self.device_id
             try:

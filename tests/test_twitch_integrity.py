@@ -8,7 +8,7 @@ import browser
 import browsercdp
 from browser import IntegrityToken, LoginResult
 from exceptions import RequestException
-from fakelogin import WEB, check_response, log_in
+from fakelogin import BROWSER_CHOICE, WEB, check_response, log_in
 
 
 def logged_in_web(live_twitch, monkeypatch):
@@ -106,3 +106,14 @@ def test_refresh_integrity_returns_false_before_login(live_twitch, monkeypatch):
     del auth.access_token
     patch_engine(monkeypatch, integrity=IntegrityToken("i", "d", 1))
     assert asyncio.run(auth.refresh_integrity()) is False
+
+
+def test_the_browser_button_logs_in_and_keeps_the_integrity(live_twitch, monkeypatch):
+    patch_engine(monkeypatch, login=LoginResult("browser-token", IntegrityToken("i", "d", 5)))
+    events, _, auth = log_in(
+        live_twitch, monkeypatch, BROWSER_CHOICE, checks=[check_response(WEB.CLIENT_ID, "7")]
+    )
+    assert "browser" in events
+    assert auth.access_token == "browser-token"
+    assert auth._twitch._client_type is WEB
+    assert auth.integrity == IntegrityToken("i", "d", 5)

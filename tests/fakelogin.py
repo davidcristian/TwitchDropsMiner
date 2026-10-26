@@ -23,6 +23,8 @@ DEVICE_FORM = {"client_id": ClientType.ANDROID_APP.CLIENT_ID, "scopes": ""}
 WWW = URL("https://www.twitch.tv")
 WEB = ClientType.WEB
 REJECTED = FakeResponse(401, json.dumps({"status": 401, "message": "invalid access token"}))
+# an answer to the Login Form that stands for a press of the browser login button
+BROWSER_CHOICE = object()
 
 
 def check_response(client_id: str, user_id: str = "7") -> FakeResponse:
@@ -98,15 +100,25 @@ class FakeLoginForm:
     An answer is a wait in seconds before a Login press, or a token that the user enters at once.
     """
 
-    def __init__(self, events: list[str], *answers: float | str) -> None:
+    def __init__(self, events: list[str], *answers: float | str | object) -> None:
         self.events = events
         self.answers = list(answers)
         # whether cookies.jar exists at each ask
         self.cookie_files: list[bool] = []
+        self._browser = False
+
+    @property
+    def used_browser(self) -> bool:
+        return self._browser
 
     async def ask_login(self) -> str | None:
         self.cookie_files.append(twitch_session.COOKIES_PATH.exists())
+        self._browser = False
         answer = self.answers.pop(0)
+        if answer is BROWSER_CHOICE:
+            self._browser = True
+            self.events.append("browser")
+            return None
         if isinstance(answer, str):
             self.events.append(f"token {answer}")
             return answer
@@ -122,7 +134,7 @@ class FakeLoginForm:
 
 
 def log_in(
-    live_twitch, monkeypatch, *answers: float | str, entered: int = 0, failures: Sequence[FakeResponse] = (),
+    live_twitch, monkeypatch, *answers: float | str | object, entered: int = 0, failures: Sequence[FakeResponse] = (),
     checks: Sequence[FakeResponse] = (), saved: str | None = None, new_run: bool = False,
     after: Callable[[Any], Awaitable[Any]] | None = None,
 ) -> tuple[list[str], LoginSession, Any]:

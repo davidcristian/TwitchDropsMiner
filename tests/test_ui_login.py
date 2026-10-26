@@ -56,6 +56,22 @@ def test_the_token_button_returns_the_entered_token_and_empties_the_masked_entry
     assert widget_states(gui) == ["disabled", "disabled", "disabled"]
 
 
+def test_the_browser_button_ends_the_wait_with_used_browser_set(window):
+    gui = window(FakeTwitch())
+
+    async def scenario() -> tuple[str | None, bool]:
+        task = asyncio.ensure_future(gui.login.ask_login())
+        await asyncio.sleep(0)
+        gui.login._browser_button.invoke()
+        token = await asyncio.wait_for(task, 1)
+        return token, gui.login.used_browser
+
+    token, used_browser = asyncio.run(scenario())
+
+    assert token is None
+    assert used_browser is True
+
+
 def test_the_token_button_with_an_empty_entry_keeps_waiting_and_login_returns_none(window):
     gui = window(FakeTwitch())
 
